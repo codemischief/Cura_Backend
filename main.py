@@ -3,30 +3,12 @@ import bcrypt
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import logging
 
 # PostgreSQL database URL
+#todo : need to source user, password and ip port from variables
 DATABASE_URL = "postgresql://postgres:cura123@192.168.10.133:5432/cura_db"
 
-# # Connect to the database using databases library
-# db_params = {
-#     "host": "192.168.10.133",
-#     "database": "cura_db",
-#     "user": "postgres",
-#     "password": "cura123",
-#     "port": "5432"
-# }
-
-# try:
-#     # Establishing a connection to the database
-#     connection = psycopg2.connect(**db_params)
-#     # Creating a cursor object to interact with the database
-#     cursor = connection.cursor()
-#     print('done')
-#     # Performing database operations here...
-# except (Exception, psycopg2.Error) as error:
-#     print(f"Error connecting to the database: {error}")
-
-# Connect to the database using psycopg2
 def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     try:
@@ -59,30 +41,21 @@ def giveFailure(msg):
         'message' : msg
     }
 
-# # Define the /addCountry route
-# @app.post("/addCountry")
-# async def add_country(payload: AddCountryPayload, db: Database = Depends(get_db)):
-#     # Check if the user exists
-#     query = f"SELECT * FROM users WHERE id = {payload.user_id}"
-#     user = await db.fetch_one(query)
 
-#     if user is None:
-#         raise HTTPException(status_code=404, detail="User not found")
-
-#     # return a simple response
-#     return {"message": f"Added {payload.new_country} for user {user['username']}"}
-# Define the payload model
 @app.get('/validateCredentials')
-async def validate_credentials(username: int, password: str, company_key: int, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def validate_credentials(username: str, password: str, company_key: int, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         with conn[0].cursor() as cursor:
-            query = 'SELECT * FROM login WHERE user_id = %s' 
+            query = 'SELECT * FROM login WHERE username = %s' 
             #todo : change table
             cursor.execute(query, (username,))
             userdata = cursor.fetchone()
 
+            
             if userdata and password == userdata[1] and company_key == userdata[2]:
-                return giveSuccess(username)
+                resp = giveSuccess(username)
+                resp['role_id'] = userdata[3]
+                return resp
             else:
                 return giveFailure("Invalid credentials")
 
@@ -121,20 +94,20 @@ async def get_role_id(user_id: int, db_params: tuple = Depends(get_db_connection
             "message": f'{e}',
         }
 
-def role_id(user_id: int, db_params: tuple = Depends(get_db_connection)):
+def check_role_access(user_id: int, db_params: tuple = Depends(get_db_connection)):
     conn, cursor = db_params
     try:
         # Fetch role_id from the "users" table in the "cura_db" database using psycopg2
         query = "SELECT role_id FROM login WHERE user_id = %s"
         cursor.execute(query, (user_id,))
-        role_id = cursor.fetchone()
+        role_access_status = cursor.fetchone()
 
-        if role_id is None:
+        if role_access_status is None:
             raise HTTPException(status_code=404, detail="User not found")
 
         # Return success with user role_id
         return {
-            "role_id": role_id[0]
+            "role_id": role_access_status[0]
         }
     except HTTPException as e:
         # Catch and re-raise HTTPException to preserve the HTTP status code
@@ -157,15 +130,17 @@ async def add_country(user_id: int,name :str, conn: psycopg2.extensions.connecti
 
             if user_data is None:
                 raise HTTPException(status_code=404, detail="User not found")
-            id = cursor.execute('SELECT COUNT(*) FROM country')
-            id = cursor.fetchone()
-            id = id[0]+1
+            role_access_status = check_role_access(user_id, conn)
+            if role_access_status['role_id'] == 1:
+                id = cursor.execute('SELECT COUNT(*) FROM country')
+                id = cursor.fetchone()
+                id = id[0]+1
             # Insert new country data into the database
-            query_insert = 'INSERT INTO country (id,name) VALUES (%s,%s)'
-            cursor.execute(query_insert, (id, name))
+                query_insert = 'INSERT INTO country (id,name) VALUES (%s,%s)'
+                cursor.execute(query_insert, (id, name))
 
             # Commit the transaction
-            conn[0].commit()
+                conn[0].commit()
 
             return {
                 "result": "success",
@@ -179,8 +154,8 @@ async def add_country(user_id: int,name :str, conn: psycopg2.extensions.connecti
 async def edit_country(user_id: str, name: str, country_name: str, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         # Check user role
-        role = role_id(user_id, conn)
-        if role['role_id'] == 1:
+        role_access_status = check_role_access(user_id, conn)
+        if role_access_status['role_id'] == 1:
             with conn[0].cursor() as cursor:
                 # Update country name in the database
                 query_update = "UPDATE country SET name = %s WHERE name = %s"
@@ -217,18 +192,19 @@ async def delete_country(user_id: int, country: str , conn: psycopg2.extensions.
 
             if user_data is None:
                 raise HTTPException(status_code=404, detail="User not found")
-
+            role_access_status = check_role_access(user_id, conn)
+            if role_access_status['role_id'] == 1:
             # Delete country data from the database
-            query_delete = 'DELETE FROM country WHERE name = %s'
-            cursor.execute(query_delete, (country,))
+                query_delete = 'DELETE FROM country WHERE name = %s'
+                cursor.execute(query_delete, (country,))
 
             # Commit the transaction
-            conn[0].commit()
+                conn[0].commit()
 
-            return {
+                return {
                 "result": "success",
                 "user_id": user_id
-            }
+                }
 
     except HTTPException as e:
         # Catch and re-raise HTTPException to preserve the HTTP status code
