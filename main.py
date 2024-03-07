@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import logging
+import traceback
 
 # PostgreSQL database URL
 #todo : need to source user, password and ip port from variables
@@ -41,26 +42,33 @@ def giveFailure(msg):
         'message' : msg
     }
 
-
-@app.get('/validateCredentials')
-async def validate_credentials(username: str, password: str, company_key: int, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+@app.post('/validateCredentials')
+async def validate_credentials(payload : dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         with conn[0].cursor() as cursor:
-            query = 'SELECT * FROM login WHERE username = %s' 
-            #todo : change table
-            cursor.execute(query, (username,))
+            print(payload)
+            query = 'SELECT password,id,roleid FROM usertable where username = %s'
+            cursor.execute(query, (str(payload['username']),))
             userdata = cursor.fetchone()
-
-            
-            if userdata and password == userdata[1] and company_key == userdata[2]:
-                resp = giveSuccess(username)
-                resp['role_id'] = userdata[3]
+            if userdata and userdata[0]==payload['password']:
+                resp = giveSuccess(userdata[1])
+                resp['role_id'] = userdata[2]
                 return resp
             else:
                 return giveFailure("Invalid credentials")
-
+    except KeyError as ke:
+        return {
+            "result": "error",
+            "message": f"key {ke} not found",
+            "user_id": payload['user_id']
+        }
     except Exception as e:
-        return giveFailure(f'{e} ab')
+        print(traceback.print_exc())
+        return {
+            "result" : "Error",
+            "message":"Username or user ID not found",
+            "data":{}
+            }
 
 def giveSuccess(user_id: int):
     return {"result": "success", "user_id": user_id}
@@ -68,458 +76,254 @@ def giveSuccess(user_id: int):
 def giveFailure(message: str):
     return {"result": "failure", "message": message}
 
-@app.get('/getRoleID')
-async def get_role_id(user_id: int, db_params: tuple = Depends(get_db_connection)):
-    #todo : add username access
-    conn, cursor = db_params
+
+def check_role_access(conn, payload: dict):
+    if 'user_id' in payload:
+        identifier_id = payload['user_id']
+        identifier_name = None
+    elif 'username' in payload:
+        identifier_name = payload['username']
+        identifier_id = None
+    else:
+        raise HTTPException(status_code=400, detail="Please provide either 'user_id' or 'username' in the payload")
+    cursor = conn[0].cursor()
     try:
-        # Fetch role_id from the "users" table in the "cura_db" database using psycopg2
-        query = "SELECT role_id FROM login WHERE user_id = %s"
-        cursor.execute(query, (user_id,))
+        if identifier_id:
+            cursor.execute("SELECT roleid FROM usertable WHERE id = %s", (identifier_id,))
+        elif identifier_name:
+            cursor.execute("SELECT roleid FROM usertable WHERE username = %s", (identifier_name,))
+        else:
+            return None
         role_id = cursor.fetchone()
 
-        if role_id is None:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        # Return success with user role_id
-        return {
-            "role_id": role_id[0]
-        }
-    except HTTPException as e:
-        # Catch and re-raise HTTPException to preserve the HTTP status code
-        raise
-    except Exception as e:
+        if role_id[0] is not None:
+            return role_id[0]
+        else:
+            raise HTTPException(status_code=404, detail="RoleID not found")
+    except KeyError as ke:
         return {
             "result": "error",
-            "message": f'{e}',
-        }
-
-def check_role_access(user_id: int, db_params: tuple = Depends(get_db_connection)):
-    conn, cursor = db_params
-    try:
-        # Fetch role_id from the "users" table in the "cura_db" database using psycopg2
-        query = "SELECT role_id FROM login WHERE user_id = %s"
-        cursor.execute(query, (user_id,))
-        role_access_status = cursor.fetchone()
-
-        if role_access_status is None:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        # Return success with user role_id
-        return {
-            "role_id": role_access_status[0]
-        }
-    except HTTPException as e:
-        # Catch and re-raise HTTPException to preserve the HTTP status code
-        raise
+            "message": "key {ke} not found",
+            "user_id": payload['user_id']
+        }  
     except Exception as e:
+        print(traceback.print_exc())
+    finally:
+        cursor.close()
+
+# FastAPI route to get roleid based on id or username
+@app.post("/getRoleID")
+async def get_role_id(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    print(payload)
+    role_id = check_role_access(conn, payload)
+    print('There')
+    if role_id is not None:
         return {
-            "result": "error",
-            "message": f'{e}',
+            "result":"Success",
+            "data":{"role id": role_id}
         }
+    else:
+        return {
+            "result" : "Error",
+            "message":"RoleID not found",
+            "data":{}
+            }
 
 
 @app.post('/addCountry')
-async def add_country(user_id: int,name :str, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         with conn[0].cursor() as cursor:
-            # Check if the user exists
-            query_user = 'SELECT * FROM usertable WHERE id = %s'
-            cursor.execute(query_user, (user_id,))
-            user_data = cursor.fetchone()
-
-            if user_data is None:
-                raise HTTPException(status_code=404, detail="User not found")
-            role_access_status = check_role_access(user_id, conn)
-            if role_access_status['role_id'] == 1:
+            role_access_status = check_role_access(conn,payload)
+            print(role_access_status)
+            if role_access_status == 1:
                 id = cursor.execute('SELECT COUNT(*) FROM country')
                 id = cursor.fetchone()
                 id = id[0]+1
+                print(id)
             # Insert new country data into the database
                 query_insert = 'INSERT INTO country (id,name) VALUES (%s,%s)'
-                cursor.execute(query_insert, (id, name))
+                cursor.execute(query_insert, (id, payload['country_name']))
 
             # Commit the transaction
                 conn[0].commit()
 
-            return {
-                "result": "success",
-                "role_id": user_data[1],  # Assuming role_id is in the users table
-                "user_id": user_id
-            }
+                return {
+                    "result": "success",
+                    "role_id": role_access_status,  # Assuming role_id is in the users table
+                    "user_id": payload['user_id'],
+                    "data":{"added":payload['country_name']}
+                }
+            elif role_access_status!=1:
+                return {
+                    "result": "error",
+                    "message": "Access denied",
+                    "role_id": role_access_status,  # Assuming role_id is in the users table
+                    "user_id": payload['user_id'],
+                    "data":{}
+                }
+            else:
+                return {
+                    "result": "error",
+                    "message": "Invalid credentials",
+                    "user_id": payload['user_id'],
+                    "data":{}
+                }
+    except KeyError as ke:
+        return {
+            "result": "error",
+            "message": f"key {ke} not found",
+            "user_id": payload['user_id'],
+            "data":{}
+        }  
     except Exception as e:
-        return giveFailure(f'{e}')
+        return {
+            "result": "error",
+            "message": "Invalid credentials",
+            "user_id": payload['user_id'],
+            "data":{}
+        }
+    
+    
+def checkcountry(payload: str,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query_find = "SELECT EXISTS (SELECT 1 FROM country WHERE name=%s)"
+            cursor.execute(query_find, (payload,))
+            ans = cursor.fetchone()[0]
+            if ans==1:
+                return True
+            else:
+                return False
+    except Exception as e:
+        print(traceback.print_exc())
+        return False
 
 @app.post("/editCountry")
-async def edit_country(user_id: str, name: str, country_name: str, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def edit_country(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         # Check user role
-        role_access_status = check_role_access(user_id, conn)
-        if role_access_status['role_id'] == 1:
+        role_access_status = check_role_access(conn,payload)
+        print(role_access_status)
+        
+        if role_access_status == 1 and checkcountry(payload['old_country_name'],conn):
             with conn[0].cursor() as cursor:
                 # Update country name in the database
                 query_update = "UPDATE country SET name = %s WHERE name = %s"
-                cursor.execute(query_update, (name, country_name))
+                cursor.execute(query_update, (payload['new_country_name'], payload['old_country_name']))
 
                 # Commit the transaction
                 conn[0].commit()
 
             return {
                 "result": "success",
-                "user_id": user_id
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data":{
+                    "original":payload['old_country_name'],
+                    "new country":payload['new_country_name']
+                }
             }
-
-    except HTTPException as e:
-        # Catch and re-raise HTTPException to preserve the HTTP status code
-        raise "error"
-
-    except Exception as e:
+        elif not checkcountry(payload['old_country_name'],conn):
+            return {
+                "result":"error",
+                "message":"Does not exist",
+                "role_id": role_access_status,
+                "data":{}
+            }
+        elif role_access_status!=1:
+            return {
+                    "result": "error",
+                    "message": "Access denied",
+                    "role_id": role_access_status,  # Assuming role_id is in the users table
+                    "user_id": payload['user_id'],
+                    "data":{}
+                }
+        
+        else:
+            return {
+                    "result": "error",
+                    "message": "Invalid credentials",
+                    "user_id": payload['user_id'],
+                    "data":{}
+                }
+    except KeyError as ke:
         return {
             "result": "error",
-            "message": f'{e}',
-            "role_id": 1,  # Default role_id in case of an error
-            "user_id": user_id
+            "message": f"key {ke} not found",
+            "user_id": payload['user_id'],
+            "data":{}
+        }     
+    except Exception as e:
+        return {
+            "result": "error", 
+            "message": "Invalid credentials",
+            "user_id": payload['user_id'],
+            "data":{}
         }
-        
+    
+
 @app.delete('/deleteCountry')
-async def delete_country(user_id: int, country: str , conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def delete_country(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         with conn[0].cursor() as cursor:
             # Check if the user exists
             query_user = 'SELECT * FROM usertable WHERE id = %s'
-            cursor.execute(query_user, (user_id,))
+            cursor.execute(query_user, (payload['user_id'],))
             user_data = cursor.fetchone()
 
             if user_data is None:
                 raise HTTPException(status_code=404, detail="User not found")
-            role_access_status = check_role_access(user_id, conn)
-            if role_access_status['role_id'] == 1:
+            role_access_status = check_role_access(conn,payload)
+            if role_access_status == 1 and checkcountry(payload['country_name'],conn):
             # Delete country data from the database
                 query_delete = 'DELETE FROM country WHERE name = %s'
-                cursor.execute(query_delete, (country,))
-
+                cursor.execute(query_delete,(payload['country_name'],))
             # Commit the transaction
                 conn[0].commit()
 
                 return {
-                "result": "success",
-                "user_id": user_id
+                    "result": "success",
+                    "user_id": payload['user_id'],
+                    "role_id": role_access_status,
+                    "data":{
+                        "deleted":payload["country_name"]
+                    }
+                    }
+            elif role_access_status!=1:
+                return {
+                    "result": "error",
+                    "message": "Access denied",
+                    "role_id": role_access_status,  # Assuming role_id is in the users table
+                    "user_id": payload['user_id'],
+                    "data":{}
                 }
-
-    except HTTPException as e:
-        # Catch and re-raise HTTPException to preserve the HTTP status code
-        raise
-
-    except Exception as e:
-        return giveFailure(f'{e}')
-
-@app.post('/addNewUser')
-async def add_new_user(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
+            elif not checkcountry(payload['name'],conn):
+                return {
+                    "result": "error",
+                    "message": "Does not exist",
+                    "role_id": role_access_status,  # Assuming role_id is in the users table
+                    "user_id": payload['user_id'],
+                    "data":{}
+                }
+            else:
+                return {
+                    "result": "error",
+                    "message": "Invalid credentials",
+                    "user_id": payload['user_id'],
+                    "data":{}
+                }
+    except KeyError as ke:
+        return {
+            "result": "error",
+            "message": f"key {ke} not found",
+            "user_id": payload['user_id'],
+            "data":{}
+        }  
     except Exception as e:
         return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.delete('/deleteUser')
-async def delete_user(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.post('/editUser')
-async def edit_user(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.post('/addLob')
-async def add_lob(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.post('/editLob')
-async def edit_lob(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.delete('/deleteLob')
-async def delete_Lob(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.post('/addState')
-async def add_state(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.post('/editState')
-async def edit_state(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-
-@app.delete('/deleteState')
-async def delete_state(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-
-@app.post('/addService')
-async def add_service(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-
-@app.post('editService')
-async def edit_service(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-
-@app.delete('/deleteService')
-async def delete_service(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.post('/addLocality')
-async def add_locality(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.post('editLocality')
-async def edit_locality(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.delete('/deleteLocality')
-async def delete_locality(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-
-@app.post('/addEmployee')
-async def add_employee(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.post('/editEmployee')
-async def edit_employee(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
-        }
-
-@app.delete('/deleteEmployee')
-async def delete_employee(payload):
-    try:
-        #==========logic========
-        return {{
-            "result":"success",
-            "role_id":1,
-            "user_id":payload['user_id']} 
-        }
-    except Exception as e:
-        return {
-            "result" : "error",
-            "message" : f'{e}',
-            "role_id" : 1, #===return value of user role===
-            "user_id" : payload['user_id']
+            "result": "error",
+            "message": "Invalid credentials",
+            "user_id": payload['user_id'],
+            "data":{}
         }
