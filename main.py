@@ -96,7 +96,7 @@ def check_role_access(conn, payload: dict):
             return None
         role_id = cursor.fetchone()
 
-        if role_id[0] is not None:
+        if role_id is not None and role_id[0] is not None:
             return role_id[0]
         else:
             raise HTTPException(status_code=404, detail="RoleID not found")
