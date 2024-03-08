@@ -129,6 +129,42 @@ async def get_role_id(payload: dict, conn: psycopg2.extensions.connection = Depe
             "data":{}
             }
 
+@app.post('/getCountries')
+def getCountries(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        print(role_access_status)
+        if role_access_status == 1:
+            with conn.cursor() as cursor:
+                query = "SELECT * FROM country ORDER BY id;"
+                cursor.execute(query)
+                data = cursor.fetchall()
+            return {
+                "result": "success",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data":{
+                    "original":payload['old_country_name'],
+                    "new country":payload['new_country_name']
+                }
+            }
+        else:
+            return {
+                "result": "error",
+                "message": "Access denied",
+                "role_id": role_access_status,  # Assuming role_id is in the users table
+                "user_id": payload['user_id'],
+                "data":{}      
+            }
+    except Exception as e:
+        print(payload["user_id"])
+        return {
+            "result": "error",
+            "message": "Access denied",
+            "role_id": role_access_status,  # Assuming role_id is in the users table
+            "user_id": payload['user_id'],
+            "data":{}
+        }
 
 @app.post('/addCountry')
 async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
