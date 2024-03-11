@@ -381,3 +381,30 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
             "user_id": payload['user_id'],
             "data":{}
         }
+@app.post('/createBuilder')
+async def create_builder(payload: dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn.cursor() as cursor:
+                query = 'INSERT INTO builder (id,buildername,phone1,phone2,email1,addressline1,addressline2,suburb,city,state,country,zip,website,comments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                cursor.execute(query,(payload['builder_id'],
+                                      payload['builder_name'],
+                                      payload['phone_1'],
+                                      payload['phone_2'],
+                                      payload['email1'],
+                                      payload['addressline1'],
+                                      payload['addressline2'],
+                                      payload['suburb'],
+                                      payload['city'],
+                                      payload['state'],
+                                      payload['country'],
+                                      payload['zip'],
+                                      payload['website'],
+                                      payload['comments'],
+                                      payload['dated'],
+                                      payload['created_by'],
+                                      payload['is_deleted']))
+    except Exception as e:
+        return None
+ 
