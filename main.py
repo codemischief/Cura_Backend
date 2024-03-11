@@ -46,11 +46,16 @@ def giveFailure(msg):
 async def validate_credentials(payload : dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         with conn[0].cursor() as cursor:
-            print(payload)
             query = 'SELECT password,id,roleid FROM usertable where username = %s'
-            cursor.execute(query, (str(payload['username']),))
+            query2 = "SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = %s);"
+            cursor.execute(query, (payload['username'],))
             userdata = cursor.fetchone()
-            if userdata and userdata[0]==payload['password']:
+            cursor.execute(query2, (payload['company_key'],))
+            key = cursor.fetchone()
+            print(userdata,key)
+            if userdata is None:
+                return giveFailure("User does not exist")
+            if userdata and userdata[0]==payload['password'] and key[0]:
                 resp = giveSuccess(userdata[1])
                 resp['role_id'] = userdata[2]
                 return resp
@@ -66,7 +71,7 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
         print(traceback.print_exc())
         return {
             "result" : "Error",
-            "message":"Username or user ID not found",
+            "message":"Wrong input",
             "data":{}
             }
 
@@ -96,10 +101,10 @@ def check_role_access(conn, payload: dict):
             return None
         role_id = cursor.fetchone()
 
-        if role_id is not None and role_id[0] is not None:
+        if role_id is not None:
             return role_id[0]
         else:
-            raise HTTPException(status_code=404, detail="RoleID not found")
+            return 0
     except KeyError as ke:
         return {
             "result": "error",
@@ -118,10 +123,17 @@ async def get_role_id(payload: dict, conn: psycopg2.extensions.connection = Depe
     role_id = check_role_access(conn, payload)
     print('There')
     if role_id is not None:
-        return {
-            "result":"Success",
-            "data":{"role id": role_id}
-        }
+        if role_id!=0:
+            return {
+                "result":"Success",
+                "data":{"role id": role_id}
+            }
+        else:
+            return {
+                "result":"error",
+                "messgae":"role_id not obtainable",
+                "data":{}
+            }
     else:
         return {
             "result" : "Error",
@@ -133,26 +145,35 @@ async def get_role_id(payload: dict, conn: psycopg2.extensions.connection = Depe
 def getCountries(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
-        # print(role_access_status)
-        if role_access_status == 1:
-            with conn[0].cursor() as cursor:
-                query = "SELECT * FROM country ORDER BY id;"
-                cursor.execute(query)
-                data = cursor.fetchall()
-            return {
-                "result": "success",
-                "user_id": payload['user_id'],
-                "role_id": role_access_status,
-                "data":data
-            }
+        print(role_access_status)
+        if role_access_status is not None:
+            if role_access_status == 1:
+                with conn[0].cursor() as cursor:
+                    query = "SELECT * FROM country ORDER BY id;"
+                    cursor.execute(query)
+                    data = cursor.fetchall()
+                return {
+                    "result": "success",
+                    "user_id": payload['user_id'],
+                    "role_id": role_access_status,
+                    "data":data
+                }
+            else:
+                return {
+                    "result": "error",
+                    "message": "Access denied",
+                    "role_id": role_access_status,  # Assuming role_id is in the users table
+                    "user_id": payload['user_id'],
+                    "data":{}      
+                }
         else:
             return {
                 "result": "error",
-                "message": "Access denied",
-                "role_id": role_access_status,  # Assuming role_id is in the users table
+                "message": "User doesn't exist",
+                "role_id": 0,  # Assuming role_id is in the users table
                 "user_id": payload['user_id'],
                 "data":{}      
-            }
+                }
     except Exception as e:
         # print(traceback.print_exc())
         return {
@@ -321,7 +342,7 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
                     "role_id": role_access_status,
                     "data":{
                         "deleted":payload["country_name"]
-                    }
+                        }
                     }
             elif role_access_status!=1:
                 return {
