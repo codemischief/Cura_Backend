@@ -381,30 +381,38 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
             "user_id": payload['user_id'],
             "data":{}
         }
-@app.post('/createBuilder')
-async def create_builder(payload: dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    try:
-        role_access_status = check_role_access(conn,payload)
-        if role_access_status == 1:
-            with conn.cursor() as cursor:
-                query = 'INSERT INTO builder (id,buildername,phone1,phone2,email1,addressline1,addressline2,suburb,city,state,country,zip,website,comments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-                cursor.execute(query,(payload['builder_id'],
-                                      payload['builder_name'],
-                                      payload['phone_1'],
-                                      payload['phone_2'],
-                                      payload['email1'],
-                                      payload['addressline1'],
-                                      payload['addressline2'],
-                                      payload['suburb'],
-                                      payload['city'],
-                                      payload['state'],
-                                      payload['country'],
-                                      payload['zip'],
-                                      payload['website'],
-                                      payload['comments'],
-                                      payload['dated'],
-                                      payload['created_by'],
-                                      payload['is_deleted']))
-    except Exception as e:
-        return None
  
+@app.post('/getBuilderInfo')
+def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    print("here")
+    try:
+        role_access_status = check_role_access(conn, payload)
+
+        if role_access_status == 1:  
+            with conn[0].cursor() as cursor:
+                query = "SELECT * FROM builder ORDER BY id;"
+                cursor.execute(query)
+                data = cursor.fetchall()
+
+                colnames = [desc[0] for desc in cursor.description]
+                
+                res = []
+                for row in data:
+                    row_dict = {}
+                    for i,colname in enumerate(colnames):
+                        row_dict[colname] = row[i]
+                    res.append(row_dict)
+                return {
+                    "result": "success",
+                    "user_id": payload['user_id'],
+                    "role_id": role_access_status,
+                    "data":{
+                        "builder_info":res
+                    }
+                }
+        else:
+            return {"result":"failure",
+                    "message":"Access Denied"}  # Return an empty list if access is denied
+    except Exception as e:
+        return {"result":"failure",
+                "message":"Invalid credentials"}
