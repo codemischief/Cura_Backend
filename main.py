@@ -3,8 +3,9 @@ import bcrypt
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-# from logging import logger
+import logging
 import traceback
+logger = logging.getLogger(__name__)
 
 # PostgreSQL database URL
 #todo : need to source user, password and ip port from variables
@@ -560,7 +561,7 @@ async def get_cities(payload: dict, conn : psycopg2.extensions.connection = Depe
         
 @app.post('/getStates')
 async def get_states_route(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    # logger.info(f'get_States: payload <{payload}>', flush=True)
+    logger.info(f'get_States: payload <{payload}>', flush=True)
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status is not None:
@@ -600,3 +601,43 @@ async def get_states_route(payload : dict,conn: psycopg2.extensions.connection =
             "user_id": payload['user_id'],
             "data": {}
         }
+@app.post('/getProjects')
+async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    print("here")
+    try:
+        role_access_status = check_role_access(conn, payload)
+
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT * FROM project ORDER BY id;"
+                cursor.execute(query)
+                data = cursor.fetchall()
+
+                colnames = [desc[0] for desc in cursor.description]
+
+                res = []
+                for row in data:
+                    row_dict = {}
+                    for i, colname in enumerate(colnames):
+                        row_dict[colname] = row[i]
+                    res.append(row_dict)
+                return {
+                    "result": "success",
+                    "user_id": payload['user_id'],
+                    "role_id": role_access_status,
+                    "data": {
+                        "project_info": res
+                    }
+                }
+        else:
+            return {
+                "result": "failure",
+                "message": "Access Denied"
+            }  # Return an empty list if access is denied
+    except Exception as e:
+        return {
+            "result": "failure",
+            "message": "Invalid credentials"
+        }
+    
+logger.info("program_started")
