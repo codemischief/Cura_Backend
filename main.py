@@ -416,3 +416,33 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
     except Exception as e:
         return {"result":"failure",
                 "message":"Invalid credentials"}
+
+
+@app.post('/getCities')
+async def get_cities(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT city FROM cities where countryid=%s'
+                cursor.execute(query,(payload['country_id'],))
+                data = cursor.fetchall()
+            return {
+                    "result": "success",
+                    "user_id": payload['user_id'],
+                    "role_id": role_access_status,
+                    "data" : {
+                        "city_names":data
+                        }
+                    }   
+        else:
+            return {
+                    "result":"failure",
+                    "message":"Access Denied"
+            }
+    except Exception as e:
+        print(traceback.print_exc())
+        return {
+            "result":"failure",
+            "message":"Invalid UserName or UserID"
+        }
