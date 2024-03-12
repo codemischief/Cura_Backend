@@ -388,8 +388,8 @@ async def add_builder_info(payload: dict,conn : psycopg2.extensions.connection =
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
-            with conn.cursor() as cursor:
-                query = 'INSERT INTO builder (id,buildername,phone1,phone2,email1,addressline1,addressline2,suburb,city,state,country,zip,website,comments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO builder (buildername,phone1,phone2,email1,addressline1,addressline2,suburb,city,state,country,zip,website,comments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                 cursor.execute(query,(payload['builder_name'],
                                       payload['phone_1'],
                                       payload['phone_2'],
@@ -406,8 +406,29 @@ async def add_builder_info(payload: dict,conn : psycopg2.extensions.connection =
                                       payload['dated'],
                                       payload['created_by'],
                                       payload['is_deleted']))
+            return {
+                    "result": "success",
+                    "user_id": payload['user_id'],
+                    "role_id": role_access_status,
+                    "data":{
+                        "entered":payload["builder_name"]
+                        }
+                    }
+        else:
+            return {
+                "result": "error",
+                "message": "Access Denied",
+                "user_id": payload['user_id'],
+                "data":{}
+            }
     except Exception as e:
-        return None
+        print(traceback.print_exc())
+        return {
+                "result": "error",
+                "message": e,
+                "user_id": payload['user_id'],
+                "data":{}
+            }
 
 @app.post('/getBuilderInfo')
 def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -488,7 +509,7 @@ async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Dep
 
 @app.post('/getStates')
 async def get_states_route(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    # logger.info(f'get_States: payload <{payload}>', flush=True)
+    logger.info(f'get_States: payload <{payload}>', flush=True)
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status is not None:
@@ -536,8 +557,8 @@ async def get_cities(payload: dict, conn : psycopg2.extensions.connection = Depe
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT * FROM cities where countryid=%s'
-                cursor.execute(query,(payload['country_id'],))
+                query = 'SELECT id,city FROM cities where countryid=%s and state=%s'
+                cursor.execute(query,(payload['country_id'],payload['state_name']))
                 data = cursor.fetchall()
             return {
                     "result": "success",
