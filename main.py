@@ -570,15 +570,21 @@ async def get_cities(payload: dict, conn : psycopg2.extensions.connection = Depe
                     }   
         else:
             return {
-                    "result":"failure",
-                    "message":"Access Denied"
+                    "result": "error",
+                    "message": "Access denied",
+                    "role_id": role_access_status,
+                    "user_id": payload['user_id'],
+                    "data": {}
             }
     except Exception as e:
         print(traceback.print_exc())
-        return {
-            "result":"failure",
-            "message":"Invalid UserName or UserID"
-        }
+       return {
+                    "result": "error",
+                    "message": "Invalid Username or User ID",
+                    "role_id": role_access_status,
+                    "user_id": payload['user_id'],
+                    "data": {}
+                }
         
 @app.post('/getStates')
 async def get_states_route(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
