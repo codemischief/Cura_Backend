@@ -322,13 +322,6 @@ async def edit_country(payload: dict, conn: psycopg2.extensions.connection = Dep
 async def delete_country(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         with conn[0].cursor() as cursor:
-            # Check if the user exists
-            query_user = 'SELECT * FROM usertable WHERE id = %s'
-            cursor.execute(query_user, (payload['user_id'],))
-            user_data = cursor.fetchone()
-
-            if user_data is None:
-                raise HTTPException(status_code=404, detail="User not found")
             role_access_status = check_role_access(conn,payload)
             if role_access_status == 1 and checkcountry(payload['country_name'],conn):
             # Delete country data from the database
@@ -506,6 +499,51 @@ async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Dep
             "result":"failure",
             "message":"Invalid UserName or UserID"
         }
+
+@app.post('/getStates')
+async def get_states_route(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logger.info(f'get_States: payload <{payload}>', flush=True)
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status is not None:
+            if role_access_status == 1:
+                with conn[0].cursor() as cursor:
+                    query = "SELECT DISTINCT state FROM cities WHERE countryid = %s" 
+                    cursor.execute(query,(payload['country_id'],))
+                    data = [i[0] for i in cursor.fetchall()]
+
+                return {
+                    "result": "success",
+                    "user_id": payload['user_id'],
+                    "role_id": role_access_status,
+                    "data": data
+                }
+            else:
+                return {
+                    "result": "error",
+                    "message": "Access denied",
+                    "role_id": role_access_status,
+                    "user_id": payload['user_id'],
+                    "data": {}
+                }
+        else:
+            return {
+                "result": "error",
+                "message": "User doesn't exist",
+                "role_id": 0,
+                "user_id": payload['user_id'],
+                "data": {}
+            }
+    except Exception as e:
+        print(traceback.print_exc())
+        return {
+            "result": "error",
+            "message": f"{e} error found",
+            "role_id": role_access_status,
+            "user_id": payload['user_id'],
+            "data": {}
+        }
+
 @app.post('/getCities')
 async def get_cities(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
@@ -525,21 +563,15 @@ async def get_cities(payload: dict, conn : psycopg2.extensions.connection = Depe
                     }   
         else:
             return {
-                    "result": "error",
-                    "message": "Access denied",
-                    "role_id": role_access_status,
-                    "user_id": payload['user_id'],
-                    "data": {}
+                    "result":"failure",
+                    "message":"Access Denied"
             }
     except Exception as e:
         print(traceback.print_exc())
-       return {
-                    "result": "error",
-                    "message": "Invalid Username or User ID",
-                    "role_id": role_access_status,
-                    "user_id": payload['user_id'],
-                    "data": {}
-                }
+        return {
+            "result":"failure",
+            "message":"Invalid UserName or UserID"
+        }
         
 @app.post('/getStates')
 async def get_states_route(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -583,6 +615,7 @@ async def get_states_route(payload : dict,conn: psycopg2.extensions.connection =
             "user_id": payload['user_id'],
             "data": {}
         }
+
 @app.post('/getProjects')
 async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     print("here")
@@ -614,7 +647,7 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
         else:
             return {
             "result": "error",
-            "message": "Access Denied",
+            "message": "Username or User ID not found",
             "role_id": role_access_status,
             "user_id": payload['user_id'],
             "data": {}
