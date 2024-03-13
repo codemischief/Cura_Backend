@@ -658,13 +658,66 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
                 }
         else:
             return {
-                "result": "failure",
-                "message": "Access Denied"
-            }  # Return an empty list if access is denied
+            "result": "error",
+            "message": "Access Denied",
+            "role_id": role_access_status,
+            "user_id": payload['user_id'],
+            "data": {}
+        }
     except Exception as e:
         return {
-            "result": "failure",
-            "message": "Invalid credentials"
+            "result": "error",
+            "message": "Username or User ID not found",
+            "role_id": role_access_status,
+            "user_id": payload['user_id'],
+            "data": {}
         }
     
+
+@app.post('/getProjectsByBuilder')
+async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    print("here")
+    try:
+        role_access_status = check_role_access(conn, payload)
+
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT * FROM project where builderid=%s ORDER BY id;"
+                cursor.execute(query,(payload['builder_id'],))
+                data = cursor.fetchall()
+
+                colnames = [desc[0] for desc in cursor.description]
+
+                res = []
+                for row in data:
+                    row_dict = {}
+                    for i, colname in enumerate(colnames):
+                        row_dict[colname] = row[i]
+                    res.append(row_dict)
+                return {
+                    "result": "success",
+                    "user_id": payload['user_id'],
+                    "role_id": role_access_status,
+                    "data": {
+                        "project_info": res
+                    }
+                }
+        else:
+            return {
+            "result": "error",
+            "message": "Username or User ID not found",
+            "role_id": role_access_status,
+            "user_id": payload['user_id'],
+            "data": {}
+            }
+    except Exception as e:
+        print(traceback.print_exc())
+        return {
+            "result": "error",
+            "message": "Username or User ID not found",
+            "role_id": role_access_status,
+            "user_id": payload['user_id'],
+            "data": {}
+        }
+
 logger.info("program_started")
