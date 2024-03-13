@@ -52,11 +52,21 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
             cursor.execute(query, (payload['username'],))
             userdata = cursor.fetchone()
             cursor.execute(query2, (payload['company_key'],))
-            key = cursor.fetchone()
-            print(userdata,key)
+            company_key = cursor.fetchone()
+            print(userdata,company_key)
             if userdata is None:
                 return giveFailure("User does not exist")
-            if userdata and userdata[0]==payload['password'] and key[0]:
+            logger.info(f"{userdata[0]} is password hashed")
+            encoded_pw = payload['password'].encode('utf-8')
+            logger.info(f"{type(encoded_pw)} is type")
+            # encoded_pw = payload["password"] if isinstance(payload["password"], bytes) else payload["password"].encode('utf-8')
+            # encoded_pw = userdata[0].encode('utf-8')
+            # database_pw = userdata[0] if isinstance(userdata[0], bytes) else userdata[0].encode('utf-8')
+            database_pw = bytes(userdata[0],'ascii')
+
+            if bcrypt.checkpw(encoded_pw,database_pw):
+            # if userdata and payload=userdata[0],userdata[0]) and key[0]:
+                logger.info('Password is ok')
                 resp = giveSuccess(userdata[1])
                 resp['role_id'] = userdata[2]
                 return resp
@@ -318,7 +328,7 @@ async def edit_country(payload: dict, conn: psycopg2.extensions.connection = Dep
         }
     
 
-@app.delete('/deleteCountry')
+@app.post('/deleteCountry')
 async def delete_country(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         with conn[0].cursor() as cursor:
@@ -364,7 +374,7 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
     except KeyError as ke:
         return {
             "result": "error",
-            "message": f"key {ke} not found",
+            "message": f"Country {payload['country_name']} not found",
             "user_id": payload['user_id'],
             "data":{}
         }  
