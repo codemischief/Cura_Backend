@@ -509,40 +509,28 @@ async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Dep
             "result":"failure",
             "message":"Invalid UserName or UserID"
         }
-
-@app.post('/getStates')
-async def get_states_route(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logger.info(f'get_States: payload <{payload}>', flush=True)
+@app.post('/getStatesAdmin')
+async def get_states_admin(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
-        if role_access_status is not None:
-            if role_access_status == 1:
-                with conn[0].cursor() as cursor:
-                    query = "SELECT DISTINCT state FROM cities WHERE countryid = %s" 
-                    cursor.execute(query,(payload['country_id'],))
-                    data = [i[0] for i in cursor.fetchall()]
-
-                return {
-                    "result": "success",
-                    "user_id": payload['user_id'],
-                    "role_id": role_access_status,
-                    "data": data
-                }
-            else:
-                return {
-                    "result": "error",
-                    "message": "Access denied",
-                    "role_id": role_access_status,
-                    "user_id": payload['user_id'],
-                    "data": {}
-                }
+        if role_access_status==1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT DISTINCT state,countryid FROM cities"
+                cursor.execute(query)
+                data = cursor.fetchall()
+            return {
+                "result": "success",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data": data
+            }
         else:
             return {
                 "result": "error",
-                "message": "User doesn't exist",
-                "role_id": 0,
+                "message":"Invalid Credentials",
                 "user_id": payload['user_id'],
-                "data": {}
+                "role_id": role_access_status,
+                "data": data
             }
     except Exception as e:
         print(traceback.print_exc())
@@ -554,47 +542,19 @@ async def get_states_route(payload : dict,conn: psycopg2.extensions.connection =
             "data": {}
         }
 
-@app.post('/getCities')
-async def get_cities(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    try:
-        role_access_status = check_role_access(conn,payload)
-        if role_access_status == 1:
-            with conn[0].cursor() as cursor:
-                query = 'SELECT id,city FROM cities where countryid=%s and state=%s'
-                cursor.execute(query,(payload['country_id'],payload['state_name']))
-                data = cursor.fetchall()
-            return {
-                    "result": "success",
-                    "user_id": payload['user_id'],
-                    "role_id": role_access_status,
-                    "data" : {
-                        "city_names":data
-                        }
-                    }   
-        else:
-            return {
-                    "result":"failure",
-                    "message":"Access Denied"
-            }
-    except Exception as e:
-        print(traceback.print_exc())
-        return {
-            "result":"failure",
-            "message":"Invalid UserName or UserID"
-        }
-        
 @app.post('/getStates')
-async def get_states_route(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logger.info(f'get_States: payload <{payload}>', flush=True)
+async def get_states(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    # logger.info(f'get_States: payload <{payload}>', flush=True)
     try:
         role_access_status = check_role_access(conn,payload)
-        if role_access_status is not None:
+        print(role_access_status)
+        if role_access_status != 0:
             if role_access_status == 1:
                 with conn[0].cursor() as cursor:
-                    query = "SELECT state FROM cities ORDER BY id;" 
-                    cursor.execute(query)
-                    data = cursor.fetchall()
-
+                    query = "SELECT DISTINCT state FROM cities WHERE countryid = %s" 
+                    cursor.execute(query,(payload['country_id'],))
+                    data = [i[0] for i in cursor.fetchall()]
+                
                 return {
                     "result": "success",
                     "user_id": payload['user_id'],
@@ -617,7 +577,58 @@ async def get_states_route(payload : dict,conn: psycopg2.extensions.connection =
                 "user_id": payload['user_id'],
                 "data": {}
             }
+    except ValueError as ve:
+        print(traceback.print_exc())
+        return {
+            "result": "error",
+            "message": f"{ve} error found",
+            "role_id": role_access_status,
+            "user_id": payload['user_id'],
+            "data": {}
+        }
     except Exception as e:
+        print(traceback.print_exc())
+        return {
+            "result": "error",
+            "message": f"{e} error found",
+            "role_id": role_access_status,
+            "user_id": payload['user_id'],
+            "data": {}
+        }
+
+@app.post('/getCitiesAdmin')
+async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT id,city,state,countryid FROM cities"
+                cursor.execute(query)
+                data = cursor.fetchall()
+            colnames = [desc[0] for desc in cursor.description]
+                
+            res = []
+            for row in data:
+                row_dict = {}
+                for i,colname in enumerate(colnames):
+                    row_dict[colname] = row[i]
+                res.append(row_dict)
+            return {
+                "result": "success",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data": res
+            }
+        else:
+            return {
+                "result": "error",
+                "message":"Invalid Credentials",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data": data
+            }
+    except Exception as e:
+        print(traceback.print_exc())
         return {
             "result": "error",
             "message": f"{e} error found",
