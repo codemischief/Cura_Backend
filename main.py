@@ -386,7 +386,7 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
             "data":{}
         }
 
-@app.post('/addNewBuilder')
+@app.post('/addBuilderInfo')
 async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     print(payload)
     try:
@@ -493,7 +493,100 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
             "user_id": payload['user_id'],
             "data":{}
         }
-@app.post('/deleteBuilder')
+
+@app.post("/editBuilder")
+async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        # Check user role
+        role_access_status = check_role_access(conn, payload)
+
+        with conn[0].cursor() as cursor:
+            # Check if the builder exists
+            query_check_builder = "SELECT EXISTS (SELECT 1 FROM builder WHERE id = %s)"
+            cursor.execute(query_check_builder, (payload['builder_id'],))
+            builder_exists = cursor.fetchone()[0]
+
+        if role_access_status == 1 and builder_exists:
+            with conn[0].cursor() as cursor:
+                # Update builder information in the database
+                query_update = """
+                    UPDATE builder 
+                    SET builder_name = %s, phone_1 = %s, phone_2 = %s, email1 = %s, 
+                    addressline1 = %s, addressline2 = %s, suburb = %s, city = %s, 
+                    state = %s, country = %s, zip = %s, website = %s, comments = %s, 
+                    dated = %s, created_by = %s, is_deleted = %s
+                    WHERE builder_id = %s
+                """
+                cursor.execute(query_update, (
+                    payload['builder_name'],
+                    payload['phone_1'],
+                    payload['phone_2'],
+                    payload['email1'],
+                    payload['addressline1'],
+                    payload['addressline2'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['zip'],
+                    payload['website'],
+                    payload['comments'],
+                    payload['dated'],
+                    payload['created_by'],
+                    payload['is_deleted'],
+                    payload['builder_id']
+                ))
+
+                # Commit the transaction
+                conn[0].commit()
+
+            return {
+                "result": "success",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data": payload  # Return the updated payload
+            }
+        elif not builder_exists:
+            return {
+                "result": "error",
+                "message": "Builder does not exist",
+                "role_id": role_access_status,
+                "user_id": payload['user_id'],
+                "data": {}
+            }
+        elif role_access_status != 1:
+            return {
+                "result": "error",
+                "message": "Access denied",
+                "role_id": role_access_status,
+                "user_id": payload['user_id'],
+                "data": {}
+            }
+        else:
+            return {
+                "result": "error",
+                "message": "Invalid credentials",
+                "user_id": payload['user_id'],
+                "data": {}
+            }
+    except KeyError as ke:
+        return {
+            "result": "error",
+            "message": f"key {ke} not found",
+            "user_id": payload['user_id'],
+            "data": {}
+        }
+    except Exception as e:
+        return {
+            "result": "error",
+            "message": str(e),
+            "user_id": payload['user_id'],
+            "data": {}
+        }
+
+
+
+@app.post('/deleteBuilderInfo')
 async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
@@ -613,7 +706,46 @@ async def get_states(payload : dict,conn: psycopg2.extensions.connection = Depen
             "user_id": payload['user_id'],
             "data": {}
         }
-
+@app.post('/getCities')
+async def get_cities(payload : dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT id,city FROM cities where state=%s"
+                cursor.execute(query,(payload['state_name'],))
+                data = cursor.fetchall()
+            colnames = [desc[0] for desc in cursor.description]
+                
+            res = []
+            for row in data:
+                row_dict = {}
+                for i,colname in enumerate(colnames):
+                    row_dict[colname] = row[i]
+                res.append(row_dict)
+            return {
+                "result": "success",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data": res
+            }
+        else:
+            return {
+                "result": "error",
+                "message":"Invalid Credentials",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data": data
+            }
+    except Exception as e:
+        print(traceback.print_exc())
+        return {
+            "result": "error",
+            "message": f"{e} error found",
+            "role_id": role_access_status,
+            "user_id": payload['user_id'],
+            "data": {}
+        }
 @app.post('/getCitiesAdmin')
 async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
