@@ -505,17 +505,17 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
             query_check_builder = "SELECT EXISTS (SELECT 1 FROM builder WHERE id = %s)"
             cursor.execute(query_check_builder, (payload['builder_id'],))
             builder_exists = cursor.fetchone()[0]
-
+            print(builder_exists)
         if role_access_status == 1 and builder_exists:
             with conn[0].cursor() as cursor:
                 # Update builder information in the database
                 query_update = """
                     UPDATE builder 
-                    SET builder_name = %s, phone_1 = %s, phone_2 = %s, email1 = %s, 
+                    SET buildername = %s, phone1 = %s, phone2 = %s, email1 = %s, 
                     addressline1 = %s, addressline2 = %s, suburb = %s, city = %s, 
                     state = %s, country = %s, zip = %s, website = %s, comments = %s, 
-                    dated = %s, created_by = %s, is_deleted = %s
-                    WHERE builder_id = %s
+                    dated = %s, createdby = %s, isdeleted = %s
+                    WHERE id = %s
                 """
                 cursor.execute(query_update, (
                     payload['builder_name'],
