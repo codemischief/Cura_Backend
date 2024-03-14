@@ -386,7 +386,7 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
             "data":{}
         }
 
-@app.post('/addBuilderInfo')
+@app.post('/addNewBuilder')
 async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     print(payload)
     try:
@@ -493,7 +493,7 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
             "user_id": payload['user_id'],
             "data":{}
         }
-@app.post('/deleteBuilderInfo')
+@app.post('/deleteBuilder')
 async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
