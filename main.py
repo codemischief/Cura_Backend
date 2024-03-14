@@ -387,51 +387,62 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
         }
 
 @app.post('/addBuilderInfo')
-async def add_builder_info(payload: dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
-        role_access_status = check_role_access(conn,payload)
+        role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'INSERT INTO builder (buildername,phone1,phone2,email1,addressline1,addressline2,suburb,city,state,country,zip,website,comments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-                cursor.execute(query,(payload['builder_name'],
-                                      payload['phone_1'],
-                                      payload['phone_2'],
-                                      payload['email1'],
-                                      payload['addressline1'],
-                                      payload['addressline2'],
-                                      payload['suburb'],
-                                      payload['city'],
-                                      payload['state'],
-                                      payload['country'],
-                                      payload['zip'],
-                                      payload['website'],
-                                      payload['comments'],
-                                      payload['dated'],
-                                      payload['created_by'],
-                                      payload['is_deleted']))
+                query = '''
+                    INSERT INTO builder (
+                        buildername, phone1, phone2, email1, email2, addressline1, addressline2,
+                        suburb, city, state, country, zip, website, comments, dated, createdby, isdeleted
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                '''
+                cursor.execute(query, (
+                    payload['buildername'],
+                    payload['phone1'],
+                    payload['phone2'],
+                    payload['email1'],
+                    payload.get('email2', ''), 
+                    payload['addressline1'],
+                    payload['addressline2'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['zip'],
+                    payload['website'],
+                    payload['comments'],
+                    payload['dated'],
+                    payload['createdby'],
+                    payload['isdeleted']
+                ))
             return {
-                    "result": "success",
-                    "user_id": payload['user_id'],
-                    "role_id": role_access_status,
-                    "data":{
-                        "entered":payload["builder_name"]
-                        }
-                    }
+                "result": "success",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data": {
+                    "entered": payload["buildername"]
+                }
+            }
         else:
             return {
                 "result": "error",
                 "message": "Access Denied",
                 "user_id": payload['user_id'],
-                "data":{}
+                "data": {}
             }
     except Exception as e:
         print(traceback.print_exc())
         return {
-                "result": "error",
-                "message": e,
-                "user_id": payload['user_id'],
-                "data":{}
-            }
+            "result": "error",
+            "message": str(e),
+            "user_id": payload['user_id'],
+            "data": {}
+        }
+
 
 @app.post('/getBuilderInfo')
 def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -682,34 +693,6 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
             "data": {}
         }
     
-@app.post('/getCountryById')
-async def get_projects_by_id(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    try:
-        role_access_status = check_role_access(conn,payload)
-        
-        if role_access_status == 1:
-            with conn[0].cursor() as cursor:
-                query = 'SELECT name FROM country where id=%s'
-                cursor.execute(query,(payload['country_id'],))
-                data =cursor.fetchone()
-            return {
-                "result": "success",
-                "user_id": payload['user_id'],
-                "role_id": role_access_status,
-                "data": {
-                    "country_name": data[0]
-                }
-            }
-    except Exception as e:
-        print(traceback.print_exc())
-        return {
-            "result": "error",
-            "message": "Username or User ID not found",
-            "role_id": role_access_status,
-            "user_id": payload['user_id'],
-            "data": {}
-        }
-                
 
 @app.post('/getProjectsByBuilder')
 async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -719,7 +702,7 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
 
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "SELECT * FROM project WHERE builderid=%s ORDER BY id;"
+                query = "SELECT * FROM project where builderid=%s ORDER BY id;"
                 cursor.execute(query,(payload['builder_id'],))
                 data = cursor.fetchall()
 
@@ -756,5 +739,169 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
             "user_id": payload['user_id'],
             "data": {}
         }
+
+@app.post("/addNewProject")
+async def add_new_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        if 'builderid' not in payload:
+            return {
+                "result": "error",
+                "message": "Missing 'builderid' in payload",
+                "user_id": payload.get('user_id', None),
+                "data": {}
+            }
+        
+        role_access_status = check_role_access(conn, payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = '''
+    INSERT INTO project (
+        builderid, projectname, addressline1, addressline2, suburb, city, state, 
+        country, zip, nearestlandmark, project_type, mailgroup1, mailgroup2, website, 
+        project_legal_status, rules, completionyear, jurisdiction, taluka, corporationward,
+        policechowkey, policestation, maintenance_details, numberoffloors, numberofbuildings,
+        approxtotalunits, tenantstudentsallowed, tenantworkingbachelorsallowed, tenantforeignersallowed,
+        otherdetails, duespayablemonth, dated, createdby, isdeleted
+    ) VALUES (
+        %(int)s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    )
+'''
+     
+             
+                
+                cursor.execute(query, (
+                    payload['builderid'],
+                    payload['projectname'],
+                    payload['addressline1'],
+                    payload['addressline2'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['zip'],
+                    payload['nearestlandmark'],
+                    payload['project_type'],
+                    payload['mailgroup1'],
+                    payload['mailgroup2'],
+                    payload['website'],
+                    payload['project_legal_status'],
+                    payload['rules'],
+                    payload['completionyear'],
+                    payload['jurisdiction'],
+                    payload['taluka'],
+                    payload['corporationward'],
+                    payload['policechowkey'],
+                    payload['policestation'],
+                    payload['maintenance_details'],
+                    payload['numberoffloors'],
+                    payload['numberofbuildings'],
+                    payload['approxtotalunits'],
+                    payload['tenantstudentsallowed'],
+                    payload['tenantworkingbachelorsallowed'],
+                    payload['tenantforeignersallowed'],
+                    payload['otherdetails'],
+                    payload['duespayablemonth'],
+                    payload['dated'],
+                    payload['createdby'],
+                    payload['isdeleted']
+))
+
+            return {
+                "result": "success",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data": {
+                    "entered": payload['projectname']
+                }
+            }
+        else:
+            return {
+                "result": "error",
+                "message": "Access Denied",
+                "user_id": payload['user_id'],
+                "data": {}
+            }
+    except Exception as e:
+        print(traceback.format_exc())
+        return {
+            "result": "error",
+            "message": str(e),
+            "user_id": payload['user_id'],
+            "data": {}
+        }
+
+@app.post('/addNewBuilderContact')
+async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        if 'builderid' not in payload:
+            return {
+                "result": "error",
+                "message": "Missing 'builderid' in payload",
+                "user_id": payload.get('user_id', None),
+                "data": {}
+            }
+        
+        role_access_status = check_role_access(conn, payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = '''
+                    INSERT INTO builder_contacts (
+                        builderid, contactname, email1, jobtitle,
+                        businessphone, homephone, mobilephone, addressline1,
+                        addressline2, suburb, city, state, country,
+                        zip, notes, dated, createdby, isdeleted
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                '''
+                cursor.execute(query, (
+                    payload['builderid'],
+                    payload['contactname'],
+                    payload['email1'],
+                    payload['jobtitle'],
+                    payload['businessphone'],
+                    payload['homephone'],
+                    payload.get('mobilephone', None),
+                    payload['addressline1'],
+                    payload['addressline2'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['zip'],
+                    payload['notes'],
+                    payload['dated'],
+                    payload['createdby'],
+                    payload['isdeleted']
+                ))
+                
+                # Commit changes to the database
+                conn[0].commit()
+                
+            return {
+                "result": "success",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data": {
+                    "entered": payload['contactname']
+                }
+            }
+        else:
+            return {
+                "result": "error",
+                "message": "Access Denied",
+                "user_id": payload['user_id'],
+                "data": {}
+            }
+    except Exception as e:
+        print(traceback.format_exc())
+        return {
+            "result": "error",
+            "message": str(e),
+            "user_id": payload['user_id'],
+            "data": {}
+        }
+
+
+
 
 logger.info("program_started")
