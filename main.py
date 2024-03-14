@@ -64,7 +64,7 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
             # database_pw = userdata[0] if isinstance(userdata[0], bytes) else userdata[0].encode('utf-8')
             database_pw = bytes(userdata[0],'ascii')
 
-            if bcrypt.checkpw(encoded_pw,database_pw):
+            if bcrypt.checkpw(encoded_pw,database_pw) and company_key:
             # if userdata and payload=userdata[0],userdata[0]) and key[0]:
                 logger.info('Password is ok')
                 resp = giveSuccess(userdata[1])
@@ -388,6 +388,7 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
 
 @app.post('/addBuilderInfo')
 async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    print(payload)
     try:
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
@@ -419,6 +420,12 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
                     payload['createdby'],
                     payload['isdeleted']
                 ))
+                 # Commit the transaction
+                conn[0].commit()
+                
+                # Get the ID of the last inserted row
+                last_row_id = cursor.lastrowid
+                print("Inserted row ID:", last_row_id)
             return {
                 "result": "success",
                 "user_id": payload['user_id'],
@@ -754,23 +761,19 @@ async def add_new_project(payload: dict, conn: psycopg2.extensions.connection = 
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = '''
-    INSERT INTO project (
-        builderid, projectname, addressline1, addressline2, suburb, city, state, 
-        country, zip, nearestlandmark, project_type, mailgroup1, mailgroup2, website, 
-        project_legal_status, rules, completionyear, jurisdiction, taluka, corporationward,
-        policechowkey, policestation, maintenance_details, numberoffloors, numberofbuildings,
-        approxtotalunits, tenantstudentsallowed, tenantworkingbachelorsallowed, tenantforeignersallowed,
-        otherdetails, duespayablemonth, dated, createdby, isdeleted
-    ) VALUES (
-        %(int)s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
-        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-    )
-'''
-     
-             
-                
-                cursor.execute(query, (
+                cursor.execute("""
+                    INSERT INTO project (
+                        builderid, projectname, addressline1, addressline2, suburb, city, state, 
+                        country, zip, nearestlandmark, project_type, mailgroup1, mailgroup2, website, 
+                        project_legal_status, rules, completionyear, jurisdiction, taluka, corporationward,
+                        policechowkey, policestation, maintenance_details, numberoffloors, numberofbuildings,
+                        approxtotalunits, tenantstudentsallowed, tenantworkingbachelorsallowed, tenantforeignersallowed,
+                        otherdetails, duespayablemonth, dated, createdby
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                """, (
                     payload['builderid'],
                     payload['projectname'],
                     payload['addressline1'],
@@ -804,17 +807,24 @@ async def add_new_project(payload: dict, conn: psycopg2.extensions.connection = 
                     payload['duespayablemonth'],
                     payload['dated'],
                     payload['createdby'],
-                    payload['isdeleted']
-))
+                ))
+                
+                # Commit the transaction
+                conn[0].commit()
+                
+                # Get the ID of the last inserted row
+                last_row_id = cursor.lastrowid
+                print("Inserted row ID:", last_row_id)
 
-            return {
-                "result": "success",
-                "user_id": payload['user_id'],
-                "role_id": role_access_status,
-                "data": {
-                    "entered": payload['projectname']
+                return {
+                    "result": "success",
+                    "user_id": payload['user_id'],
+                    "role_id": role_access_status,
+                    "data": {
+                        "entered": payload['projectname'],
+                        "project_id": last_row_id
+                    }
                 }
-            }
         else:
             return {
                 "result": "error",
@@ -830,6 +840,7 @@ async def add_new_project(payload: dict, conn: psycopg2.extensions.connection = 
             "user_id": payload['user_id'],
             "data": {}
         }
+
 
 @app.post('/addNewBuilderContact')
 async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
