@@ -682,6 +682,34 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
             "data": {}
         }
     
+@app.post('/getCountryById')
+async def get_projects_by_id(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT name FROM country where id=%s'
+                cursor.execute(query,(payload['country_id'],))
+                data =cursor.fetchone()
+            return {
+                "result": "success",
+                "user_id": payload['user_id'],
+                "role_id": role_access_status,
+                "data": {
+                    "country_name": data[0]
+                }
+            }
+    except Exception as e:
+        print(traceback.print_exc())
+        return {
+            "result": "error",
+            "message": "Username or User ID not found",
+            "role_id": role_access_status,
+            "user_id": payload['user_id'],
+            "data": {}
+        }
+                
 
 @app.post('/getProjectsByBuilder')
 async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -691,7 +719,7 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
 
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "SELECT * FROM project where builderid=%s ORDER BY id;"
+                query = "SELECT * FROM project WHERE builderid=%s ORDER BY id;"
                 cursor.execute(query,(payload['builder_id'],))
                 data = cursor.fetchall()
 
