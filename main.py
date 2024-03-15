@@ -20,6 +20,42 @@ def get_db_connection():
         cursor.close()
         conn.close()
 
+def get_countries_from_id(conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = 'SELECT * FROM country'
+            cursor.execute(query)
+            data = cursor.fetchall()
+            print(data)
+            res = {}
+            for row in data:
+                res[row[0]] = row[1]
+            return res
+    except:
+        print(traceback.print_exc())
+        return {}
+    
+def get_city_from_id(conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = 'SELECT id,city FROM cities'
+            cursor.execute(query)
+            data = cursor.fetchall()
+            res = {}
+            for row in data:
+                res[row[0]] = row[1]
+            return res
+    except:
+        print(traceback.print_exc())
+        return {}
+        
+
+def get_name(id : int,name_dict:dict):
+    if id in name_dict:
+        return name_dict[id]
+    else:
+        return f"NA_{id}"
+
 # Create a FastAPI app
 app = FastAPI()
 
@@ -51,9 +87,8 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
             query2 = "SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = %s);"
             cursor.execute(query, (payload['username'],))
             userdata = cursor.fetchone()
-            cursor.execute(query2, (payload['company_key'],))
+            cursor.execute(query2, (str(payload['company_key']),))
             company_key = cursor.fetchone()
-            print(userdata,company_key)
             if userdata is None:
                 return giveFailure("User does not exist")
             logger.info(f"{userdata[0]} is password hashed")
@@ -63,8 +98,8 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
             # encoded_pw = userdata[0].encode('utf-8')
             # database_pw = userdata[0] if isinstance(userdata[0], bytes) else userdata[0].encode('utf-8')
             database_pw = bytes(userdata[0],'ascii')
-
-            if bcrypt.checkpw(encoded_pw,database_pw) and company_key:
+            print(company_key)
+            if bcrypt.checkpw(encoded_pw,database_pw) and company_key[0]:
             # if userdata and payload=userdata[0],userdata[0]) and key[0]:
                 logger.info('Password is ok')
                 resp = giveSuccess(userdata[1])
@@ -249,6 +284,7 @@ async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depend
             "data":{}
         }
     
+
     
 def checkcountry(payload: str,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
@@ -453,7 +489,8 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
 
 @app.post('/getBuilderInfo')
 def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    print("here")
+    countries = get_countries_from_id(conn=conn)
+    cities = get_city_from_id(conn=conn)
     try:
         role_access_status = check_role_access(conn, payload)
 
@@ -470,7 +507,10 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
                     row_dict = {}
                     for i,colname in enumerate(colnames):
                         row_dict[colname] = row[i]
+                    row_dict['country'] = get_name(row_dict['country'],countries)
+                    row_dict['city'] = get_name(row_dict['city'],cities)
                     res.append(row_dict)
+                
                 return {
                     "result": "success",
                     "user_id": payload['user_id'],
@@ -482,14 +522,15 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
         else:
             return {
                 "result": "error",
-                "message": "Invalid credentials",
+                "message": "Access Denied",
                 "user_id": payload['user_id'],
                 "data":{}
             }
     except Exception as e:
+        print(traceback.print_exc())
         return {
             "result": "error",
-            "message": "Invalid credentials",
+            "message": f"Invalid credentials {e}",
             "user_id": payload['user_id'],
             "data":{}
         }
@@ -586,7 +627,7 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
 
 
 
-@app.post('/deleteBuilderInfo')
+@app.post('/deleteBuilder')
 async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
