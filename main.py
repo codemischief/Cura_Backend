@@ -594,10 +594,12 @@ async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Dep
             with conn[0].cursor() as cursor:
                 query = 'SELECT * FROM builder where id=%s'
                 cursor.execute(query,(payload['builder_id'],))
-                exists = cursor.fetchone() is None
+                exists = cursor.fetchone()
+                print(exists)
                 if exists:
                     query = 'DELETE FROM builder where id = %s'
                     cursor.execute(query,(payload['builder_id'],))
+                    conn[0].commit()
                     return {
                     "result": "success",
                     "user_id": payload['user_id'],
