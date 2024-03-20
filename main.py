@@ -18,11 +18,14 @@ def getFilteredAndPaginatedDataFromDatabaseTable(db_config,
                                                  sort_column=None,
                                                  sort_order='asc',
                                                  page_number=1,
-                                                 page_size=10):
+                                                 page_size=10,
+                                                 query = None):
     try:
         # Base query
-        query = f"SELECT {','.join(required_columns)} FROM {table_name}"
+        if query is None:
+            query = f"SELECT {','.join(required_columns)} FROM {table_name}"
         # Adding filters
+        print(f'Query is {query}')
         where_clauses = []
         for column, filter_type, value in (filters or []):
             if filter_type == 'startsWith':
@@ -37,7 +40,7 @@ def getFilteredAndPaginatedDataFromDatabaseTable(db_config,
                 where_clauses.append(f"{column} = ''")
             elif filter_type == 'isNotNull':
                 where_clauses.append(f"{column} != ''")
-
+        print(query)
         # handle where clause and sorting
         if where_clauses:
             query += " WHERE " + " AND ".join(where_clauses)
@@ -631,8 +634,10 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
                     row_dict[colname] = row[i]
                 res.append(row_dict)
             for i in res:
-                i['city'] = cities[i['id']]
-                i['countryid'] = country[i['countryid']]
+                if 'countryid' in i:
+                    i['countryid'] = country[i['countryid']]
+                if 'city' in i:
+                    i['city'] = cities[i['id']]
             return giveSuccess(payload["user_id"],role_access_status,res)
         else:
             return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
@@ -821,13 +826,15 @@ async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.conne
         print(traceback.format_exc())
         return giveFailure(str(e),payload['user_id'],0)
 
-@app.post('/getLocalities')
+@app.post('/getLocality')
 async def get_localties(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
+        cities = get_city_from_id(conn)
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             table_name = 'locality'
-            data = getFilteredAndPaginatedDataFromDatabaseTable(DATABASE_URL,payload['rows'],table_name,payload['filters'],payload['sort_by'],payload['order'],payload["pg_no"],payload["pg_size"])
+            query = 'SELECT DISTINCT a.id,a.locality,b.city,b.state,c.name as country from locality a, cities b, country c where a.cityid=b.id and b.countryid = c.id'
+            data = getFilteredAndPaginatedDataFromDatabaseTable(DATABASE_URL,payload['rows'],table_name,payload['filters'],payload['sort_by'],payload['order'],payload["pg_no"],payload["pg_size"],query)
             print(data['data'])
             colnames = payload['rows']
             print(colnames)
@@ -891,7 +898,7 @@ async def delete_localities(payload : dict,conn : psycopg2.extensions.connection
                 query = 'DELETE FROM locality WHERE id=%s'
                 cursor.execute(query, (payload['id'],))
                 conn[0].commit()
-            data = {"Deleted Localirty":payload['id']}
+            data = {"Deleted Locality ID":payload['id']}
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -983,4 +990,120 @@ async def delete_bank_statement(payload : dict, conn : psycopg2.extensions.conne
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)  
 
+@app.post('/getEmployee')
+async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    cities = get_city_from_id(conn)
+    countries = get_countries_from_id(conn)
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            table_name = 'employee'
+            data = getFilteredAndPaginatedDataFromDatabaseTable(DATABASE_URL,payload['rows'],table_name,payload['filters'],payload['sort_by'],payload['order'],payload["pg_no"],payload["pg_size"])
+            print(data['data'])
+            colnames = payload['rows']
+            print(colnames)
+            res = []
+            for row in data['data']:
+                row_dict = {}
+                print(row)
+                for i,colname in enumerate(colnames):
+                    row_dict[colname] = row[i]
+                res.append(row_dict)
+            for i in res:
+                if 'country' in i:
+                    i['country'] = countries[i['country']]
+                if 'city' in i:
+                    i['city'] = cities[i['city']]
+            
+            return giveSuccess(payload["user_id"],role_access_status,res)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/getlob')
+async def get_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            table_name = 'lob'
+            data = getFilteredAndPaginatedDataFromDatabaseTable(DATABASE_URL,payload['rows'],table_name,payload['filters'],payload['sort_by'],payload['order'],payload["pg_no"],payload["pg_size"])
+            print(data['data'])
+            colnames = payload['rows']
+            print(colnames)
+            res = []
+            for row in data['data']:
+                row_dict = {}
+                print(row)
+                for i,colname in enumerate(colnames):
+                    row_dict[colname] = row[i]
+                res.append(row_dict)
+            return giveSuccess(payload["user_id"],role_access_status,res)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)    
+
+@app.post('/addLob')
+async def add_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO lob (id,name,lob_head,company,entityid) VALUES (%s,%s,%s,%s,%s)'
+                cursor.execute(query,(payload['id'],payload['name'],payload['lob_head'],payload['company'],payload['entityid']))
+                conn[0].commit()
+            data = {
+                "added_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/editLob')
+async def edit_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE lob SET name=%s,lob_head=%s,company=%s,entityid=%s WHERE id=%s'
+                cursor.execute(query,(payload['name'],payload['lob_head'],payload['company'],payload['entityid'],payload['id']))
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure("No Bank st available",payload['user_id'],role_access_status)
+                conn[0].commit()
+            data = {
+                "edited_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/deleteLob')
+async def delete_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM lob WHERE id=%s'
+                cursor.execute(query,(payload['id'],))
+                if cursor.statusmessage == "DELETE 0":
+                    return giveFailure("No LOB available",payload['user_id'],role_access_status)
+                conn[0].commit()
+            data = {
+                "deleted_lob":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)  
 logger.info("program_started")
