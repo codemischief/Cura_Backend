@@ -357,52 +357,22 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
                 cursor.execute(query_delete,(payload['country_name'],))
             # Commit the transaction
                 conn[0].commit()
-
-                return {
-                    "result": "success",
-                    "user_id": payload['user_id'],
-                    "role_id": role_access_status,
-                    "data":{
+                data = {
                         "deleted":payload["country_name"]
                         }
-                    }
+                return giveSuccess(payload['user_id'],role_access_status,data)
             elif role_access_status!=1:
-                return {
-                    "result": "error",
-                    "message": "Access denied",
-                    "role_id": role_access_status,  # Assuming role_id is in the users table
-                    "user_id": payload['user_id'],
-                    "data":{}
-                }
+                return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+
             elif not checkcountry(payload['name'],conn):
-                return {
-                    "result": "error",
-                    "message": "Does not exist",
-                    "role_id": role_access_status,  # Assuming role_id is in the users table
-                    "user_id": payload['user_id'],
-                    "data":{}
-                }
+                return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+
             else:
-                return {
-                    "result": "error",
-                    "message": "Invalid credentials",
-                    "user_id": payload['user_id'],
-                    "data":{}
-                }
-    except KeyError as ke:
-        return {
-            "result": "error",
-            "message": f"Country {payload['country_name']} not found",
-            "user_id": payload['user_id'],
-            "data":{}
-        }  
+                return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+
     except Exception as e:
-        return {
-            "result": "error",
-            "message": "Invalid credentials",
-            "user_id": payload['user_id'],
-            "data":{}
-        }
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
+
 
 @app.post('/addBuilderInfo')
 async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -544,7 +514,7 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
     except KeyError as ke:
         return giveFailure(f"key {ke} not found",payload['user_id'],0)
     except Exception as e:
-        return giveFailure(str(e),payload['user_id'],role_access_status)
+        return giveFailure(str(e),payload['user_id'],0)
 
 @app.post('/deleteBuilder')
 async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -565,19 +535,14 @@ async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Dep
                         }
                     return giveSuccess(payload['user_id'],role_access_status,data)
                 else:
-                    return {
-                        "result":"failure",
-                        "message":"No Builder with given ID"
-                        }
+                    return giveFailure("Invalid Credentials",payload['user_id'],0)
+
         else:
-            return {"result":"failure",
-                    "message":"Access Denied"}
+            return giveFailure("Access Denoed",payload['user_id'],0)
+
     except Exception as e:
         print(traceback.print_exc())
-        return {
-            "result":"failure",
-            "message":"Invalid UserName or UserID"
-        }
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 #STATES UPDATED
 @app.post('/getStatesAdmin')
@@ -594,7 +559,7 @@ async def get_states_admin(payload:dict,conn: psycopg2.extensions.connection = D
             return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
-        return giveFailure(f"{e} error found",payload["user_id"],role_access_status)
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/getStates')
 async def get_states(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -616,10 +581,10 @@ async def get_states(payload : dict,conn: psycopg2.extensions.connection = Depen
             return giveFailure("User does not exist",payload['user_id'],role_access_status)
     except ValueError as ve:
         print(traceback.print_exc())
-        return giveFailure(f"{ve} error found",payload["user_id"],role_access_status)
+        return giveFailure(f"{ve} error found",payload["user_id"],0)
     except Exception as e:
         print(traceback.print_exc())
-        return giveFailure(f"{e} error found",payload['user_id'],role_access_status)
+        return giveFailure(f"{e} error found",payload['user_id'],0)
 
 @app.post('/getCities')
 async def get_cities(payload : dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -643,7 +608,7 @@ async def get_cities(payload : dict, conn: psycopg2.extensions.connection = Depe
             return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
-        return giveFailure(f"{e} error found",payload['user_id'],role_access_status)
+        return giveFailure(f"{e} error found",payload['user_id'],0)
 
 #CITIES UPDATED
 @app.post('/getCitiesAdmin')
@@ -673,7 +638,7 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
             return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
-        return giveFailure(f"{e} error found",0,0)
+        return giveFailure(f"{e} error found",payload['user_id'],0)
 
 @app.post('/getProjects')
 async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -698,7 +663,7 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
         else:
             return giveFailure( "Username or User ID not found",payload['user_id'],role_access_status)
     except Exception as e:
-        return giveFailure("Username or User ID not found",payload["user_id"],role_access_status)
+        return giveFailure("Username or User ID not found",payload["user_id"],0)
 
 @app.post('/getProjectsByBuilder')
 async def get_projects_builder(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -728,7 +693,7 @@ async def get_projects_builder(payload: dict, conn: psycopg2.extensions.connecti
             return giveFailure("Username or User ID not found",payload["user_id"],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
-        return giveFailure("Username or User ID not found",payload['user_id'],role_access_status)
+        return giveFailure("Username or User ID not found",payload['user_id'],0)
 
 @app.post("/addNewProject")
 async def add_new_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -798,8 +763,8 @@ async def add_new_project(payload: dict, conn: psycopg2.extensions.connection = 
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
-        print(traceback.format_exc())
-        return giveFailure(str(e),payload['user_id'],role_access_status)
+        print(traceback.print_exc())
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/addNewBuilderContact')
 async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -854,7 +819,7 @@ async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.conne
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.format_exc())
-        return giveFailure(str(e),payload['user_id'],role_access_status)
+        return giveFailure(str(e),payload['user_id'],0)
 
 @app.post('/getLocalities')
 async def get_localties(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -897,7 +862,7 @@ async def add_localities(payload: dict, conn : psycopg2.extensions.connection = 
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/editLocality')
 async def edit_localities(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -915,7 +880,7 @@ async def edit_localities(payload: dict, conn : psycopg2.extensions.connection =
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
-        return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/deleteLocality')
 async def delete_localities(payload : dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -932,6 +897,69 @@ async def delete_localities(payload : dict,conn : psycopg2.extensions.connection
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/getBankSt')
+async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            table_name = 'bankst'
+            data = getFilteredAndPaginatedDataFromDatabaseTable(DATABASE_URL,payload['rows'],table_name,payload['filters'],payload['sort_by'],payload['order'],payload["pg_no"],payload["pg_size"])
+            print(data['data'])
+            colnames = payload['rows']
+            print(colnames)
+            res = []
+            for row in data['data']:
+                row_dict = {}
+                print(row)
+                for i,colname in enumerate(colnames):
+                    row_dict[colname] = row[i]
+                res.append(row_dict)
+            return giveSuccess(payload["user_id"],role_access_status,res)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/addBankSt')
+async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO bankst (id,modeofpayment,date,amount,particulars,crdr,chequeno,availablebalance,dateadded,clientid,orderid,receivedby,details,vendorid,createdby) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                cursor.execute(query,(payload['id'],payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['chequeno'],payload['availablebalance'],payload['dateadded'],payload['clientid'],payload['orderid'],payload['receivedby'],payload['details'],payload['vendorid'],payload['createdby']))
+                conn[0].commit()
+            data = {
+                "added_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/editBankSt')
+async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE bankst SET modeofpayment=%s,date=%s,amount=%s,particulars=%s,crdr=%s,chequeno=%s,availablebalance=%s,dateadded=%s,clientid=%s,orderid=%s,receivedby=%s,details=%s,vendorid=%s,createdby=%s WHERE id=%s'
+                cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['chequeno'],payload['availablebalance'],payload['dateadded'],payload['clientid'],payload['orderid'],payload['receivedby'],payload['details'],payload['vendorid'],payload['createdby'],payload['id']))
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure("No Bank st available",payload['user_id'],role_access_status)
+                conn[0].commit()
+            data = {
+                "added_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
 
 logger.info("program_started")
