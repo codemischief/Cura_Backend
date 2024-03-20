@@ -700,8 +700,8 @@ async def get_projects_builder(payload: dict, conn: psycopg2.extensions.connecti
         print(traceback.print_exc())
         return giveFailure("Username or User ID not found",payload['user_id'],0)
 
-@app.post("/addNewProject")
-async def add_new_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+@app.post("/addProject")
+async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:       
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
@@ -713,10 +713,10 @@ async def add_new_project(payload: dict, conn: psycopg2.extensions.connection = 
                         project_legal_status, rules, completionyear, jurisdiction, taluka, corporationward,
                         policechowkey, policestation, maintenance_details, numberoffloors, numberofbuildings,
                         approxtotalunits, tenantstudentsallowed, tenantworkingbachelorsallowed, tenantforeignersallowed,
-                        otherdetails, duespayablemonth, dated, createdby
+                        otherdetails, duespayablemonth, dated, createdby,id
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s
                     )
                 """, (
                     payload['builderid'],
@@ -752,8 +752,9 @@ async def add_new_project(payload: dict, conn: psycopg2.extensions.connection = 
                     payload['duespayablemonth'],
                     payload['dated'],
                     payload['createdby'],
+                    payload['id']
                 ))
-                
+                print(cursor.statusmessage)
                 # Commit the transaction
                 conn[0].commit()
                 
@@ -771,6 +772,94 @@ async def add_new_project(payload: dict, conn: psycopg2.extensions.connection = 
         print(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
 
+@app.post("/editProject")
+async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:       
+        role_access_status = check_role_access(conn, payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                cursor.execute("""
+                    UPDATE project SET 
+                        builderid=%s, projectname=%s, addressline1=%s, addressline2=%s, suburb=%s, city=%s, state=%s, 
+                        country=%s, zip=%s, nearestlandmark=%s, project_type=%s, mailgroup1=%s, mailgroup2=%s, website=%s, 
+                        project_legal_status=%s, rules=%s, completionyear=%s, jurisdiction=%s, taluka=%s, corporationward=%s,
+                        policechowkey=%s, policestation=%s, maintenance_details=%s, numberoffloors=%s, numberofbuildings=%s,
+                        approxtotalunits=%s, tenantstudentsallowed=%s, tenantworkingbachelorsallowed=%s, tenantforeignersallowed=%s,
+                        otherdetails=%s, duespayablemonth=%s, dated=%s, createdby=%s WHERE id=%s
+                """, (
+                    payload['builderid'],
+                    payload['projectname'],
+                    payload['addressline1'],
+                    payload['addressline2'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['zip'],
+                    payload['nearestlandmark'],
+                    payload['project_type'],
+                    payload['mailgroup1'],
+                    payload['mailgroup2'],
+                    payload['website'],
+                    payload['project_legal_status'],
+                    payload['rules'],
+                    payload['completionyear'],
+                    payload['jurisdiction'],
+                    payload['taluka'],
+                    payload['corporationward'],
+                    payload['policechowkey'],
+                    payload['policestation'],
+                    payload['maintenance_details'],
+                    payload['numberoffloors'],
+                    payload['numberofbuildings'],
+                    payload['approxtotalunits'],
+                    payload['tenantstudentsallowed'],
+                    payload['tenantworkingbachelorsallowed'],
+                    payload['tenantforeignersallowed'],
+                    payload['otherdetails'],
+                    payload['duespayablemonth'],
+                    payload['dated'],
+                    payload['createdby'],
+                    payload['id']
+                ))
+                
+                # Commit the transaction
+                conn[0].commit()
+                
+                data= {
+                        "entered": payload['projectname'],
+                    }
+                return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/deleteProject')
+async def delete_project(payload:dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:       
+        role_access_status = check_role_access(conn, payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                cursor.execute("""DELETE FROM project WHERE id=%s""",(payload['id'],))
+                
+                # Commit the transaction
+                conn[0].commit()
+                
+                # Get the ID of the last inserted row
+                last_row_id = cursor.lastrowid
+                print("Inserted row ID:", last_row_id)
+                data= {
+                        "deleted": payload['projectname']
+                    }
+                return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
+    
 @app.post('/addNewBuilderContact')
 async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
@@ -1021,6 +1110,115 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/addEmployee')
+async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO employee (id,employeename,employeeid, userid,roleid, dateofjoining, dob, panno,status, phoneno, email, addressline1, addressline2,suburb, city, state, country, zip,dated, createdby, isdeleted, entityid,lobid, lastdateofworking, designation)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                cursor.execute(query,(payload['id'],
+                                        payload['employeename'],
+                                        payload['employeeid'],
+                                        payload['userid'],
+                                        payload['roleid'],
+                                        payload['dateofjoining'],
+                                        payload['dob'],
+                                        payload['panno'],
+                                        payload['status'],
+                                        payload['phoneno'],
+                                        payload['email'],
+                                        payload['addressline1'],
+                                        payload['addressline2'],
+                                        payload['suburb'],
+                                        payload['city'],
+                                        payload['state'],
+                                        payload['country'],
+                                        payload['zip'],
+                                        payload['dated'],
+                                        payload['createdby'],
+                                        payload['isdeleted'],
+                                        payload['entityid'],
+                                        payload['lobid'],
+                                        payload['lastdateofworking'],     
+                                        payload['designation'],))
+                conn[0].commit()
+            data = {
+                "Inserted Employee" : payload['employeename']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/editEmployee')
+async def edit_employee(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            with conn[0].cursor() as cursor:
+                query = '''UPDATe employee SET employeename=%s,employeeid=%s, userid=%s,roleid=%s, dateofjoining=%s, dob=%s, panno=%s,status=%s, phoneno=%s, email=%s, addressline1=%s, addressline2=%s,suburb=%s, city=%s, state=%s, country=%s, zip=%s,dated=%s, createdby=%s, isdeleted=%s, entityid=%s,lobid=%s, lastdateofworking=%s, designation=%s WHERE id=%s'''
+                cursor.execute(query,(
+                                        payload['employeename'],
+                                        payload['employeeid'],
+                                        payload['userid'],
+                                        payload['roleid'],
+                                        payload['dateofjoining'],
+                                        payload['dob'],
+                                        payload['panno'],
+                                        payload['status'],
+                                        payload['phoneno'],
+                                        payload['email'],
+                                        payload['addressline1'],
+                                        payload['addressline2'],
+                                        payload['suburb'],
+                                        payload['city'],
+                                        payload['state'],
+                                        payload['country'],
+                                        payload['zip'],
+                                        payload['dated'],
+                                        payload['createdby'],
+                                        payload['isdeleted'],
+                                        payload['entityid'],
+                                        payload['lobid'],
+                                        payload['lastdateofworking'],     
+                                        payload['designation'],
+                                        payload['id'],))
+                conn[0].commit()
+            data = {
+                "Updated Employee":payload['employeename']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
+
+
+@app.post('/deleteEmployee')
+async def delete_employee(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM employee WHERE id=%s'
+                cursor.execute(query,(payload['id'],))
+                conn[0].commit()
+                if cursor.statusmessage == "DELETE 0":
+                    return giveFailure("No record exists",payload['user_id'],role_access_status)        
+            data = {
+                "deleted_user":payload['id']
+            }
+            return giveSuccess(payload["user_id"],role_access_status,data)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)  
 
 @app.post('/getlob')
 async def get_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
