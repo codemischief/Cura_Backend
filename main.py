@@ -1105,5 +1105,97 @@ async def delete_lob(payload: dict, conn: psycopg2.extensions.connection = Depen
             giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)  
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+        
+@app.post('/getResearchProspect')
+async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    countries = get_countries_from_id(conn)
+    print(countries)
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            table_name = 'research_prospect'
+            data = getFilteredAndPaginatedDataFromDatabaseTable(DATABASE_URL,payload['rows'],table_name,payload['filters'],payload['sort_by'],payload['order'],payload["pg_no"],payload["pg_size"])
+            print(data['data'])
+            colnames = payload['rows']
+            print(colnames)
+            res = []
+            for row in data['data']:
+                row_dict = {}
+                print(row)
+                for i,colname in enumerate(colnames):
+                    row_dict[colname] = row[i]
+                res.append(row_dict)
+            for i in res:
+                print(res,"\n\n")
+                if 'country' in i:
+                    i['country'] = countries[i['country']]
+            return giveSuccess(payload["user_id"],role_access_status,res)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0) 
+        
+@app.post('/addResearchProspect')
+async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO research_prospect (id,personname,suburb,city,state,country,propertylocation,possibleservices,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                cursor.execute(query,(payload['id'],payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted']))
+                conn[0].commit()
+            data = {
+                "added_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/editResearchProspect')
+async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE research_prospect SET personname=%s,suburb=%s,city=%s,state=%s,country=%s,propertylocation=%s,possibleservices=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
+                cursor.execute(query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['id']))
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure("No Prospect available",payload['user_id'],role_access_status)
+                conn[0].commit()
+            data = {
+                "edited_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/deleteResearchProspect')
+async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM research_prospect WHERE id=%s'
+                cursor.execute(query,(payload['id'],))
+                if cursor.statusmessage == "DELETE 0":
+                    return giveFailure("No Prospect available",payload['user_id'],role_access_status)
+                conn[0].commit()
+            data = {
+                "deleted_lob":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
 logger.info("program_started")
