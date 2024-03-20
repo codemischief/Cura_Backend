@@ -953,7 +953,7 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
                 conn[0].commit()
             data = {
-                "added_data":payload['id']
+                "edited_data":payload['id']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -961,5 +961,26 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/deleteBankSt')
+async def delete_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM bankst WHERE id=%s'
+                cursor.execute(query,(payload['id'],))
+                if cursor.statusmessage == "DELETE 0":
+                    return giveFailure("No Bank st available",payload['user_id'],role_access_status)
+                conn[0].commit()
+            data = {
+                "deleted_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)  
 
 logger.info("program_started")
