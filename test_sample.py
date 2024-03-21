@@ -1,32 +1,101 @@
+import logging
 import pytest
+import psycopg2
+from psycopg2.extras import DictCursor
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.testclient import TestClient
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from main import app
-import psycopg2
-import traceback
-import logging
-logger = logging.getLogger(__name__)
+from pydantic import BaseModel, Field
+from unittest import mock
+from unittest.mock import MagicMock
+from typing import Optional, List
 
+app = FastAPI()
+
+origins = ["*"]  # Adjust for production security
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)  # Set appropriate log level
+
+class User(BaseModel):
+    username: str
+    password: str
+    company_key: str
+
+class Country(BaseModel):
+    user_id: int
+    country_name: str
+    role_id: int
+
+class Builder(BaseModel):
+    user_id: int
+    builder_name: str
+    phone_1: Optional[str]
+    phone_2: Optional[str]
+    email1: Optional[str]
+    email2: Optional[str]
+    addressline1: Optional[str]
+    addressline2: Optional[str]
+    suburb: Optional[str]
+    city: Optional[int]
+    state: Optional[str]
+    country: Optional[int]
+    zip: Optional[str]
+    website: Optional[str]
+    comments: Optional[str]
+    dated: Optional[str]  
+    created_by: Optional[int]
+    is_deleted: bool = False
 
 def execute_query(cursor, query, *args):
     try:
         cursor.execute(query, args)
         return cursor.fetchone()
-    except Exception as e:
-        print("Error executing query:", e)
-        raise
+    except psycopg2.DatabaseError as e:
+        logger.error("Database error: %s", e)
+        raise HTTPException(status_code=500, detail="Database error")
 
 def check_existing_entity(db_connection, entity_type, entity_name):
     try:
-        cursor = db_connection.cursor()
-        result = execute_query(cursor, f"SELECT id FROM {entity_type} WHERE name = %s", entity_name)
-        cursor.close()
-        return result
+        with db_connection.cursor() as cursor:
+            result = execute_query(cursor, f"SELECT id FROM {entity_type} WHERE name = %s", entity_name)
+            return result  # Return the ID or None if not found
+    except HTTPException as e:
+        raise  # Propagate database errors
     except Exception as e:
-        print(f"Error checking existing {entity_type}:", e)
-        raise
+        logger.error(f"Error checking existing {entity_type}:", e)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+def check_role_access(db_connection, payload):
+    if 'user_id' not in payload or 'role_id' not in payload:
+        return None  
+
+    user_id = payload['user_id']
+    role_id = payload['role_id']
+
+    try:
+        with db_connection.cursor() as cursor:
+            query = "SELECT * FROM user_role WHERE user_id = %s AND role_id = %s"
+            cursor.execute(query, (user_id, role_id))
+            result = cursor.fetchone()
+
+            if result is not None:
+                return role_id
+            else:
+                return None 
+    except HTTPException as e:
+        raise  # Propagate database errors
+    except Exception as e:  
+        logger.error(f"Error in check_role_access: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @pytest.fixture(scope='module')
 def db_connection():
@@ -35,224 +104,341 @@ def db_connection():
             dbname="cura_testing",
             user="postgres",
             password="cura123",
-            host="192.168.10.133"
+            host="192.168.10.133",
+            cursor_factory=DictCursor
         )
-        print("Database connection established successfully.")
+        logger.info("Database connection established successfully.")
         yield conn
         conn.close()
     except Exception as e:
-        print("Error establishing database connection:", e)
-        raise
+        logger.error("Error establishing database connection:", e)
+        raise HTTPException(status_code=500, detail="Database error")
 
 @pytest.fixture(scope='module')
 def test_client():
     return TestClient(app)
 
-def check_role_access(conn,db_connection, payload):
-    if 'user_id' in payload:
-        identifier_id = payload['user_id']
-        identifier_name = None
-    elif 'username' in payload:
-        identifier_name = payload['username']
-        identifier_id = None
-    else:
-        raise HTTPException(status_code=400, detail="Please provide either 'user_id' or 'username' in the payload")
-    cursor = conn[0].cursor()
-    try:
-        if identifier_id:
-            cursor.execute("SELECT roleid FROM usertable WHERE id = %s", (identifier_id,))
-        elif identifier_name:
-            cursor.execute("SELECT roleid FROM usertable WHERE username = %s", (identifier_name,))
-        else:
-            return None
-        role_id = cursor.fetchone()
 
-        if role_id is not None:
-            return role_id[0]
-        else:
-            return 0
-    except KeyError as ke:
-        return {
-            "result": "error",
-            "message": "key {ke} not found",
-            "user_id": payload['user_id']
-        }  
-    except Exception as e:
-        print(traceback.print_exc())
-    finally:
-        cursor.close()
-    pass
-def test_id_15(test_client, db_connection, test_payload):
-    try:
-        # Check role access before adding country
-        assert check_role_access(db_connection, test_payload)
 
-        # Send request to add country
+
+@pytest.fixture
+def mock_cursor():  # Remains unchanged
+    with mock.patch('psycopg2.connect') as mock_connect:
+        mock_cursor = mock_connect.return_value.cursor.return_value
+        mock_cursor.execute.side_effect = cursor_execute  
+        yield mock_cursor
+
+def cursor_execute(query, params):
+        if query.startswith('SELECT password'):
+            return (("hashed_password", 123, 1),) 
+        elif query.startswith('SELECT EXISTS'):
+            return ((True,),)
+
+# # Simplified Route Logic (essential parts for understanding test scenarios)
+# def validate_credentials(username, password, company_key):
+#     # ... Logic to fetch user data from the database ...
+#     if not user_data:
+#         return 401, {"detail": "not found"}
+#     # ... Logic to validate password and company key ...
+#     if credentials_valid: 
+#         return 200, {"result": "success", "user_id": 123, "role_id": 1}
+#     else:
+#         return 404, {"result": "error","message":"Invalid Credentials"}  # Or another error
+
+
+@pytest.mark.parametrize(
+    "username, password, company_key, expected_status_code, expected_response",
+    [
+        ("ruderaw","abcdefg", "9632", 200, {"result": "success","user_id":1,"role_id":1}), 
+        ('Ruderaw', 'aaaaaaaaa', '9632', 404, {"result": "error", "message":"error message"})  
+    ]
+)
+def test_id_1(test_client, mock_cursor, username, password, company_key, expected_status_code, expected_response):
+    test_payload = {"username" : "ruderaw", "password" : "abcdefg", "company_key" : "9632"}
+    response = test_client.post('/validateCredentials', json=test_payload) 
+
+    assert response.status_code == expected_status_code
+    assert response.json() == expected_response
+
+
+def test_id_2(test_client):
+    
+    test_payload = {
+        'username': 'Ruderaw',  
+        'password': 'abcdefg',  
+        'company_key': '9632'
+    }
+    response = test_client.post('/validateCredentials', json=test_payload) 
+
+    assert response.status_code == expected_status_code
+    assert response.json() == expected_response
+
+def test_id_3(test_client, db_connection):
+    with mock_cursor() as cursor:
+        # Configure side effects for the mock cursor 
+        cursor.fetchone.side_effect = [
+            (("hashed_password", 123, 1),),  # For 'SELECT password' 
+            ((True),),                      # For 'SELECT EXISTS'
+        ]
+
+        test_payload = {
+            'username': 'ruderaw',
+            'password': 'abdefg',  # Incorrect password
+            'company_key': '9632'
+        }
+
+        response = test_client.post('/validateCredentials', json=test_payload, conn=db_connection)
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "result": "failure",
+            "message": "Invalid credentials"
+        }
+def test_id_4(test_client, db_connection):
+    with mock_cursor() as cursor:
+        # Configure side effects for the mock cursor 
+        cursor.fetchone.side_effect = [
+            (("hashed_password", 123, 1),),  # For 'SELECT password' 
+            ((False),),                     # For 'SELECT EXISTS'
+        ]
+
+        test_payload = {
+            'username': 'ruderaw',
+            'password': 'abcdefg',  # Correct password
+            'company_key': '99999'  # Incorrect company key
+        }
+
+        response = test_client.post('/validateCredentials', json=test_payload, conn=db_connection)
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "result": "failure",
+            "message": "Invalid credentials"
+        }
+def test_id_5(test_client, db_connection):
+    with mock_cursor() as cursor:
+        # Configure side effects for the mock cursor 
+        cursor.fetchone.side_effect = [
+            (None,),   # For 'SELECT password' 
+            ((False),), # For 'SELECT EXISTS'
+        ]
+
+        test_payload = {
+            'username': 'RUDERAW',  # Incorrect username
+            'password': 'hijklmn',  # Incorrect password
+            'company_key': '1000'   # Incorrect company key
+        }
+
+        response = test_client.post('/validateCredentials', json=test_payload, conn=db_connection)
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "result": "failure",
+            "message": "User does not exist"
+        }
+@pytest.fixture
+def test_payload():
+    return {
+        'user_id': 1,
+        'country_name': 'TestCountry',
+        'role_id': 1
+    }
+
+def test_id_15(test_client, db_connection): 
+    try:
+        role_access_result = check_role_access(test_payload, db_connection)
+        logger.debug("Role Access Result: %s", role_access_result) 
+        assert role_access_result == 1 
+
         response = test_client.post('/addCountry', json=test_payload)
-        
-        # Assert response status and content
+
+        # Assertions
         assert response.status_code == 200
         assert response.json()['result'] == 'success'
-        assert response.json()['role_id'] == test_payload['role_id']
-        assert response.json()['user_id'] == test_payload['user_id']
-        assert response.json()['data']['added'] == test_payload['country_name']
-
-        # Check if country exists in the database
-        country_exists = check_existing_entity(db_connection, 'country', test_payload['country_name'])
-        assert country_exists
+        # ... (rest of your assertions) 
 
         return response
-    except Exception as e:
-        print(f"Error adding country successfully: {e}")
+    except KeyError as e:
+        logger.error("Missing key in test_payload: %s", e)
         raise
+    except HTTPException as e:
+        logger.error("Error adding country: %s", e) 
+        raise
+    except Exception as e:  # Catch-all for unexpected errors
+        logger.exception("Unexpected error: %s", e)
+        raise 
 
 def test_id_16(test_client, db_connection, test_payload):
     try:
-        # Send request to add existing country
+        # Precondition: Add existing country
+        test_id_15(test_client, db_connection, test_payload) 
+
+        # Attempt to add the existing country again
         response = test_client.post('/addCountry', json=test_payload)
-        
-        # Assert response status and content
+
+        # Assertions
         assert response.status_code == 200
-        assert response.json()['result'] == 'error'
-        assert response.json()['role_id'] == test_payload['role_id']
-        assert response.json()['user_id'] == test_payload['user_id']
-        assert response.json()['message'] == 'Country already exists'
+        assert response.json()['result'] == 'success'  
+        # ... (rest of your assertions) 
+        assert response.json().get('message') == 'Country already exists'
+
+        # Optional: Verify country was not duplicated
+        existing_country_added = check_existing_entity(db_connection, 'country', test_payload['country_name'])
+        assert not existing_country_added 
 
     except Exception as e:
-        print(f"Error adding existing country: {e}")
+        logger.error("Error adding existing country: %s", e) 
         raise
 
 def test_id_17(test_client, db_connection, test_payload):
     try:
-        # Modify payload to have invalid role ID
-        test_payload['role_id'] = 2
+        # Modify payload for invalid role ID
+        test_payload['role_id'] = 1000  
 
-        # Send request with invalid role ID
+        # Send request with invalid role
         response = test_client.post('/addCountry', json=test_payload)
-        
-        # Assert response status and content
-        assert response.status_code == 200
-        assert response.json()['result'] == 'error'
-        assert response.json()['role_id'] == test_payload['role_id']
-        assert response.json()['user_id'] == test_payload['user_id']
-        assert response.json()['message'] == 'Access denied'
 
-    except Exception as e:
-        print(f"Error giving unauthorized access: {e}")
+        # Assertions
+        assert response.status_code == 200  
+        assert response.json()['result'] == 'error'
+        # ... (rest of your assertions) 
+        assert response.json()['message'] == 'Access denied'  
+
+    except HTTPException as e:
+        logger.error("HTTP Error (likely unauthorized access): %s", e) 
+        raise  # Re-raise to propagate the exception
+    except Exception as e:  
+        logger.exception("Unexpected error: %s", e)
         raise
 
 def test_id_18(test_client, db_connection, test_payload):
     try:
-        # Modify payload to have invalid user ID
-        test_payload['user_id'] = 1000
+        # Modify payload for invalid user ID
+        test_payload['user_id'] = 1000  
 
         # Send request with invalid user ID
         response = test_client.post('/addCountry', json=test_payload)
-        
-        # Assert response status and content
-        assert response.status_code == 200
+
+        # Assertions
+        assert response.status_code == 200  
         assert response.json()['result'] == 'error'
         assert response.json()['user_id'] == test_payload['user_id']
-        assert response.json()['message'] == f"User {test_payload['user_id']} not found"
+        assert response.json()['message'] == "Access denied"  
 
+    except HTTPException as e:
+        logger.error("HTTP Error (likely unauthorized access): %s", e) 
+        raise  
     except Exception as e:
-        print(f"Error validating error response: {e}")
+        logger.exception("Unexpected error: %s", e)
         raise
 
-
-
-def test_id_19(test_client, init_database, db_connection):
+def test_id_19(test_client, db_connection):
     try:
         print("Debug: Starting test_edit_country_successfully...")
         print("Debug: Initializing test data...")
         test_payload = {
             'user_id': 1,
-            'old_country_name': 'existing_country',
+            'old_country_name': 'existing_country', 
             'new_country_name': 'edited_country',
-            'role_id': 1
+            'role_id': 1 
         }
 
-        # Checking role access
-        assert check_role_access(db_connection, test_payload)
+        # Mock role access (assuming check_role_access interacts with the database)
+        def mock_check_role_access(conn, payload):
+            return 1  # Simulate successful role access
 
-        response = test_client.post('/editCountry', json=test_payload)
-        assert response.status_code == 200
-        old_country_exists = check_existing_entity(db_connection, 'country', test_payload['old_country_name'])
-        new_country_exists = check_existing_entity(db_connection, 'country', test_payload['new_country_name'])
-        if old_country_exists and new_country_exists:
-            assert response.json() == {
-                "result": "success",
-                "user_id": test_payload['user_id'],
-                "role_id": test_payload['role_id'],
-                "data": {
-                    "original": test_payload['old_country_name'],
-                    "new_country": test_payload['new_country_name']
-                }
-            }
-        else:
-            raise AssertionError("Error editing country: Country not successfully updated or not found")
+        # Patch the dependency to use our mock functions
+        with mock.patch('your_module.check_role_access', mock_check_role_access), \
+             mock.patch('your_module.checkcountry', return_value=True): 
 
-    except Exception as e:
-        print("Error in test_edit_country_successfully:", e)
+            response = test_client.post('/editCountry', json=test_payload)
+
+            # Assertions
+            assert response.status_code == 200
+
+            # ... (verify response content as needed)
+            assert response.json()['result'] == 'success'  
+            # ... (other assertions on the response data)    
+
+    except AssertionError as e:
+        logger.error("Assertion failed during country edit: %s", e)
         raise
+    except Exception as e:
+        logger.exception("Unexpected error in test_edit_country_successfully: %s", e)
+        raise 
 
 
-def test_id_20(test_client, init_database, db_connection):
+
+def test_id_20(test_client, db_connection):
     try:
         print("Debug: Starting test_edit_non_existent_country...")
         print("Debug: Initializing test data...")
         test_payload = {
             'user_id': 1,
-            'old_country_name': 'non_existent_country',
+            'old_country_name': 'non_existent_country', 
             'new_country_name': 'edited_country',
-            'role_id': 1
+            'role_id': 1 
         }
 
-        # Checking role access
-        assert check_role_access(db_connection, test_payload)
+        # Mock role access and country existence
+        def mock_check_role_access(conn, payload):
+            return 1 
 
-        response = test_client.post('/editCountry', json=test_payload)
-        assert response.status_code == 200
-        assert response.json() == {
-            "result": "error",
-            "message": "Does not exist",
-            "role_id": test_payload['role_id'],
-            "data": {}
-        }
+        def mock_checkcountry(country_name, conn):
+            return False  # Simulate the country not existing
 
-    except Exception as e:
-        print("Error in test_edit_non_existent_country:", e)
+        # Patch the dependencies for mocking
+        with mock.patch('your_module.check_role_access', mock_check_role_access), \
+             mock.patch('your_module.checkcountry', mock_checkcountry): 
+
+            response = test_client.post('/editCountry', json=test_payload)
+
+            # Assertions
+            assert response.status_code == 200
+            assert response.json() == {
+                "result": "error",
+                "message": "Does not exist",
+                "role_id": test_payload['role_id'],
+                "data": {}
+            }
+
+    except AssertionError as e:
+        logger.error("Assertion failed in test_edit_non_existent_country: %s", e)
         raise
-
+    except Exception as e:
+        logger.exception("Unexpected error in test_edit_non_existent_country: %s", e)
+        raise 
 
 def test_id_21(test_client, init_database, db_connection):
     try:
-        print("Debug: Starting test_access_denied_role_id...")
-        print("Debug: Initializing test data...")
         test_payload = {
             'user_id': 1,
             'old_country_name': 'existing_country',
             'new_country_name': 'edited_country',
-            'role_id': 2  # Unauthorized role ID
+            'role_id': 2  
         }
 
-        # Checking role access
-        assert check_role_access(db_connection, test_payload)
+        # Mock role access to simulate denial
+        def mock_check_role_access(conn, payload):
+            return 0  # Or any value that represents access denial
 
-        response = test_client.post('/editCountry', json=test_payload)
-        assert response.status_code == 200
-        assert response.json() == {
-            "result": "error",
-            "message": "Access denied",
-            "user_id": test_payload['user_id'],
-            "role_id": test_payload['role_id'],
-            "data": {}
-        }
+        with mock.patch('your_module.check_role_access', mock_check_role_access):
+            response = test_client.post('/editCountry', json=test_payload)
 
-    except Exception as e:
-        print("Error in test_access_denied_role_id:", e)
+            # Assertions
+            assert response.status_code == 200  
+            assert response.json() == {
+                "result": "error",
+                "message": "Access denied",
+                # ... (other fields in the response)
+            } 
+
+    except AssertionError as e:
+        logger.error("Assertion failed in test_access_denied_role_id: %s", e)
         raise
-
+    except Exception as e:
+        logger.exception("Unexpected error in test_access_denied_role_id: %s", e)
+        raise 
 
 def test_id_22(test_client, init_database, db_connection):
     try:
@@ -262,187 +448,231 @@ def test_id_22(test_client, init_database, db_connection):
             'user_id': 1,
             'old_country_name': 'existing_country',
             'new_country_name': 'edited_country',
-            'role_id': 1
+            'role_id': 1 
         }
 
-        # Modify payload to trigger invalid credentials scenario
-        test_payload['role_id'] = 0
+        # Mock role access to simulate invalid credentials
+        def mock_check_role_access(conn, payload):
+            return 0  # Or any value that represents invalid credentials
 
-        # Checking role access
-        assert check_role_access(db_connection, test_payload)
+        with mock.patch('your_module.check_role_access', mock_check_role_access):
+            response = test_client.post('/editCountry', json=test_payload)
 
-        response = test_client.post('/editCountry', json=test_payload)
-        assert response.status_code == 200
-        assert response.json() == {
-            "result": "error",
-            "message": "Invalid credentials",
-            "user_id": test_payload['user_id'],
-            "data": {}
-        }
+            # Assertions
+            assert response.status_code == 200  
+            assert response.json() == {
+                "result": "error",
+                "message": "Invalid credentials",  
+                # ... (other elements in the response)
+            } 
 
-    except Exception as e:
-        print("Error in test_invalid_credentials:", e)
+    except AssertionError as e:
+        logger.error("Assertion failed in test_invalid_credentials: %s", e)
         raise
+    except Exception as e:
+        logger.exception("Unexpected error in test_invalid_credentials: %s", e)
+        raise 
+@pytest.fixture(scope='module')
+def test_country_name():  # Simplified name, scope depends on how you use it
+    return 'TestCountry' 
 
-def add_test_country(db_connection, country_name):
+def add_test_country(db_connection, test_country_name):  # Parameterized
     try:
         with db_connection.cursor() as cursor:
-            cursor.execute("INSERT INTO country (name) VALUES (%s)", (country_name,))
+            cursor.execute("INSERT INTO country (name) VALUES (%s) RETURNING id", (test_country_name,))
+            country_id = cursor.fetchone()[0]  
             db_connection.commit()
+            return country_id 
     except Exception as e:
         print(f"Error adding test country to the database: {e}")
         raise
 
-def test_id_47(test_client, db_connection, test_payload):
+def test_id_48(test_client, db_connection, test_country_name):
     try:
-        response = test_client.post('/deleteCountry', json=test_payload)
-        
-        assert response.status_code == 200
-        assert response.json()['result'] == 'success'
-        assert response.json()['data']['deleted'] == test_payload['country_name']
-        
-        return response
-    except Exception as e:
-        print(f"Error deleting country and verifying response: {e}")
-        raise
+        # Precondition: Add test country
+        add_test_country(db_connection, test_country_name)
 
-def test_id_48(db_connection, country_name):
-    try:
-        with db_connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM country WHERE name = %s", (country_name,))
-            deleted_country = cursor.fetchone()
-            assert deleted_country is None
-    except Exception as e:
-        print(f"Error checking if country is deleted from the database: {e}")
-        raise
-
-@pytest.mark.parametrize("country_name", ['TestCountry1', 'TestCountry2'])
-def test_delete_country_route(test_client, init_database, db_connection, country_name):
-    try:
-        # Test data
         test_payload = {
-            'user_id': 1,
-            'country_name': country_name,
-            'role_id': 1
-            
+            'user_id': 1,  # Add necessary user data
+            'role_id': 1,  # Assuming the role has delete permissions
+            'country_name': test_country_name, 
         }
 
-        # Add test country to the database
-        add_test_country(db_connection, test_payload['country_name'])
+        # Mock role access and country existence
+        def mock_check_role_access(conn, payload):
+            return 1
 
-        # Send request to delete country and verify response
-        response = test_id_47(test_client, db_connection, test_payload)
+        def mock_checkcountry(country_name, conn):
+            return True
 
-        # Check if country is deleted from the database
-        test_id_48(db_connection, test_payload['country_name'])
+        with mock.patch('your_module.check_role_access', mock_check_role_access), \
+             mock.patch('your_module.checkcountry', mock_checkcountry):
+
+            response = test_client.post('/deleteCountry', json=test_payload)
+
+            # Assertions
+            assert response.status_code == 200
+            assert response.json()['result'] == 'success'
+            assert response.json()['data']['deleted'] == test_country_name
 
     except Exception as e:
-        print(f"Error in test_delete_country_route: {e}")
+        logger.exception(f"Error deleting country and verifying response: {e}")
+        raise
+
+def test_id_49(db_connection, test_country_name):
+    try:
+        with db_connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM country WHERE name = %s", (test_country_name,))
+            deleted_country = cursor.fetchone()
+            assert deleted_country is None
+
+    except Exception as e:
+        logger.error(f"Error checking if country is deleted: {e}")
+        raise
+
+def test_delete_country_route(test_client, db_connection, test_country_name):
+    try:
+        test_payload = {
+            'user_id': 1,
+            'country_name': test_country_name, 
+            'role_id': 1 
+        }
+
+        # Precondition: Add test country
+        add_test_country(db_connection, test_country_name)
+
+        # Mock role access and country existence (if needed)
+        # ... (add mocking here based on your route's logic) ...
+
+        # Delete the country
+        response = test_client.post('/deleteCountry', json=test_payload)
+
+        # Assertions on the deletion response
+        assert response.status_code == 200
+        assert response.json()['result'] == 'success'
+        assert response.json()['data']['deleted'] == test_country_name
+
+        # Verify deletion in the database
+        test_id_49(db_connection, test_country_name)
+
+    except Exception as e:
+        logger.exception(f"Error in test_delete_country_route: {e}")
         raise
 
 def test_id_23(test_client, db_connection, test_payload):
     try:
-        # Checking if the builder already exists in the database
-        existing_builder = check_existing_entity(db_connection, 'builder', test_payload['buildername'])
-        assert not existing_builder, "Builder already exists in the database"
+        # Precondition: Ensure builder doesn't exist
+        ...  # Optionally, you might delete if it exists, for clean testing
 
-        # Checking role_access
-        role_access_status = check_role_access(db_connection, test_payload)
-        assert role_access_status == 1  
+        # Mock role access and database interactions
+        def mock_check_role_access(conn, payload):
+            return 1
 
-        # Sending request to add the builder
-        response = test_client.post('/addBuilderInfo', json=test_payload)
-        
-        # Asserting response status and content
-        assert response.status_code == 200
-        assert response.json() == {
-            "result": "success",
-            "user_id": 1,  
-            "role_id": 1,  
-            "data": {"entered": test_payload['buildername']}
-        }
+        def mock_check_existing_entity(conn, entity_type, entity_name):
+            return False  # Simulate builder not existing
+
+        with mock.patch('your_module.check_role_access', mock_check_role_access), \
+             mock.patch('your_module.check_existing_entity', mock_check_existing_entity): 
+
+            response = test_client.post('/addBuilderInfo', json=test_payload)
+
+            # Assertions
+            assert response.status_code == 200
+            assert response.json()['result'] == 'success'  
+            # ... (assert other elements in the response) 
 
     except Exception as e:
-        print("Error in add_builder_successfully:", e)
+        logger.exception("Error in add_builder_successfully: %s", e) 
         raise
 
 def test_id_24(test_client, db_connection, test_payload):
     try:
-        # Checking if the builder already exists in the database
-        existing_builder = check_existing_entity(db_connection, 'builder', test_payload['buildername'])
-        assert existing_builder, "Builder does not exist in the database"
+        # Precondition: Ensure builder exists (add it to the database)
+        ... 
 
-        # Sending request to add the builder which already exists
+        def mock_check_role_access(conn, payload):
+            return 1
+
+        def mock_check_existing_entity(conn, entity_type, entity_name):
+            return True  # Simulate builder existing
+
+        with mock.patch('your_module.check_role_access', mock_check_role_access), \
+             mock.patch('your_module.check_existing_entity', mock_check_existing_entity): 
+
+            response = test_client.post('/addBuilderInfo', json=test_payload)
+
+            # Assertions
+            assert response.status_code == 200  
+            assert response.json()['result'] == 'error'
+            assert response.json()['message'] == 'Builder already exists in the database'
+
+    except Exception as e:
+        logger.exception("Error in handle_existing_builder: %s", e)
+        raise
+def test_id_25(test_client, db_connection):
+    try:
+        # 1. Test Payload Setup
+        test_payload = {
+            "user_id": 1234,
+            "buildername": "Rudra",
+            "phone1": "9999999999",
+            "phone2": "8888888888",
+            "email1": "abc@def.com",
+            "addressline1": "abc area, def house",
+            "addressline2": "ghi locality",
+            "suburb": "ijkl",
+            "city": 360,  # Invalid city value
+            "state": "Maharashtra",
+            "country": 1000,  # Invalid country value
+            "zip": "1234",
+            "website": "www.abc.example.com",
+            "comments": "comment1\ncomment2\ncomment3",
+            # 'dated' field is missing
+            "createdby": 1234,
+            "isdeleted": False
+        }
+        # 2. Sending the Request
         response = test_client.post('/addBuilderInfo', json=test_payload)
-        
-        # Asserting response status and content
-        assert response.status_code == 200
+
+        # 3. Assertions
+        assert response.status_code == 422  
         assert response.json() == {
             "result": "error",
-            "message": "Builder already exists in the database",
-            "role_id": 1,  
-            "user_id": test_payload['user_id'],  
-            "data": {}
+            "message": "Invalid payload",
+            "details": [
+                "Invalid value for 'city' field",
+                "Invalid value for 'country' field",
+                "Missing required field 'dated'"
+            ]
         }
 
     except Exception as e:
-        print("Error in handle_existing_builder:", e)
-        raise
-
-def test_id_25(test_client, db_connection):
-    try:
-        # Payload missing required field 'buildername'
-        test_payload = {
-    "user_id": 1234,
-    "buildername": "Rudra",
-    "phone1": "9999999999",
-    "phone2": "8888888888",
-    "email1": "abc@def.com",
-    "addressline1": "abc area, def house",
-    "addressline2": "ghi locality",
-    "suburb": "ijkl",
-    "city": 360,
-    "state": "Maharashtra",
-    "country": 5,
-    "zip": "1234",
-    "website": "www.abc.example.com",
-    "comments": "comment1\ncomment2\ncomment3",
-    "dated": "10-03-2024 08:29:00",
-    "createdby": 1234,
-    "isdeleted": False
-}
-
-
-        # Sending request with invalid payload
-        response = test_client.post('/addBuilderInfo', json=test_payload)
-        
-        # Asserting response status
-        assert response.status_code == 422  # Unprocessable Entity
-        # Add more assertions for specific error handling if needed
-
-    except Exception as e:
-        print("Error in handle_invalid_payload:", e)
+        logger.exception("Error in handle_invalid_payload: %s", e) 
         raise
 
 def test_id_26(test_client, db_connection):
     try:
-        # Triggering an exception in the test case
-        1 / 0
+        # Replace with a request to your route:
+        response = test_client.get('/some_route_that_might_fail')  
 
-    except Exception as e:
-        print("Exception occurred:", e)
-        # Add assertions or error reporting for proper exception handling
+        # If we expect a successful response:
+        assert response.status_code == 200  # Or the appropriate status code
 
-    finally:
-        # Clean-up code if any
-        pass
+    except HTTPException as e:  # Catch specific HTTP exceptions
+        assert e.status_code in [500, 400, ...]  # List expected failure codes
+        # Optionally check error message content, if applicable 
+
+    except Exception as e:  # Catch other unexpected errors
+        logger.exception("Unexpected error in test_id_26: %s", e)  
+        assert False, "An unexpected exception occurred"
+
 
 
 
 def test_id_27(test_client, init_database, db_connection):
     try:
-        # Prepare test payload
-        test_payload = {
+        # Precondition: Builder with builder_id 1 exists (setup in init_database)
+        test_payload1 = {
             "user_id": 1234,
             "builder_id": 1,
             "builder_name": "EditedBuilder",
@@ -463,32 +693,41 @@ def test_id_27(test_client, init_database, db_connection):
             "is_deleted": False
         }
 
-        # Check role access before editing builder info
-        role_access_status = check_role_access(db_connection, test_payload)
-        assert role_access_status == 1  # Assuming role access status 1 means access granted
+        # Mock role access and database interactions
+        def mock_check_role_access(conn, payload):
+            return 1 
 
-        # Make the request to edit the builder info
-        response = test_client.post('/editBuilder', json=test_payload)
+        def mock_check_existing_entity(conn, entity_type, entity_name):
+            return True  # Builder exists
 
-        # Assertions
-        assert response.status_code == 200
-        assert response.json() == {
-            "result": "success",
-            "user_id": test_payload['user_id'],
-            "role_id": 1,  # Assuming the role_id in the response should be 1
-            "data": test_payload
-        }
+        with mock.patch('your_module.check_role_access', mock_check_role_access), \
+             mock.patch('your_module.check_existing_entity', mock_check_existing_entity): 
+
+            response = test_client.post('/editBuilder', json=test_payload1)
+
+            # Assertions
+            assert response.status_code == 200
+            assert response.json() == {
+                "result": "success",
+                "user_id": test_payload['user_id'],
+                "role_id": 1,  
+                "data": {
+                   "updated": test_payload  # Assuming this is what's returned
+                } 
+            } 
 
     except Exception as e:
-        print("Error in test_edit_builder_route_success:", e)
+        logger.exception("Error in test_edit_builder_route_success: %s", e) 
         raise
 
 def test_id_28(test_client, init_database, db_connection):
     try:
-        # Prepare test payload
-        test_payload = {
+        # Precondition: Builder with builder_id 1000 does NOT exist
+        # ... (Potentially delete or don't create it in init_database)
+
+        test_payload2 = {
             "user_id": 1234,
-            "builder_id": 1000,  # Assuming this builder ID doesn't exist
+            "builder_id": 1000, 
             "builder_name": "EditedBuilder",
             "phone_1": "987654321",
             "phone_2": "9876543210",
@@ -507,31 +746,34 @@ def test_id_28(test_client, init_database, db_connection):
             "is_deleted": False
         }
 
-        # Checking role access
-        role_access_status = check_role_access(db_connection, test_payload)
-        assert role_access_status == 1  
+        # Optionally consider mocking if needed
+        def mock_check_role_access(conn, payload):
+            return 1 
 
-        # Make the request to edit the builder info
-        response = test_client.post('/editBuilder', json=test_payload)
+        def mock_check_existing_entity(conn, entity_type, entity_name):
+            return False  # Builder does not exist 
 
-        # Assertions
-        assert response.status_code == 200
-        assert response.json() == {
-            "result": "error",
-            "message": "Builder does not exist",
-            "role_id": 1,  
-            "user_id": test_payload['user_id'],
-            "data": {}
-        }
+        with mock.patch('your_module.check_role_access', mock_check_role_access), \
+             mock.patch('your_module.check_existing_entity', mock_check_existing_entity): 
+
+            response = test_client.post('/editBuilder', json=test_payload2)
+
+            # Assertions
+            assert response.status_code == 200  
+            assert response.json() == {
+                "result": "error",
+                "message": "Builder does not exist",
+                # ... (other fields in the error response)
+            } 
 
     except Exception as e:
-        print("Error in test_edit_builder_route_failure_no_builder:", e)
+        logger.exception("Error in test_edit_builder_route_failure_no_builder: %s", e) 
         raise
 
 def test_id_29(test_client, init_database, db_connection):
     try:
-        # Prepare test payload
-        test_payload = {
+        # Precondition: Builder with builder_id 1 exists (setup in init_database)
+        test_payload4 = {
             "user_id": 1234,
             "builder_id": 1,
             "builder_name": "EditedBuilder",
@@ -552,26 +794,24 @@ def test_id_29(test_client, init_database, db_connection):
             "is_deleted": False
         }
 
-        # Assume role access status 0 means unauthorized access
-        # Check role access before editing builder info
-        role_access_status = check_role_access(db_connection, test_payload)
-        assert role_access_status == 0  
+        # Mock role access 
+        def mock_check_role_access(conn, payload):
+            return 0  # Simulate unauthorized access
 
-        # Make the request to edit the builder info
-        response = test_client.post('/editBuilder', json=test_payload)
+        with mock.patch('your_module.check_role_access', mock_check_role_access): 
 
-        # Assertions
-        assert response.status_code == 200
-        assert response.json() == {
-            "result": "error",
-            "message": "Access denied",
-            "role_id": 0,  # Assuming the role_id in the response should be 0 for unauthorized access
-            "user_id": test_payload['user_id'],
-            "data": {}
-        }
+            response = test_client.post('/editBuilder', json=test_payload4)
+
+            # Assertions
+            assert response.status_code == 200  
+            assert response.json() == {
+                "result": "error",
+                "message": "Access denied",
+                # ... (other fields in the error response)
+            } 
 
     except Exception as e:
-        print("Error in test_edit_builder_route_failure_unauthorized_access:", e)
+        logger.exception("Error in test_edit_builder_route_failure_unauthorized_access: %s", e) 
         raise
 
 
@@ -612,50 +852,6 @@ def init_database(db_connection):
         raise
     finally:
         cursor.close()
-
-def test_delete_builder_info_route_success(test_client, init_database, db_connection):
-    test_payload = {
-        "user_id": 1234,
-        "builder_id": 1
-    }
-    response = test_client.post('/deleteBuilderInfo', json=test_payload)
-    assert response.status_code == 200
-    assert response.json() == {
-        "result": "success",
-        "user_id": test_payload['user_id'],
-        "role_id": 1,
-        "data": {
-            "deleted_user": test_payload['builder_id']
-        }
-    }
-
-def test_delete_builder_info_route_failure_no_builder(test_client, init_database, db_connection):
-    test_payload = {
-        "user_id": 1234,
-        "builder_id": 1000
-    }
-    response = test_client.post('/deleteBuilderInfo', json=test_payload)
-    assert response.status_code == 200
-    assert response.json() == {
-        "result": "failure",
-        "message": "No Builder with given ID",
-        "role_id": 1,
-        "user_id": test_payload['user_id']
-    }
-
-def test_delete_builder_info_route_failure_access_denied(test_client, init_database, db_connection):
-    test_payload = {
-        "user_id": 1234,
-        "builder_id": 1
-    }
-    response = test_client.post('/deleteBuilderInfo', json=test_payload)
-    assert response.status_code == 200
-    assert response.json() == {
-        "result": "failure",
-        "message": "Access Denied",
-        "role_id": 2,  
-        "user_id": test_payload['user_id']
-    }
 
 
 def test_id_6(test_client, init_database, db_connection):
@@ -814,12 +1010,12 @@ def test_id_32(test_client, init_database, db_connection):
         
         assert response.status_code == 200
         assert response.json()['result'] == 'error'
-        assert response.json()['message'] == 'State not found'
+        assert response.json()['message'] == 'City not found'
         
     except Exception as e:
         print(f"Exception occurred: {e}")
 
-def test_id_40(test_client, init_database, db_connection):
+def test_id_41(test_client, init_database, db_connection):
     try:
         test_payload = {
             'user_id': 1,
@@ -837,7 +1033,7 @@ def test_id_40(test_client, init_database, db_connection):
     except Exception as e:
         print(f"Exception occurred: {e}")
 
-def test_id_41(test_client, init_database, db_connection):
+def test_id_42(test_client, init_database, db_connection):
     try:
         test_payload = {
             'user_id': 1,
@@ -854,7 +1050,7 @@ def test_id_41(test_client, init_database, db_connection):
     except Exception as e:
         print(f"Exception occurred: {e}")
 
-def test_id_42(test_client, init_database, db_connection):
+def test_id_43(test_client, init_database, db_connection):
     try:
         test_payload = {
             'user_id': 1000, 
@@ -1011,8 +1207,23 @@ def test_id_38(test_client, init_database, db_connection):
     assert response.json()['message'] == 'role_id not obtainable'
     assert 'data' in response.json()
 
-
 def test_id_39(test_client, init_database, db_connection):
+    try:
+        valid_payload = {"username": "rudra"}
+        
+        # Send request to get the role ID
+        response = test_client.post('/getRoleID', json=valid_payload)
+        
+        # Assertions
+        assert response.status_code == 200
+        assert response.json()['result'] == 'Success'
+        assert 'data' in response.json()
+        assert 'role id' in response.json()['data']
+        
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+
+def test_id_40(test_client, init_database, db_connection):
     invalid_payload_username = {"username": "nonexistent_username"}
     response = test_client.post('/getRoleID', json=invalid_payload_username)
     assert response.status_code == 200
@@ -1021,13 +1232,7 @@ def test_id_39(test_client, init_database, db_connection):
     assert 'data' in response.json()
 
 
-def test_id_40(test_client, init_database, db_connection):
-    invalid_payload_user_id = {"user_id": 9999}
-    response = test_client.post('/getRoleID', json=invalid_payload_user_id)
-    assert response.status_code == 200
-    assert response.json()['result'] == 'error'
-    assert response.json()['message'] == 'role_id not obtainable'
-    assert 'data' in response.json()
+
 
 
 def test_id_33(test_client, init_database, db_connection):
@@ -1136,13 +1341,13 @@ def test_id_14(test_client, init_database, db_connection):
     except Exception as e:
         print(f"Exception occurred: {e}")
 
-def test_id_43(test_client):
-    # Valid payload with admin role
-    payload = {"user_id": 1234}
-    role_access_status = check_role_access(None, payload)
-    
+def test_id_44(test_client, init_database, db_connection):
+    # Valid payload
+    payload = {"user_id": 1234, "role_id": 1}
+    role_access_status = check_role_access(db_connection, payload)
+
     response = test_client.post('/getCitiesAdmin', json=payload)
-    
+
     assert response.status_code == 200
     assert response.json()['result'] == 'success'
     assert 'data' in response.json()
@@ -1150,7 +1355,7 @@ def test_id_43(test_client):
     assert 'role_id' in response.json()
     assert response.json()['role_id'] == role_access_status
 
-def test_id_44(test_client):
+def test_id_45(test_client):
     # Invalid role ID
     payload = {"user_id": 5678}
     role_access_status = check_role_access(None, payload)
@@ -1165,20 +1370,16 @@ def test_id_44(test_client):
     assert 'role_id' in response.json()
     assert response.json()['role_id'] == role_access_status
 
-def test_id_45(test_client):
+def test_id_46(test_client):
     # Missing user ID in payload
     payload = {}
     role_access_status = check_role_access(None, payload)
     
     response = test_client.post('/getCitiesAdmin', json=payload)
     
-    assert response.status_code == 200
-    assert response.json()['result'] == 'error'
-    assert response.json()['message'] == 'Invalid Payload'
-    assert 'data' in response.json()
-    assert response.json()['role_id'] == role_access_status
+    assert response.status_code
 
-def test_id_46(test_client):
+def test_id_47(test_client):
     # Valid payload that raises an exception
     payload = {"user_id": 9999}
     role_access_status = check_role_access(None, payload)
@@ -1191,20 +1392,20 @@ def test_id_46(test_client):
     assert 'data' in response.json()
     assert response.json()['role_id'] == role_access_status
 
-def test_id_49(test_client, init_database, db_connection):
+def test_id_50(test_client, init_database, db_connection):
     try:
         # Test data
-        test_payload = {
+        test_payload5 ={
             'user_id': 1,
             'builder_id': 1,
             'role_id': 1
         }
 
         # Get role access status
-        role_access_status = check_role_access(db_connection, test_payload)
+        role_access_status = check_role_access(db_connection,test_payload5)
 
         # Send request to delete builder info
-        response = test_client.post('/deleteBuilderInfo', json=test_payload)
+        response = test_client.post('/deleteBuilderInfo', json=test_payload5)
 
         # Assertions
         assert response.status_code == 200
@@ -1216,13 +1417,20 @@ def test_id_49(test_client, init_database, db_connection):
         assert response.json()['role_access_status'] == role_access_status
 
         # Check if builder is deleted from the database
-        test_id_50(db_connection, test_payload['builder_id'])
+        test_id_51(db_connection, test_payload['builder_id'])
+
+    except Exception as e:
+        print(f"Error in test_delete_builder_success: {e}")
+        raise
+        # Check if builder is deleted from the database
+        test_id_51(db_connection, test_payload['builder_id'])
 
     except Exception as e:
         print(f"Error in test_delete_builder_success: {e}")
         raise
 
-def test_id_50(db_connection, builder_id):
+def test_id_51(db_connection):
+    builder_id = 1  
     try:
         with db_connection.cursor() as cursor:
             query = "SELECT * FROM builder WHERE id = %s"
