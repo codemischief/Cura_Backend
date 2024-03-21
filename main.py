@@ -20,6 +20,7 @@ def getFilteredAndPaginatedDataFromDatabaseTable(db_config,
                                                  page_number=1,
                                                  page_size=10,
                                                  query = None):
+    print(f"<sort criteria is {sort_column}>")
     try:
         # Base query
         if query is None:
@@ -45,7 +46,7 @@ def getFilteredAndPaginatedDataFromDatabaseTable(db_config,
         if where_clauses:
             query += " WHERE " + " AND ".join(where_clauses)
         if sort_column:
-            query += f" ORDER BY {sort_column} {sort_order}"
+            query += f" ORDER BY {sort_column[0]} {sort_order}"
         # Calculate OFFSET
         offset = (page_number - 1) * page_size
         # Adding pagination
@@ -553,11 +554,11 @@ async def get_states_admin(payload:dict,conn: psycopg2.extensions.connection = D
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            with conn[0].cursor() as cursor:
-                query = "SELECT DISTINCT a.state,b.name FROM cities a,country b WHERE a.countryid=b.id"
-                cursor.execute(query)
-                data = cursor.fetchall()
-            return giveSuccess(payload["user_id"],role_access_status,data)
+            query = "SELECT DISTINCT a.state,b.name as countryname FROM cities a,country b WHERE a.countryid=b.id"
+            data = getFilteredAndPaginatedDataFromDatabaseTable(DATABASE_URL,payload['rows'],None,payload['filters'],payload['sort_by'],payload['order'],payload["pg_no"],payload["pg_size"],query=query)
+
+            
+            return giveSuccess(payload["user_id"],role_access_status,data['data'])
         else:
             return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
     except Exception as e:
@@ -1220,7 +1221,7 @@ async def delete_employee(payload: dict, conn : psycopg2.extensions.connection =
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)  
 
-@app.post('/getlob')
+@app.post('/getLob')
 async def get_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
@@ -1387,7 +1388,7 @@ async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.con
                     return giveFailure("No Prospect available",payload['user_id'],role_access_status)
                 conn[0].commit()
             data = {
-                "deleted_lob":payload['id']
+                "deleted_prospect":payload['id']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -1395,5 +1396,105 @@ async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.con
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/getPayments')
+async def get_payments(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            table_name = 'ref_contractual_payments'
+            data = getFilteredAndPaginatedDataFromDatabaseTable(DATABASE_URL,payload['rows'],table_name,payload['filters'],payload['sort_by'],payload['order'],payload["pg_no"],payload["pg_size"])
+            print(data['data'])
+            colnames = payload['rows']
+            print(colnames)
+            res = []
+            for row in data['data']:
+                row_dict = {}
+                print(row)
+                for i,colname in enumerate(colnames):
+                    row_dict[colname] = row[i]
+                res.append(row_dict)
+            return giveSuccess(payload["user_id"],role_access_status,res)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0) 
+
+@app.post('/addPayment')
+async def add_payment(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO ref_contractual_payments (id,paymentto,paymentby,amount,paidon,paymentmode,paymentstatus,description,banktransactionid,paymentfor,dated,createdby,isdeleted,entityid,officeid,tds,professiontax,month,deduction) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                
+                cursor.execute(query,(payload['id'],payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['paymentstatus'],payload['description'],payload['banktransactionid'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction']))
+                conn[0].commit()
+            data = {
+                "added_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/editPayment')
+async def edit_payment(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE ref_contractual_payments SET paymentto=%s,paymentby=%s,amount=%s,paidon=%s,paymentmode=%s,paymentstatus=%s,description=%s,banktransactionid=%s,paymentfor=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s,officeid=%s,tds=%s,professiontax=%s,month=%s,deduction=%s WHERE id=%s'
+                cursor.execute(query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['paymentstatus'],payload['description'],payload['banktransactionid'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction'],payload['id']))
+                conn[0].commit()
+            data = {
+                "edited_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)   
+
+@app.post('/deletePayment')
+async def delete_payment(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM ref_contractual_payments WHERE id=%s'
+                cursor.execute(query,(payload['id'],))
+                if cursor.statusmessage == "DELETE 0":
+                    return giveFailure("No Payment available",payload['user_id'],role_access_status)
+                conn[0].commit()
+            data = {
+                "deleted_payment":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/getVendorAdmin')
+async def get_vendor_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT id,vendorname FROM vendor'
+                cursor.execute(query)
+                data = cursor.fetchall()
+                
+                return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        giveFailure('Invalid Credentials',payload['user_id'],0)
 
 logger.info("program_started")
