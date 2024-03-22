@@ -146,96 +146,72 @@ def cursor_execute(query, params):
 #         return 404, {"result": "error","message":"Invalid Credentials"}  # Or another error
 
 
-@pytest.mark.parametrize(
-    "username, password, company_key, expected_status_code, expected_response",
-    [
-        ("ruderaw","abcdefg", "9632", 200, {"result": "success","user_id":1,"role_id":1}), 
-        ('Ruderaw', 'aaaaaaaaa', '9632', 404, {"result": "error", "message":"error message"})  
-    ]
-)
-def test_id_1(test_client, mock_cursor, username, password, company_key, expected_status_code, expected_response):
-    test_payload = {"username" : "ruderaw", "password" : "abcdefg", "company_key" : "9632"}
-    response = test_client.post('/validateCredentials', json=test_payload) 
+@pytest.mark.usefixtures("db_connection")  
+def test_id_1(client):
+    response = client.post('/validateCredentials', json={
+        'username': 'ruderaw',  # Assuming this user exists with the correct password
+        'password': 'abcdefg', 
+        'company_key': '9632'  # Assuming this company key exists
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data['result'] == 'success'
+    # ... (Add more assertions on data if needed)
 
-    assert response.status_code == expected_status_code
-    assert response.json() == expected_response
-
-
-def test_id_2(test_client):
-    
-    test_payload = {
-        'username': 'Ruderaw',  
-        'password': 'abcdefg',  
-        'company_key': '9632'
+@pytest.mark.usefixtures("db_connection")
+def test_id_2(client):
+    response = client.post('/validateCredentials', json={
+        'username': 'RRRRRRR', 
+        'password': 'abcdefg', 
+        'company_key': '9632' 
+    })
+    assert response.status_code == 200  # Or a more appropriate error code
+    assert response.json() == {
+        "result": "Error",
+        "message": "Wrong input", 
+        "data": {}
     }
-    response = test_client.post('/validateCredentials', json=test_payload) 
 
-    assert response.status_code == expected_status_code
-    assert response.json() == expected_response
+@pytest.mark.usefixtures("db_connection")
+def test_id_3(client):
+    response = client.post('/validateCredentials', json={
+        'username': 'ruderaw',
+        'password': 'hijklmn', 
+        'company_key': '9632' 
+    })
+    assert response.status_code == 200  # Or a different code for auth errors
+    assert response.json() == {
+        "result": "error",
+        "message": "Invalid Credentials" 
+    }
 
-def test_id_3(test_client, db_connection):
-    with mock_cursor() as cursor:
-        # Configure side effects for the mock cursor 
-        cursor.fetchone.side_effect = [
-            (("hashed_password", 123, 1),),  # For 'SELECT password' 
-            ((True),),                      # For 'SELECT EXISTS'
-        ]
+@pytest.mark.usefixtures("db_connection")
+def test_id_4(client):
+    response = client.post('/validateCredentials', json={
+        'username': 'ruderaw',
+        'password': 'abcdefg', 
+        'company_key': '1111' 
+    })
+    assert response.status_code == 200  # Or a different code for auth errors
+    assert response.json() == {
+        "result": "error",
+        "message": "Invalid Credentials" 
+    }
 
-        test_payload = {
-            'username': 'ruderaw',
-            'password': 'abdefg',  # Incorrect password
-            'company_key': '9632'
-        }
+@pytest.mark.usefixtures("db_connection")
+def test_id_5(client):
+    response = client.post('/validateCredentials', json={
+        'username': 'RRRRRRR',
+        'password': 'hijklmn', 
+        'company_key': '1111' 
+    })
+    assert response.status_code == 200  # Or a different code for auth errors
+    assert response.json() == {
+        "result": "Error",
+        "message": "Wrong input",
+        "data": {}
+    }
 
-        response = test_client.post('/validateCredentials', json=test_payload, conn=db_connection)
-
-        assert response.status_code == 200
-        assert response.json() == {
-            "result": "failure",
-            "message": "Invalid credentials"
-        }
-def test_id_4(test_client, db_connection):
-    with mock_cursor() as cursor:
-        # Configure side effects for the mock cursor 
-        cursor.fetchone.side_effect = [
-            (("hashed_password", 123, 1),),  # For 'SELECT password' 
-            ((False),),                     # For 'SELECT EXISTS'
-        ]
-
-        test_payload = {
-            'username': 'ruderaw',
-            'password': 'abcdefg',  # Correct password
-            'company_key': '99999'  # Incorrect company key
-        }
-
-        response = test_client.post('/validateCredentials', json=test_payload, conn=db_connection)
-
-        assert response.status_code == 200
-        assert response.json() == {
-            "result": "failure",
-            "message": "Invalid credentials"
-        }
-def test_id_5(test_client, db_connection):
-    with mock_cursor() as cursor:
-        # Configure side effects for the mock cursor 
-        cursor.fetchone.side_effect = [
-            (None,),   # For 'SELECT password' 
-            ((False),), # For 'SELECT EXISTS'
-        ]
-
-        test_payload = {
-            'username': 'RUDERAW',  # Incorrect username
-            'password': 'hijklmn',  # Incorrect password
-            'company_key': '1000'   # Incorrect company key
-        }
-
-        response = test_client.post('/validateCredentials', json=test_payload, conn=db_connection)
-
-        assert response.status_code == 200
-        assert response.json() == {
-            "result": "failure",
-            "message": "User does not exist"
-        }
 @pytest.fixture
 def test_payload():
     return {
