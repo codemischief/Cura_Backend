@@ -76,7 +76,7 @@ def filterAndPaginate(db_config,
             search_results = []
             for row in rows:
                 concatenated_row = " ".join( str(item) for item in row)
-                if search_key in concatenated_row:
+                if str(search_key).lower() in concatenated_row.lower():
                     search_results.append(row)
                 else:
                     pass
@@ -85,7 +85,6 @@ def filterAndPaginate(db_config,
             start_index = (page_number - 1) * page_size
             end_index = start_index + page_size
             rows = search_results[start_index:end_index]
-            #logging.info(f'filterAndPaginate: Given search key <{search_key}> yeilds <{total_count}> entries')
 
         return {'data':rows, 'total_count' : total_count, 'message':'success'}
     except Exception as e:
@@ -990,8 +989,8 @@ async def add_localities(payload: dict, conn : psycopg2.extensions.connection = 
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'INSERT INTO locality VALUES (%s,%s,%s)'
-                cursor.execute(query,(payload['id'],payload['locality'],payload['cityid']))
+                query = 'INSERT INTO locality (locality,cityid) VALUES (%s,%s)'
+                cursor.execute(query,(payload['locality'],payload['cityid']))
                 conn[0].commit()
             data = {
                 "Inserted Locality" : payload['locality']
@@ -1093,7 +1092,9 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE bankst SET modeofpayment=%s,date=%s,amount=%s,particulars=%s,crdr=%s,chequeno=%s,availablebalance=%s,dateadded=%s,clientid=%s,orderid=%s,receivedby=%s,details=%s,vendorid=%s,createdby=%s WHERE id=%s'
+                query = ('UPDATE bankst SET modeofpayment=%s,'
+                         'date=%s,amount=%s,particulars=%s,'
+                         'crdr=%s,vendorid=%s,createdby=%s WHERE id=%s')
                 cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['chequeno'],payload['availablebalance'],payload['dateadded'],payload['clientid'],payload['orderid'],payload['receivedby'],payload['details'],payload['vendorid'],payload['createdby'],payload['id']))
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
