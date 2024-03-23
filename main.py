@@ -22,9 +22,15 @@ def filterAndPaginate(db_config,
                       query = None,
                       search_key = None):
     try:
+        logging.info(f'required_columns is <{required_columns}>')
         # Base query
         if query is None:
-            query = f"SELECT distinct {','.join(required_columns)} FROM {table_name}"
+            columns_to_select = None
+            if required_columns == []:
+                columns_to_select = '*'
+            else:
+                columns_to_select = ','.join(required_columns)
+            query = f"SELECT distinct {columns_to_select} FROM {table_name}"
         # Adding filters
         where_clauses = []
         for column, filter_type, value in (filters or []):
@@ -320,8 +326,8 @@ async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depend
             role_access_status = check_role_access(conn,payload)
             if role_access_status == 1:
             # Insert new country data into the database
-                query_insert = 'INSERT INTO country (id,name) VALUES (%s,%s)'
-                cursor.execute(query_insert, (payload['country_id'], payload['country_name']))
+                query_insert = 'INSERT INTO country (name) VALUES (%s)'
+                cursor.execute(query_insert, (payload['country_name'],))
 
             # Commit the transaction
                 conn[0].commit()
@@ -691,7 +697,17 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
 
         if role_access_status == 1:
             table_name = 'project'
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
+            query = ("SELECT b.buildername, a.builderid, a.projectname, a.addressline1, a.addressline2, "
+                     "a.suburb, a.city, a.state, a.country, a.zip, a.nearestlandmark, "
+                     "a.project_type, a.mailgroup1, a.mailgroup2, a.website, a.project_legal_status, "
+                     "a.rules, a.completionyear, a.jurisdiction, a.taluka, a.corporationward, "
+                     "a.policechowkey, a.policestation, a.maintenance_details, a.numberoffloors, "
+                     "a.numberofbuildings, a.approxtotalunits, a.tenantstudentsallowed, "
+                     "a.tenantworkingbachelorsallowed, a.tenantforeignersallowed, a.otherdetails, "
+                     "a.duespayablemonth, a.dated, a.createdby, a.isdeleted, a.id from project a, builder b where a.builderid = b.id")
+            data = filterAndPaginate(DATABASE_URL,
+                                     payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
+                                     search_key = payload['search_key'] if 'search_key' in payload else None, query=query)
             total_count = data['total_count']
             colnames = payload['rows']
             print(colnames)
@@ -705,6 +721,7 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
         else:
             return giveFailure( "Username or User ID not found",payload['user_id'],role_access_status)
     except Exception as e:
+        logging.exception(f'getProjects: encountered exception <{e}>')
         return giveFailure("Username or User ID not found",payload["user_id"],0)
 
 @app.post('/getProjectsByBuilder')
@@ -958,14 +975,14 @@ async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.conne
 
 @app.post('/getLocality')
 async def get_localties(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getLocalities: received payload <{payload}>')
     try:
+        logging.info(f'getLocality: received payload <{payload}>')
         cities = get_city_from_id(conn)
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             table_name = 'locality'
-            query = 'SELECT DISTINCT a.id,c.name as country ,b.city,b.state, a.locality from locality a, cities b, country c where a.cityid=b.id and b.countryid = c.id'
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], query, search_key = payload['search_key'] if 'search_key' in payload else None)
+            query = 'SELECT DISTINCT a.id, c.name as country, b.city, b.id as city_id, b.state, a.locality from locality a, cities b, country c where a.cityid=b.id and b.countryid = c.id'
+            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], query=query, search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
             print(colnames)
@@ -979,7 +996,7 @@ async def get_localties(payload: dict, conn: psycopg2.extensions.connection = De
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
-        print(traceback.print_exc())
+        logging.exception(f'getLocality_ex: {traceback.print_exc()}')
         return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/addLocality')
@@ -1092,10 +1109,19 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = ('UPDATE bankst SET modeofpayment=%s,'
-                         'date=%s,amount=%s,particulars=%s,'
-                         'crdr=%s,vendorid=%s,createdby=%s WHERE id=%s')
-                cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['chequeno'],payload['availablebalance'],payload['dateadded'],payload['clientid'],payload['orderid'],payload['receivedby'],payload['details'],payload['vendorid'],payload['createdby'],payload['id']))
+                query = ('UPDATE bankst SET modeofpayment=%s, date=%s,amount=%s,particulars=%s,'
+                         'crdr=%s,vendorid=%s, receivedby=%s, createdby=%s WHERE id=%s')
+                cursor.execute(query,(
+                        payload['modeofpayment'],
+                        payload['date'],
+                        payload['amount'],
+                        payload['particulars'],
+                        payload['crdr'],
+                        payload['vendorid'],
+                        payload['receivedby'],
+                        payload['createdby'],
+                        payload['id'])
+                )
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
                 conn[0].commit()
@@ -1487,18 +1513,16 @@ async def add_payment(payload: dict,conn: psycopg2.extensions.connection = Depen
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'INSERT INTO ref_contractual_payments (id,paymentto,paymentby,amount,paidon,paymentmode,paymentstatus,description,banktransactionid,paymentfor,dated,createdby,isdeleted,entityid,officeid,tds,professiontax,month,deduction) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                query = 'INSERT INTO ref_contractual_payments (paymentto,paymentby,amount,paidon,paymentmode,paymentstatus,description,banktransactionid,paymentfor,dated,createdby,isdeleted,entityid,officeid,tds,professiontax,month,deduction) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                 
-                cursor.execute(query,(payload['id'],payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['paymentstatus'],payload['description'],payload['banktransactionid'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction']))
+                cursor.execute(query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['paymentstatus'],payload['description'],payload['banktransactionid'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction']))
                 conn[0].commit()
-            data = {
-                "added_data":payload['id']
-            }
+            data = { "added_data":payload }
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
-        print(traceback.print_exc())
+        logging.exception(f'addPayment: exception <{traceback.print_exc()}>')
         giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/editPayment')
