@@ -5,11 +5,84 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import logging
 import traceback
+# import os
+# from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
 
 # PostgreSQL database URL
 #todo : need to source user, password and ip port from variables
 DATABASE_URL = "postgresql://postgres:cura123@192.168.10.133:5432/cura_db"
+
+def getdata(conn: psycopg2.extensions.connection):
+    return [
+        usernames(conn),
+        paymentmode(conn),
+        entity(conn)
+    ]
+
+
+
+def usernames(conn : psycopg2.extensions.connection):
+    try:
+        with conn.cursor() as cursor:
+            query = 'SELECT firstname,lastname,id FROM usertable'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        if data:
+            res = {}
+            for i in data:
+                res[i[2]] = f'{i[0]} {i[1]}'
+        return res
+    except Exception as e:
+        return None
+
+def paymentmode(conn: psycopg2.extensions.connection):
+    try:
+        with conn.cursor() as cursor:
+            query = 'SELECT id,name from mode_of_payment'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        res = {}
+        for i in data:
+            res[i[0]] = i[1]
+        return res
+    except Exception as e:
+        print(traceback.print_exc())
+        print(f"Error is {e}")
+        return None
+
+def entity(conn):
+    try:
+        with conn.cursor() as cursor:
+            query = 'SELECT id,name from entity'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        res = {}
+        for i in data:
+            res[i[0]] = i[1]
+        print(res)
+        return res
+    except Exception as e:
+        print(traceback.print_exc())
+        print(f"Error is {e}")
+        return None
+
+def roles(conn):
+    try:
+        with conn.cursor() as cursor:
+            query = 'SELECT id,name from role'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        res = {}
+        for i in data:
+            res[i[0]] = i[1]
+        print(res)
+        return res
+    except Exception as e:
+        print(traceback.print_exc())
+        print(f"Error is {e}")
+        return None
+
 
 def filterAndPaginate(db_config,
                       required_columns,
@@ -1171,7 +1244,7 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO employee (employeename,employeeid, userid,roleid, dateofjoining, dob, panno,status, phoneno, email, addressline1, addressline2,suburb, city, state, country, zip,dated, createdby, isdeleted, entityid,lobid, lastdateofworking, designation)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-                cursor.execute(query,( payload['employeename'],
+                cursor.execute(query,(  payload['employeename'],
                                         payload['employeeid'],
                                         payload['userid'],
                                         payload['roleid'],
@@ -1462,17 +1535,23 @@ async def get_payments(payload: dict, conn : psycopg2.extensions.connection = De
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
+            users,paymentmodes,entities = getdata(conn[0])
             table_name = 'ref_contractual_payments'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
-            print(colnames)
             res = []
             for row in data['data']:
                 row_dict = {}
                 for i,colname in enumerate(colnames):
                     row_dict[colname] = row[i]
                 res.append(row_dict)
+            print(entities)
+            for i in res:
+                i['paymentto'] = users[i['paymentto']]
+                i['paymentby'] = users[i['paymentby']]
+                i['paymentmode'] = paymentmodes[i['paymentmode']]
+                i['entityid'] = entities.get(i['entityid'],None)
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1630,6 +1709,18 @@ async def get_howreceived_admin(payload: dict, conn: psycopg2.extensions.connect
         giveFailure('Invalid Credentials', payload['user_id'], 0)
 
 
+@app.post('/getRoles')
+async def get_roles(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            res = roles(conn[0])
+            return giveSuccess(payload['user_id'],role_access_status,res,total_count=len(res))
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        return giveFailure("Invalid Credentials",0,0)
+
 @app.post('/addClientReceipt')
 async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'addClientReceipt: received payload <{payload}>')
@@ -1673,6 +1764,19 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
     except Exception as e:
         logging.exception(f'addClientReceit_Exception: {traceback.format_exc()}')
         return giveFailure(str(e), payload['user_id'], 0)
+
+    
+@app.post('/getEntityID')
+async def get_entity_id(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            res = entity(conn[0])
+            return giveSuccess(payload['user_id'],role_access_status,res,total_count=len(res))
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        return giveFailure("Invalid Credentials",0,0)
 
 
 logger.info("program_started")
