@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import logging
 import traceback
+import datetime
 # import os
 # from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
@@ -17,7 +18,8 @@ def getdata(conn: psycopg2.extensions.connection):
     return [
         usernames(conn),
         paymentmode(conn),
-        entity(conn)
+        entity(conn),
+        paymentfor(conn)
     ]
 
 
@@ -36,25 +38,41 @@ def usernames(conn : psycopg2.extensions.connection):
     except Exception as e:
         return None
 
-def paymentmode(conn: psycopg2.extensions.connection):
+def paymentfor(conn: psycopg2.extensions.connection):
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT id,name from mode_of_payment'
+            query = 'SELECT DISTINCT id,name from payment_for'
             cursor.execute(query)
             data = cursor.fetchall()
         res = {}
         for i in data:
             res[i[0]] = i[1]
+        print(res)
         return res
     except Exception as e:
         print(traceback.print_exc())
         print(f"Error is {e}")
         return None
 
+def paymentmode(conn: psycopg2.extensions.connection):
+    try:
+        with conn.cursor() as cursor:
+            query = 'SELECT DISTINCT id,name from mode_of_payment'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        res = {}
+        for i in data:
+            res[i[0]] = i[1]
+        print(res)
+        return res
+    except Exception as e:
+        print(traceback.print_exc())
+        print(f"Error is {e}")
+        return None
 def entity(conn):
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT id,name from entity'
+            query = 'SELECT DISTINCT id,name from entity'
             cursor.execute(query)
             data = cursor.fetchall()
         res = {}
@@ -70,7 +88,7 @@ def entity(conn):
 def roles(conn):
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT id,name from role'
+            query = 'SELECT DISTINCT id,name from role'
             cursor.execute(query)
             data = cursor.fetchall()
         res = {}
@@ -96,26 +114,31 @@ def filterAndPaginate(db_config,
                       search_key = None):
     try:
         # Base query
+        query_frontend = False
         if query is None:
             query = f"SELECT distinct {','.join(required_columns)} FROM {table_name}"
+            query_frontend = True
         # Adding filters
         where_clauses = []
         for column, filter_type, value in (filters or []):
-            if filter_type == 'startsWith':
-                where_clauses.append(f"{column} LIKE '{value}%'")
-            elif filter_type == 'endsWith':
-                where_clauses.append(f"{column} LIKE '%{value}'")
-            elif filter_type == 'contains':
-                where_clauses.append(f"{column} LIKE '%{value}%'")
-            elif filter_type == 'exactMatch':
-                where_clauses.append(f"{column} = '{value}'")
-            elif filter_type == 'isNull':
-                where_clauses.append(f"{column} = ''")
-            elif filter_type == 'isNotNull':
-                where_clauses.append(f"{column} != ''")
+            if value != '':
+                if filter_type == 'startsWith':
+                    where_clauses.append(f"{column} LIKE '{value}%'")
+                elif filter_type == 'endsWith':
+                    where_clauses.append(f"{column} LIKE '%{value}'")
+                elif filter_type == 'contains':
+                    where_clauses.append(f"{column} LIKE '%{value}%'")
+                elif filter_type == 'exactMatch':
+                    where_clauses.append(f"{column} = '{value}'")
+                elif filter_type == 'isNull':
+                    where_clauses.append(f"{column} = ''")
+                elif filter_type == 'isNotNull':
+                    where_clauses.append(f"{column} != ''")
         # handle where clause and sorting
-        if where_clauses:
+        if where_clauses and query_frontend:
             query += " WHERE " + " AND ".join(where_clauses)
+        elif where_clauses and not query_frontend:
+            query += " AND " + " AND ".join(where_clauses)
         if sort_column:
             query += f" ORDER BY {sort_column[0]} {sort_order}"
         # Handle pagination
@@ -136,11 +159,13 @@ def filterAndPaginate(db_config,
         conn = psycopg2.connect(db_config)
         cur = conn.cursor()
         cur.execute(query)
+        logging.info(f"Cursor message is {cur.statusmessage}")
         rows = cur.fetchall()
         cur = conn.cursor()
         cur.execute(counts_query)
         rows_for_counts = cur.fetchall()
         total_count = len(rows_for_counts)
+        colnames = [desc[0] for desc in cur.description]
         logging.info(f'filterAndPaginate: Given filter yeilds <{total_count}> entries')
         cur.close()
         conn.close()
@@ -159,7 +184,7 @@ def filterAndPaginate(db_config,
             end_index = start_index + page_size
             rows = search_results[start_index:end_index]
 
-        return {'data':rows, 'total_count' : total_count, 'message':'success'}
+        return {'data':rows, 'total_count' : total_count, 'message':'success', 'colnames':colnames}
     except Exception as e:
         logging.exception(traceback.print_exc())
         msg = str(e).replace("\n","")
@@ -238,7 +263,7 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT password,id,roleid FROM usertable where username = %s'
-            query2 = "SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = %s);"
+            query2 = "SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = %s)"
             cursor.execute(query, (payload['username'],))
             userdata = cursor.fetchone()
             cursor.execute(query2, (str(payload['company_key']),))
@@ -336,6 +361,21 @@ def check_role_access(conn, payload: dict):
         logging.exception(traceback.print_exc())
     finally:
         cursor.close()
+
+@app.post('/paymentForAdmin')
+async def payment_for_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            res = paymentfor(conn[0])
+            arr = []
+            for i in res:
+                arr.append({'id':i,'name':res[i]})
+            return giveSuccess(payload['user_id'],role_access_status,arr,total_count=len(arr))
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        return giveFailure("Invalid Credentials",0,0)
 
 # FastAPI route to get roleid based on id or username
 @app.post("/getRoleID")
@@ -544,14 +584,15 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
 
         if role_access_status == 1:  
             with conn[0].cursor() as cursor:
-                query = "SELECT a.id,a.buildername,a.phone1,a.phone2,a.email1,a.email2,a.addressline1,a.addressline2,a.suburb,b.city,a.state,c.name as country,a.zip,a.website,a.comments,a.dated,a.createdby,a.isdeleted FROM builder a,cities b,country c WHERE a.city = b.id AND a.country = c.id ORDER BY id;"
-                cursor.execute(query)
-                data = cursor.fetchall()
+                query = "SELECT a.id,a.buildername,a.phone1,a.phone2,a.email1,a.email2,a.addressline1,a.addressline2,a.suburb,b.city,a.state,c.name as country,a.zip,a.website,a.comments,a.dated,a.createdby,a.isdeleted FROM builder a,cities b,country c WHERE a.city = b.id AND a.country = c.id ORDER BY id"
+                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'country', payload['filters'],
+                                        payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
+                                        search_key = payload['search_key'] if 'search_key' in payload else None,query=query)
 
-                colnames = [desc[0] for desc in cursor.description]
+                colnames = data['colnames']
                 
                 res = []
-                for row in data:
+                for row in data['data']:
                     row_dict = {}
                     for i,colname in enumerate(colnames):
                         row_dict[colname] = row[i]
@@ -706,8 +747,8 @@ async def get_cities(payload : dict, conn: psycopg2.extensions.connection = Depe
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = "SELECT distinct id,city FROM cities where id=%s"
-                cursor.execute(query,(payload['state_id'],))
+                query = "SELECT distinct id,city FROM cities where state=%s"
+                cursor.execute(query,(payload['state_name'],))
                 data = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
                 
@@ -764,7 +805,17 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
 
         if role_access_status == 1:
             table_name = 'project'
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
+            query = ("SELECT b.buildername, a.builderid, a.projectname, a.addressline1, a.addressline2, "
+                     "a.suburb, a.city, a.state, a.country, a.zip, a.nearestlandmark, "
+                     "a.project_type, a.mailgroup1, a.mailgroup2, a.website, a.project_legal_status, "
+                     "a.rules, a.completionyear, a.jurisdiction, a.taluka, a.corporationward, "
+                     "a.policechowkey, a.policestation, a.maintenance_details, a.numberoffloors, "
+                     "a.numberofbuildings, a.approxtotalunits, a.tenantstudentsallowed, "
+                     "a.tenantworkingbachelorsallowed, a.tenantforeignersallowed, a.otherdetails, "
+                     "a.duespayablemonth, a.dated, a.createdby, a.isdeleted, a.id from project a, builder b where a.builderid = b.id")
+            data = filterAndPaginate(DATABASE_URL,
+                                     payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
+                                     search_key = payload['search_key'] if 'search_key' in payload else None, query=query)
             total_count = data['total_count']
             colnames = payload['rows']
             print(colnames)
@@ -778,38 +829,9 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
         else:
             return giveFailure( "Username or User ID not found",payload['user_id'],role_access_status)
     except Exception as e:
+        logging.exception(f'getProjects: encountered exception <{e}>')
         return giveFailure("Username or User ID not found",payload["user_id"],0)
-
-@app.post('/getProjectsByBuilder')
-async def get_projects_builder(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getProjectsByBuilder: received payload <{payload}>')
-    try:
-        role_access_status = check_role_access(conn, payload)
-
-        if role_access_status == 1:
-            with conn[0].cursor() as cursor:
-                query = "SELECT a.id,a.builderid,a.addressline1,a.addressline2,a.suburb,b.city as city,a.state,c.name as country,a.zip,a.nearestlandmark, a.project_type, a.rules,a.completionyear,a.jurisdiction,a.taluka,a.corporationward,a.policechowkey,a.policestation,a.maintenance_details,a.numberoffloors,a.numberofbuildings,a.approxtotalunits,a.tenantstudentsallowed,a.tenantworkingbachelorsallowed,a.tenantforeignersallowed,a.otherdetails,a.duespayablemonth,a.dated,a.createdby,a.isdeleted FROM project a,cities b, country c where a.city = b.id and a.country = c.id and builderid=%s ORDER BY id;"
-                cursor.execute(query,(payload['builder_id'],))
-                data = cursor.fetchall()
-
-                colnames = [desc[0] for desc in cursor.description]
-
-                res = []
-                for row in data:
-                    row_dict = {}
-                    for i, colname in enumerate(colnames):
-                        row_dict[colname] = row[i]
-                    res.append(row_dict)
-                data= {
-                        "project_info": res
-                    }
-                return giveSuccess(payload['user_id'],role_access_status,data)
-        else:
-            return giveFailure("Username or User ID not found",payload["user_id"],role_access_status)
-    except Exception as e:
-        print(traceback.print_exc())
-        return giveFailure("Username or User ID not found",payload['user_id'],0)
-
+    
 @app.post("/addProject")
 async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'addProject: received payload <{payload}>')
@@ -1037,7 +1059,7 @@ async def get_localties(payload: dict, conn: psycopg2.extensions.connection = De
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             table_name = 'locality'
-            query = ' SELECT DISTINCT a.id,c.name as country,a.cityid,b.city,b.state, a.locality from locality a, cities b, country c where a.cityid=b.id and b.countryid = c.id'
+            query = ' SELECT DISTINCT a.id,c.name as country,a.cityid,b.city,b.state as state, a.locality from locality a, cities b, country c where a.cityid=b.id and b.countryid = c.id '
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], query, search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -1212,6 +1234,7 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
+            role_cache = roles(conn[0])
             table_name = 'employee'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
@@ -1223,12 +1246,13 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
                 for i,colname in enumerate(colnames):
                     row_dict[colname] = row[i]
                 res.append(row_dict)
+            print(res)
             for i in res:
                 if 'country' in i:
                     i['country'] = countries[i['country']]
                 if 'city' in i:
                     i['city'] = cities[i['city']]
-            
+                i['roleid'] = get_name(i['roleid'],role_cache)
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1243,7 +1267,7 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'INSERT INTO employee (employeename,employeeid, userid,roleid, dateofjoining, dob, panno,status, phoneno, email, addressline1, addressline2,suburb, city, state, country, zip,dated, createdby, isdeleted, entityid,lobid, lastdateofworking, designation)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                query = 'INSERT INTO employee (employeename,employeeid, userid,roleid, dateofjoining, dob, panno,status, phoneno, email, addressline1, addressline2,suburb, city, state, country, zip,dated, createdby, isdeleted, entityid,lobid, lastdateofworking, designation)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                 cursor.execute(query,(  payload['employeename'],
                                         payload['employeeid'],
                                         payload['userid'],
@@ -1267,7 +1291,7 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
                                         payload['entityid'],
                                         payload['lobid'],
                                         payload['lastdateofworking'],     
-                                        payload['designation'],))
+                                        payload['designation']))
                 conn[0].commit()
             data = {
                 "Inserted Employee" : payload['employeename']
@@ -1535,7 +1559,7 @@ async def get_payments(payload: dict, conn : psycopg2.extensions.connection = De
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            users,paymentmodes,entities = getdata(conn[0])
+            users,paymentmodes,entities,paymentfordata = getdata(conn[0])
             table_name = 'ref_contractual_payments'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
@@ -1546,12 +1570,13 @@ async def get_payments(payload: dict, conn : psycopg2.extensions.connection = De
                 for i,colname in enumerate(colnames):
                     row_dict[colname] = row[i]
                 res.append(row_dict)
-            print(entities)
+            print(paymentfordata)
             for i in res:
                 i['paymentto'] = users[i['paymentto']]
                 i['paymentby'] = users[i['paymentby']]
                 i['paymentmode'] = paymentmodes[i['paymentmode']]
                 i['entityid'] = entities.get(i['entityid'],None)
+                i['paymentfor']=paymentfordata.get(i['paymentfor'],None)
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1566,12 +1591,12 @@ async def add_payment(payload: dict,conn: psycopg2.extensions.connection = Depen
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'INSERT INTO ref_contractual_payments (id,paymentto,paymentby,amount,paidon,paymentmode,paymentstatus,description,banktransactionid,paymentfor,dated,createdby,isdeleted,entityid,officeid,tds,professiontax,month,deduction) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-                
-                cursor.execute(query,(payload['id'],payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['paymentstatus'],payload['description'],payload['banktransactionid'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction']))
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                query = 'INSERT INTO ref_contractual_payments (paymentto,paymentby,amount,paidon,paymentmode,description,paymentfor,dated,createdby,entityid,tds,professiontax,month) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'                
+                cursor.execute(query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['description'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['entityid'],payload['tds'],payload['professiontax'],payload['month']))
                 conn[0].commit()
             data = {
-                "added_data":payload['id']
+                "added_payment_by":payload['createdby']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -1587,8 +1612,8 @@ async def edit_payment(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE ref_contractual_payments SET paymentto=%s,paymentby=%s,amount=%s,paidon=%s,paymentmode=%s,paymentstatus=%s,description=%s,banktransactionid=%s,paymentfor=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s,officeid=%s,tds=%s,professiontax=%s,month=%s,deduction=%s WHERE id=%s'
-                cursor.execute(query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['paymentstatus'],payload['description'],payload['banktransactionid'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction'],payload['id']))
+                query = 'UPDATE ref_contractual_payments SET paymentto=%s,paymentby=%s,amount=%s,paidon=%s,paymentmode=%s,description=%s,paymentfor=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s,officeid=%s,tds=%s,professiontax=%s,month=%s,deduction=%s WHERE id=%s'
+                cursor.execute(query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['description'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction'],payload['id']))
                 conn[0].commit()
             data = {
                 "edited_data":payload['id']
@@ -1675,7 +1700,7 @@ async def get_modes_admin(payload: dict, conn: psycopg2.extensions.connection = 
 
 @app.post('/getEntityAdmin')
 async def get_entity_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getEntityAdmin: received payload <{payload}>')
+    logging.info(f'getModesAdmin: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
@@ -1687,9 +1712,8 @@ async def get_entity_admin(payload: dict, conn: psycopg2.extensions.connection =
         else:
             giveFailure("Access Denied", payload['user_id'], role_access_status)
     except Exception as e:
-        logging.exception(f'getEntityAdmin_Exception: <{str(e)}>')
+        logging.exception(f'getModesAdmin_Exception: <{str(e)}>')
         giveFailure('Invalid Credentials', payload['user_id'], 0)
-
 
 @app.post('/getHowReceivedAdmin')
 async def get_howreceived_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1708,18 +1732,36 @@ async def get_howreceived_admin(payload: dict, conn: psycopg2.extensions.connect
         logging.exception(f'getHowReceivedAdmin_Exception: <{str(e)}>')
         giveFailure('Invalid Credentials', payload['user_id'], 0)
 
+@app.post('/getUsersAdmin')
+async def get_users_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            res = usernames(conn[0])
+            arr = []
+            for i in res:
+                arr.append({'id':i,'name':res[i]})
+            return giveSuccess(payload['user_id'],role_access_status,arr,total_count=len(arr))
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        return giveFailure("Invalid Credentials",0,0)
 
-@app.post('/getRoles')
+@app.post('/getRolesAdmin')
 async def get_roles(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             res = roles(conn[0])
-            return giveSuccess(payload['user_id'],role_access_status,res,total_count=len(res))
+            arr = []
+            for i in res:
+                arr.append({'id':i,'name':res[i]})
+            return giveSuccess(payload['user_id'],role_access_status,arr,total_count=len(arr))
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
         return giveFailure("Invalid Credentials",0,0)
+
 
 @app.post('/addClientReceipt')
 async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1766,17 +1808,28 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
         return giveFailure(str(e), payload['user_id'], 0)
 
     
-@app.post('/getEntityID')
-async def get_entity_id(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+@app.post('/getItembyId')
+async def get_item_by_id(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            res = entity(conn[0])
-            return giveSuccess(payload['user_id'],role_access_status,res,total_count=len(res))
+            with conn[0].cursor() as cursor:
+                query = f"SELECT * FROM {payload['table_name']} WHERe id =%s LIMIT 1"
+                cursor.execute(query,(payload['item_id'],))
+                data = cursor.fetchone()
+                
+                colnames = [desc[0] for desc in cursor.description]
+                
+                res = {}
+                for i,e in enumerate(data):
+                    res[colnames[i]] = e
+            return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
-        return giveFailure("Invalid Credentials",0,0)
-
+        logging.info(traceback.print_exc())
+        return {
+            giveFailure("Invalid Credentials",0,0)
+        }
 
 logger.info("program_started")
