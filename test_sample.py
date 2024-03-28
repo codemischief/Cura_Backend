@@ -1417,6 +1417,140 @@ def test_id_51(db_connection):
         print(f"Error checking if builder is deleted from the database: {e}")
         raise
 
+@pytest.mark.usefixtures("db_connection")
+def test_id_52(client):
+    payload = {
+        "user_id": 1234,
+        "employeename": "changed emp",
+        "employeeid": "P002020",
+        "userid": 1236,
+        "roleid": 2,
+        "dateofjoining": "2024-01-13T00:00:00",
+        "dob": "2001-01-13T00:00:00",
+        "panno": "abcd",
+        "status": False,
+        "phoneno": None,
+        "email": None,
+        "addressline1": "abcdefgh",
+        "addressline2": "ijklmnop",
+        "suburb": "Pune",
+        "city": 847,
+        "state": "Maharashta",
+        "country": 5,
+        "zip": None,
+        "dated": "2020-01-20T00:00:00",
+        "createdby": 1234,
+        "isdeleted": False,
+        "entityid": 10,
+        "lobid": 100,
+        "lastdateofworking": "2020-02-20T00:00:00",
+        "designation": "New"
+    }
+
+    expected_response = {
+        "result": "success",
+        "user_id": 1234,
+        "role_id": 1,
+        "data": {
+            "Inserted Employee": "changed emp"
+        }
+    }
+
+    with patch('main.check_role_access', return_value=1):  # Mock successful role access check
+        response = client.post('/addEmployee', json=payload)
+
+    assert response.status_code == 200
+    assert response.json() == expected_response
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_54(client):
+    payload = {
+        "user_id": 1235,
+        "employeename": "changed emp",
+        "employeeid": "P002020",
+        "userid": 1236,
+        "roleid": 2,
+        "dateofjoining": "2024-01-13T00:00:00",
+        "dob": "2001-01-13T00:00:00",
+        "panno": "abcd",
+        "status": False,
+        "phoneno": None,
+        "email": None,
+        "addressline1": "abcdefgh",
+        "addressline2": "ijklmnop",
+        "suburb": "Pune",
+        "city": 847,
+        "state": "Maharashta",
+        "country": 5,
+        "zip": None,
+        "dated": "2020-01-20T00:00:00",
+        "createdby": 1234,
+        "isdeleted": False,
+        "entityid": 10,
+        "lobid": 100,
+        "lastdateofworking": "2020-02-20T00:00:00",
+        "designation": "New"
+    }
+
+    expected_response = {
+        "result": "error",
+        "message": "Access Denied",
+        "user_id": 1235,
+        "role_id": 0,
+        "data": []
+    }
+
+    with patch('main.check_role_access', return_value=0):  # Mock insufficient role access
+        response = client.post('/addEmployee', json=payload)
+
+    assert response.status_code == 200
+    assert response.json() == expected_response
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_55(client):
+    payload = {
+    
+    "user_id": 1234,
+    "employeeid": "P002020",
+    "userid": 1236,
+    "roleid": 2,
+    "dateofjoining": "2024-01-13T00:00:00",
+    "dob": "2001-01-13T00:00:00",
+    "panno": "abcd",
+    "status": False,
+    "phoneno": None,
+    "email": None,
+    "addressline1": "abcdefgh",
+    "addressline2": "ijklmnop",
+    "suburb": "Pune",
+    "city": 847,
+    "state": "Maharashta",
+    "country": 5,
+    "zip": None,
+    "dated": "2020-01-20T00:00:00",
+    "createdby": 1234,
+    "isdeleted": False,
+    "entityid": 10,
+    "lobid": 100,
+    "lastdateofworking": "2020-02-20T00:00:00",
+    "designation": "New"
+}
+
+
+
+    expected_response = {
+        "result": "error",
+        "message": "Invalid Credentials",
+        "user_id": 1234,
+        "role_id": 0,
+        "data": []
+    }
+
+    response = client.post('/addEmployee', json=payload)
+
+    assert response.status_code == 200
+    assert response.json() == expected_response
+
 
 
 
