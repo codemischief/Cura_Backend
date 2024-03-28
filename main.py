@@ -1252,7 +1252,8 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
                     i['country'] = countries[i['country']]
                 if 'city' in i:
                     i['city'] = cities[i['city']]
-                i['roleid'] = get_name(i['roleid'],role_cache)
+                if['roleid'] in i:
+                    i['roleid'] = get_name(i['roleid'],role_cache)
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1560,8 +1561,11 @@ async def get_payments(payload: dict, conn : psycopg2.extensions.connection = De
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             users,paymentmodes,entities,paymentfordata = getdata(conn[0])
-            table_name = 'ref_contractual_payments'
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
+            # query = 'SELECT distinct a.id,concat(b.firstname,' ',b.lastname) as paymentby,concat(c.firstname,' ',c.lastname) as paymentto, a.amount,a.paidon,d.name as paymentmode,a.paymentstatus,a.description,a.banktransactionid,e.name as paymentfor,a.dated,a.createdby,a.isdeleted,a.entityid,a.officeid,a.tds,a.professiontax,a.month,a.deduction FROM ref_contractual_payments a,usertable b, usertable c, mode_of_payment d, payment_for e where a.paymentto = b.id and a.paymentby = c.id and a.paymentmode = d.id and a.paymentfor = e.id;'
+            table_name = 'get_payments_view'
+            # data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],query = query,search_key = payload['search_key'] if 'search_key' in payload else None)
+
+            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
             res = []
@@ -1571,12 +1575,12 @@ async def get_payments(payload: dict, conn : psycopg2.extensions.connection = De
                     row_dict[colname] = row[i]
                 res.append(row_dict)
             print(paymentfordata)
-            for i in res:
-                i['paymentto'] = users[i['paymentto']]
-                i['paymentby'] = users[i['paymentby']]
-                i['paymentmode'] = paymentmodes[i['paymentmode']]
-                i['entityid'] = entities.get(i['entityid'],None)
-                i['paymentfor']=paymentfordata.get(i['paymentfor'],None)
+            # for i in res:
+                # i['paymentto'] = users[i['paymentto']]
+                # i['paymentby'] = users[i['paymentby']]
+                # i['paymentmode'] = paymentmodes[i['paymentmode']]
+                # i['entityid'] = entities.get(i['entityid'],None)
+                # i['paymentfor']=paymentfordata.get(i['paymentfor'],None)
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1632,7 +1636,7 @@ async def delete_payment(payload: dict, conn: psycopg2.extensions.connection = D
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'DELETE FROM ref_contractual_payments WHERE id=%s'
+                query = 'DELETE FROM get_payments_view WHERE id=%s'
                 cursor.execute(query,(payload['id'],))
                 if cursor.statusmessage == "DELETE 0":
                     return giveFailure("No Payment available",payload['user_id'],role_access_status)
