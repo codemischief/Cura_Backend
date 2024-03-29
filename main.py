@@ -1482,6 +1482,7 @@ async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connect
                 res.append(row_dict)
             for i in res:
                 if 'country' in i:
+                    i['countryid'] = i['country']
                     i['country'] = countries[i['country']]
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
