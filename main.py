@@ -1058,9 +1058,8 @@ async def get_localties(payload: dict, conn: psycopg2.extensions.connection = De
         cities = get_city_from_id(conn)
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            table_name = 'locality'
-            query = ' SELECT DISTINCT a.id,c.name as country,a.cityid,b.city,b.state as state, a.locality from locality a, cities b, country c where a.cityid=b.id and b.countryid = c.id '
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], query, search_key = payload['search_key'] if 'search_key' in payload else None)
+            table_name = 'get_locality_view'
+            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
             print(colnames)
@@ -1190,7 +1189,7 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
                 query = ('UPDATE bankst SET modeofpayment=%s,'
                          'date=%s,amount=%s,particulars=%s,'
                          'crdr=%s,vendorid=%s,createdby=%s WHERE id=%s')
-                cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['chequeno'],payload['availablebalance'],payload['dateadded'],payload['clientid'],payload['orderid'],payload['receivedby'],payload['details'],payload['vendorid'],payload['createdby'],payload['id']))
+                cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['createdby'],payload['id']))
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
                 conn[0].commit()
@@ -1235,7 +1234,7 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             role_cache = roles(conn[0])
-            table_name = 'employee'
+            table_name = 'get_employee_view'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -1247,13 +1246,13 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
                     row_dict[colname] = row[i]
                 res.append(row_dict)
             print(res)
-            for i in res:
-                if 'country' in i:
-                    i['country'] = countries[i['country']]
-                if 'city' in i:
-                    i['city'] = cities[i['city']]
-                if['roleid'] in i:
-                    i['roleid'] = get_name(i['roleid'],role_cache)
+            # for i in res:
+            #     if 'country' in i:
+            #         i['country'] = countries[i['country']]
+            #     if 'city' in i:
+            #         i['city'] = cities[i['city']]
+            #     if['roleid'] in i:
+            #         i['roleid'] = get_name(i['roleid'],role_cache)
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1469,7 +1468,7 @@ async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connect
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            table_name = 'research_prospect'
+            table_name = 'get_research_prospect_view'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
