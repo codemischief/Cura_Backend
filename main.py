@@ -431,6 +431,9 @@ async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depend
     try:
         with conn[0].cursor() as cursor:
             role_access_status = check_role_access(conn,payload)
+            if 'country_id' not in payload:
+                cursor.execute('select max(id) from country')
+                payload['country_id'] = cursor.fetchone()[0]+1
             if role_access_status == 1:
             # Insert new country data into the database
                 query_insert = 'INSERT INTO country (id,name) VALUES (%s,%s)'
@@ -584,10 +587,9 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
 
         if role_access_status == 1:  
             with conn[0].cursor() as cursor:
-                query = "SELECT a.id,a.buildername,a.phone1,a.phone2,a.email1,a.email2,a.addressline1,a.addressline2,a.suburb,b.city,a.state,c.name as country,a.zip,a.website,a.comments,a.dated,a.createdby,a.isdeleted FROM builder a,cities b,country c WHERE a.city = b.id AND a.country = c.id ORDER BY id"
-                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'country', payload['filters'],
+                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None,query=query)
+                                        search_key = payload['search_key'] if 'search_key' in payload else None)
 
                 colnames = data['colnames']
                 
@@ -774,7 +776,7 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
         cities = get_city_from_id(conn)
         country = get_countries_from_id(conn)
         if role_access_status==1:
-            table_name = 'cities'
+            table_name = 'get_cities_view'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -785,11 +787,12 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
                 for i,colname in enumerate(colnames):
                     row_dict[colname] = row[i]
                 res.append(row_dict)
-            for i in res:
-                if 'countryid' in i:
-                    i['countryid'] = country[i['countryid']] if i['countryid'] in country else f"NA_id_{i['countryid']}"
-                if 'city' in i:
-                    i['city'] = cities[i['id']] if i['id'] in cities else f"NA_id_{i['id']}"
+            # for i in res:
+            #     if 'countryid' in i:
+            #         i['countryid'] = country[i['countryid']] if i['countryid'] in country else f"NA_id_{i['countryid']}"
+            #     if 'city' in i:
+            #         i['city'] = cities[i['id']] if i['id'] in cities else f"NA_id_{i['id']}"
+            logging.info(f"payload is <{payload}>")
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
@@ -912,6 +915,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 cursor.execute("""
                     UPDATE project SET 
                         builderid=%s, projectname=%s, addressline1=%s, addressline2=%s, suburb=%s, city=%s, state=%s, 
@@ -986,7 +990,7 @@ async def delete_project(payload:dict,conn : psycopg2.extensions.connection = De
                 last_row_id = cursor.lastrowid
                 print("Inserted row ID:", last_row_id)
                 data= {
-                        "deleted": payload['projectname']
+                        "deleted": payload['id']
                     }
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -1058,9 +1062,8 @@ async def get_localties(payload: dict, conn: psycopg2.extensions.connection = De
         cities = get_city_from_id(conn)
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            table_name = 'locality'
-            query = ' SELECT DISTINCT a.id,c.name as country,a.cityid,b.city,b.state as state, a.locality from locality a, cities b, country c where a.cityid=b.id and b.countryid = c.id '
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], query, search_key = payload['search_key'] if 'search_key' in payload else None)
+            table_name = 'get_locality_view'
+            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
             print(colnames)
@@ -1083,6 +1086,7 @@ async def add_localities(payload: dict, conn : psycopg2.extensions.connection = 
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
+            payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO locality (locality,cityid) VALUES (%s,%s)'
                 cursor.execute(query,(payload['locality'],payload['cityid']))
@@ -1103,6 +1107,7 @@ async def edit_localities(payload: dict, conn : psycopg2.extensions.connection =
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
+            payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
                 query = 'UPDATE locality SET locality = %s,cityid = %s WHERE id=%s'
                 cursor.execute(query,(payload['locality'],payload['cityid'],payload['id']))
@@ -1164,6 +1169,7 @@ async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = (
                     'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,vendorid,createdby) '
                     'VALUES (%s,%s,%s,%s,%s,%s,%s)'
@@ -1187,10 +1193,11 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = ('UPDATE bankst SET modeofpayment=%s,'
                          'date=%s,amount=%s,particulars=%s,'
                          'crdr=%s,vendorid=%s,createdby=%s WHERE id=%s')
-                cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['chequeno'],payload['availablebalance'],payload['dateadded'],payload['clientid'],payload['orderid'],payload['receivedby'],payload['details'],payload['vendorid'],payload['createdby'],payload['id']))
+                cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['createdby'],payload['id']))
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
                 conn[0].commit()
@@ -1235,7 +1242,7 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             role_cache = roles(conn[0])
-            table_name = 'employee'
+            table_name = 'get_employee_view'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -1247,13 +1254,13 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
                     row_dict[colname] = row[i]
                 res.append(row_dict)
             print(res)
-            for i in res:
-                if 'country' in i:
-                    i['country'] = countries[i['country']]
-                if 'city' in i:
-                    i['city'] = cities[i['city']]
-                if['roleid'] in i:
-                    i['roleid'] = get_name(i['roleid'],role_cache)
+            # for i in res:
+            #     if 'country' in i:
+            #         i['country'] = countries[i['country']]
+            #     if 'city' in i:
+            #         i['city'] = cities[i['city']]
+            #     if['roleid'] in i:
+            #         i['roleid'] = get_name(i['roleid'],role_cache)
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1268,6 +1275,7 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO employee (employeename,employeeid, userid,roleid, dateofjoining, dob, panno,status, phoneno, email, addressline1, addressline2,suburb, city, state, country, zip,dated, createdby, isdeleted, entityid,lobid, lastdateofworking, designation)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                 cursor.execute(query,(  payload['employeename'],
                                         payload['employeeid'],
@@ -1311,6 +1319,7 @@ async def edit_employee(payload: dict, conn : psycopg2.extensions.connection = D
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = '''UPDATe employee SET employeename=%s,employeeid=%s, userid=%s,roleid=%s, dateofjoining=%s, dob=%s, panno=%s,status=%s, phoneno=%s, email=%s, addressline1=%s, addressline2=%s,suburb=%s, city=%s, state=%s, country=%s, zip=%s,dated=%s, createdby=%s, isdeleted=%s, entityid=%s,lobid=%s, lastdateofworking=%s, designation=%s WHERE id=%s'''
                 cursor.execute(query,(
                                         payload['employeename'],
@@ -1403,6 +1412,7 @@ async def add_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO lob (name) VALUES (%s)'
                 cursor.execute("INSERT INTO lob (name) VALUES (%s)",(payload['name'],))
                 conn[0].commit()
@@ -1423,6 +1433,7 @@ async def edit_lob(payload: dict, conn: psycopg2.extensions.connection = Depends
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'UPDATE lob SET name=%s WHERE name=%s'
                 cursor.execute(query,(payload['new_name'],payload['old_name']))
                 logging.info(f'editLob: cursor status message is <{cursor.statusmessage}>')
@@ -1469,7 +1480,7 @@ async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connect
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            table_name = 'research_prospect'
+            table_name = 'get_research_prospect_view'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -1498,6 +1509,7 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO research_prospect (personname,suburb,city,state,country,propertylocation,possibleservices,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                 cursor.execute(query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted']))
                 conn[0].commit()
@@ -1518,6 +1530,8 @@ async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.conne
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
                 query = 'UPDATE research_prospect SET personname=%s,suburb=%s,city=%s,state=%s,country=%s,propertylocation=%s,possibleservices=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
                 cursor.execute(query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['id']))
                 if cursor.statusmessage == "UPDATE 0":
@@ -1617,6 +1631,7 @@ async def edit_payment(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'UPDATE ref_contractual_payments SET paymentto=%s,paymentby=%s,amount=%s,paidon=%s,paymentmode=%s,description=%s,paymentfor=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s,officeid=%s,tds=%s,professiontax=%s,month=%s,deduction=%s WHERE id=%s'
                 cursor.execute(query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['description'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction'],payload['id']))
                 conn[0].commit()
@@ -1782,6 +1797,7 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = '''
                     INSERT INTO client_receipt (
                         receivedby, paymentmode, recddate, entityid, amount, howreceivedid,
@@ -1836,5 +1852,37 @@ async def get_item_by_id(payload: dict, conn: psycopg2.extensions.connection = D
         return {
             giveFailure("Invalid Credentials",0,0)
         }
+        
+@app.post('/getViewScreenTypes')
+async def get_view_screen_types(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            cursor = conn[0].cursor()
+            column_info_list = []
+            if 'columns' not in payload:
+                query = """SELECT column_name,data_type
+                    FROM information_schema.columns
+                    WHERE table_name = %s"""
+                cursor.execute(query,(payload['table_name'],))
+                columns = cursor.fetchall()
+                column_info_list = [{"column": col[0], "type": col[1]} for col in columns]
+            else:
+                for column_name in payload['columns']:
+                    query ="""
+                        SELECT data_type
+                        FROM information_schema.columns
+                        WHERE table_name = %s
+                        AND column_name = %s
+                    """
+                    cursor.execute(query, (payload['table_name'], column_name))
+                    data_type = cursor.fetchone()[0]
+                    column_info_list.append({"column": column_name, "type": data_type})
+            return giveSuccess(payload['user_id'],role_access_status,column_info_list)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except psycopg2.Error as e:
+        return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+        
 
 logger.info("program_started")
