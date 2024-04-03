@@ -22,8 +22,20 @@ def getdata(conn: psycopg2.extensions.connection):
         paymentfor(conn)
     ]
 
-
-
+def checkexist(criteria : str,table_name : str,conn: psycopg2.extensions.connection,value):
+    try:
+        with conn[0].cursor() as cursor:
+            query = f"SELECT {criteria} FROM {table_name} WHERE {criteria} = %s"
+            cursor.execute(query,(value,))
+            s = len(cursor.fetchall())
+            logging.info(s)
+        if s!=0:
+            return False
+        else:
+            return True
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return False
 def usernames(conn : psycopg2.extensions.connection):
     try:
         with conn.cursor() as cursor:
@@ -431,7 +443,10 @@ async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depend
     try:
         with conn[0].cursor() as cursor:
             role_access_status = check_role_access(conn,payload)
-            if role_access_status == 1:
+            if 'country_id' not in payload:
+                cursor.execute('select max(id) from country')
+                payload['country_id'] = cursor.fetchone()[0]+1
+            if role_access_status == 1 and checkexist('name','country',conn,payload['country_name']):
             # Insert new country data into the database
                 query_insert = 'INSERT INTO country (id,name) VALUES (%s,%s)'
                 cursor.execute(query_insert, (payload['country_id'], payload['country_name']))
@@ -443,7 +458,7 @@ async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depend
             elif role_access_status!=1:
                 return giveFailure("Access Denied",payload['user_id'],role_access_status)
             else:
-                return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+                return giveFailure("Already Exists",payload['user_id'],role_access_status)
     except KeyError as ke:
         return giveFailure(f"key {ke} not found",payload['user_id'],0)
     except Exception as e:
@@ -515,8 +530,7 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
                 return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
 
             elif not checkcountry(payload['name'],conn):
-                return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
-
+                return giveFailure("Already Exists",payload['user_id'],role_access_status)
             else:
                 return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
 
@@ -529,7 +543,7 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
     logging.info(f'addBuilderInfo: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1:
+        if role_access_status == 1 and checkexist('buildername','builder',conn,payload['buildername']):
             with conn[0].cursor() as cursor:
                 query = '''
                     INSERT INTO builder (
@@ -567,8 +581,10 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
                     "entered": payload["buildername"]
                 }
             return giveSuccess(payload['user_id'],role_access_status,data,data)
-        else:
+        elif role_access_status!=1:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
+        else:
+            return giveFailure("Already Exists",payload['user_id'],role_access_status)
     except Exception as e:
         logging.exception(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -584,13 +600,12 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
 
         if role_access_status == 1:  
             with conn[0].cursor() as cursor:
-                query = "SELECT a.id,a.buildername,a.phone1,a.phone2,a.email1,a.email2,a.addressline1,a.addressline2,a.suburb,b.city,a.state,c.name as country,a.zip,a.website,a.comments,a.dated,a.createdby,a.isdeleted FROM builder a,cities b,country c WHERE a.city = b.id AND a.country = c.id ORDER BY id"
-                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'country', payload['filters'],
+                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None,query=query)
+                                        search_key = payload['search_key'] if 'search_key' in payload else None)
 
                 colnames = data['colnames']
-                
+                total_count = data['total_count']
                 res = []
                 for row in data['data']:
                     row_dict = {}
@@ -602,7 +617,8 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
                     data={
                         "builder_info":res
                     }
-                return giveSuccess(payload['user_id'],role_access_status,data)
+                
+                return giveSuccess(payload['user_id'],role_access_status,data,total_count)
         else:
             return giveFailure("Access Denied",payload["user_id"],role_access_status)
     except Exception as e:
@@ -649,7 +665,7 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
                     payload['comments'],
                     payload['dated'],
                     payload['created_by'],
-                    payload['is_deleted'],
+                    payload['isdeleted'],
                     payload['builder_id']
                 ))
 
@@ -774,7 +790,7 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
         cities = get_city_from_id(conn)
         country = get_countries_from_id(conn)
         if role_access_status==1:
-            table_name = 'cities'
+            table_name = 'get_cities_view'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -785,11 +801,12 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
                 for i,colname in enumerate(colnames):
                     row_dict[colname] = row[i]
                 res.append(row_dict)
-            for i in res:
-                if 'countryid' in i:
-                    i['countryid'] = country[i['countryid']] if i['countryid'] in country else f"NA_id_{i['countryid']}"
-                if 'city' in i:
-                    i['city'] = cities[i['id']] if i['id'] in cities else f"NA_id_{i['id']}"
+            # for i in res:
+            #     if 'countryid' in i:
+            #         i['countryid'] = country[i['countryid']] if i['countryid'] in country else f"NA_id_{i['countryid']}"
+            #     if 'city' in i:
+            #         i['city'] = cities[i['id']] if i['id'] in cities else f"NA_id_{i['id']}"
+            logging.info(f"payload is <{payload}>")
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
@@ -804,22 +821,15 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn, payload)
 
         if role_access_status == 1:
-            table_name = 'project'
-            query = ("SELECT b.buildername, a.builderid, a.projectname, a.addressline1, a.addressline2, "
-                     "a.suburb, a.city, a.state, a.country, a.zip, a.nearestlandmark, "
-                     "a.project_type, a.mailgroup1, a.mailgroup2, a.website, a.project_legal_status, "
-                     "a.rules, a.completionyear, a.jurisdiction, a.taluka, a.corporationward, "
-                     "a.policechowkey, a.policestation, a.maintenance_details, a.numberoffloors, "
-                     "a.numberofbuildings, a.approxtotalunits, a.tenantstudentsallowed, "
-                     "a.tenantworkingbachelorsallowed, a.tenantforeignersallowed, a.otherdetails, "
-                     "a.duespayablemonth, a.dated, a.createdby, a.isdeleted, a.id from project a, builder b where a.builderid = b.id")
+            table_name = 'get_projects_view'
             data = filterAndPaginate(DATABASE_URL,
                                      payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                     search_key = payload['search_key'] if 'search_key' in payload else None, query=query)
+                                     search_key = payload['search_key'] if 'search_key' in payload else None,)
             total_count = data['total_count']
             colnames = payload['rows']
             print(colnames)
             res = []
+            print(data['data'])
             for row in data['data']:
                 row_dict = {}
                 for i,colname in enumerate(colnames):
@@ -837,7 +847,8 @@ async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depe
     logging.info(f'addProject: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1:
+        print(checkexist('projectname','project',conn,payload['projectname']))
+        if role_access_status == 1 and checkexist('projectname','project',conn,payload['projectname']):
             with conn[0].cursor() as cursor:
                 cursor.execute("""
                     INSERT INTO project (
@@ -899,8 +910,10 @@ async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depe
                         "project_id": last_row_id
                     }
                 return giveSuccess(payload['user_id'],role_access_status,data)
-        else:
+        elif role_access_status!=1:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
+        else:
+            return giveFailure("Already Exists",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -912,6 +925,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 cursor.execute("""
                     UPDATE project SET 
                         builderid=%s, projectname=%s, addressline1=%s, addressline2=%s, suburb=%s, city=%s, state=%s, 
@@ -986,7 +1000,7 @@ async def delete_project(payload:dict,conn : psycopg2.extensions.connection = De
                 last_row_id = cursor.lastrowid
                 print("Inserted row ID:", last_row_id)
                 data= {
-                        "deleted": payload['projectname']
+                        "deleted": payload['id']
                     }
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -1058,9 +1072,8 @@ async def get_localties(payload: dict, conn: psycopg2.extensions.connection = De
         cities = get_city_from_id(conn)
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            table_name = 'locality'
-            query = ' SELECT DISTINCT a.id,c.name as country,a.cityid,b.city,b.state as state, a.locality from locality a, cities b, country c where a.cityid=b.id and b.countryid = c.id '
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], query, search_key = payload['search_key'] if 'search_key' in payload else None)
+            table_name = 'get_locality_view'
+            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
             print(colnames)
@@ -1082,7 +1095,8 @@ async def add_localities(payload: dict, conn : psycopg2.extensions.connection = 
     logging.info(f'addLocality: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
-        if role_access_status == 1:
+        if role_access_status == 1 and checkexist('locality','locality',conn,payload['locality']):
+            payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO locality (locality,cityid) VALUES (%s,%s)'
                 cursor.execute(query,(payload['locality'],payload['cityid']))
@@ -1091,8 +1105,10 @@ async def add_localities(payload: dict, conn : psycopg2.extensions.connection = 
                 "Inserted Locality" : payload['locality']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
-        else:
+        elif role_access_status!=1:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
+        else:
+            return giveFailure("Already Exists",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1103,6 +1119,7 @@ async def edit_localities(payload: dict, conn : psycopg2.extensions.connection =
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
+            payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
                 query = 'UPDATE locality SET locality = %s,cityid = %s WHERE id=%s'
                 cursor.execute(query,(payload['locality'],payload['cityid'],payload['id']))
@@ -1162,8 +1179,9 @@ async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
     logging.info(f'addBankSt: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
-        if role_access_status == 1:
+        if role_access_status==1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = (
                     'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,vendorid,createdby) '
                     'VALUES (%s,%s,%s,%s,%s,%s,%s)'
@@ -1174,8 +1192,10 @@ async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
                 "added_data": f"added bank statement for amount <{payload['amount']}>"
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
+        elif role_access_status!=1:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            giveFailure("Access Denied",payload['user_id'],role_access_status)
+            return giveFailure("Already Exists",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
         return giveFailure(f"failed to add bank statement due to exception <{str(e)}>",payload['user_id'],0)
@@ -1187,10 +1207,11 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = ('UPDATE bankst SET modeofpayment=%s,'
                          'date=%s,amount=%s,particulars=%s,'
                          'crdr=%s,vendorid=%s,createdby=%s WHERE id=%s')
-                cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['chequeno'],payload['availablebalance'],payload['dateadded'],payload['clientid'],payload['orderid'],payload['receivedby'],payload['details'],payload['vendorid'],payload['createdby'],payload['id']))
+                cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['createdby'],payload['id']))
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
                 conn[0].commit()
@@ -1235,7 +1256,7 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             role_cache = roles(conn[0])
-            table_name = 'employee'
+            table_name = 'get_employee_view'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -1247,13 +1268,13 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
                     row_dict[colname] = row[i]
                 res.append(row_dict)
             print(res)
-            for i in res:
-                if 'country' in i:
-                    i['country'] = countries[i['country']]
-                if 'city' in i:
-                    i['city'] = cities[i['city']]
-                if['roleid'] in i:
-                    i['roleid'] = get_name(i['roleid'],role_cache)
+            # for i in res:
+            #     if 'country' in i:
+            #         i['country'] = countries[i['country']]
+            #     if 'city' in i:
+            #         i['city'] = cities[i['city']]
+            #     if['roleid'] in i:
+            #         i['roleid'] = get_name(i['roleid'],role_cache)
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1266,8 +1287,9 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
     logging.info(f'addEmployee: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
-        if role_access_status == 1:
+        if role_access_status == 1 and checkexist('employeeid','employee',conn,payload['employeeid']):
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO employee (employeename,employeeid, userid,roleid, dateofjoining, dob, panno,status, phoneno, email, addressline1, addressline2,suburb, city, state, country, zip,dated, createdby, isdeleted, entityid,lobid, lastdateofworking, designation)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                 cursor.execute(query,(  payload['employeename'],
                                         payload['employeeid'],
@@ -1298,8 +1320,10 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
                 "Inserted Employee" : payload['employeename']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
-        else:
+        elif role_access_status!=1:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
+        else:
+            return giveFailure("Already Exists",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1311,6 +1335,7 @@ async def edit_employee(payload: dict, conn : psycopg2.extensions.connection = D
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = '''UPDATe employee SET employeename=%s,employeeid=%s, userid=%s,roleid=%s, dateofjoining=%s, dob=%s, panno=%s,status=%s, phoneno=%s, email=%s, addressline1=%s, addressline2=%s,suburb=%s, city=%s, state=%s, country=%s, zip=%s,dated=%s, createdby=%s, isdeleted=%s, entityid=%s,lobid=%s, lastdateofworking=%s, designation=%s WHERE id=%s'''
                 cursor.execute(query,(
                                         payload['employeename'],
@@ -1401,8 +1426,9 @@ async def add_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(
     logging.info(f'addLob: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
-        if role_access_status == 1:
+        if role_access_status == 1 and checkexist('name','lob',conn,payload['name']):
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO lob (name) VALUES (%s)'
                 cursor.execute("INSERT INTO lob (name) VALUES (%s)",(payload['name'],))
                 conn[0].commit()
@@ -1410,8 +1436,10 @@ async def add_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(
                 "added_data":payload['name']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
+        elif role_access_status!=1:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            giveFailure("Access Denied",payload['user_id'],role_access_status)
+            return giveFailure("Already Exists",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1423,6 +1451,7 @@ async def edit_lob(payload: dict, conn: psycopg2.extensions.connection = Depends
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'UPDATE lob SET name=%s WHERE name=%s'
                 cursor.execute(query,(payload['new_name'],payload['old_name']))
                 logging.info(f'editLob: cursor status message is <{cursor.statusmessage}>')
@@ -1469,7 +1498,7 @@ async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connect
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            table_name = 'research_prospect'
+            table_name = 'get_research_prospect_view'
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -1498,6 +1527,7 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO research_prospect (personname,suburb,city,state,country,propertylocation,possibleservices,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                 cursor.execute(query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted']))
                 conn[0].commit()
@@ -1518,6 +1548,8 @@ async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.conne
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
                 query = 'UPDATE research_prospect SET personname=%s,suburb=%s,city=%s,state=%s,country=%s,propertylocation=%s,possibleservices=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
                 cursor.execute(query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['id']))
                 if cursor.statusmessage == "UPDATE 0":
@@ -1617,6 +1649,7 @@ async def edit_payment(payload: dict, conn: psycopg2.extensions.connection = Dep
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'UPDATE ref_contractual_payments SET paymentto=%s,paymentby=%s,amount=%s,paidon=%s,paymentmode=%s,description=%s,paymentfor=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s,officeid=%s,tds=%s,professiontax=%s,month=%s,deduction=%s WHERE id=%s'
                 cursor.execute(query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['description'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction'],payload['id']))
                 conn[0].commit()
@@ -1767,6 +1800,37 @@ async def get_roles(payload: dict, conn : psycopg2.extensions.connection = Depen
     except Exception as e:
         return giveFailure("Invalid Credentials",0,0)
 
+@app.post('/getClientInfo')
+async def get_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn, payload)
+
+        if role_access_status == 1:  
+            with conn[0].cursor() as cursor:
+                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_client_info_view', payload['filters'],
+                                        payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
+                                        search_key = payload['search_key'] if 'search_key' in payload else None)
+
+                colnames = data['colnames']
+                total_count = data['total_count']
+                res = []
+                for row in data['data']:
+                    row_dict = {}
+                    for i,colname in enumerate(colnames):
+                        row_dict[colname] = row[i]
+                    # row_dict['country'] = get_name(row_dict['country'],countries)
+                    # row_dict['city'] = get_name(row_dict['city'],cities)
+                    res.append(row_dict)
+                    data={
+                        "client_info":res
+                    }
+                
+                return giveSuccess(payload['user_id'],role_access_status,data,total_count)
+        else:
+            return giveFailure("Access Denied",payload["user_id"],role_access_status)
+    except Exception as e:
+        logging.exception(traceback.print_exc())
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/addClientReceipt')
 async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1782,6 +1846,7 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = '''
                     INSERT INTO client_receipt (
                         receivedby, paymentmode, recddate, entityid, amount, howreceivedid,
@@ -1836,5 +1901,154 @@ async def get_item_by_id(payload: dict, conn: psycopg2.extensions.connection = D
         return {
             giveFailure("Invalid Credentials",0,0)
         }
+        
+@app.post('/getViewScreenTypes')
+async def get_view_screen_types(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            cursor = conn[0].cursor()
+            column_info_list = []
+            if 'columns' not in payload:
+                query = """SELECT column_name,data_type
+                    FROM information_schema.columns
+                    WHERE table_name = %s"""
+                cursor.execute(query,(payload['table_name'],))
+                columns = cursor.fetchall()
+                column_info_list = [{"column": col[0], "type": col[1]} for col in columns]
+            else:
+                for column_name in payload['columns']:
+                    query ="""
+                        SELECT data_type
+                        FROM information_schema.columns
+                        WHERE table_name = %s
+                        AND column_name = %s
+                    """
+                    cursor.execute(query, (payload['table_name'], column_name))
+                    data_type = cursor.fetchone()[0]
+                    column_info_list.append({"column": column_name, "type": data_type})
+            return giveSuccess(payload['user_id'],role_access_status,column_info_list)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except psycopg2.Error as e:
+        return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+        
+@app.post('/getProjectsByBuilderId')
+async def get_projects_by_builder_id(payload: dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            # query = 'SELECT distinct a.id,concat(b.firstname,' ',b.lastname) as paymentby,concat(c.firstname,' ',c.lastname) as paymentto, a.amount,a.paidon,d.name as paymentmode,a.paymentstatus,a.description,a.banktransactionid,e.name as paymentfor,a.dated,a.createdby,a.isdeleted,a.entityid,a.officeid,a.tds,a.professiontax,a.month,a.deduction FROM ref_contractual_payments a,usertable b, usertable c, mode_of_payment d, payment_for e where a.paymentto = b.id and a.paymentby = c.id and a.paymentmode = d.id and a.paymentfor = e.id;'
+            table_name = 'get_projects_view'
+            # data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],query = query,search_key = payload['search_key'] if 'search_key' in payload else None)
+
+            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],search_key = payload['search_key'] if 'search_key' in payload else None)
+            total_count = data['total_count']
+            colnames = payload['rows']
+            res = []
+            for row in data['data']:
+                row_dict = {}
+                for i,colname in enumerate(colnames):
+                    row_dict[colname] = row[i]
+                if row_dict['builderid'] == payload['builderid']:
+                    res.append(row_dict)
+            return giveSuccess(payload["user_id"],role_access_status,res, total_count=len(res))
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0) 
+
+@app.post('/getBuilderContactsById')
+async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            # query = 'SELECT distinct a.id,concat(b.firstname,' ',b.lastname) as paymentby,concat(c.firstname,' ',c.lastname) as paymentto, a.amount,a.paidon,d.name as paymentmode,a.paymentstatus,a.description,a.banktransactionid,e.name as paymentfor,a.dated,a.createdby,a.isdeleted,a.entityid,a.officeid,a.tds,a.professiontax,a.month,a.deduction FROM ref_contractual_payments a,usertable b, usertable c, mode_of_payment d, payment_for e where a.paymentto = b.id and a.paymentby = c.id and a.paymentmode = d.id and a.paymentfor = e.id;'
+            table_name = 'get_builder_contact_view'
+            # data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],query = query,search_key = payload['search_key'] if 'search_key' in payload else None)
+
+            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],search_key = payload['search_key'] if 'search_key' in payload else None)
+            total_count = data['total_count']
+            colnames = payload['rows']
+            res = []
+            print('Hello')
+            for row in data['data']:
+                row_dict = {}
+                for i,colname in enumerate(colnames):
+                    row_dict[colname] = row[i]
+                print(row_dict['builderid'])
+                if row_dict['builderid'] == payload['builderid']:
+                    res.append(row_dict)
+            return giveSuccess(payload["user_id"],role_access_status,res, total_count=len(res))
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0) 
+
+@app.post('/getClientProperty')
+async def get_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn, payload)
+
+        if role_access_status == 1:  
+            with conn[0].cursor() as cursor:
+                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
+                                        payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
+                                        search_key = payload['search_key'] if 'search_key' in payload else None)
+
+                colnames = data['colnames']
+                total_count = data['total_count']
+                res = []
+                for row in data['data']:
+                    row_dict = {}
+                    for i,colname in enumerate(colnames):
+                        row_dict[colname] = row[i]
+                    # row_dict['country'] = get_name(row_dict['country'],countries)
+                    # row_dict['city'] = get_name(row_dict['city'],cities)
+                    res.append(row_dict)
+                    data={
+                        "client_info":res
+                    }
+                
+                return giveSuccess(payload['user_id'],role_access_status,data,total_count)
+        else:
+            return giveFailure("Access Denied",payload["user_id"],role_access_status)
+    except Exception as e:
+        logging.exception(traceback.print_exc())
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/getClientProperty')
+async def get_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn, payload)
+
+        if role_access_status == 1:  
+            with conn[0].cursor() as cursor:
+                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
+                                        payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
+                                        search_key = payload['search_key'] if 'search_key' in payload else None)
+
+                colnames = data['colnames']
+                total_count = data['total_count']
+                res = []
+                for row in data['data']:
+                    row_dict = {}
+                    for i,colname in enumerate(colnames):
+                        row_dict[colname] = row[i]
+                    # row_dict['country'] = get_name(row_dict['country'],countries)
+                    # row_dict['city'] = get_name(row_dict['city'],cities)
+                    res.append(row_dict)
+                    data={
+                        "client_info":res
+                    }
+                
+                return giveSuccess(payload['user_id'],role_access_status,data,total_count)
+        else:
+            return giveFailure("Access Denied",payload["user_id"],role_access_status)
+    except Exception as e:
+        logging.exception(traceback.print_exc())
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 logger.info("program_started")
