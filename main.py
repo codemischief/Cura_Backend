@@ -22,7 +22,7 @@ def getdata(conn: psycopg2.extensions.connection):
         paymentfor(conn)
     ]
 
-def checkexist(criteria : str,table_name : str,conn: psycopg2.extensions.connection,value):
+def ifNotExist(criteria : str,table_name : str,conn: psycopg2.extensions.connection,value):
     try:
         with conn[0].cursor() as cursor:
             query = f"SELECT {criteria} FROM {table_name} WHERE {criteria} = %s"
@@ -446,7 +446,7 @@ async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depend
             if 'country_id' not in payload:
                 cursor.execute('select max(id) from country')
                 payload['country_id'] = cursor.fetchone()[0]+1
-            if role_access_status == 1 and checkexist('name','country',conn,payload['country_name']):
+            if role_access_status == 1 and ifNotExist('name','country',conn,payload['country_name']):
             # Insert new country data into the database
                 query_insert = 'INSERT INTO country (id,name) VALUES (%s,%s)'
                 cursor.execute(query_insert, (payload['country_id'], payload['country_name']))
@@ -543,7 +543,7 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
     logging.info(f'addBuilderInfo: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1 and checkexist('buildername','builder',conn,payload['buildername']):
+        if role_access_status == 1 and ifNotExist('buildername','builder',conn,payload['buildername']):
             with conn[0].cursor() as cursor:
                 query = '''
                     INSERT INTO builder (
@@ -847,8 +847,8 @@ async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depe
     logging.info(f'addProject: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
-        print(checkexist('projectname','project',conn,payload['projectname']))
-        if role_access_status == 1 and checkexist('projectname','project',conn,payload['projectname']):
+        print(ifNotExist('projectname','project',conn,payload['projectname']))
+        if role_access_status == 1 and ifNotExist('projectname','project',conn,payload['projectname']):
             with conn[0].cursor() as cursor:
                 cursor.execute("""
                     INSERT INTO project (
@@ -1095,7 +1095,7 @@ async def add_localities(payload: dict, conn : psycopg2.extensions.connection = 
     logging.info(f'addLocality: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
-        if role_access_status == 1 and checkexist('locality','locality',conn,payload['locality']):
+        if role_access_status == 1 and ifNotExist('locality','locality',conn,payload['locality']):
             payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO locality (locality,cityid) VALUES (%s,%s)'
@@ -1287,7 +1287,7 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
     logging.info(f'addEmployee: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
-        if role_access_status == 1 and checkexist('employeeid','employee',conn,payload['employeeid']):
+        if role_access_status == 1 and ifNotExist('employeeid','employee',conn,payload['employeeid']):
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO employee (employeename,employeeid, userid,roleid, dateofjoining, dob, panno,status, phoneno, email, addressline1, addressline2,suburb, city, state, country, zip,dated, createdby, isdeleted, entityid,lobid, lastdateofworking, designation)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
@@ -1426,7 +1426,7 @@ async def add_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(
     logging.info(f'addLob: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
-        if role_access_status == 1 and checkexist('name','lob',conn,payload['name']):
+        if role_access_status == 1 and ifNotExist('name','lob',conn,payload['name']):
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO lob (name) VALUES (%s)'
@@ -1987,37 +1987,6 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0) 
 
-@app.post('/getClientProperty')
-async def get_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    try:
-        role_access_status = check_role_access(conn, payload)
-
-        if role_access_status == 1:  
-            with conn[0].cursor() as cursor:
-                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
-                                        payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None)
-
-                colnames = data['colnames']
-                total_count = data['total_count']
-                res = []
-                for row in data['data']:
-                    row_dict = {}
-                    for i,colname in enumerate(colnames):
-                        row_dict[colname] = row[i]
-                    # row_dict['country'] = get_name(row_dict['country'],countries)
-                    # row_dict['city'] = get_name(row_dict['city'],cities)
-                    res.append(row_dict)
-                    data={
-                        "client_info":res
-                    }
-                
-                return giveSuccess(payload['user_id'],role_access_status,data,total_count)
-        else:
-            return giveFailure("Access Denied",payload["user_id"],role_access_status)
-    except Exception as e:
-        logging.exception(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/getClientProperty')
 async def get_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2050,5 +2019,50 @@ async def get_client_info(payload : dict, conn : psycopg2.extensions.connection 
     except Exception as e:
         logging.exception(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/addClientInfo')
+async def add_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status =check_role_access(conn,payload)
+        if role_access_status == 1:
+            # tempdata = {
+            #     "cliententrydone":{
+            #         client
+            #     }
+            # }
+            client_info = payload['client_info']
+            client_access_list = payload['client_access']
+            client_bank_info = payload['client_bank_info']
+            client_legal_info = payload['client_legal_info']
+            client_poa = payload['client_poa']
+            with conn[0].cursor() as cursor:
+                query = "INSERT INTO client (firstname,middlename,lastname,salutation,clienttype,addressline1,addressline2,suburb,city,state,country,zip,homephone,workphone,mobilephone,email1,email2,employername,comments,photo,onlineaccreated,localcontact1name,localcontact1address,localcontact1details,localcontact2name,localcontact2address,localcontact2details,includeinmailinglist,dated,createdby,isdeleted,entityid,tenantof,tenantofproperty) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
+                cursor.execute(query,(client_info["firstname"],client_info["middlename"],client_info["lastname"],client_info["salutation"],client_info["clienttype"],client_info["addressline1"],client_info["addressline2"],client_info["suburb"],client_info["city"],client_info["state"],client_info["country"],client_info["zip"],client_info["homephone"],client_info["workphone"],client_info["mobilephone"],client_info["email1"],client_info["email2"],client_info["employername"],client_info["comments"],client_info["photo"],client_info["onlineaccreated"],client_info["localcontact1name"],client_info["localcontact1address"],client_info["localcontact1details"],client_info["localcontact2name"],client_info["localcontact2address"],client_info["localcontact2details"],client_info["includeinmailinglist"],client_info["dated"],client_info["createdby"],client_info["isdeleted"],client_info["entityid"],client_info["tenantof"],client_info["tenantofproperty"]))
+                #--insert query for client_access table--
+                id = cursor.fetchone()[0]
+                conn[0].commit()
+                
+                for client_access in client_access_list:
+                    client_access['clientid'] = id 
+                    query = "INSERT INTO client_access (clientid,onlinemailid,onlinepwd,onlineclue,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)"
+                    cursor.execute(query,(client_access['clientid'],client_access["onlinemailid"],client_access["onlinepwd"],client_access["onlineclue"],client_access["dated"],client_access["createdby"],client_access["isdeleted"]))
+                client_bank_info['clientid'] = id
+                query = "INSERT INTO client_bank_info (clientid,bankname,bankbranch,bankcity,bankaccountno,bankaccountholdername,bankifsccode,bankmicrcode,bankaccounttype,dated,createdby,isdeleted,description) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                client_legal_info['clientid'] = id
+                cursor.execute(query,(client_bank_info['clientid'],client_bank_info["bankname"],client_bank_info["bankbranch"],client_bank_info["bankcity"],client_bank_info["bankaccountno"],client_bank_info["bankaccountholdername"],client_bank_info["bankifsccode"],client_bank_info["bankmicrcode"],client_bank_info["bankaccounttype"],client_bank_info["dated"],client_bank_info["createdby"],client_bank_info["isdeleted"],client_bank_info["description"]))
+                query = "INSERT INTO client_legal_info (clientid,fulllegalname,panno,addressline1,addressline2,suburb,city,state,country,zip,occupation,birthyear,employername,relation,relationwith,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                cursor.execute(query,(client_legal_info['clientid'],client_legal_info["fulllegalname"],client_legal_info["panno"],client_legal_info["addressline1"],client_legal_info["addressline2"],client_legal_info["suburb"],client_legal_info["city"],client_legal_info["state"],client_legal_info["country"],client_legal_info["zip"],client_legal_info["occupation"],client_legal_info["birthyear"],client_legal_info["employername"],client_legal_info["relation"],client_legal_info["relationwith"],client_legal_info["dated"],client_legal_info["createdby"],client_legal_info["isdeleted"]))
+                client_poa['clientid'] = id
+                query = "INSERT INTO client_poa (clientid,poalegalname,poapanno,poaaddressline1,poaaddressline2,poasuburb,poacity,poastate,poacountry,poazip,poaoccupation,poabirthyear,poaphoto,poaemployername,poarelation,poarelationwith,poaeffectivedate,poaenddate,poafor,scancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                cursor.execute(query,(client_poa['clientid'],client_poa["poalegalname"],client_poa["poapanno"],client_poa["poaaddressline1"],client_poa["poaaddressline2"],client_poa["poasuburb"],client_poa["poacity"],client_poa["poastate"],client_poa["poacountry"],client_poa["poazip"],client_poa["poaoccupation"],client_poa["poabirthyear"],client_poa["poaphoto"],client_poa["poaemployername"],client_poa["poarelation"],client_poa["poarelationwith"],client_poa["poaeffectivedate"],client_poa["poaenddate"],client_poa["poafor"],client_poa["scancopy"],client_poa["dated"],client_poa["createdby"],client_poa["isdeleted"]))
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"inserted_id":id})
+        else:
+            return giveFailure("Access Denied",client_info['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        print(traceback.print_exc())
+        conn[0].rollback()
+        return giveFailure(f"Error {e}",0,0)
 
 logger.info("program_started")
