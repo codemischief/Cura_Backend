@@ -2031,7 +2031,7 @@ async def add_client_info(payload : dict, conn : psycopg2.extensions.connection 
             #     }
             # }
             client_info = payload['client_info']
-            client_access = payload['client_access']
+            client_access_list = payload['client_access']
             client_bank_info = payload['client_bank_info']
             client_legal_info = payload['client_legal_info']
             client_poa = payload['client_poa']
@@ -2042,7 +2042,7 @@ async def add_client_info(payload : dict, conn : psycopg2.extensions.connection 
                 id = cursor.fetchone()[0]
                 conn[0].commit()
                 
-                for client_access in list:
+                for client_access in client_access_list:
                     client_access['clientid'] = id 
                     query = "INSERT INTO client_access (clientid,onlinemailid,onlinepwd,onlineclue,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)"
                     cursor.execute(query,(client_access['clientid'],client_access["onlinemailid"],client_access["onlinepwd"],client_access["onlineclue"],client_access["dated"],client_access["createdby"],client_access["isdeleted"]))
