@@ -541,7 +541,8 @@ WHERE
     a.vendorid = c.id AND
     a.assignedtooffice = d.id AND
     a.default_task_owner = e.id AND
-    a.entityid = f.id;
+    a.entityid = f.id AND
+    a.clientid = g.id;
 
 -- Create a new sequence if it doesn't exist starting from the maximum value of column id + 1
 CREATE SEQUENCE IF NOT EXISTS builder_id_seq OWNED BY builder.id;
@@ -551,3 +552,33 @@ SELECT setval('builder_id_seq', COALESCE(max(id), 0) + 1, false) FROM builder;
 
 -- Alter the table to set the default value of column id to use the sequence
 ALTER TABLE builder ALTER COLUMN id SET DEFAULT nextval('builder_id_seq');
+
+-- For client table
+CREATE SEQUENCE IF NOT EXISTS client_id_seq OWNED BY client.id;
+SELECT setval('client_id_seq', COALESCE(max(id), 0) + 1, false) FROM client;
+ALTER TABLE client ALTER COLUMN id SET DEFAULT nextval('client_id_seq');
+
+-- For client_access table
+CREATE SEQUENCE IF NOT EXISTS client_access_id_seq OWNED BY client_access.id;
+SELECT setval('client_access_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_access;
+ALTER TABLE client_access ALTER COLUMN id SET DEFAULT nextval('client_access_id_seq');
+
+-- For client_legal_info table
+CREATE SEQUENCE IF NOT EXISTS client_legal_info_id_seq OWNED BY client_legal_info.id;
+SELECT setval('client_legal_info_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_legal_info;
+ALTER TABLE client_legal_info ALTER COLUMN id SET DEFAULT nextval('client_legal_info_id_seq');
+
+-- For client_bank_info table
+CREATE SEQUENCE IF NOT EXISTS client_bank_info_id_seq OWNED BY client_bank_info.id;
+SELECT setval('client_bank_info_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_bank_info;
+ALTER TABLE client_bank_info ALTER COLUMN id SET DEFAULT nextval('client_bank_info_id_seq');
+
+-- For client_poa table
+CREATE SEQUENCE IF NOT EXISTS client_poa_id_seq OWNED BY client_poa.id;
+SELECT setval('client_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_poa;
+ALTER TABLE client_poa ALTER COLUMN id SET DEFAULT nextval('client_poa_id_seq');
+
+
+INSERT INTO your_table (column1, column2, ...)
+VALUES (value1, value2, ...)
+RETURNING *;
