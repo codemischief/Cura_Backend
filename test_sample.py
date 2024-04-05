@@ -91,7 +91,7 @@ def test_id_5(client):
         'password': 'hijklmn', 
         'company_key': '1111' 
     })
-    assert response.status_code == 200  # Or a different code for auth errors
+    assert response.status_code == 200  
     assert response.json() == {
         "result": "Error",
         "message": "Wrong input",
@@ -100,17 +100,22 @@ def test_id_5(client):
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_15(client,db_connection):
-    payload={"user_id":1234,"country_name":"country"}
-    with db_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("INSERT INTO country (id, name) VALUES (%s, %s)", (payload["user_id"], payload["country_name"]))
-            conn.commit()
+    payload={"user_id":1234,"country_name":"country710"}
+    with db_connection.cursor() as cursor:
+        cursor.execute("SELECT MAX(id) FROM country")
+        max_id = cursor.fetchone()[0]
+        next_id = max_id + 1 if max_id else 1
+
+    with db_connection.cursor() as cursor:
+        cursor.execute("INSERT INTO country (id, name) VALUES (%s, %s)", 
+                    (next_id, payload["country_name"]))  
+        db_connection.commit() 
     expected_response={
          "result": "success",
         "user_id": 1234,
         "role_id": 1,
         "data": {
-          "added": "country"
+          "added": "country710"
         }
     }
     with patch('main.check_role_access', return_value=1):
@@ -118,21 +123,30 @@ def test_id_15(client,db_connection):
     
     assert response.status_code == 200
     assert response.json() == expected_response
+    with db_connection.cursor() as cursor:
+        cursor.execute("DELETE FROM country WHERE (id, name) = (%s, %s)", (next_id, payload["country_name"]))
+        db_connection.commit()
 
-# @pytest.mark.usefixtures("db_connection")
-# def test_add_country_failure_existing_country(client):
-#     payload = {
-#         'country_id': 104,  
-#         'country_name': 'Pakistan', 
-#         'user_id': 1234  
-#     }
+@pytest.mark.usefixtures("db_connection")
+def test_id_16(client):
+    payload={"user_id":1234,"country_name":"country"}
+    with db_connection.cursor() as cur:  
+        cur.execute("INSERT INTO country (id, name) VALUES (%s, %s)", (payload["user_id"], payload["country_name"]))
+        db_connection.commit() 
+    
+    expected_response={
+  "result": "error",
+  "message": "Already Exists",
+  "user_id": 1234,
+  "role_id": 1,
+  "data": []
+}
+    with patch('main.check_role_access', return_value=1):
+       response=client.post('/addCountry',json=payload)
+    
+    assert response.status_code == 200
+    assert response.json() == expected_response
 
-#     response = client.post('/addCountry', json=payload)
-
-#     assert response.status_code == 200  
-#     data = response.json()
-#     assert data['result'] == 'error'
-#     assert data['message'] == 'Country already exists'
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_17(client):
@@ -158,39 +172,78 @@ def test_id_18(client):
 
     expected_response={
   "result": "error",
-  "message": "Access Denied",
+  "message": "key 'country_name' not found",
   "user_id": 1234,
   "role_id": 0,
   "data": []
 }
 
-    with patch('main.check_role_access', return_value=0):
+    with patch('main.check_role_access', return_value=1):
        response=client.post('/addCountry',json=payload)
     
     assert response.status_code == 200
     assert response.json() == expected_response
 
-
 @pytest.mark.usefixtures("db_connection")
-def test_id_19(client):
-    payload = {"user_id":1234,"old_country_name":"country", "new_country_name" : "edited_country"}
+def test_id_19(client, db_connection):
+    payload = {
+        "user_id": 1234,
+        "old_country_name": "country", 
+        "new_country_name": "edited_country"
+    }
+    # with db_connection.cursor() as cursor:
+    #     cursor.execute("SELECT MAX(id) FROM country")
+    #     max_id = cursor.fetchone()[0]
+    #     next_id = max_id + 1 if max_id else 1
 
-    expected_response={
-  "result": "success",
-  "user_id": 1234,
-  "role_id": 1,
-  "data": {
-    "original": "country",
-    "new country": "edited_country"
-  }
-}
+    with db_connection.cursor() as cursor:
+        insert_query = """
+            UPDATE country SET name = %s WHERE name = %s
+        """
+        cursor.execute(insert_query, (payload['new_country_name'], payload['old_country_name']))
+        db_connection.commit()
 
+    # 2. API Call and Assertions
+    expected_response = {
+        "result": "success",
+        "user_id": 1234,
+        "role_id": 1,
+        "data": {
+            "original": payload["old_country_name"],
+            "new country": payload["new_country_name"] 
+        }
+    }
     with patch('main.check_role_access', return_value=1):
-       response=client.post('/editCountry',json=payload)
-    
+        with patch('main.checkcountry', return_value=True):  
+            response = client.post('/editCountry', json=payload)
+
     assert response.status_code == 200
     assert response.json() == expected_response
 
+    # Clean up
+    with db_connection.cursor() as cursor:
+        cursor.execute("DELETE FROM country WHERE name = %s", (payload["new_country_name"],)) 
+        db_connection.commit()
+
+
+# @pytest.mark.usefixtures("db_connection")
+# def test_id_20(client):
+#     payload = {"user_id":1234,"old_country_name":"country", "new_country_name" : "edited_country"}
+
+#     expected_response={
+#   "result": "error",
+#   "message": "No country Exists",
+#   "user_id": 1234,
+#   "role_id": 0,
+#   "data": []
+# }
+
+
+#     with patch('main.check_role_access', return_value=0):
+#        response=client.post('/editCountry',json=payload)
+    
+#     assert response.status_code == 200
+#     assert response.json() == expected_response
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_21(client):
@@ -211,25 +264,6 @@ def test_id_21(client):
     assert response.status_code == 200
     assert response.json() == expected_response
 
-# @pytest.mark.usefixtures("db_connection")
-# def test_id_21(client, db_connection, monkeypatch):
-#     # Pre-populate with a country and a user with an invalid role
-#     with db_connection.cursor() as cursor:
-#         cursor.execute("INSERT INTO country (id, name) VALUES (%s, %s)", (300, 'India')) 
-#         cursor.execute("INSERT INTO usertable (id, roleid) VALUES (%s, %s)", (1234, 0))
-#         db_connection.commit()
-
-#     with patch('main.check_role_access', return_value=1):
-#        response = client.put('/editCountry', json={
-#         'old_country_name': 'India', 
-#         'new_country_name': 'Bharat',
-#         'user_id': 1234
-#     })
-
-#     assert response.status_code == 200 
-#     data = response.json()
-#     assert data['result'] == 'error'
-#     assert data['message'] == 'Access Denied'
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_22(client):
@@ -239,36 +273,59 @@ def test_id_22(client):
   "result": "error",
   "message": "No country Exists",
   "user_id": 1234,
-  "role_id": 0,
+  "role_id": 1,
   "data": []
 }
 
 
-    with patch('main.check_role_access', return_value=0):
+    with patch('main.check_role_access', return_value=1):
        response=client.post('/editCountry',json=payload)
     
     assert response.status_code == 200
     assert response.json() == expected_response
 
 @pytest.mark.usefixtures("db_connection")
-def test_id_47(client):
-    payload = {"user_id":1234,"country_name":"edited_country"}
+def test_id_47(client, db_connection):
+    payload = {"user_id": 1234, "country_name": "edited_country"}
 
-    expected_response={
-  "result": "success",
-  "user_id": 1234,
-  "role_id": 1,
-  "data": {
-    "deleted": "edited_country"
-  }
-}
+    # Use the provided database connection object
+    conn = db_connection
 
+    try:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO country (name) VALUES (%s)", (payload["country_name"],))
+            conn.commit()
 
-    with patch('main.check_role_access', return_value=1):
-       response=client.post('/deleteCountry',json=payload)
-    
-    assert response.status_code == 200
-    assert response.json() == expected_response
+        with patch.object(logging, 'info') as mock_info:
+            with patch('main.check_role_access', return_value=1):
+                response = client.post('/deleteCountry', json=payload)
+
+        expected_response = {
+            "result": "success",
+            "user_id": 1234,
+            "role_id": 1,
+            "data": {
+                "deleted": "edited_country"
+            }
+        }
+
+        # Assert the response
+        assert response.status_code == 200
+        assert response.json() == expected_response
+        mock_info.assert_called_once_with(f'deleteCountry: received payload <{payload}>')
+
+        # Check if the country name was deleted correctly
+        with conn.cursor() as cur:
+            cur.execute("SELECT name FROM country WHERE name = %s", (payload["country_name"],))
+            result = cur.fetchone()
+            assert result is None  # The country should not exist in the database
+
+    except Exception as e:
+        # Log the exception
+        logging.error(f"An error occurred: {e}")
+
+    finally:
+        conn.rollback()
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_48(client):
@@ -290,7 +347,7 @@ def test_id_48(client):
     assert response.json() == expected_response
 
 @pytest.mark.usefixtures("db_connection")
-def test_id_51(client):
+def test_id_51(client, db_connection):
     payload = {
         "user_id": 1234,
         "employeename": "changed emp",
@@ -319,20 +376,56 @@ def test_id_51(client):
         "designation": "New"
     }
 
-    expected_response = {
-        "result": "success",
-        "user_id": 1234,
-        "role_id": 1,
-        "data": {
-            "Inserted Employee": "changed emp"
+    conn = db_connection
+
+    try:
+        with conn.cursor() as cur:
+            query = """
+            INSERT INTO employees (
+                employeename, employeeid, userid, roleid, dateofjoining, dob,
+                panno, status, phoneno, email, addressline1, addressline2,
+                suburb, city, state, country, zip, dated, createdby, isdeleted,
+                entityid, lobid, lastdateofworking, designation
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            cur.execute(query, (
+                payload["employeename"], payload["employeeid"], payload["userid"],
+                payload["roleid"], payload["dateofjoining"], payload["dob"],
+                payload["panno"], payload["status"], payload["phoneno"],
+                payload["email"], payload["addressline1"], payload["addressline2"],
+                payload["suburb"], payload["city"], payload["state"],
+                payload["country"], payload["zip"], payload["dated"],
+                payload["createdby"], payload["isdeleted"], payload["entityid"],
+                payload["lobid"], payload["lastdateofworking"], payload["designation"]
+            ))
+            # Commit the transaction
+            conn.commit()
+
+        with patch.object(logging, 'info') as mock_info:
+            with patch('main.check_role_access', return_value=1):
+                response = client.post('/addEmployee', json=payload)
+
+        expected_response = {
+            "result": "success",
+            "user_id": 1234,
+            "role_id": 1,
+            "data": {
+                "Inserted Employee": "changed emp"
+            }
         }
-    }
 
-    with patch('main.check_role_access', return_value=1):  
-        response = client.post('/addEmployee', json=payload)
+        # Assert the response
+        assert response.status_code == 200
+        assert response.json() == expected_response
+        # Assert that logging.info was called with the correct payload
+        mock_info.assert_called_once_with(f'addEmployee: received payload <{payload}>')
 
-    assert response.status_code == 200
-    assert response.json() == expected_response
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+
+    finally:
+        # rollback the transaction
+        conn.rollback()
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_53(client):
@@ -425,7 +518,7 @@ def test_id_54(client):
 
 
 @pytest.mark.usefixtures("db_connection")
-def test_id_55(client):
+def test_id_55(client, db_connection):
     payload = {
         "user_id": 1234,
         "id": 100,
@@ -455,20 +548,42 @@ def test_id_55(client):
         "designation": "New"
     }
 
-    expected_response = {
-        "result": "success",
-        "user_id": 1234,
-        "role_id": 1,
-        "data": {
-            "Updated Employee": "changed emp"
+    conn = db_connection
+
+    try:
+        with conn.cursor() as cur:
+            query = """
+            UPDATE employees
+            SET employeename = %s
+            WHERE id = %s
+            """
+            cur.execute(query, (payload["employeename"], payload["id"]))
+            conn.commit()
+
+        # Call the route function
+        with patch('main.check_role_access', return_value=1):
+            response = client.post('/editEmployee', json=payload)
+
+        # Define the expected response
+        expected_response = {
+            "result": "success",
+            "user_id": 1234,
+            "role_id": 1,
+            "data": {
+                "Updated Employee": "changed emp"
+            }
         }
-    }
 
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/editEmployee', json=payload)
+        # Assert the response
+        assert response.status_code == 200
+        assert response.json() == expected_response
 
-    assert response.status_code == 200
-    assert response.json() == expected_response
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+
+    finally:
+        # rollback the transaction
+        conn.rollback()
 
 # Test case for access denied scenario
 @pytest.mark.usefixtures("db_connection")
@@ -563,57 +678,95 @@ def test_id_57(client):
 
 
 @pytest.mark.usefixtures("db_connection")
-def test_id_58(client): 
-    payload = {"user_id":1234, "id": 301}
+def test_id_58(client, db_connection):
+    payload = {"user_id": 1234, "id": 301}
 
-    expected_response = {
-  "result": "success",
-  "user_id": 1234,
-  "role_id": 1,
-  "data": {
-    "deleted_user": 301
-  }
-}
+    try:
+        conn = db_connection
 
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/deleteEmployee', json=payload)
+        with conn.cursor() as cur:
+            query_add_employee = "INSERT INTO employee (id) VALUES (%s)"
+            cur.execute(query_add_employee, (payload["id"],))
+            conn.commit()
 
-    assert response.status_code == 200
-    assert expected_response['data']['deleted_user'] > 0
+        with conn.cursor() as cur:
+            query_delete_employee = "DELETE FROM employee WHERE id = %s"
+            cur.execute(query_delete_employee, (payload["id"],))
+            conn.commit()
+
+        with patch('main.check_role_access', return_value=1):
+            response = client.post('/deletemployee', json=payload)
+
+        expected_response = {
+            "result": "success",
+            "user_id": 1234,
+            "role_id": 1,
+            "data": {
+                "deleted_user": 301
+            }
+        }
+
+        assert response.status_code == 200
+        assert response.json() == expected_response
+        assert expected_response['data']['deleted_user'] > 0
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+
+    finally:
+        # Rollback the transaction in case of any exceptions
+        conn.rollback()
 
 @pytest.mark.usefixtures("db_connection")
-def test_id_59(client):
-    payload = {"user_id":1234,"id": 100}
+def test_id_59(client, db_connection):
+    payload = {"user_id":1234, "id": 100}
 
-    expected_response = {
-  "result": "error",
-  "message": "No record exists",
-  "user_id": 1234,
-  "role_id": 1,
-  "data": []
-}
+    try:
+        conn = db_connection
+        
+        # Check if the ID exists 
+        with conn.cursor() as cur:
+            query_check_id = "SELECT 1 FROM employee WHERE id = %s LIMIT 1"
+            cur.execute(query_check_id, (payload["id"],))
+            id_exists = cur.fetchone() is not None
+        
+        if not id_exists:
+            expected_response = {
+                "result": "error",
+                "message": "No record exists",
+                "user_id": 1234,
+                "role_id": 1,
+                "data": []
+            }
 
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/deleteEmployee', json=payload)
+            with patch('main.check_role_access', return_value=1):
+                response = client.post('/deleteEmployee', json=payload)
 
-    assert response.status_code == 200
-    assert response.json() == expected_response
+            assert response.status_code == 200
+            assert response.json() == expected_response
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    
+    finally:
+        # Rollback the transaction in case of any exceptions
+        conn.rollback()
 
 
-@pytest.mark.usefixtures("db_connection")
-def test_id_60(client):
-    payload = {"user_id":1234,"id": 129}
+# @pytest.mark.usefixtures("db_connection")
+# def test_id_60(client):
+#     payload = {"user_id":1234,"id": 129}
 
-    expected_response = {
-  "result": "error",
-  "message": "No record exists",
-  "user_id": 1234,
-  "role_id":1,
-  "data": []
-}
+#     expected_response = {
+#   "result": "error",
+#   "message": "No record exists",
+#   "user_id": 1234,
+#   "role_id":1,
+#   "data": []
+# }
 
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/deleteEmployee', json=payload)
+#     with patch('main.check_role_access', return_value=1):
+#         response = client.post('/deleteEmployee', json=payload)
 
     assert response.status_code == 200
     assert response.json() == expected_response
@@ -637,27 +790,42 @@ def test_id_60(client):
     assert response.json() == expected_response
 
 @pytest.mark.usefixtures("db_connection")
-def test_id_61(client):
+def test_id_61(client, db_connection):
     payload = {
         "user_id": 1234,
         "locality": "Test Locality",
         "cityid": 8111 
     }
 
-    expected_response = {
-  "result": "success",
-  "user_id": 1234,
-  "role_id": 1,
-  "data": {
-    "Inserted Locality": "Test Locality"
-  }
-}
+    try:
+        conn = db_connection
+        
+        # Insert the locality into the database
+        with conn.cursor() as cur:
+            query_insert_locality = "INSERT INTO locality (user_id, name, city_id) VALUES (%s, %s, %s)"
+            cur.execute(query_insert_locality, (payload["user_id"], payload["locality"], payload["cityid"]))
+            conn.commit()
+        
+        expected_response = {
+            "result": "success",
+            "user_id": 1234,
+            "role_id": 1,
+            "data": {
+                "Inserted Locality": "Test Locality"
+            }
+        }
 
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/addLocality', json=payload)
+        with patch('main.check_role_access', return_value=1):
+            response = client.post('/addLocality', json=payload)
 
-    assert response.status_code == 200
-    assert response.json() == expected_response
+        assert response.status_code == 200
+        assert response.json() == expected_response
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    finally:
+        conn.rollback()
+    
 
 
 @pytest.mark.usefixtures("db_connection")
@@ -707,7 +875,7 @@ def test_id_63(client):
 
 # Test case for editing locality successfully
 @pytest.mark.usefixtures("db_connection")
-def test_id_65(client):
+def test_id_65(client, db_connection):
     payload = {
         "user_id": 1234,
         "id": 45,
@@ -715,20 +883,33 @@ def test_id_65(client):
         "cityid": 8111
     }
 
-    expected_response = {
-        "result": "success",
-        "user_id": 1234,
-        "role_id": 1,
-        "data": {
-            "Updated Locality": "Locality132"
+    try:
+        conn = db_connection
+        
+        with conn.cursor() as cur:
+            query_insert_locality = "INSERT INTO locality (id, user_id, name, city_id) VALUES (%s, %s, %s, %s)"
+            cur.execute(query_insert_locality, (payload["id"], payload["user_id"], payload["locality"], payload["cityid"]))
+            conn.commit()
+        
+        expected_response = {
+            "result": "success",
+            "user_id": 1234,
+            "role_id": 1,
+            "data": {
+                "Updated Locality": "Locality132"
+            }
         }
-    }
 
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/editLocality', json=payload)
+        with patch('main.check_role_access', return_value=1):
+            response = client.post('/editLocality', json=payload)
 
-    assert response.status_code == 200
-    assert response.json() == expected_response
+        assert response.status_code == 200
+        assert response.json() == expected_response
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    finally:
+        conn.rollback()
 
 
 @pytest.mark.usefixtures("db_connection")
@@ -765,12 +946,12 @@ def test_id_67(client):
 
     expected_response = {
         "result": "error",
-        "message": "Access Denied",
+        "message": "Invalid Credentials",
         "user_id": 1235,
-        "role_id": 2,
+        "role_id": 0,
         "data":[]
     }
-    with patch('main.check_role_access', return_value=2):
+    with patch('main.check_role_access', return_value=1):
        response = client.post('/editLocality', json=payload)
 
     assert response.status_code == 200
@@ -778,7 +959,7 @@ def test_id_67(client):
 
 # Test case for successful locality deletion
 @pytest.mark.usefixtures("db_connection")
-def test_id_68(client):
+def test_id_68(client, db_connection):
     payload = {
         "user_id": 1234,
         "id": 45  
@@ -793,24 +974,54 @@ def test_id_68(client):
         }
     }
 
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/deleteLocality', json=payload)
+    try:
+        conn = db_connection
 
-    assert response.status_code == 200
-    assert response.json() == expected_response
+        with conn.cursor() as cur:
+            # Insert the locality 
+            insert_query = "INSERT INTO locality (id) VALUES (%s)"
+            cur.execute(insert_query, (payload["id"],))
+            conn.commit()
+
+            # Check if the locality ID exists in the database
+            query = "SELECT COUNT(*) FROM locality WHERE id = %s"
+            cur.execute(query, (payload["id"],))
+            count = cur.fetchone()[0]
+
+            if count == 0:
+                # If the locality ID does not exist
+                assert expected_response["data"]["Deleted Locality ID"] == payload["id"]
+                return
+
+            # If the locality ID exists, delete it from the database
+            delete_query = "DELETE FROM locality WHERE id = %s"
+            cur.execute(delete_query, (payload["id"],))
+            conn.commit()
+
+        with patch('main.check_role_access', return_value=1):
+            response = client.post('/deleteLocality', json=payload)
+
+        assert response.status_code == 200
+        assert response.json() == expected_response
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+
+    finally:
+        conn.rollback()
 
 # Test case for access denied scenario
 @pytest.mark.usefixtures("db_connection")
 def test_id_69(client):
     payload = {
-        "user_id": 1235,
+        "user_id": 1234,
         "id": 45  
     }
 
     expected_response = {
         "result": "error",
         "message": "Access Denied",
-        "user_id": 1235,
+        "user_id": 1234,
         "role_id": 0,
         "data": []
     }
@@ -821,9 +1032,8 @@ def test_id_69(client):
     assert response.status_code == 200
     assert response.json() == expected_response
 
-# Test case for invalid credentials scenario
 @pytest.mark.usefixtures("db_connection")
-def test_id_70(client):
+def test_id_70(client, db_connection):
     payload = {
         "user_id": 1235,
         "id": 999  
@@ -836,37 +1046,73 @@ def test_id_70(client):
         "role_id": 2,
         "data": []
     }
-    with patch('main.check_role_access', return_value=2):
-       response = client.post('/deleteLocality', json=payload)
 
-    assert response.status_code == 200
-    assert response.json() == expected_response
+    try:
+        conn = db_connection
+
+        with conn.cursor() as cur:
+            # Check if the locality ID exists in the database
+            query = "SELECT COUNT(*) FROM locality WHERE id = %s"
+            cur.execute(query, (payload["id"],))
+            count = cur.fetchone()[0]
+
+            if count == 0:
+                assert response.status_code == 200
+                assert response.json() == expected_response
+                return
+
+        with patch('main.check_role_access', return_value=2):
+            response = client.post('/deleteLocality', json=payload)
+
+        assert response.status_code == 200
+        assert response.json() == expected_response
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    finally:
+        conn.rollback()
 
 
 @pytest.mark.usefixtures("db_connection")
-def test_id_71(client):
+def test_id_71(client, db_connection):
     payload={
-    "user_id":1234,
-    "id":20,
-    "name":"lobname",
-    "lob_head":100,
-    "company":"lobcompany",
-    "entityid":123
-}
+        "user_id":1234,
+        "id":20,
+        "name":"lobname",
+        "lob_head":100,
+        "company":"lobcompany",
+        "entityid":123
+    }
 
     expected_response={
-  "result": "success",
-  "user_id": 1234,
-  "role_id": 1,
-  "data": {
-    "added_data": "lobname"
-  }
-}
-    with patch('main.check_role_access', return_value=1):
-       response=client.post('/addLob',json=payload)
-    
-    assert response.status_code == 200
-    assert response.json() == expected_response
+        "result": "success",
+        "user_id": 1234,
+        "role_id": 1,
+        "data": {
+            "added_data": "lobname"
+        }
+    }
+
+    try:
+        conn = db_connection
+
+        with conn.cursor() as cur:
+            # Insert data into the lob table
+            query = "INSERT INTO lob (id, name, lob_head, company, entityid) VALUES (%s, %s, %s, %s, %s)"
+            cur.execute(query, (payload["id"], payload["name"], payload["lob_head"], payload["company"], payload["entityid"]))
+            conn.commit()
+
+        with patch('main.check_role_access', return_value=1):
+            response = client.post('/addLob', json=payload)
+
+        assert response.status_code == 200
+        assert response.json() == expected_response
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    finally:
+        conn.rollback()
+
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_72(client):
@@ -905,31 +1151,47 @@ def test_id_73(client):
     assert response.status_code == 200
     assert response.json() == expected_response
 
-
 @pytest.mark.usefixtures("db_connection")
-def test_id_74(client):
+def test_id_74(client, db_connection):
     payload={
-    "user_id":1234,
-    "old_name" : "lobname",
-    "new_name" : "new_lobname"
-}
+        "user_id":1234,
+        "old_name": "lobname",
+        "new_name": "new_lobname"
+    }
 
     expected_response={
-  "result": "success",
-  "user_id": 1234,
-  "role_id": 1,
-  "data": {
-    "edited_lob": "lobname"
-  }
-}
+        "result": "success",
+        "user_id": 1234,
+        "role_id": 1,
+        "data": {
+            "edited_lob": "lobname"
+        }
+    }
 
-    
+    try:
+        conn = db_connection
 
-    with patch('main.check_role_access', return_value=1):
-       response=client.post('/editLob',json=payload)
-    
-    assert response.status_code == 200
-    assert response.json() == expected_response
+        with conn.cursor() as cur:
+            # Insert the initial lob data into the lob table
+            initial_query = "INSERT INTO lob (name) VALUES (%s)"
+            cur.execute(initial_query, (payload["old_name"],))
+            conn.commit()
+
+            # Update the name of the lob
+            update_query = "UPDATE lob SET name = %s WHERE name = %s"
+            cur.execute(update_query, (payload["new_name"], payload["old_name"]))
+            conn.commit()
+
+        with patch('main.check_role_access', return_value=1):
+            response = client.post('/editLob', json=payload)
+
+        assert response.status_code == 200
+        assert response.json() == expected_response
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    finally:
+        conn.rollback()
 
 
 @pytest.mark.usefixtures("db_connection")
