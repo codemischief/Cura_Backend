@@ -578,6 +578,36 @@ CREATE SEQUENCE IF NOT EXISTS client_poa_id_seq OWNED BY client_poa.id;
 SELECT setval('client_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_poa;
 ALTER TABLE client_poa ALTER COLUMN id SET DEFAULT nextval('client_poa_id_seq');
 
+CREATE SEQUENCE IF NOT EXISTS project_id_seq OWNED BY project.id;
+SELECT setval('project_id_seq', COALESCE(max(id), 0) + 1, false) FROM project;
+ALTER TABLE project ALTER COLUMN id SET DEFAULT nextval('project_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS project_amenities_id_seq OWNED BY project_amenities.id;
+SELECT setval('project_amenities_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_amenities;
+ALTER TABLE project_amenities ALTER COLUMN id SET DEFAULT nextval('project_amenities_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS project_bank_details_id_seq OWNED BY project_bank_details.id;
+SELECT setval('project_bank_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_bank_details;
+ALTER TABLE project_bank_details ALTER COLUMN id SET DEFAULT nextval('project_bank_details_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS project_contacts_id_seq OWNED BY project_contacts.id;
+SELECT setval('project_contacts_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_contacts;
+ALTER TABLE project_contacts ALTER COLUMN id SET DEFAULT nextval('project_contacts_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS project_photos_id_seq OWNED BY project_photos.id;
+SELECT setval('project_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_photos;
+ALTER TABLE project_photos ALTER COLUMN id SET DEFAULT nextval('project_photos_id_seq');
+
+CREATE TABLE project_photos(
+    id int,
+    projectid int,
+    photo_link text,
+    description text,
+    date_taken date,
+    dated timestamp(3),
+    createdby int,
+    isdeleted boolean
+);
 
 INSERT INTO your_table (column1, column2, ...)
 VALUES (value1, value2, ...)
