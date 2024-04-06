@@ -2198,4 +2198,37 @@ async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depe
             print(traceback.print_exc())
             return giveFailure("Could not delete data",payload['user_id'],0)
 
+@app.post('/addClientProperty')
+async def add_client_property(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        global prop_id
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                client_property = payload['client_property']
+                client_property_photos_list = payload['client_property_photos']
+                client_property_poa = payload['client_property_poa']
+                client_property_owner = payload['client_property_owner']
+                query = "INSERT INTO client_property (clientid,projectid,propertydescription,suburb,city,state,country,layoutdetails,numberofparkings,internalfurnitureandfittings,leveloffurnishing,status,initialpossessiondate,poagiven,poaid,electricityconsumernumber,electricitybillingunit,otherelectricitydetails,gasconnectiondetails,propertytaxnumber,clientservicemanager,propertymanager,comments,propertyownedbyclientonly,textforposting,electricitybillingduedate,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
+                cursor.execute(query,(client_property["clientid"],client_property["projectid"],client_property["propertydescription"],client_property["suburb"],client_property["city"],client_property["state"],client_property["country"],client_property["layoutdetails"],client_property["numberofparkings"],client_property["internalfurnitureandfittings"],client_property["leveloffurnishing"],client_property["status"],client_property["initialpossessiondate"],client_property["poagiven"],client_property["poaid"],client_property["electricityconsumernumber"],client_property["electricitybillingunit"],client_property["otherelectricitydetails"],client_property["gasconnectiondetails"],client_property["propertytaxnumber"],client_property["clientservicemanager"],client_property["propertymanager"],client_property["comments"],client_property["propertyownedbyclientonly"],client_property["textforposting"],client_property["electricitybillingduedate"],givenowtime(),payload['user_id'],False))
+                prop_id = cursor.fetchone()[0]
+                conn[0].commit()
+                for client_property_photos in client_property_photos_list:
+                    query = "INSERT INTO client_property_photos (clientpropertyid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)"
+                    cursor.execute (query,(prop_id,client_property_photos["photolink"],client_property_photos["description"],client_property_photos["phototakenwhen"],givenowtime(),payload['user_id'],False))
+                query = "INSERT INTO client_property_poa (clientpropertyid,poalegalname,poapanno,poaaddressline1,poaaddressline2,poasuburb,poacity,poastate,poacountry,poazip,poaoccupation,poabirthyear,poaphoto,poaemployername,poarelation,poarelationwith,poaeffectivedate,poaenddate,poafor,scancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                cursor.execute (query,(prop_id,client_property_poa["poalegalname"],client_property_poa["poapanno"],client_property_poa["poaaddressline1"],client_property_poa["poaaddressline2"],client_property_poa["poasuburb"],client_property_poa["poacity"],client_property_poa["poastate"],client_property_poa["poacountry"],client_property_poa["poazip"],client_property_poa["poaoccupation"],client_property_poa["poabirthyear"],client_property_poa["poaphoto"],client_property_poa["poaemployername"],client_property_poa["poarelation"],client_property_poa["poarelationwith"],client_property_poa["poaeffectivedate"],client_property_poa["poaenddate"],client_property_poa["poafor"],client_property_poa["scancopy"],givenowtime(),payload['user_id'],False))
+                query = "INSERT INTO client_property_owner (propertyid,owner1name,owner1addressline1,owner1addressline2,owner1suburb,owner1city,owner1state,owner1country,owner1zip,owner1panno,owner1occupation,owner1employername,owner1birthyear,owner1relation,owner1relationwith,owner2name,owner2addressline1,owner2addressline2,owner2suburb,owner2city,owner2state,owner2country,owner2zip,owner2panno,owner2occupation,owner2employer,owner2birthyr,owner2relation,owner2relationwith,otherownerdetails,owner3name,owner3panno,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                cursor.execute (query,(prop_id,client_property_owner["owner1name"],client_property_owner["owner1addressline1"],client_property_owner["owner1addressline2"],client_property_owner["owner1suburb"],client_property_owner["owner1city"],client_property_owner["owner1state"],client_property_owner["owner1country"],client_property_owner["owner1zip"],client_property_owner["owner1panno"],client_property_owner["owner1occupation"],client_property_owner["owner1employername"],client_property_owner["owner1birthyear"],client_property_owner["owner1relation"],client_property_owner["owner1relationwith"],client_property_owner["owner2name"],client_property_owner["owner2addressline1"],client_property_owner["owner2addressline2"],client_property_owner["owner2suburb"],client_property_owner["owner2city"],client_property_owner["owner2state"],client_property_owner["owner2country"],client_property_owner["owner2zip"],client_property_owner["owner2panno"],client_property_owner["owner2occupation"],client_property_owner["owner2employername"],client_property_owner["owner2birthyear"],client_property_owner["owner2relation"],client_property_owner["owner2relationwith"],client_property_owner["otherownerdetails"],client_property_owner["owner3name"],client_property_owner["owner3panno"],givenowtime(),payload['user_id'],False))
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"inserted_property":prop_id})
+    except Exception as e:
+        print(traceback.print_exc())
+        try:
+            conn = psycopg2.connect(DATABASE_URL)
+            conn.cursor().execute("delete from client_property where id=%s",(prop_id,))
+            return giveFailure('Invalid Credentials',0,0)
+        except Exception as e:
+            print(traceback.print_exc())
+            return giveFailure(f"Could not delete id: {prop_id}",0,0)
 logger.info("program_started")
