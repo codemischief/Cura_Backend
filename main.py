@@ -60,7 +60,7 @@ def paymentfor(conn: psycopg2.extensions.connection):
         res = {}
         for i in data:
             res[i[0]] = i[1]
-        print(res)
+        # print(res)
         return res
     except Exception as e:
         print(traceback.print_exc())
@@ -76,7 +76,7 @@ def paymentmode(conn: psycopg2.extensions.connection):
         res = {}
         for i in data:
             res[i[0]] = i[1]
-        print(res)
+        # print(res)
         return res
     except Exception as e:
         print(traceback.print_exc())
@@ -91,7 +91,7 @@ def entity(conn):
         res = {}
         for i in data:
             res[i[0]] = i[1]
-        print(res)
+        # print(res)
         return res
     except Exception as e:
         print(traceback.print_exc())
@@ -107,7 +107,7 @@ def roles(conn):
         res = {}
         for i in data:
             res[i[0]] = i[1]
-        print(res)
+        # print(res)
         return res
     except Exception as e:
         print(traceback.print_exc())
@@ -1523,9 +1523,10 @@ async def get_payments(payload: dict, conn : psycopg2.extensions.connection = De
         if role_access_status==1:
             users,paymentmodes,entities,paymentfordata = getdata(conn[0])
             # query = 'SELECT distinct a.id,concat(b.firstname,' ',b.lastname) as paymentby,concat(c.firstname,' ',c.lastname) as paymentto, a.amount,a.paidon,d.name as paymentmode,a.paymentstatus,a.description,a.banktransactionid,e.name as paymentfor,a.dated,a.createdby,a.isdeleted,a.entityid,a.officeid,a.tds,a.professiontax,a.month,a.deduction FROM ref_contractual_payments a,usertable b, usertable c, mode_of_payment d, payment_for e where a.paymentto = b.id and a.paymentby = c.id and a.paymentmode = d.id and a.paymentfor = e.id;'
-            table_name = 'get_payments_view'
+            table_name = 'ref_contractual_payments'
             # data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],query = query,search_key = payload['search_key'] if 'search_key' in payload else None)
-
+            payload['rows'].remove('entity')
+            payload['rows'].append('entityid')
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -1536,12 +1537,12 @@ async def get_payments(payload: dict, conn : psycopg2.extensions.connection = De
                     row_dict[colname] = row[i]
                 res.append(row_dict)
             # print(paymentfordata)
-            # for i in res:
-            #     i['paymentto'] = users[i['paymentto']]
-            #     i['paymentby'] = users[i['paymentby']]
-            #     i['paymentmode'] = paymentmodes[i['paymentmode']]
-            #     i['entityid'] = entities.get(i['entityid'],None)
-            #     i['paymentfor']=paymentfordata.get(i['paymentfor'],None)
+            for i in res:
+                i['paymentto'] = users[i['paymentto']]
+                i['paymentby'] = users[i['paymentby']]
+                i['paymentmode'] = paymentmodes[i['paymentmode']]
+                i['entity'] = entities.get(i['entityid'],None)
+                i['paymentfor']=paymentfordata.get(i['paymentfor'],None)
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1600,10 +1601,13 @@ async def delete_payment(payload: dict, conn: psycopg2.extensions.connection = D
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'DELETE FROM get_payments_view WHERE id=%s'
+                query = 'DELETE FROM ref_contractual_payments WHERE id=%s'
                 cursor.execute(query,(payload['id'],))
                 if cursor.statusmessage == "DELETE 0":
                     return giveFailure("No Payment available",payload['user_id'],role_access_status)
+                else:
+                    logging.info(f'deletePayment: Successful {cursor.statusmessage}>')
+
                 conn[0].commit()
             data = {
                 "deleted_payment":payload['id']
@@ -1990,7 +1994,7 @@ async def add_client_info(payload : dict, conn : psycopg2.extensions.connection 
             #     }
             # }
             client_info = payload['client_info']
-
+            global id
             with conn[0].cursor() as cursor:
                 query = "INSERT INTO client (firstname,middlename,lastname,salutation,clienttype,addressline1,addressline2,suburb,city,state,country,zip,homephone,workphone,mobilephone,email1,email2,employername,comments,photo,onlineaccreated,localcontact1name,localcontact1address,localcontact1details,localcontact2name,localcontact2address,localcontact2details,includeinmailinglist,dated,createdby,isdeleted,entityid,tenantof,tenantofproperty) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
                 cursor.execute(query,(client_info["firstname"],client_info["middlename"],client_info["lastname"],client_info["salutation"],client_info["clienttype"],client_info["addressline1"],client_info["addressline2"],client_info["suburb"],client_info["city"],client_info["state"],client_info["country"],client_info["zip"],client_info["homephone"],client_info["workphone"],client_info["mobilephone"],client_info["email1"],client_info["email2"],client_info["employername"],client_info["comments"],client_info["photo"],client_info["onlineaccreated"],client_info["localcontact1name"],client_info["localcontact1address"],client_info["localcontact1details"],client_info["localcontact2name"],client_info["localcontact2address"],client_info["localcontact2details"],client_info["includeinmailinglist"],givenowtime(),payload['user_id'],False,client_info["entityid"],client_info["tenantof"],client_info["tenantofproperty"]))
@@ -2023,11 +2027,12 @@ async def add_client_info(payload : dict, conn : psycopg2.extensions.connection 
         logging.info(traceback.print_exc())
         # print(traceback.print_exc())
         try:
-            with conn[0].cursor() as cursor:
+            conn = psycopg2.cursor(DATABASE_URL)
+            with conn.cursor() as cursor:
                 cursor.execute("DELETE FROM client WHERE id=%s",(id,))
-                conn[0].commit()
+                conn.commit()
             
-            conn[0].rollback()
+            # conn[0].rollback()
             return giveFailure(f"Error: {ke} not present",0,0)
         except Exception as e:
             logging.info(f"Client id {id} could not be deleted")  
@@ -2148,29 +2153,49 @@ async def delete_client_info(payload: dict, conn: psycopg2.extensions.connection
 async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'addProject: received payload <{payload}>')
     try:
+        global id
         role_access_status = check_role_access(conn, payload)
-        print(ifNotExist('projectname','project',conn,payload['projectname']))
-        if role_access_status == 1 and ifNotExist('projectname','project',conn,payload['projectname']):
+        if role_access_status == 1:
+            project_info = payload['project_info']
+            project_amenities = payload['project_amenities']
+            bank_details_list = payload['project_bank_details']
+            project_contacts_list = payload['project_contacts']
+            project_photos_list = payload['project_photos']
             with conn[0].cursor() as cursor:
-                
-                print(cursor.statusmessage)
-                # Commit the transaction
+                query = "insert into project(builderid,projectname,addressline1,addressline2,suburb,city,state,country,zip,nearestlandmark,project_type,mailgroup1,mailgroup2,website,project_legal_status,rules,completionyear,jurisdiction,taluka,corporationward,policechowkey,maintenance_details,numberoffloors,numberofbuildings,approxtotalunits,tenantstudentsallowed,tenantworkingbachelorsallowed,tenantforeignersallowed,otherdetails,duespayablemonth,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id"
+                cursor.execute(query,(project_info["builderid"],project_info["projectname"],project_info["addressline1"],project_info["addressline2"],project_info["suburb"],project_info["city"],project_info["state"],project_info["country"],project_info["zip"],project_info["nearestlandmark"],project_info["project_type"],project_info["mailgroup1"],project_info["mailgroup2"],project_info["website"],project_info["project_legal_status"],project_info["rules"],project_info["completionyear"],project_info["jurisdiction"],project_info["taluka"],project_info["corporationward"],project_info["policechowkey"],project_info["maintenance_details"],project_info["numberoffloors"],project_info["numberofbuildings"],project_info["approxtotalunits"],project_info["tenantstudentsallowed"],project_info["tenantworkingbachelorsallowed"],project_info["tenantforeignersallowed"],project_info["otherdetails"],project_info["duespayablemonth"],givenowtime(),payload['user_id'],False))
+                id = cursor.fetchone()[0]
                 conn[0].commit()
-                
-                # Get the ID of the last inserted row
-                last_row_id = cursor.lastrowid
-                print("Inserted row ID:", last_row_id)
-                data= {
-                        "entered": payload['projectname'],
-                        "project_id": last_row_id
-                    }
+                query = 'insert into project_amenities(projectid,swimmingpool,lift,liftbatterybackup,clubhouse,gym,childrensplayarea,pipedgas,cctvcameras,otheramenities,studio,"1BHK","2BHK","3BHK",rowhouse,otheraccomodationtypes,sourceofwater,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id'
+                cursor.execute(query,(id,project_amenities["swimmingpool"],project_amenities["lift"],project_amenities["liftbatterybackup"],project_amenities["clubhouse"],project_amenities["gym"],project_amenities["childrensplayarea"],project_amenities["pipedgas"],project_amenities["cctvcameras"],project_amenities["otheramenities"],project_amenities["studio"],project_amenities["1BHK"],project_amenities["2BHK"],project_amenities["3BHK"],project_amenities["rowhouse"],project_amenities["otheraccomodationtypes"],project_amenities["sourceofwater"],givenowtime(),payload['user_id'],False))
+                data = {
+                    "added project id":id
+                }
+                for bank_details in bank_details_list:
+                    query = 'insert into project_bank_details(projectid,bankname,bankbranch,bankcity,bankaccountholdername,bankaccountno,bankifsccode,banktypeofaccount,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                    cursor.execute(query,(id,bank_details["bankname"],bank_details["bankbranch"],bank_details["bankcity"],bank_details["bankaccountholdername"],bank_details["bankaccountno"],bank_details["bankifsccode"],bank_details["banktypeofaccount"],givenowtime(),payload['user_id'],False))
+                for project_contacts in project_contacts_list:
+                    query = 'insert into project_contacts(projectid,contactname,phone,email,role,effectivedate,tenureenddate,details,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                    cursor.execute(query,(id,project_contacts["contactname"],project_contacts["phone"],project_contacts["email"],project_contacts["role"],project_contacts["effectivedate"],project_contacts["tenureenddate"],project_contacts["details"],givenowtime(),payload['user_id'],False))
+                for project_photos in project_photos_list:
+                    query = 'insert into project_photos(projectid,photo_link,description,date_taken,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s)'
+                    cursor.execute(query,(id,project_photos["photo_link"],project_photos["description"],project_photos["date_taken"],givenowtime(),payload['user_id'],False))
+                conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
-        else:
-            return giveFailure("Already Exists",payload['user_id'],role_access_status)
+        # else:
+        #     return giveFailure("Already Exists",payload['user_id'],role_access_status)
     except Exception as e:
-        print(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],0)
+        try:
+            query = 'delete from client where id=%s'
+            con = psycopg2.connect(DATABASE_URL)
+            with con.cursor() as cursor:
+                cursor.execute(query,(id,))
+            print(traceback.print_exc())
+            return giveFailure("Invalid Credentials",payload['user_id'],0)
+        except Exception as e:
+            print(traceback.print_exc())
+            return giveFailure("Could not delete data",payload['user_id'],0)
 
 logger.info("program_started")
