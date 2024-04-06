@@ -609,6 +609,23 @@ CREATE TABLE project_photos(
     isdeleted boolean
 );
 
+CREATE SEQUENCE IF NOT EXISTS client_property_id_seq OWNED BY client_property.id;
+SELECT setval('client_property_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property;
+ALTER TABLE client_property ALTER COLUMN id SET DEFAULT nextval('client_property_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS client_property_photos_id_seq OWNED BY client_property_photos.id;
+SELECT setval('client_property_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_photos;
+ALTER TABLE client_property_photos ALTER COLUMN id SET DEFAULT nextval('client_property_photos_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS client_property_poa_id_seq OWNED BY client_property_poa.id;
+SELECT setval('client_property_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_poa;
+ALTER TABLE client_property_poa ALTER COLUMN id SET DEFAULT nextval('client_property_poa_id_seq');
+
+SELECT * FROM client_property WHERE id=18194;
+SELECT * FROM client_property_photos WHERE clientpropertyid=18194;
+SELECT * FROM client_property_poa WHERE clientpropertyid=18194;
+SELECT * FROM client_property_owner WHERE propertyid=18194;
+
 INSERT INTO your_table (column1, column2, ...)
 VALUES (value1, value2, ...)
 RETURNING *;
