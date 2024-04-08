@@ -60,11 +60,11 @@ def paymentfor(conn: psycopg2.extensions.connection):
         res = {}
         for i in data:
             res[i[0]] = i[1]
-        # print(res)
+        # logging.info(res)
         return res
     except Exception as e:
-        print(traceback.print_exc())
-        print(f"Error is {e}")
+        logging.info(traceback.print_exc())
+        logging.info(f"Error is {e}")
         return None
 
 def paymentmode(conn: psycopg2.extensions.connection):
@@ -76,11 +76,11 @@ def paymentmode(conn: psycopg2.extensions.connection):
         res = {}
         for i in data:
             res[i[0]] = i[1]
-        # print(res)
+        # logging.info(res)
         return res
     except Exception as e:
-        print(traceback.print_exc())
-        print(f"Error is {e}")
+        logging.info(traceback.print_exc())
+        logging.info(f"Error is {e}")
         return None
 def entity(conn):
     try:
@@ -91,11 +91,11 @@ def entity(conn):
         res = {}
         for i in data:
             res[i[0]] = i[1]
-        # print(res)
+        # logging.info(res)
         return res
     except Exception as e:
-        print(traceback.print_exc())
-        print(f"Error is {e}")
+        logging.info(traceback.print_exc())
+        logging.info(f"Error is {e}")
         return None
 
 def roles(conn):
@@ -107,11 +107,11 @@ def roles(conn):
         res = {}
         for i in data:
             res[i[0]] = i[1]
-        # print(res)
+        # logging.info(res)
         return res
     except Exception as e:
-        print(traceback.print_exc())
-        print(f"Error is {e}")
+        logging.info(traceback.print_exc())
+        logging.info(f"Error is {e}")
         return None
 
 
@@ -641,7 +641,7 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
             query_check_builder = "SELECT EXISTS (SELECT 1 FROM builder WHERE id = %s)"
             cursor.execute(query_check_builder, (payload['builder_id'],))
             builder_exists = cursor.fetchone()[0]
-            print(builder_exists)
+            logging.info(builder_exists)
         if role_access_status == 1 and builder_exists:
             with conn[0].cursor() as cursor:
                 # Update builder information in the database
@@ -698,7 +698,7 @@ async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Dep
                 query = 'SELECT distinct * FROM builder where id=%s'
                 cursor.execute(query,(payload['builder_id'],))
                 exists = cursor.fetchone()
-                print(exists)
+                logging.info(exists)
                 if exists:
                     query = 'DELETE FROM builder where id = %s'
                     cursor.execute(query,(payload['builder_id'],))
@@ -739,7 +739,7 @@ async def get_states(payload : dict,conn: psycopg2.extensions.connection = Depen
     logging.info(f'getStates: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
-        print(role_access_status)
+        logging.info(role_access_status)
         if role_access_status != 0:
             if role_access_status == 1:
                 with conn[0].cursor() as cursor:
@@ -754,10 +754,10 @@ async def get_states(payload : dict,conn: psycopg2.extensions.connection = Depen
         else:
             return giveFailure("User does not exist",payload['user_id'],role_access_status)
     except ValueError as ve:
-        print(traceback.print_exc())
+        logging.info(traceback.print_exc())
         return giveFailure(f"{ve} error found",payload["user_id"],0)
     except Exception as e:
-        print(traceback.print_exc())
+        logging.info(traceback.print_exc())
         return giveFailure(f"{e} error found",payload['user_id'],0)
 
 @app.post('/getCities')
@@ -782,7 +782,7 @@ async def get_cities(payload : dict, conn: psycopg2.extensions.connection = Depe
         else:
             return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
     except Exception as e:
-        print(traceback.print_exc())
+        logging.info(traceback.print_exc())
         return giveFailure(f"{e} error found",payload['user_id'],0)
 
 #CITIES UPDATED
@@ -798,7 +798,7 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
-            print(colnames)
+            logging.info(colnames)
             res = []
             for row in data['data']:
                 row_dict = {}
@@ -831,9 +831,9 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
                                      search_key = payload['search_key'] if 'search_key' in payload else None,)
             total_count = data['total_count']
             colnames = payload['rows']
-            print(colnames)
+            logging.info(colnames)
             res = []
-            print(data['data'])
+            logging.info(data['data'])
             for row in data['data']:
                 row_dict = {}
                 for i,colname in enumerate(colnames):
@@ -1864,7 +1864,7 @@ async def get_item_by_id(payload: dict, conn: psycopg2.extensions.connection = D
             giveFailure("Invalid Credentials",0,0)
         }
         
-@app.post('/getViewScreenTypes')
+@app.post('/getViewScreenDataTypes')
 async def get_view_screen_types(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
@@ -1948,7 +1948,6 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0) 
-
 
 @app.post('/getClientProperty')
 async def get_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2231,4 +2230,49 @@ async def add_client_property(payload: dict, conn: psycopg2.extensions.connectio
         except Exception as e:
             print(traceback.print_exc())
             return giveFailure(f"Could not delete id: {prop_id}",0,0)
+
+# @app.post('/editClientInfo')
+# async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+#     try:
+#         role_access_status = check_role_access(conn,payload)
+#         if role_access_status == 1:
+#             client_info = payload['client_info']
+#             with conn[0].cursor() as cursor:
+#                 query = 'UPDATE client SET firstname=%s,middlename=%s,lastname=%s,salutation=%s,clienttype=%s,addressline1=%s,addressline2=%s,suburb=%s,city=%s,state=%s,country=%s,zip=%s,homephone=%s,workphone=%s,mobilephone=%s,email1=%s,email2=%s,employername=%s,comments=%s,photo=%s,onlineaccreated=%s,localcontact1name=%s,localcontact1address=%s,localcontact1details=%s,localcontact2name=%s,localcontact2address=%s,localcontact2details=%s,includeinmailinglist=%s,entityid=%s,tenantof=%s,tenantofproperty=%s WHERE ID=%s'
+#                 cursor.execute(query,(client_info["firstname"],client_info["middlename"],client_info["lastname"],client_info["salutation"],client_info["clienttype"],client_info["addressline1"],client_info["addressline2"],client_info["suburb"],client_info["city"],client_info["state"],client_info["country"],client_info["zip"],client_info["homephone"],client_info["workphone"],client_info["mobilephone"],client_info["email1"],client_info["email2"],client_info["employername"],client_info["comments"],client_info["photo"],client_info["onlineaccreated"],client_info["localcontact1name"],client_info["localcontact1address"],client_info["localcontact1details"],client_info["localcontact2name"],client_info["localcontact2address"],client_info["localcontact2details"],client_info["includeinmailinglist"],givenowtime(),payload['user_id'],False,client_info["entityid"],client_info["tenantof"],client_info["tenantofproperty"],client_info['id']))
+                
+#             return giveSuccess(payload['user_id'],role_access_status,data)
+#     except Exception as e:
+#         logging.info(traceback.print_exc())
+#         return giveFailure("Invalid Credentials",0,0)
+
+
+@app.post('/deleteClientProperty')
+async def delete_client_property(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM client_property WHERE id=%s'
+                cursor.execute(query,(payload['id'],))
+                if cursor.statusmessage == "DELETE 0":
+                    return giveFailure("No Property available",payload['user_id'],role_access_status)
+
+                query = "DELETE FROM client_property_poa WHERE clientpropertyid = %s"
+                cursor.execute(query,(payload['id'],))
+                query = "DELETE FROM client_property_photos WHERE clientpropertyid = %s"
+                cursor.execute(query,(payload['id'],))
+                query = "DELETE FROM client_property_owner WHERE propertyid = %s"
+                cursor.execute(query,(payload['id'],))
+                conn[0].commit()
+            data = {
+                "deleted_client_property":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
 logger.info("program_started")
