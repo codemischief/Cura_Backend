@@ -1,6 +1,12 @@
 
+CREATE INDEX ON usertable(id);
+CREATE INDEX ON mode_of_payment(id);
+CREATE INDEX ON payment_for(id);
+CREATE INDEX ON z_paymentrequeststatus(id);
+--CREATE INDEX ON paymentrequeststatus(id);
+CREATE INDEX ON entity(id);
 CREATE VIEW get_payments_view AS
-SELECT DISTINCT 
+SELECT
     a.id,
     CONCAT(b.firstname, ' ', b.lastname) AS paymentby,
     CONCAT(c.firstname, ' ', c.lastname) AS paymentto,
@@ -20,22 +26,30 @@ SELECT DISTINCT
     a.tds,
     a.professiontax,
     a.month,
-    a.deduction 
-FROM 
-    ref_contractual_payments a, 
-    usertable b, 
-    usertable c, 
-    mode_of_payment d, 
-    payment_for e,
-    paymentrequeststatus f,
-    entity g
-WHERE 
-    a.paymentto = b.id 
-    AND a.paymentby = c.id 
-    AND a.paymentmode = d.id 
-    AND a.paymentfor = e.id
-    AND a.paymentstatus = f.id
-    AND a.entityid = g.id;
+    a.deduction
+
+FROM ref_contractual_payments a
+inner JOIN usertable b ON a.paymentto = b.id
+inner JOIN usertable c ON a.paymentby = c.id
+inner JOIN mode_of_payment d ON a.paymentmode = d.id
+inner JOIN payment_for e ON a.paymentfor = e.id
+inner JOIN z_paymentrequeststatus f ON a.paymentstatus = f.id
+inner JOIN entity g ON a.entityid = g.id;
+
+--FROM ref_contractual_payments a,
+--    usertable b,
+--    usertable c,
+--    mode_of_payment d,
+--    payment_for e,
+--    paymentrequeststatus f,
+--    entity g
+--WHERE
+--    a.paymentto = b.id
+--    AND a.paymentby = c.id
+--    AND a.paymentmode = d.id
+--    AND a.paymentfor = e.id
+--    AND a.paymentstatus = f.id
+--    AND a.entityid = g.id;
 
 
 
@@ -56,7 +70,7 @@ EXECUTE FUNCTION delete_from_get_payments_view();
 
 
 CREATE VIEW get_employee_view AS
-SELECT DISTINCT
+SELECT
     a.id,
     a.employeename,
     a.employeeid,
@@ -115,7 +129,7 @@ EXECUTE FUNCTION delete_from_get_employee_view();
 
 
 CREATE VIEW get_locality_view AS
-SELECT DISTINCT
+SELECT
     a.id,
     a.locality,
     a.cityid,
@@ -152,7 +166,7 @@ EXECUTE FUNCTION delete_from_get_locality_view();
 
 
 CREATE VIEW get_research_prospect_view AS
-SELECT DISTINCT
+SELECT
     a.id,
     a.personname,
     a.suburb,
@@ -190,7 +204,7 @@ EXECUTE FUNCTION delete_from_get_research_prospect_view();
 
 
 CREATE VIEW get_builder_view AS
-SELECT DISTINCT
+SELECT
     a.id,
     a.buildername,
     a.phone1,
@@ -233,7 +247,7 @@ FOR EACH ROW
 EXECUTE FUNCTION delete_from_get_builder_view();
 
 CREATE VIEW get_cities_view AS
-SELECT DISTINCT
+SELECT
     a.id,
     a.city,
     a.state,
@@ -260,7 +274,7 @@ FOR EACH ROW
 EXECUTE FUNCTION delete_from_get_cities_view();
 
 CREATE VIEW get_projects_view AS
-SELECT DISTINCT
+SELECT
     b.buildername,
     a.builderid,
     a.projectname,
@@ -325,7 +339,7 @@ FOR EACH ROW
 EXECUTE FUNCTION delete_from_get_projects_view();
 
 CREATE VIEW get_builder_contact_view AS
-SELECT DISTINCT
+SELECT
     a.id,
     b.buildername,
     a.builderid,
@@ -369,7 +383,7 @@ EXECUTE FUNCTION delete_from_get_builder_contacts_view();
 
 
 CREATE VIEW get_client_info_view AS
-SELECT DISTINCT
+SELECT
     a.id,
     a.firstname,
     a.middlename,
@@ -407,9 +421,10 @@ SELECT DISTINCT
     a.tenantof
 FROM
     client a,
-    client_type b
+    client_type b,
+    country c
 WHERE
-    a.clienttype = b.id;
+    a.clienttype = b.id and a.country = c.id;
 
 CREATE OR REPLACE FUNCTION delete_from_get_client_info_view() RETURNS TRIGGER AS $$
 BEGIN
@@ -427,7 +442,7 @@ FOR EACH ROW
 EXECUTE FUNCTION delete_from_get_client_info_view();
 
 CREATE VIEW get_client_property_view AS
-SELECT DISTINCT
+SELECT
     a.id,
     CONCAT(b.firstname,' ',b.middlename,' ',b.lastname) as client,
     a.clientid,
@@ -499,7 +514,7 @@ FOR EACH ROW
 EXECUTE FUNCTION delete_from_get_client_property_view();
 
 CREATE VIEW get_orders_view AS
-SELECT DISTINCT
+SELECT
     a.id,
     a.clientid,
     CONCAT(g.firstname,' ',g.lastname) as client_name,
