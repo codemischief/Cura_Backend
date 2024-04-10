@@ -2639,4 +2639,60 @@ async def delete_client_property(payload: dict, conn: psycopg2.extensions.connec
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
 
+
+@app.post('/getPropertyStatusAdmin')
+async def get_property_status_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = 'SELECT DISTINCT id,name from property_status order by id'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        res = {}
+        for i in data:
+            res[i[0]] = i[1]
+        # logging.info(res)
+        return res
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        logging.info(f"Error is {e}")
+        return None    
+
+@app.post('/getLevelOfFurnishingAdmin')
+async def get_level_of_furnishing(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = 'SELECT DISTINCT id,name from level_of_furnishing order by id'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        res = {}
+        for i in data:
+            res[i[0]] = i[1]
+        # logging.info(res)
+        return res
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        logging.info(f"Error is {e}")
+        return None    
+
+@app.post('/getPropertyType')
+async def get_property_type(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = 'SELECT DISTINCT id,name from property_type order by id'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        res = {}
+        for i in data:
+            res[i[0]] = i[1]
+        # logging.info(res)
+        return res
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        logging.info(f"Error is {e}")
+        return None    
+
+
+logger.info("program_started")
+
+
 logger.info("program_started")
