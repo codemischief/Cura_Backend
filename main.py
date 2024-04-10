@@ -2209,7 +2209,7 @@ async def get_client_info(payload : dict, conn : psycopg2.extensions.connection 
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
+                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'client_property', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None)
                 colnames = data['colnames']
@@ -2232,6 +2232,28 @@ async def get_client_info(payload : dict, conn : psycopg2.extensions.connection 
     except Exception as e:
         logging.exception(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/getBuildersAndProjectsList')
+async def get_builders_and_projects_list(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'getBuildersAndProjectsList: received payload <{payload}>')
+    try:
+        role_access_status = check_role_access(conn, payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'select distinct a.id as builderid, a.buildername, b.id as projectid, b.projectname from builder a, project b where a.id = b.builderid order by a.buildername asc'
+                cursor.execute(query)
+                data_ = cursor.fetchall()
+                data = []
+                for row in data_:
+                    dictrow = {"builderid" : row[0], "buildername" : row[1], "projectid" : row[2], "projectname" : row[3]}
+                    data.append(dictrow)
+                logging.info(f'getBuildersAndProjectsList: fetched <{len(data)}> rows')
+                return giveSuccess(payload['user_id'], role_access_status, data)
+        else:
+            return giveFailure("Access Denied", payload["user_id"], role_access_status)
+    except Exception as e:
+        logging.exception(traceback.print_exc())
+        return giveFailure("Invalid Credentials", payload['user_id'], 0)
 
 @app.post('/addClientInfo')
 async def add_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
