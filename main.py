@@ -2690,9 +2690,4 @@ async def get_property_type(payload: dict, conn: psycopg2.extensions.connection 
         logging.info(traceback.print_exc())
         logging.info(f"Error is {e}")
         return None    
-
-
-logger.info("program_started")
-
-
 logger.info("program_started")
