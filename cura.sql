@@ -446,6 +446,7 @@ SELECT
     a.id,
     CONCAT(b.firstname,' ',b.middlename,' ',b.lastname) as client,
     a.clientid,
+    a.propertydescription,
     c.projectname as project,
     a.projectid,
     a.propertytype as propertytypeid,
