@@ -1796,6 +1796,44 @@ async def get_vendor_admin(payload: dict, conn : psycopg2.extensions.connection 
     except Exception as e:
         giveFailure('Invalid Credentials',payload['user_id'],0)
 
+async def runInTryCatch(conn, fname,query, payload, isPaginationRequired=False):#, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'{fname}:RT: received payload <{payload}>')
+    try:
+        role_access_status = check_role_access(conn, payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                data = dict()
+                if isPaginationRequired:
+                    data = filterAndPaginate(DATABASE_URL,
+                                             query=query,
+                                             filters=payload['filters'] if 'filters' in payload else None,
+                                             table_name=payload['table_name'] if 'table_name' in payload else None,
+                                             required_columns=payload['required_columns'] if 'required_columns' in payload else None,
+                                             sort_column=payload['sort_by'] if 'sort_by' in payload else None,
+                                             sort_order=payload['order'] if 'order' in payload else None,
+                                             page_number=payload['pg_no'] if 'pg_no' in payload else 1,
+                                             page_size=payload['pg_size'] if 'pg_size' in payload else 10,
+                                             search_key=payload['search_key'] if 'search_key' in payload else None)
+                else:
+                    cursor.execute(query)
+                    data = cursor.fetchall()
+                return giveSuccess(payload['user_id'], role_access_status, data)
+        else:
+            giveFailure("Access Denied", payload['user_id'], role_access_status)
+    except Exception as e:
+        logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
+        giveFailure('Invalid Credentials', payload['user_id'], 0)
+
+@app.post('/getClientAdminPaginated')
+async def get_client_admin_paginated(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    return await runInTryCatch(
+        conn=conn,
+        fname='getClientAdminPaginated',
+        query="select distinct id, concat_ws(' ',firstname,lastname) as client_name from client order by concat_ws(' ',firstname,lastname)",
+        payload=payload,
+        isPaginationRequired=True
+    )
+
 
 @app.post('/getClientAdmin')
 async def get_client_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2203,7 +2241,7 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
         giveFailure("Invalid Credentials",payload['user_id'],0) 
 
 @app.post('/getClientProperty')
-async def get_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+async def get_client_property(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'getClientProperty: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
