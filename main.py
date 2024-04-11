@@ -2247,7 +2247,7 @@ async def get_client_property(payload : dict, conn : psycopg2.extensions.connect
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'client_property', payload['filters'],
+                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None)
                 colnames = data['colnames']
@@ -2676,5 +2676,269 @@ async def delete_client_property(payload: dict, conn: psycopg2.extensions.connec
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
+
+
+@app.post('/getPropertyStatusAdmin')
+async def get_property_status_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = 'SELECT DISTINCT id,name from property_status order by id'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        res = []
+        for i in data:
+            res.append({
+                "id":i[0],
+                "name":i[1]
+            })
+        return res
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        logging.info(f"Error is {e}")
+        return None    
+
+@app.post('/getLevelOfFurnishingAdmin')
+async def get_level_of_furnishing(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = 'SELECT DISTINCT id,name from level_of_furnishing order by id'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        res = []
+        for i in data:
+            res.append({
+                "id":i[0],
+                "name":i[1]
+            })
+            
+        # logging.info(res)
+        return res
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        logging.info(f"Error is {e}")
+        return None    
+
+@app.post('/getPropertyType')
+async def get_property_type(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = 'SELECT DISTINCT id,name from property_type order by id'
+            cursor.execute(query)
+            data = cursor.fetchall()
+        res = []
+        for i in data:
+            res.append({
+                "id":i[0],
+                "name":i[1]
+            })
+        return res
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        logging.info(f"Error is {e}")
+        return None    
+
+
+@app.post('/editClientProperty')
+async def edit_client_property(payload: dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            ci = payload['client_property_info']
+            propertyid = payload['client_property_id']
+            with conn[0].cursor() as cursor:
+                # update client information in 'client' table
+                query = ''.join(('UPDATE client_property SET '
+                         'clientid=%s,' 'propertytype=%s,' 'leveloffurnishing=%s,' 'numberofparkings=%s,' 'state=%s,' 'city=%s,' 
+                         'suburb=%s,' 'projectid=%s,' 'status=%s,'
+                         'propertydescription=%s,' 'layoutdetails=%s,' 'email=%s,' 'website=%s,' 'initialpossessiondate=%s,'
+                         'electricityconsumernumber=%s,' 'otherelectricitydetails=%s,' 'electricitybillingduedate=%s,' 'comments=%s,' 
+                         'gasconnectiondetails=%s,' 'textforposting=%s WHERE ID=%s'))
+                data = cursor.execute(
+                    query,(
+                        ci["clientid"],ci["propertytype"],ci["leveloffurnishing"],ci["numberofparkings"],
+                        ci["state"],ci["city"],ci["suburb"],ci["projectid"],ci["status"],ci["propertydescription"],
+                        ci["layoutdetails"],ci["email"],ci["website"],ci["initialpossessiondate"],ci["electricityconsumernumber"],
+                        ci["otherelectricitydetails"],ci["electricitybillingduedate"],ci["comments"],ci["gasconnectiondetails"],
+                        ci["textforposting"],propertyid))
+                conn[0].commit()
+                logging.info(f'editClientInfo: client_info update status is <{cursor.statusmessage}>')
+                # perform CRUD for client accesses in 'client_access' table
+                if 'client_property_photos' in payload and 'update' in payload['client_property_photos']:
+                    for u in payload['client_property_photos']['update']:
+                        query = ('UPDATE client_property_photos SET photolink=%s,' 'description=%s,' 'phototakenwhen=%s  WHERE id=%s and clientpropertyid=%s')
+                        data = cursor.execute( query,(u["photolink"], u["description"], u["phototakenwhen"], u["id"], propertyid))
+                        conn[0].commit()
+                        logging.info(f'editClientInfo: client_description propertyid <{propertyid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
+                if 'client_property_photos' in payload and 'insert' in payload['client_access']:
+                    for u in payload['client_property_photos']['insert']:
+                        query = ('INSERT into client_property_photos (photolink,description,phototakenwhen,clientpropertyid) values (%s,%s,%s,%s)')
+                        data = cursor.execute( query,(u["photolink"], u["description"], u["phototakenwhen"], propertyid))
+                        conn[0].commit()
+                        logging.info(f'editClientInfo: client_property_photos clientid <{propertyid}> INSERT status is <{cursor.statusmessage}>')
+
+                # # perform CRUD for client bank information in 'client_bank_info' table
+                # if 'client_bank_info' in payload and 'update' in payload['client_bank_info']:
+                #     for u in payload['client_bank_info']['update']:
+                #         # todo: may need to add "description" when UI starts sending it. It is part of the bank_info section
+                #         query = ('UPDATE client_bank_info SET bankaccountholdername=%s,bankaccountno=%s,bankaccounttype=%s,'
+                #                  'bankbranch=%s,bankcity=%s,bankifsccode=%s, bankmicrcode=%s  WHERE ID=%s and clientid=%s')
+                #         data = cursor.execute( query,(
+                #             u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
+                #             u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], u["id"], propertyid))
+                #         conn[0].commit()
+                #         logging.info(f'editClientInfo: client_access clientid <{propertyid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
+                # if 'client_bank_info' in payload and 'insert' in payload['client_bank_info']:
+                #     for u in payload['client_bank_info']['insert']:
+                #         query = ('INSERT into client_bank_info (bankaccountholdername,bankaccountno,bankaccounttype,bankbranch,bankcity,bankifsccode,bankmicrcode,clientid) '
+                #                  'values (%s,%s,%s,%s,%s,%s,%s,%s)')
+                #         data = cursor.execute( query,(u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
+                #             u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], propertyid))
+                #         conn[0].commit()
+                #         logging.info(f'editClientInfo: client_bank_info clientid <{propertyid}> INSERT status is <{cursor.statusmessage}>')
+
+    #             # update client legalinfo in 'client_legal_info' table
+                li = payload['client_property_owner']
+                query = ('UPDATE client_property_owner SET '
+                         'owner1name=%s,' 'owner1addressline1=%s,' 'owner1addressline2=%s,' 'owner1suburb=%s,' 'owner1city=%s,'
+                         'owner1state=%s,' 'owner1country=%s,' 'owner1zip=%s,' 'owner1panno=%s,' 'owner1occupation=%s,'
+                         'owner1employername=%s,' 'owner1relation=%s,' 'owner1relationwith=%s,' 'owner1birthyear=%s,'
+                         'owner2name=%s,' 'owner2addressline1=%s,' 'owner2addressline2=%s,' 'owner2suburb=%s,' 'owner2city=%s,'
+                         'owner2state=%s,' 'owner2country=%s,' 'owner2zip=%s,' 'owner2panno=%s,' 'owner2occupation=%s,'
+                         'owner2employer=%s,' 'owner2relation=%s,' 'owner2relationwith=%s,' 'owner2birthyr=%s,'
+                         'owner3name=%s,' 'owner3panno=%s,' 'otherownerdetails=%s'
+                         'WHERE ID=%s and propertyid=%s')
+                data = cursor.execute(
+                    ''.join(query),(li['owner1name'],li['owner1addressline1'], li['owner1addressline2'], li['owner1suburb'],
+                           li['owner1city'], li['owner1state'], li['owner1country'], li['owner1zip'], li['owner1panno'], li['owner1occupation'],
+                           li['owner1employername'], li['owner1relation'], li['owner1relationwith'], li['owner1birthyear'],
+                           li['owner2name'],li['owner2addressline1'], li['owner2addressline2'], li['owner2suburb'],
+                           li['owner2city'], li['owner2state'], li['owner2country'], li['owner2zip'], li['owner2panno'], li['owner2occupation'],
+                           li['owner2employername'], li['owner2relation'], li['owner2relationwith'], li['owner2birthyear'],
+                           li['owner3name'],li['owner3panno'],li['otherownerdetails'],li['id'],
+                           propertyid))
+                conn[0].commit()
+                logging.info(f'editClientInfo: client_legal_info update status is <{cursor.statusmessage}>')
+
+    #             # update client_poa in 'client_poa' table
+                pi = payload['client_property_poa']
+                query = ('UPDATE client_property_poa SET '
+                         'poaaddressline1=%s,' 'poaaddressline2=%s,' 'poabirthyear=%s,' 'poacity=%s,' 'poacountry=%s,'
+                         'poaeffectivedate=%s,' 'poaemployername=%s,' 'poaenddate=%s,' 'poafor=%s,' 'poalegalname=%s,'
+                         'poaoccupation=%s,' 'poapanno=%s,' 'poaphoto=%s,' 'poarelation=%s, poarelationwith=%s, poastate=%s,'
+                         'poasuburb=%s, poazip=%s  WHERE ID=%s and clientpropertyid=%s')
+                data = cursor.execute( query,(pi['poaaddressline1'],pi['poaaddressline2'], pi['poabirthyear'], pi['poacity'], pi['poacountry'],
+                           pi['poaeffectivedate'], pi['poaemployername'], pi['poaenddate'], pi['poafor'], pi['poalegalname'],
+                           pi['poaoccupation'], pi['poapanno'], pi['poaphoto'], pi['poarelation'], pi['poarelationwith'],
+                           pi['poastate'],pi['poasuburb'], pi['poazip'], pi['id'], propertyid))
+                conn[0].commit()
+    #             logging.info(f'editClientInfo: client_poa update status is <{cursor.statusmessage}>')
+        return giveSuccess(payload['user_id'],role_access_status,{"edited_property":propertyid})
+    except Exception as e:
+         logging.info(traceback.print_exc())
+         return giveFailure(f"Failed To Edit given client info due to <{traceback.print_exc()}>",0,0)
+
+@app.post('/deleteClientProperty')
+async def delete_client_property(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                cursor.execute('DELETE FROM  WHERE id=%s',(payload['propertyid'],))
+                cursor.execute('DELETE FROM client_property_owner WHERE propertyid=%s',(payload['propertyid'],))
+                cursor.execute('DELETE FROM client_property_photos WHERE clientpropertyid=%s',(payload['propertyid'],))
+                cursor.execute('DELETE FROM client_property_poa WHERE clientpropertyid=%s',(payload['propertyid'],))
+            return giveSuccess(payload['user_id'],role_access_status,{"deleted_id":payload['propertyid']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',0,0)
+    
+@app.post('/getClientPropertyById')
+async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn, payload)
+
+        if role_access_status == 1:
+            data = dict()
+            with conn[0].cursor() as cursor:
+                ############### Arrange Client Property ##################
+                query = f'''
+                    select distinct clientid,propertytype,leveloffurnishing,numberofparkings,state,
+                    city,suburb,country,projectid,status,propertydescription,layoutdetails,
+                    email,website,initialpossessiondate,electricityconsumernumber,
+                    otherelectricitydetails,electricitybillingduedate,comments,
+                    propertytaxnumber,clientservicemanager,propertymanager,
+                    propertyownedbyclientonly,gasconnectiondetails,internalfurnitureandfittings,
+                    textforposting,poagiven,poaid,electricitybillingunit 
+                    from client_property where id = {payload['id']}
+                '''
+                cursor.execute(query)
+                colnames = [desc[0] for desc in cursor.description]
+                property_info_ = cursor.fetchall()
+                property_info = dict()
+                for row in property_info_:
+                    row_dict = {colname: value for colname, value in zip(colnames, row)}
+                    property_info = row_dict
+                data["client_property_info"]  = property_info
+                ############### Arrange Client Property Photos ##################
+                query = f'''
+                    select id,clientpropertyid,photolink,description,phototakenwhen  
+                    from client_property_photos where clientpropertyid = {payload['id']}
+                '''
+                cursor.execute(query)
+                colnames = [desc[0] for desc in cursor.description]
+                _data = cursor.fetchall()
+                property_photos = []
+                for row in _data:
+                    row_dict = {colname: value for colname, value in zip(colnames, row)}
+                    property_photos.append(row_dict)
+                data["client_property_photos"] = property_photos
+
+
+
+                ############### Arrage Client Property Owner Info ##################
+                query = f'''
+                    select distinct id,propertyid,owner1name,owner1addressline1,owner1addressline2,owner1suburb,owner1city,
+                    owner1state,owner1country,owner1zip,owner1panno,owner1occupation,owner1employername,
+                    owner1relation,owner1birthyear,owner1relationwith,owner2name,owner2addressline1,
+                    owner2addressline2,owner2suburb,owner2city,owner2state,owner2country,owner2zip,
+                    owner2panno,owner2occupation,owner2employer,owner2relation,owner2relationwith,
+                    owner2birthyr,owner3name,owner3panno,otherownerdetails from client_property_owner 
+                    where propertyid = {payload['id']}
+                '''
+                cursor.execute(query)
+                colnames = [desc[0] for desc in cursor.description]
+                _data = cursor.fetchall()
+                property_owner = dict()
+                for row in _data:
+                    row_dict = {colname: value for colname, value in zip(colnames, row)}
+                    property_owner = row_dict
+                data["client_property_owner"] = property_owner
+
+                ############### Arrange Client Property POA info ##################
+                query = f'''select distinct id,clientpropertyid,poalegalname,poapanno,poaaddressline1,poaaddressline2,poasuburb,poacity,
+                    poastate,poacountry,poazip,poaoccupation,poabirthyear,poaphoto,poaemployername,
+                    poarelation,poarelationwith,poaeffectivedate,poaenddate,poafor,scancopy
+                    from client_property_poa where clientpropertyid = {payload['id']}
+                '''
+                cursor.execute(query)
+                colnames = [desc[0] for desc in cursor.description]
+                _data = cursor.fetchall()
+                logging.info(f'The data is <{_data}>')
+                client_poainfo = dict()
+                for row in _data:
+                    row_dict = {colname: value for colname, value in zip(colnames, row)}
+                    client_poainfo = row_dict
+                data["client_property_poa"] = client_poainfo
+
+
+                return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            return giveFailure("Access Denied",payload["user_id"],role_access_status)
+    except Exception as e:
+        logging.exception(traceback.print_exc())
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
+
 
 logger.info("program_started")
