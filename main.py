@@ -213,7 +213,12 @@ def filterAndPaginate(db_config,
             logging.info(f'filterAndPaginate: Given search key <{search_key}> yeilds <{total_count}> entries')
             start_index = (page_number - 1) * page_size
             end_index = start_index + page_size
-            rows = search_results[start_index:end_index]
+            logging.info(f'filterAndPaginate: Given search key <{search_key}> yeilds <{total_count}> entries and before filtered rows are <{len(rows)}>')
+            if start_index != 0 and end_index !=0:
+                rows = search_results[start_index:end_index]
+            else:
+                rows = search_results
+            logging.info(f'filterAndPaginate: Given search key <{search_key}> yeilds <{total_count}> entries and after filtered rows are <{len(rows)}>')
 
         return {'data':rows, 'total_count' : total_count, 'message':'success', 'colnames':colnames}
     except Exception as e:
@@ -1808,7 +1813,7 @@ async def runInTryCatch(conn, fname,query, payload, isPaginationRequired=False):
                                              query=query,
                                              filters=payload['filters'] if 'filters' in payload else None,
                                              table_name=payload['table_name'] if 'table_name' in payload else None,
-                                             required_columns=payload['required_columns'] if 'required_columns' in payload else None,
+                                             required_columns=payload['rows'] if 'rows' in payload else None,
                                              sort_column=payload['sort_by'] if 'sort_by' in payload else None,
                                              sort_order=payload['order'] if 'order' in payload else None,
                                              page_number=payload['pg_no'] if 'pg_no' in payload else 1,
@@ -2837,23 +2842,7 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
          logging.info(traceback.print_exc())
          return giveFailure(f"Failed To Edit given client info due to <{traceback.print_exc()}>",0,0)
 
-@app.post('/deleteClientProperty')
-async def delete_client_property(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    try:
-        role_access_status = check_role_access(conn,payload)
-        if role_access_status == 1:
-            with conn[0].cursor() as cursor:
-                cursor.execute('DELETE FROM  WHERE id=%s',(payload['propertyid'],))
-                cursor.execute('DELETE FROM client_property_owner WHERE propertyid=%s',(payload['propertyid'],))
-                cursor.execute('DELETE FROM client_property_photos WHERE clientpropertyid=%s',(payload['propertyid'],))
-                cursor.execute('DELETE FROM client_property_poa WHERE clientpropertyid=%s',(payload['propertyid'],))
-            return giveSuccess(payload['user_id'],role_access_status,{"deleted_id":payload['propertyid']})
-        else:
-            return giveFailure('Access Denied',payload['user_id'],role_access_status)
-    except Exception as e:
-        logging.info(traceback.print_exc())
-        return giveFailure('Invalid Credentials',0,0)
-    
+
 @app.post('/getClientPropertyById')
 async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
