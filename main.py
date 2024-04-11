@@ -1796,44 +1796,6 @@ async def get_vendor_admin(payload: dict, conn : psycopg2.extensions.connection 
     except Exception as e:
         giveFailure('Invalid Credentials',payload['user_id'],0)
 
-async def runInTryCatch(conn, fname,query, payload, isPaginationRequired=False):#, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'{fname}:RT: received payload <{payload}>')
-    try:
-        role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1:
-            with conn[0].cursor() as cursor:
-                data = dict()
-                if isPaginationRequired:
-                    data = filterAndPaginate(DATABASE_URL,
-                                             query=query,
-                                             filters=payload['filters'] if 'filters' in payload else None,
-                                             table_name=payload['table_name'] if 'table_name' in payload else None,
-                                             required_columns=payload['rows'] if 'rows' in payload else None,
-                                             sort_column=payload['sort_by'] if 'sort_by' in payload else None,
-                                             sort_order=payload['order'] if 'order' in payload else None,
-                                             page_number=payload['pg_no'] if 'pg_no' in payload else 1,
-                                             page_size=payload['pg_size'] if 'pg_size' in payload else 10,
-                                             search_key=payload['search_key'] if 'search_key' in payload else None)
-                else:
-                    cursor.execute(query)
-                    data = cursor.fetchall()
-                return giveSuccess(payload['user_id'], role_access_status, data)
-        else:
-            giveFailure("Access Denied", payload['user_id'], role_access_status)
-    except Exception as e:
-        logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
-        giveFailure('Invalid Credentials', payload['user_id'], 0)
-
-@app.post('/getClientAdminPaginated')
-async def get_client_admin_paginated(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    return await runInTryCatch(
-        conn=conn,
-        fname='getClientAdminPaginated',
-        query="select distinct id, concat_ws(' ',firstname,lastname) as client_name from client order by concat_ws(' ',firstname,lastname)",
-        payload=payload,
-        isPaginationRequired=True
-    )
-
 
 @app.post('/getClientAdmin')
 async def get_client_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2241,7 +2203,7 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
         giveFailure("Invalid Credentials",payload['user_id'],0) 
 
 @app.post('/getClientProperty')
-async def get_client_property(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+async def get_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'getClientProperty: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
@@ -2420,7 +2382,7 @@ async def get_tenant_of_property_admin(payload: dict, conn: psycopg2.extensions.
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT distinct a.id,a.projectid,b.projectname from client_property a,project b where a.projectid = b.id order by b.projectname'
+                query = 'SELECT distinct id,propertydescription,suburb from client_property order by propertydescription'
                 cursor.execute(query)
                 data = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
@@ -2600,18 +2562,18 @@ async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection =
                     for u in payload['client_bank_info']['update']:
                         # todo: may need to add "description" when UI starts sending it. It is part of the bank_info section
                         query = ('UPDATE client_bank_info SET bankaccountholdername=%s,bankaccountno=%s,bankaccounttype=%s,'
-                                 'bankbranch=%s,bankcity=%s,bankifsccode=%s, bankmicrcode=%s  WHERE ID=%s and clientid=%s')
+                                 'bankbranch=%s,bankcity=%s,bankifsccode=%s, bankmicrcode=%s,description=%s  WHERE ID=%s and clientid=%s')
                         data = cursor.execute( query,(
                             u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
-                            u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], u["id"], clientid))
+                            u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"],u['description'],u["id"], clientid))
                         conn[0].commit()
                         logging.info(f'editClientInfo: client_access clientid <{clientid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
                 if 'client_bank_info' in payload and 'insert' in payload['client_bank_info']:
                     for u in payload['client_bank_info']['insert']:
-                        query = ('INSERT into client_bank_info (bankaccountholdername,bankaccountno,bankaccounttype,bankbranch,bankcity,bankifsccode,bankmicrcode,clientid) '
+                        query = ('INSERT into client_bank_info (bankaccountholdername,bankaccountno,bankaccounttype,bankbranch,bankcity,bankifsccode,bankmicrcode,clientid,description) '
                                  'values (%s,%s,%s,%s,%s,%s,%s,%s)')
                         data = cursor.execute( query,(u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
-                            u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], clientid))
+                            u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], clientid,u['description']))
                         conn[0].commit()
                         logging.info(f'editClientInfo: client_bank_info clientid <{clientid}> INSERT status is <{cursor.statusmessage}>')
 
