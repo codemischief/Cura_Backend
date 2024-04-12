@@ -142,6 +142,7 @@ def filterAndPaginate(db_config,
                       page_number=1,
                       page_size=10,
                       query = None,
+                      whereinquery = False,
                       search_key = None):
     try:
         # Base query
@@ -154,21 +155,21 @@ def filterAndPaginate(db_config,
         for column, filter_type, value in (filters or []):
             if value != '':
                 if filter_type == 'startsWith':
-                    where_clauses.append(f"{column} LIKE '{value}%'")
+                    where_clauses.append(f"lower({column}) LIKE '{value.lower()}%'")
                 elif filter_type == 'endsWith':
-                    where_clauses.append(f"{column} LIKE '%{value}'")
+                    where_clauses.append(f"lower({column}) LIKE '%{value.lower()}'")
                 elif filter_type == 'contains':
-                    where_clauses.append(f"{column} LIKE '%{value}%'")
+                    where_clauses.append(f"lower({column}) LIKE '%{value.lower()}%'")
                 elif filter_type == 'exactMatch':
-                    where_clauses.append(f"{column} = '{value}'")
+                    where_clauses.append(f"lower({column}) = '{value.lower()}'")
                 elif filter_type == 'isNull':
                     where_clauses.append(f"{column} = ''")
                 elif filter_type == 'isNotNull':
                     where_clauses.append(f"{column} != ''")
         # handle where clause and sorting
-        if where_clauses and query_frontend:
+        if where_clauses and not whereinquery:
             query += " WHERE " + " AND ".join(where_clauses)
-        elif where_clauses and not query_frontend:
+        elif where_clauses and whereinquery:
             query += " AND " + " AND ".join(where_clauses)
         if sort_column:
             query += f" ORDER BY {sort_column[0]} {sort_order}"
@@ -214,7 +215,7 @@ def filterAndPaginate(db_config,
             start_index = (page_number - 1) * page_size
             end_index = start_index + page_size
             logging.info(f'filterAndPaginate: Given search key <{search_key}> yeilds <{total_count}> entries and before filtered rows are <{len(rows)}>')
-            if start_index != 0 and end_index !=0:
+            if start_index != end_index:
                 rows = search_results[start_index:end_index]
             else:
                 rows = search_results
@@ -589,7 +590,7 @@ def getCountries(payload : dict,conn: psycopg2.extensions.connection = Depends(g
         if role_access_status is not None:
             if role_access_status == 1:
                 with conn[0].cursor() as cursor:
-                    #query = "SELECT * FROM country ORDER BY id;"
+                    # query = "SELECT * FROM country ORDER BY id;"
                     data = filterAndPaginate(DATABASE_URL, payload['rows'], 'country', payload['filters'],
                                              payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                              search_key = payload['search_key'] if 'search_key' in payload else None)
@@ -888,7 +889,7 @@ async def get_states_admin(payload:dict,conn: psycopg2.extensions.connection = D
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             query = "SELECT DISTINCT  b.name as countryname, a.state, b.id as id FROM cities a,country b WHERE a.countryid=b.id order by a.state"
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], None, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], query=query, search_key = payload['search_key'] if 'search_key' in payload else None)
+            data = filterAndPaginate(DATABASE_URL, payload['rows'], None, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], query=query, search_key = payload['search_key'] if 'search_key' in payload else None,whereinquery=True)
             total_count = data['total_count']
             return giveSuccess(payload["user_id"],role_access_status,data['data'], total_count=total_count)
         else:
@@ -983,31 +984,15 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
 
 @app.post('/getProjects')
 async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getProjects: received payload <{payload}>')
-    try:
-        role_access_status = check_role_access(conn, payload)
-
-        if role_access_status == 1:
-            table_name = 'get_projects_view'
-            data = filterAndPaginate(DATABASE_URL,
-                                     payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                     search_key = payload['search_key'] if 'search_key' in payload else None,)
-            total_count = data['total_count']
-            colnames = payload['rows']
-            logging.info(colnames)
-            res = []
-            logging.info(data['data'])
-            for row in data['data']:
-                row_dict = {}
-                for i,colname in enumerate(colnames):
-                    row_dict[colname] = row[i]
-                res.append(row_dict)
-            return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
-        else:
-            return giveFailure( "Username or User ID not found",payload['user_id'],role_access_status)
-    except Exception as e:
-        logging.exception(f'getProjects: encountered exception <{e}>')
-        return giveFailure("Username or User ID not found",payload["user_id"],0)
+    payload['table_name'] = 'get_projects_view'
+    return await runInTryCatch(
+        conn=conn,
+        fname='getProjects',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True
+    )
     
 @app.post("/editProject")
 async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1687,11 +1672,11 @@ async def get_payments(payload: dict, conn : psycopg2.extensions.connection = De
         if role_access_status==1:
             users,paymentmodes,entities,paymentfordata, paymentreqstatus = getdata(conn[0])
             # query = 'SELECT distinct a.id,concat(b.firstname,' ',b.lastname) as paymentby,concat(c.firstname,' ',c.lastname) as paymentto, a.amount,a.paidon,d.name as paymentmode,a.paymentstatus,a.description,a.banktransactionid,e.name as paymentfor,a.dated,a.createdby,a.isdeleted,a.entityid,a.officeid,a.tds,a.professiontax,a.month,a.deduction FROM ref_contractual_payments a,usertable b, usertable c, mode_of_payment d, payment_for e where a.paymentto = b.id and a.paymentby = c.id and a.paymentmode = d.id and a.paymentfor = e.id;'
-            table_name = 'ref_contractual_payments'
-            #table_name = 'get_payments_view'
+            # table_name = 'ref_contractual_payments'
+            table_name = 'get_payments_view'
             # data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],query = query,search_key = payload['search_key'] if 'search_key' in payload else None)
-            payload['rows'].remove('entity')
-            payload['rows'].append('entityid')
+            # payload['rows'].remove('entity')
+            # payload['rows'].append('entityid')
             data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -1702,13 +1687,13 @@ async def get_payments(payload: dict, conn : psycopg2.extensions.connection = De
                     row_dict[colname] = row[i]
                 res.append(row_dict)
 
-            for i in res:
-                i['paymentto'] = users[i['paymentto']]
-                i['paymentby'] = users[i['paymentby']]
-                i['paymentmode'] = paymentmodes[i['paymentmode']]
-                i['entity'] = entities.get(i['entityid'],None)
-                i['paymentfor']=paymentfordata.get(i['paymentfor'],None)
-                i['paymentstatus'] =  paymentreqstatus[i['paymentstatus']]if (i['paymentstatus'] is not None and paymentreqstatus[i['paymentstatus']]) else 'NA'
+            # for i in res:
+            #     i['paymentto'] = users[i['paymentto']]
+            #     i['paymentby'] = users[i['paymentby']]
+            #     i['paymentmode'] = paymentmodes[i['paymentmode']]
+            #     i['entity'] = entities.get(i['entityid'],None)
+            #     i['paymentfor']=paymentfordata.get(i['paymentfor'],None)
+            #     i['paymentstatus'] =  paymentreqstatus[i['paymentstatus']]if (i['paymentstatus'] is not None and paymentreqstatus[i['paymentstatus']]) else 'NA'
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1801,7 +1786,7 @@ async def get_vendor_admin(payload: dict, conn : psycopg2.extensions.connection 
     except Exception as e:
         giveFailure('Invalid Credentials',payload['user_id'],0)
 
-async def runInTryCatch(conn, fname,query, payload, isPaginationRequired=False):#, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=False,whereinquery=True,formatData = False):#, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'{fname}:RT: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
@@ -1809,6 +1794,7 @@ async def runInTryCatch(conn, fname,query, payload, isPaginationRequired=False):
             with conn[0].cursor() as cursor:
                 data = dict()
                 if isPaginationRequired:
+                    logging.info("Pagination")
                     data = filterAndPaginate(DATABASE_URL,
                                              query=query,
                                              filters=payload['filters'] if 'filters' in payload else None,
@@ -1818,25 +1804,40 @@ async def runInTryCatch(conn, fname,query, payload, isPaginationRequired=False):
                                              sort_order=payload['order'] if 'order' in payload else None,
                                              page_number=payload['pg_no'] if 'pg_no' in payload else 1,
                                              page_size=payload['pg_size'] if 'pg_size' in payload else 10,
-                                             search_key=payload['search_key'] if 'search_key' in payload else None)
+                                             search_key=payload['search_key'] if 'search_key' in payload else None,
+                                             whereinquery=whereinquery)
+                    colnames = data['colnames']
+                    data = data['data']
                 else:
                     cursor.execute(query)
-                    data = cursor.fetchall()
+                    res = cursor.fetchall()
+                    colnames = [desc[0] for desc in cursor.description]
+                    
+                if formatData:
+                    logging.info(f"Formatting in progress for process {fname}")
+                    res = []
+                    for row in data:
+                        row_dict = {}
+                        for i,colname in enumerate(colnames):
+                            row_dict[colname] = row[i]
+                        res.append(row_dict)
+                data = res
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
             giveFailure("Access Denied", payload['user_id'], role_access_status)
     except Exception as e:
-        logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
-        giveFailure('Invalid Credentials', payload['user_id'], 0)
+            logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
+            giveFailure('Invalid Credentials', payload['user_id'], 0)
 
 @app.post('/getClientAdminPaginated')
 async def get_client_admin_paginated(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    return await runInTryCatch(
+    return runInTryCatch(
         conn=conn,
         fname='getClientAdminPaginated',
-        query="select distinct id, concat_ws(' ',firstname,lastname) as client_name from client order by concat_ws(' ',firstname,lastname)",
+        query="select distinct id, concat_ws(' ',firstname,lastname) as client_name from get_client_info_view",
         payload=payload,
-        isPaginationRequired=True
+        isPaginationRequired=True,
+        whereinquery=False
     )
 
 
@@ -2425,7 +2426,7 @@ async def get_tenant_of_property_admin(payload: dict, conn: psycopg2.extensions.
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT distinct a.id,a.projectid,b.projectname from client_property a,project b where a.projectid = b.id order by b.projectname'
+                query = 'SELECT distinct id,propertydescription,suburb from client_property order by suburb'
                 cursor.execute(query)
                 data = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
@@ -2437,8 +2438,10 @@ async def get_tenant_of_property_admin(payload: dict, conn: psycopg2.extensions.
                 res.append(row_dict)
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
+            
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
+        logging.info(traceback.print_exc())
         return giveFailure("Invalid Credentials",0,0)
     
 @app.post('/deleteClientInfo')
@@ -2765,20 +2768,21 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
                         ci["otherelectricitydetails"],ci["electricitybillingduedate"],ci["comments"],ci["gasconnectiondetails"],
                         ci["textforposting"],propertyid))
                 conn[0].commit()
-                logging.info(f'editClientInfo: client_info update status is <{cursor.statusmessage}>')
+                
+                logging.info(f'editClientproperty: client_property_info update status is <{cursor.statusmessage}>')
                 # perform CRUD for client accesses in 'client_access' table
                 if 'client_property_photos' in payload and 'update' in payload['client_property_photos']:
                     for u in payload['client_property_photos']['update']:
                         query = ('UPDATE client_property_photos SET photolink=%s,' 'description=%s,' 'phototakenwhen=%s  WHERE id=%s and clientpropertyid=%s')
                         data = cursor.execute( query,(u["photolink"], u["description"], u["phototakenwhen"], u["id"], propertyid))
                         conn[0].commit()
-                        logging.info(f'editClientInfo: client_description propertyid <{propertyid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
-                if 'client_property_photos' in payload and 'insert' in payload['client_access']:
+                        logging.info(f'editClientProperty: client_property_photos propertyid <{propertyid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
+                if 'client_property_photos' in payload and 'insert' in payload['client_property_photos']:
                     for u in payload['client_property_photos']['insert']:
                         query = ('INSERT into client_property_photos (photolink,description,phototakenwhen,clientpropertyid) values (%s,%s,%s,%s)')
                         data = cursor.execute( query,(u["photolink"], u["description"], u["phototakenwhen"], propertyid))
                         conn[0].commit()
-                        logging.info(f'editClientInfo: client_property_photos clientid <{propertyid}> INSERT status is <{cursor.statusmessage}>')
+                        logging.info(f'editClientProperty: client_property_photos clientid <{propertyid}> INSERT status is <{cursor.statusmessage}>')
 
                 # # perform CRUD for client bank information in 'client_bank_info' table
                 # if 'client_bank_info' in payload and 'update' in payload['client_bank_info']:
@@ -2810,18 +2814,18 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
                          'owner2state=%s,' 'owner2country=%s,' 'owner2zip=%s,' 'owner2panno=%s,' 'owner2occupation=%s,'
                          'owner2employer=%s,' 'owner2relation=%s,' 'owner2relationwith=%s,' 'owner2birthyr=%s,'
                          'owner3name=%s,' 'owner3panno=%s,' 'otherownerdetails=%s'
-                         'WHERE ID=%s and propertyid=%s')
+                         ' WHERE propertyid=%s')
                 data = cursor.execute(
                     ''.join(query),(li['owner1name'],li['owner1addressline1'], li['owner1addressline2'], li['owner1suburb'],
                            li['owner1city'], li['owner1state'], li['owner1country'], li['owner1zip'], li['owner1panno'], li['owner1occupation'],
                            li['owner1employername'], li['owner1relation'], li['owner1relationwith'], li['owner1birthyear'],
                            li['owner2name'],li['owner2addressline1'], li['owner2addressline2'], li['owner2suburb'],
                            li['owner2city'], li['owner2state'], li['owner2country'], li['owner2zip'], li['owner2panno'], li['owner2occupation'],
-                           li['owner2employername'], li['owner2relation'], li['owner2relationwith'], li['owner2birthyear'],
-                           li['owner3name'],li['owner3panno'],li['otherownerdetails'],li['id'],
+                           li['owner2employer'], li['owner2relation'], li['owner2relationwith'], li['owner2birthyr'],
+                           li['owner3name'],li['owner3panno'],li['otherownerdetails'],
                            propertyid))
                 conn[0].commit()
-                logging.info(f'editClientInfo: client_legal_info update status is <{cursor.statusmessage}>')
+                logging.info(f'editClientProperty: client_property_owner update status is <{cursor.statusmessage}>')
 
     #             # update client_poa in 'client_poa' table
                 pi = payload['client_property_poa']
@@ -2829,13 +2833,13 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
                          'poaaddressline1=%s,' 'poaaddressline2=%s,' 'poabirthyear=%s,' 'poacity=%s,' 'poacountry=%s,'
                          'poaeffectivedate=%s,' 'poaemployername=%s,' 'poaenddate=%s,' 'poafor=%s,' 'poalegalname=%s,'
                          'poaoccupation=%s,' 'poapanno=%s,' 'poaphoto=%s,' 'poarelation=%s, poarelationwith=%s, poastate=%s,'
-                         'poasuburb=%s, poazip=%s  WHERE ID=%s and clientpropertyid=%s')
+                         'poasuburb=%s, poazip=%s WHERE clientpropertyid=%s')
                 data = cursor.execute( query,(pi['poaaddressline1'],pi['poaaddressline2'], pi['poabirthyear'], pi['poacity'], pi['poacountry'],
                            pi['poaeffectivedate'], pi['poaemployername'], pi['poaenddate'], pi['poafor'], pi['poalegalname'],
                            pi['poaoccupation'], pi['poapanno'], pi['poaphoto'], pi['poarelation'], pi['poarelationwith'],
-                           pi['poastate'],pi['poasuburb'], pi['poazip'], pi['id'], propertyid))
+                           pi['poastate'],pi['poasuburb'], pi['poazip'], propertyid))
                 conn[0].commit()
-    #             logging.info(f'editClientInfo: client_poa update status is <{cursor.statusmessage}>')
+                logging.info(f'editClientProperty: client_property_poa update status is <{cursor.statusmessage}>')
         return giveSuccess(payload['user_id'],role_access_status,{"edited_property":propertyid})
     except Exception as e:
          logging.info(traceback.print_exc())
@@ -2852,8 +2856,8 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
             with conn[0].cursor() as cursor:
                 ############### Arrange Client Property ##################
                 query = f'''
-                    select distinct clientid,propertytype,leveloffurnishing,numberofparkings,state,
-                    city,suburb,country,projectid,status,propertydescription,layoutdetails,
+                    select distinct clientid,leveloffurnishing,numberofparkings,state,
+                    city,suburb,country,projectid,status,propertydescription,propertytype,layoutdetails,
                     email,website,initialpossessiondate,electricityconsumernumber,
                     otherelectricitydetails,electricitybillingduedate,comments,
                     propertytaxnumber,clientservicemanager,propertymanager,
@@ -2868,10 +2872,12 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
                 for row in property_info_:
                     row_dict = {colname: value for colname, value in zip(colnames, row)}
                     property_info = row_dict
-                data["client_property_info"]  = property_info
+                if not property_info:
+                    row_dict = {colname: None for colname in colnames}
+                data["client_property"]  = property_info
                 ############### Arrange Client Property Photos ##################
                 query = f'''
-                    select id,clientpropertyid,photolink,description,phototakenwhen  
+                    select photolink,description,phototakenwhen  
                     from client_property_photos where clientpropertyid = {payload['id']}
                 '''
                 cursor.execute(query)
@@ -2881,13 +2887,13 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
                 for row in _data:
                     row_dict = {colname: value for colname, value in zip(colnames, row)}
                     property_photos.append(row_dict)
+                # if not property_photos:
+                #     property_photos = [{colname: None for colname in colnames}]
                 data["client_property_photos"] = property_photos
-
-
 
                 ############### Arrage Client Property Owner Info ##################
                 query = f'''
-                    select distinct id,propertyid,owner1name,owner1addressline1,owner1addressline2,owner1suburb,owner1city,
+                    select distinct owner1name,owner1addressline1,owner1addressline2,owner1suburb,owner1city,
                     owner1state,owner1country,owner1zip,owner1panno,owner1occupation,owner1employername,
                     owner1relation,owner1birthyear,owner1relationwith,owner2name,owner2addressline1,
                     owner2addressline2,owner2suburb,owner2city,owner2state,owner2country,owner2zip,
@@ -2902,10 +2908,12 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
                 for row in _data:
                     row_dict = {colname: value for colname, value in zip(colnames, row)}
                     property_owner = row_dict
+                if not property_owner:
+                    property_owner = {colname: None for colname in colnames}
                 data["client_property_owner"] = property_owner
 
                 ############### Arrange Client Property POA info ##################
-                query = f'''select distinct id,clientpropertyid,poalegalname,poapanno,poaaddressline1,poaaddressline2,poasuburb,poacity,
+                query = f'''select distinct poalegalname,poapanno,poaaddressline1,poaaddressline2,poasuburb,poacity,
                     poastate,poacountry,poazip,poaoccupation,poabirthyear,poaphoto,poaemployername,
                     poarelation,poarelationwith,poaeffectivedate,poaenddate,poafor,scancopy
                     from client_property_poa where clientpropertyid = {payload['id']}
@@ -2914,12 +2922,14 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
                 colnames = [desc[0] for desc in cursor.description]
                 _data = cursor.fetchall()
                 logging.info(f'The data is <{_data}>')
-                client_poainfo = dict()
+                property_poa = dict()
                 for row in _data:
                     row_dict = {colname: value for colname, value in zip(colnames, row)}
-                    client_poainfo = row_dict
-                data["client_property_poa"] = client_poainfo
-
+                    property_poa = row_dict
+                if not property_poa:
+                    property_poa = {colname: None for colname in colnames}
+                data["client_property_poa"] = property_poa
+                
 
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
