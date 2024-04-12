@@ -383,11 +383,12 @@ EXECUTE FUNCTION delete_from_get_builder_contacts_view();
 
 
 CREATE VIEW get_client_info_view AS
-SELECT
+SELECT 
     a.id,
     a.firstname,
     a.middlename,
     a.lastname,
+    concat_ws(' ',a.firstname,a.middlename,a.lastname) as clientname,
     a.salutation,
     a.clienttype,
     b.name as clienttypename,
@@ -396,7 +397,7 @@ SELECT
     a.suburb,
     a.city,
     a.state,
-    a.country,
+    c.name as country,
     a.zip,
     a.homephone,
     a.workphone,
@@ -418,13 +419,20 @@ SELECT
     a.createdby,
     a.isdeleted,
     a.entityid,
-    a.tenantof
+    a.tenantof,
+    concat_ws(' ',d.firstname,d.middlename,d.lastname) as tenantofname,
+    a.tenantofproperty,
+    concat_ws('-',e.propertydescription,e.suburb) as tenantofpropertyname
 FROM
     client a,
     client_type b,
-    country c
+    country c,
+    client d,
+    client_property e
 WHERE
-    a.clienttype = b.id and a.country = c.id;
+    a.clienttype = b.id and a.country = c.id
+    and a.tenantof = d.id and a.tenantofproperty = e.id;
+
 
 CREATE OR REPLACE FUNCTION delete_from_get_client_info_view() RETURNS TRIGGER AS $$
 BEGIN
@@ -442,11 +450,10 @@ FOR EACH ROW
 EXECUTE FUNCTION delete_from_get_client_info_view();
 
 CREATE VIEW get_client_property_view AS
-SELECT
+SELECT DISTINCT
     a.id,
     CONCAT(b.firstname,' ',b.middlename,' ',b.lastname) as client,
     a.clientid,
-    a.propertydescription,
     c.projectname as project,
     a.projectid,
     a.propertytype as propertytypeid,
@@ -481,23 +488,22 @@ SELECT
     a.isdeleted,
     a.electricitybillingduedate
 FROM
-    client_property a,
-    client b,
-    project c,
-    property_type d,
-    cities e,
-    country f,
-    property_status g,
-    usertable h,
-    usertable i
-WHERE
-    a.clientid = b.id AND
-    a.projectid = c.id AND
-    a.propertytype = d.id AND
-    a.country = f.id AND
-    a.status = g.id AND
-    a.clientservicemanager = h.id AND
-    a.propertymanager = i.id;
+    client_property a
+LEFT JOIN
+    client b ON a.clientid = b.id
+LEFT JOIN
+    project c ON a.projectid = c.id
+LEFT JOIN
+    property_type d ON a.propertytype = d.id
+LEFT JOIN
+    country f ON a.country = f.id
+LEFT JOIN
+    property_status g ON a.status = g.id
+LEFT JOIN
+    usertable h ON a.clientservicemanager = h.id
+LEFT JOIN
+    usertable i ON a.propertymanager = i.id;
+
 
 CREATE OR REPLACE FUNCTION delete_from_get_client_property_view() RETURNS TRIGGER AS $$
 BEGIN
@@ -637,6 +643,11 @@ CREATE SEQUENCE IF NOT EXISTS client_property_poa_id_seq OWNED BY client_propert
 SELECT setval('client_property_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_poa;
 ALTER TABLE client_property_poa ALTER COLUMN id SET DEFAULT nextval('client_property_poa_id_seq');
 
+
+CREATE SEQUENCE IF NOT EXISTS client_property_owner_id_seq OWNED BY client_property_owner.id;
+SELECT setval('client_property_owner_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_owner;
+ALTER TABLE client_property_owner ALTER COLUMN id SET DEFAULT nextval('client_property_owner_id_seq');
+
 SELECT * FROM client_property WHERE id=18194;
 SELECT * FROM client_property_photos WHERE clientpropertyid=18194;
 SELECT * FROM client_property_poa WHERE clientpropertyid=18194;
@@ -645,3 +656,10 @@ SELECT * FROM client_property_owner WHERE propertyid=18194;
 INSERT INTO your_table (column1, column2, ...)
 VALUES (value1, value2, ...)
 RETURNING *;
+
+alter table client_property alter column initialpossessiondate date;
+
+alter table client_property add column website text;
+alter table client_property add column email text;
+
+SELECT setval('client_property_id_seq', (SELECT MAX(id) FROM client_property));
