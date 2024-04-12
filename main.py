@@ -1966,7 +1966,7 @@ async def get_client_info(payload : dict, conn : psycopg2.extensions.connection 
             with conn[0].cursor() as cursor:
                 #if 'clienttypename' in payload['rows']:
                 #    payload['rows'].remove('clienttypename')
-                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_client_info_view', payload['filters'],
+                data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_client_info_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None)
                 types = clienttype(payload,conn)['data']
