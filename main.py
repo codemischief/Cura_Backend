@@ -1792,7 +1792,9 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                data = dict()
+                res = []
+                data = []
+                colnames = []
                 if isPaginationRequired:
                     logging.info("Pagination")
                     data = filterAndPaginate(DATABASE_URL,
@@ -1810,18 +1812,17 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                     data = data['data']
                 else:
                     cursor.execute(query)
-                    res = cursor.fetchall()
+                    res_ = cursor.fetchall()
                     colnames = [desc[0] for desc in cursor.description]
-                    
+                    data = res_
+
                 if formatData:
                     logging.info(f"Formatting in progress for process {fname}")
-                    res = []
                     for row in data:
                         row_dict = {}
                         for i,colname in enumerate(colnames):
                             row_dict[colname] = row[i]
                         res.append(row_dict)
-                data = res
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
             giveFailure("Access Denied", payload['user_id'], role_access_status)
