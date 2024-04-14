@@ -251,15 +251,15 @@ def filterAndPaginate_v2(db_config,
             ##########################################################
             if dataType == 'String':
                 if filter_type == 'contains':
-                    where_clauses.append(f"{column} LIKE '%{value}%'")
+                    where_clauses.append(f"lower({column}) LIKE '%{value.lower()}%'")
                 elif filter_type == 'doesNotContain':
-                    where_clauses.append(f"{column} NOT LIKE '%{value}%'")
+                    where_clauses.append(f"lower({column}) NOT LIKE '%{value.lower()}%'")
                 elif filter_type == 'startsWith':
-                    where_clauses.append(f"{column} LIKE '{value}%'")
+                    where_clauses.append(f"lower({column}) LIKE '{value.lower()}%'")
                 elif filter_type == 'endsWith':
-                    where_clauses.append(f"{column} LIKE '%{value}'")
+                    where_clauses.append(f"lower({column}) LIKE '%{value.lower()}'")
                 elif filter_type == 'equalTo':
-                    where_clauses.append(f"{column} = '{value}'")
+                    where_clauses.append(f"lower({column}) = '{value.lower()}'")
                 elif filter_type == 'isNull':
                     where_clauses.append(f"{column} = ''")
                 elif filter_type == 'isNotNull':
@@ -591,7 +591,7 @@ def getCountries(payload : dict,conn: psycopg2.extensions.connection = Depends(g
             if role_access_status == 1:
                 with conn[0].cursor() as cursor:
                     # query = "SELECT * FROM country ORDER BY id;"
-                    data = filterAndPaginate(DATABASE_URL, payload['rows'], 'country', payload['filters'],
+                    data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'country', payload['filters'],
                                              payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                              search_key = payload['search_key'] if 'search_key' in payload else None)
                     total_count = data['total_count']
@@ -768,7 +768,7 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
 
         if role_access_status == 1:  
             with conn[0].cursor() as cursor:
-                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
+                data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None)
 
@@ -888,8 +888,8 @@ async def get_states_admin(payload:dict,conn: psycopg2.extensions.connection = D
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            query = "SELECT DISTINCT  b.name as countryname, a.state, b.id as id FROM cities a,country b WHERE a.countryid=b.id order by a.state"
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], None, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], query=query, search_key = payload['search_key'] if 'search_key' in payload else None,whereinquery=True)
+            # query = "SELECT DISTINCT  b.name as countryname, a.state, b.id as id FROM cities a,country b WHERE a.countryid=b.id order by a.state"
+            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'],'get_states_view', payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None,whereinquery=True)
             total_count = data['total_count']
             return giveSuccess(payload["user_id"],role_access_status,data['data'], total_count=total_count)
         else:
@@ -1235,7 +1235,7 @@ async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             table_name = 'bankst'
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
+            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
             print(colnames)
@@ -1481,7 +1481,7 @@ async def get_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             table_name = 'lob'
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
+            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
             print(colnames)
@@ -1576,7 +1576,7 @@ async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connect
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             table_name = 'get_research_prospect_view'
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
+            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
             print(colnames)
@@ -1792,9 +1792,7 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                res = []
-                data = []
-                colnames = []
+                data = dict()
                 if isPaginationRequired:
                     logging.info("Pagination")
                     data = filterAndPaginate(DATABASE_URL,
@@ -1812,17 +1810,18 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                     data = data['data']
                 else:
                     cursor.execute(query)
-                    res_ = cursor.fetchall()
+                    res = cursor.fetchall()
                     colnames = [desc[0] for desc in cursor.description]
-                    data = res_
-
+                    
                 if formatData:
                     logging.info(f"Formatting in progress for process {fname}")
+                    res = []
                     for row in data:
                         row_dict = {}
                         for i,colname in enumerate(colnames):
                             row_dict[colname] = row[i]
                         res.append(row_dict)
+                data = res
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
             giveFailure("Access Denied", payload['user_id'], role_access_status)
@@ -1832,12 +1831,13 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
 
 @app.post('/getClientAdminPaginated')
 async def get_client_admin_paginated(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    return await runInTryCatch(
+    return runInTryCatch(
         conn=conn,
         fname='getClientAdminPaginated',
         query="select distinct id, concat_ws(' ',firstname,lastname) as client_name from get_client_info_view",
         payload=payload,
-        isPaginationRequired=True
+        isPaginationRequired=True,
+        whereinquery=False
     )
 
 
@@ -2253,7 +2253,7 @@ async def get_client_property(payload : dict, conn : psycopg2.extensions.connect
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                data = filterAndPaginate(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
+                data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None)
                 colnames = data['colnames']
