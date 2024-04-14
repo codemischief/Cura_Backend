@@ -1832,7 +1832,7 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
 
 @app.post('/getClientAdminPaginated')
 async def get_client_admin_paginated(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    return runInTryCatch(
+    return await runInTryCatch(
         conn=conn,
         fname='getClientAdminPaginated',
         query="select distinct id, concat_ws(' ',firstname,lastname) as client_name from get_client_info_view",
