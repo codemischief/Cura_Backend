@@ -2,6 +2,7 @@ import psycopg2
 import bcrypt
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
+import psycopg2.errorcodes
 from pydantic import BaseModel
 import logging
 import traceback
@@ -236,7 +237,8 @@ def filterAndPaginate_v2(db_config,
                          page_number=1,
                          page_size=10,
                          query = None,
-                         search_key = None):
+                         search_key = None,
+                         whereinquery=False):
     try:
         # Base query
         query_frontend = False
@@ -312,8 +314,10 @@ def filterAndPaginate_v2(db_config,
                 # must throw a warning here
                 pass
         # handle where clause and sorting
-        if where_clauses:
+        if where_clauses and not whereinquery:
             query += " WHERE " + " AND ".join(where_clauses)
+        elif where_clauses and whereinquery:
+            query += " AND " + " AND ".join(where_clauses)
         if sort_column:
             query += f" ORDER BY {sort_column[0]} {sort_order}"
         # Handle pagination
@@ -334,7 +338,7 @@ def filterAndPaginate_v2(db_config,
         conn = psycopg2.connect(db_config)
         cur = conn.cursor()
         cur.execute(query)
-        #logging.info(f"Cursor message is {cur.statusmessage}")
+        logging.info(f"Cursor message is {cur.statusmessage}")
         rows = cur.fetchall()
         cur = conn.cursor()
         cur.execute(counts_query)
@@ -1797,7 +1801,7 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                 colnames = []
                 if isPaginationRequired:
                     logging.info("Pagination")
-                    data = filterAndPaginate(DATABASE_URL,
+                    data = filterAndPaginate_v2(DATABASE_URL,
                                              query=query,
                                              filters=payload['filters'] if 'filters' in payload else None,
                                              table_name=payload['table_name'] if 'table_name' in payload else None,
@@ -1809,12 +1813,14 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                                              search_key=payload['search_key'] if 'search_key' in payload else None,
                                              whereinquery=whereinquery)
                     colnames = data['colnames']
+                    total_count = data['total_count']
                     data = data['data']
                 else:
                     cursor.execute(query)
                     res_ = cursor.fetchall()
                     colnames = [desc[0] for desc in cursor.description]
                     data = res_
+                    return giveSuccess(payload['user_id'], role_access_status, data,total_count)
 
                 if formatData:
                     logging.info(f"Formatting in progress for process {fname}")
@@ -1823,7 +1829,7 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                         for i,colname in enumerate(colnames):
                             row_dict[colname] = row[i]
                         res.append(row_dict)
-                return giveSuccess(payload['user_id'], role_access_status, data)
+                return giveSuccess(payload['user_id'], role_access_status, res,total_count)
         else:
             giveFailure("Access Denied", payload['user_id'], role_access_status)
     except Exception as e:
@@ -2091,51 +2097,6 @@ async def get_client_info_by_clientid(payload : dict, conn : psycopg2.extensions
         logging.exception(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
 
-
-@app.post('/addClientReceipt')
-async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addClientReceipt: received payload <{payload}>')
-    try:
-        # if 'builderid' not in payload:
-        #     return {
-        #         "result": "error",
-        #         "message": "Missing 'builderid' in payload",
-        #         "user_id": payload.get('user_id', None),
-        #         "data": {}
-        #     }
-        role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1:
-            with conn[0].cursor() as cursor:
-                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                query = '''
-                    INSERT INTO client_receipt (
-                        receivedby, paymentmode, recddate, entityid, amount, howreceivedid,
-                        clientid, receiptdesc, serviceamount, reimbursementamount, tds 
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                '''
-                cursor.execute(query, (
-                    payload['receivedby'],
-                    payload['paymentmode'],
-                    payload['recddate'],
-                    payload['entityid'],
-                    payload['amount'],
-                    payload['howreceivedid'],
-                    payload['clientid'],
-                    payload['receiptdesc'],
-                    payload['serviceamount'],
-                    payload['reimbursementamount'],
-                    payload['tds']
-                ))
-
-                # Commit changes to the database
-                conn[0].commit()
-            data = { "entered": f"client receipt for amount <{payload['amount']}>"}
-            return giveSuccess(payload['user_id'], role_access_status, data)
-        else:
-            return giveFailure("Access Denied", payload['user_id'], role_access_status)
-    except Exception as e:
-        logging.exception(f'addClientReceit_Exception: {traceback.format_exc()}')
-        return giveFailure(str(e), payload['user_id'], 0)
 
     
 @app.post('/getItembyId')
@@ -2939,5 +2900,179 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
         logging.exception(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
 
+@app.post('/getClientReceipt')
+async def get_client_receipt(payload: dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'get_client_receipt_view'
+    return await runInTryCatch(
+        conn=conn,
+        fname='get_client_receipt',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True
+    )
+
+@app.post('/addClientReceipt')
+async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "INSERT INTO client_receipt(receivedby,amount,tds,paymentmode,clientid,receiptdesc,serviceamount,reimbursementamount,entityid,howreceivedid,officeid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
+                cursor.execute(query,[
+                    payload["receivedby"],
+                    payload["amount"],
+                    payload["tds"],
+                    payload["paymentmode"],
+                    payload["clientid"],
+                    payload["receiptdesc"],
+                    payload["serviceamount"],
+                    payload["reimbursementamount"],
+                    payload["entityid"],
+                    payload["howreceivedid"],
+                    payload["officeid"],
+                    givenowtime(),
+                    payload["user_id"],
+                    False
+                ])
+                data = cursor.fetchone()[0]
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted_Receipt":data})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+    
+@app.post('/editClientReceipt')
+async def edit_client_receipt(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "UPDATE client_receipt SET receivedby = %s, amount = %s, tds = %s, paymentmode = %s, clientid = %s,receiptdesc = %s, serviceamount=%s, reimbursementamount = %s, entityid = %s, howreceivedid = %s,officeid = %s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s"
+                cursor.execute(query,[
+                    payload["receivedby"],
+                    payload["amount"],
+                    payload["tds"],
+                    payload["paymentmode"],
+                    payload["clientid"],
+                    payload["receiptdesc"],
+                    payload["serviceamount"],
+                    payload["reimbursementamount"],
+                    payload["entityid"],
+                    payload["howreceivedid"],
+                    payload["officeid"],
+                    givenowtime(),
+                    payload["user_id"],
+                    False,
+                    payload["id"]
+                ])
+                conn[0].commit()
+                if cursor.statusmessage!="UPDATE 0":
+                    return giveSuccess(payload['user_id'],role_access_status,{"Edited_Receipt":payload['id']})
+                else:
+                    return giveFailure("No Record Available",payload['user_id'],role_access_status)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+
+@app.post('/deleteClientReceipt')
+async def delete_client_receipt(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "DELETE FROM client_receipt WHERE id=%s"
+                cursor.execute(query,(payload['id'],))
+                conn[0].commit()
+            if cursor.statusmessage !="DELETE 0":
+                return giveSuccess(payload['user_id'],role_access_status,{"Deleted_Receipt":payload['id']})
+            else:
+                    return giveFailure("No Record Available",payload['user_id'],role_access_status)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+
+@app.post('/getClientPMAAgreement')
+async def get_client_pma_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'get_client_property_pma_info'
+    return await runInTryCatch(
+        conn=conn,
+        fname='get_client_pma_agreement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True
+    )
+
+@app.post('/addClientPMAAgreement')
+async def add_client_pma_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "INSERT INTO client_property_caretaking_Agreement (clientpropertyid,startdate,enddate,actualenddate,active,scancopy,reasonforearlyterminationifapplicable,description,rented,fixed,rentedtax,fixedtax,orderid,poastartdate,poaenddate,poaholder,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
+                cursor.execute(query,[
+                    payload["clientpropertyid"],payload["startdate"],payload["enddate"],payload["actualenddate"],payload["active"],
+                    payload["scancopy"],payload["reasonforearlyterminationifapplicable"],payload["description"],payload["rented"],
+                    payload["fixed"],payload["rentedtax"],payload["fixedtax"],payload["orderid"],payload["poastartdate"],payload["poaenddate"],
+                    payload["poaholder"],givenowtime(),payload["user_id"],False
+                ])
+                id = cursor.fetchone()[0]
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted_PMA":id})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+
+@app.post('/editClientPMAAgreement')
+async def edit_client_pma_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "UPDATE client_property_caretaking_agreement SET clientpropertyid=%s,startdate=%s,enddate=%s,actualenddate=%s,active=%s,scancopy=%s,reasonforearlyterminationifapplicable=%s,description=%s,rented=%s,fixed=%s,rentedtax=%s,fixedtax=%s,orderid=%s,poastartdate=%s,poaenddate=%s,poaholder=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s"
+                cursor.execute(query,[
+                    payload["clientpropertyid"],payload["startdate"],payload["enddate"],payload["actualenddate"],payload["active"],
+                    payload["scancopy"],payload["reasonforearlyterminationifapplicable"],payload["description"],payload["rented"],
+                    payload["fixed"],payload["rentedtax"],payload["fixedtax"],payload["orderid"],payload["poastartdate"],payload["poaenddate"],
+                    payload["poaholder"],givenowtime(),payload["user_id"],False,payload['id']
+                ])
+                conn[0].commit()
+            if cursor.statusmessage !="UPDATE 0":
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited_PMA":payload['id']})
+            else:
+                    return giveFailure("No Record Available",payload['user_id'],role_access_status)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+
+@app.post('/deleteClientPMAAgreement')
+async def delete_client_pma_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "DELETE FROM client_property_caretaking_agreement WHERE id=%s"
+                cursor.execute(query,(payload['id'],))
+                conn[0].commit()
+            if cursor.statusmessage !="DELETE 0":
+                return giveSuccess(payload['user_id'],role_access_status,{"Deleted_PMA":payload['id']})
+            else:
+                    return giveFailure("No Record Available",payload['user_id'],role_access_status)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
 
 logger.info("program_started")
