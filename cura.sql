@@ -663,3 +663,68 @@ alter table client_property add column website text;
 alter table client_property add column email text;
 
 SELECT setval('client_property_id_seq', (SELECT MAX(id) FROM client_property));
+
+ALTER TABLE client_property_caretaking_agreement RENAME COLUMN pmaholder TO poaholder;
+
+CREATE VIEW get_client_receipt_view AS
+SELECT DISTINCT
+    a.id,
+    a.receivedby,
+    concat_ws(' ',f.firstname,f.lastname) as receivedbyname,
+    a.amount,
+    a.tds,
+    a.paymentmode,
+    g.name as paymentmodename,
+    a.clientid,
+    concat_ws(' ',e.firstname,e.middlename,e.lastname) as clientname,
+    a.receiptdesc,
+    a.dated,
+    a.createdby,
+    a.isdeleted,
+    a.serviceamount,
+    a.reimbursementamount,
+    a.entityid,
+    b.name as entity,
+    c.name as howreceived,
+    a.howreceivedid,
+    d.name as office,
+    a.officeid
+FROM
+    client_receipt a
+LEFT JOIN 
+    entity b ON a.entityid = b.id
+LEFT JOIN 
+    howreceived c ON a.howreceivedid = c.id
+LEFT JOIN 
+    office d ON a.officeid = d.id
+LEFT JOIN
+    client e ON a.clientid = e.id
+LEFT JOIN
+    usertable f ON a.receivedby = f.id
+LEFT JOIN
+    mode_of_payment g ON a.paymentmode = g.id;
+
+CREATE OR REPLACE FUNCTION delete_from_get_client_receipt_view() RETURNS TRIGGER AS $$
+BEGIN
+    -- Perform delete operation on the underlying table(s)
+    DELETE FROM client_receipt WHERE id = OLD.id;
+    -- You might need additional delete operations if data is spread across multiple tables
+    -- If so, add DELETE statements for those tables here.
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER delete_trigger_for_get_client_receipt_view
+INSTEAD OF DELETE ON get_client_receipt_view
+FOR EACH ROW
+EXECUTE FUNCTION delete_from_get_client_receipt_view();
+
+CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
+SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
+ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS client_property_caretaking_agreement_id_seq OWNED BY client_property_caretaking_agreement.id;
+SELECT setval('client_property_caretaking_agreement_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_caretaking_agreement;
+ALTER TABLE client_property_caretaking_agreement ALTER COLUMN id SET DEFAULT nextval('client_property_caretaking_agreement_id_seq');
+
+
