@@ -673,6 +673,7 @@ SELECT DISTINCT
     concat_ws(' ',f.firstname,f.lastname) as receivedbyname,
     a.amount,
     a.tds,
+    a.recddate,
     a.paymentmode,
     g.name as paymentmodename,
     a.clientid,
@@ -723,8 +724,102 @@ CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
 SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
 ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
 
+ALTER TABLE client_receipt ALTER COLUMN recddate set type date;
+
 CREATE SEQUENCE IF NOT EXISTS client_property_caretaking_agreement_id_seq OWNED BY client_property_caretaking_agreement.id;
 SELECT setval('client_property_caretaking_agreement_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_caretaking_agreement;
 ALTER TABLE client_property_caretaking_agreement ALTER COLUMN id SET DEFAULT nextval('client_property_caretaking_agreement_id_seq');
 
 
+
+CREATE VIEW get_client_property_pma_view AS
+SELECT DISTINCT
+    a.id,
+    a.clientpropertyid,
+    concat_ws('-',d.project,d.suburb) as propertydescription,
+    d.propertystatus,
+    d.client as clientname,
+    d.status,
+    a.startdate,
+    a.enddate,
+    a.actualenddate,
+    a.active,
+    a.scancopy,
+    a.reasonforearlyterminationifapplicable,
+    a.dated,
+    a.createdby,
+    a.isdeleted,
+    a.description,
+    a.rented,
+    a.fixed,
+    a.rentedtax,
+    a.fixedtax,
+    a.orderid,
+    b.briefdescription as orderdescription,
+    a.poastartdate,
+    a.poaenddate,
+    a.poaholder
+FROM
+    client_property_caretaking_agreement a
+LEFT JOIN
+    orders b ON a.orderid = b.id
+LEFT JOIN
+    get_client_property_view d ON a.clientpropertyid = d.id;
+
+
+CREATE OR REPLACE FUNCTION get_client_property_pma_view() RETURNS TRIGGER AS $$
+BEGIN
+    -- Perform delete operation on the underlying table(s)
+    DELETE FROM client_property_caretaking_agreement WHERE id = OLD.id;
+    -- You might need additional delete operations if data is spread across multiple tables
+    -- If so, add DELETE statements for those tables here.
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER get_client_property_pma_view
+INSTEAD OF DELETE ON get_client_property_pma_view
+FOR EACH ROW
+EXECUTE FUNCTION get_client_property_pma_view();
+
+CREATE VIEW get_client_property_lla_view AS
+SELECT DISTINCT
+    a.id,
+    a.clientpropertyid,
+    a.orderid,
+    b.briefdescription as orderdescription,
+    a.startdate,
+    a.durationinmonth,
+    a.depositamount,
+    a.rentamount,
+    a.registrationtype,
+    a.rentpaymentdate,
+    a.noticeperiodindays,
+    a.active,
+    a.llscancopy,
+    a.dated,
+    a.createdby,
+    a.isdeleted
+FROM 
+    client_property_leave_license_details a
+LEFT JOIN
+    orders b ON a.orderid = b.id;
+
+CREATE SEQUENCE IF NOT EXISTS client_property_leave_license_details_id_seq OWNED BY client_property_leave_license_details.id;
+SELECT setval('client_property_caretaking_agreement_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_leave_license_details;
+ALTER TABLE client_property_leave_license_details ALTER COLUMN id SET DEFAULT nextval('client_property_leave_license_details_id_seq');
+
+CREATE OR REPLACE FUNCTION get_client_property_lla_view() RETURNS TRIGGER AS $$
+BEGIN
+    -- Perform delete operation on the underlying table(s)
+    DELETE FROM client_property_leave_license_details WHERE id = OLD.id;
+    -- You might need additional delete operations if data is spread across multiple tables
+    -- If so, add DELETE statements for those tables here.
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER get_client_property_lla_view
+INSTEAD OF DELETE ON get_client_property_lla_view
+FOR EACH ROW
+EXECUTE FUNCTION get_client_property_lla_view();
