@@ -3084,7 +3084,7 @@ async def delete_client_pma_agreement(payload: dict, conn: psycopg2.extensions.c
         logging.info(traceback.print_exc())
         return giveFailure("Invalid Credentials",0,0)
 
-@app.post('/getLLAgreement')
+@app.post('/getClientLLAgreement')
 async def get_ll_agreement(payload: dict, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'get_client_property_lla_view'
     return await runInTryCatch(
@@ -3096,22 +3096,62 @@ async def get_ll_agreement(payload: dict, conn:psycopg2.extensions.connection = 
         formatData=True
     )
 
-@app.post('/addClientPMAAgreement')
+@app.post('/addClientLLAgreement')
 async def add_client_ll_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "INSERT INTO client_property_leave_license_details (clientpropertyid,orderid,startdate,durationinmonth,depositamount,rentamount,registrationtype,rentpaymentdate,noticeperiodindays,active,llscancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
-                cursor.execute(query,[
-                    payload["clientpropertyid"],payload["startdate"],payload["enddate"],payload["actualenddate"],payload["active"],
-                    payload["scancopy"],payload["reasonforearlyterminationifapplicable"],payload["description"],payload["rented"],
-                    payload["fixed"],payload["rentedtax"],payload["fixedtax"],payload["orderid"],payload["poastartdate"],payload["poaenddate"],
-                    payload["poaholder"],givenowtime(),payload["user_id"],False
+                query = "INSERT INTO client_property_leave_license_details (clientpropertyid,orderid,durationinmonth,startdate,actualenddate,depositamount,rentamount,registrationtype,rentpaymentdate,noticeperiodindays,active,llscancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
+                cursor.execute(query,[payload["clientpropertyid"],payload["orderid"],payload["durationinmonth"],payload['startdate'],
+                                      payload['actualenddate'],payload['depositamount'],payload["rentamount"],payload["registrationtype"],
+                                      payload["rentpaymentdate"],payload["noticeperiodindays"],payload["active"],
+                                      payload["llscancopy"],givenowtime(),payload["user_id"],False
                 ])
                 id = cursor.fetchone()[0]
                 conn[0].commit()
-                return giveSuccess(payload['user_id'],role_access_status,{"Inserted_PMA":id})
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted_L&L":id})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+
+@app.post('/editClientLLAgreement')
+async def edit_client_ll_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE client_property_leave_license_details SET clientpropertyid=%s,orderid=%s,durationinmonth=%s,startdate=%s,depositamount=%s,actualenddate=%s,rentamount=%s,registrationtype=%s,rentpaymentdate=%s,noticeperiodindays=%s,active=%s,llscancopy=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
+                cursor.execute(query,[payload["clientpropertyid"],payload["orderid"],payload["durationinmonth"],payload["startdate"],payload['depositamount'],
+                                      payload["actualenddate"],payload["rentamount"],payload["registrationtype"],payload["rentpaymentdate"],
+                                      payload["noticeperiodindays"],payload["active"],payload["llscancopy"],givenowtime(),payload['user_id']
+                                      ,False,payload['id']])
+            conn[0].commit()
+            if cursor.statusmessage !="UPDATE 0":
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited_LLA":payload['id']})
+            else:
+                    return giveFailure("No Record Available",payload['user_id'],role_access_status)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+    
+@app.post('/deleteClientLLAgreement')
+async def delete_client_pma_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "DELETE FROM client_property_leave_license_details WHERE id=%s"
+                cursor.execute(query,(payload['id'],))
+                conn[0].commit()
+            if cursor.statusmessage !="DELETE 0":
+                return giveSuccess(payload['user_id'],role_access_status,{"Deleted_L&L":payload['id']})
+            else:
+                    return giveFailure("No Record Available",payload['user_id'],role_access_status)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
