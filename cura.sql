@@ -738,6 +738,7 @@ SELECT DISTINCT
     a.clientpropertyid,
     concat_ws('-',d.project,d.suburb) as propertydescription,
     d.propertystatus,
+    d.status as propertystatusname,
     e.name as propertystatusname,
     d.client as clientname,
     d.status,
@@ -766,8 +767,6 @@ LEFT JOIN
     orders b ON a.orderid = b.id
 LEFT JOIN
     get_client_property_view d ON a.clientpropertyid = d.id
-LEFT JOIN
-    property_status e ON d.propertystatus = e.id;
 
 
 CREATE OR REPLACE FUNCTION get_client_property_pma_view() RETURNS TRIGGER AS $$
@@ -789,6 +788,10 @@ CREATE VIEW get_client_property_lla_view AS
 SELECT DISTINCT
     a.id,
     a.clientpropertyid,
+    d.client as clientname,
+    concat_ws('-',d.project,d.suburb) as propertydescription,
+    d.propertystatus,
+    d.status as propertystatusname,
     a.orderid,
     b.briefdescription as orderdescription,
     a.startdate,
@@ -806,7 +809,9 @@ SELECT DISTINCT
 FROM 
     client_property_leave_license_details a
 LEFT JOIN
-    orders b ON a.orderid = b.id;
+    orders b ON a.orderid = b.id
+LEFT JOIN
+    get_client_property_view d ON a.clientpropertyid = d.id;
 
 CREATE SEQUENCE IF NOT EXISTS client_property_leave_license_details_id_seq OWNED BY client_property_leave_license_details.id;
 SELECT setval('client_property_leave_license_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_leave_license_details;

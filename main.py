@@ -281,7 +281,7 @@ def filterAndPaginate_v2(db_config,
                 elif filter_type == 'greaterThanOrEqualTo':
                     where_clauses.append(f"{column} >= {value}")
                 elif filter_type == 'lessThanOrEqualTo':
-                    where_clauses.append(f"{column} =< {value}")
+                    where_clauses.append(f"{column} <= {value}")
                 elif filter_type == 'between':
                     where_clauses.append(f" ({column} >= {value[0]} AND {column} <= {value[1]}) ")
                 elif filter_type == 'notBetween':
@@ -3157,5 +3157,49 @@ async def delete_client_pma_agreement(payload: dict, conn: psycopg2.extensions.c
     except Exception as e:
         logging.info(traceback.print_exc())
         return giveFailure("Invalid Credentials",0,0)
+
+@app.post('/getClientPropertyByClientId')
+async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT DISTINCT a.id,concat_ws('-',a.project,b.propertydescription,a.suburb) as propertyname from get_client_property_view a LEFT JOIN client_property b ON a.projectid=b.id WHERE a.clientid=%s"
+                cursor.execute(query,(payload['client_id'],))
+                data = cursor.fetchall()
+            colnames = [desc[0] for desc in cursor.description]
+            res = []
+            for row in data:
+                row_dict = {key:value for key,value in zip(colnames,row)}
+                res.append(row_dict)
+            return giveSuccess(payload['user_id'],role_access_status,res)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+    
+@app.post('/getOrdersByClientId')
+async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT DISTINCT a.id,concat_ws('-',concat_ws(' ',b.firstname,b.lastname),briefdescription) as ordername from orders a LEFT JOIN usertable b ON a.owner=b.id WHERE clientid = %s"
+                cursor.execute(query,(payload['client_id'],))
+                data = cursor.fetchall()
+            colnames = [desc[0] for desc in cursor.description]
+            res = []
+            for row in data:
+                row_dict = {key:value for key,value in zip(colnames,row)}
+                res.append(row_dict)
+            return giveSuccess(payload['user_id'],role_access_status,res)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+
+
 
 logger.info("program_started")
