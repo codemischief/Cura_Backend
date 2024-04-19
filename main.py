@@ -281,7 +281,7 @@ def filterAndPaginate_v2(db_config,
                 elif filter_type == 'greaterThanOrEqualTo':
                     where_clauses.append(f"{column} >= {value}")
                 elif filter_type == 'lessThanOrEqualTo':
-                    where_clauses.append(f"{column} =< {value}")
+                    where_clauses.append(f"{column} <= {value}")
                 elif filter_type == 'between':
                     where_clauses.append(f" ({column} >= {value[0]} AND {column} <= {value[1]}) ")
                 elif filter_type == 'notBetween':
@@ -1001,72 +1001,6 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
         formatData=True
     )
     
-@app.post("/editProject")
-async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'editProject: received payload <{payload}>')
-    try:
-        role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1:
-            with conn[0].cursor() as cursor:
-                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                cursor.execute("""
-                    UPDATE project SET 
-                        builderid=%s, projectname=%s, addressline1=%s, addressline2=%s, suburb=%s, city=%s, state=%s, 
-                        country=%s, zip=%s, nearestlandmark=%s, project_type=%s, mailgroup1=%s, mailgroup2=%s, website=%s, 
-                        project_legal_status=%s, rules=%s, completionyear=%s, jurisdiction=%s, taluka=%s, corporationward=%s,
-                        policechowkey=%s, policestation=%s, maintenance_details=%s, numberoffloors=%s, numberofbuildings=%s,
-                        approxtotalunits=%s, tenantstudentsallowed=%s, tenantworkingbachelorsallowed=%s, tenantforeignersallowed=%s,
-                        otherdetails=%s, duespayablemonth=%s, dated=%s, createdby=%s WHERE id=%s
-                """, (
-                    payload['builderid'],
-                    payload['projectname'],
-                    payload['addressline1'],
-                    payload['addressline2'],
-                    payload['suburb'],
-                    payload['city'],
-                    payload['state'],
-                    payload['country'],
-                    payload['zip'],
-                    payload['nearestlandmark'],
-                    payload['project_type'],
-                    payload['mailgroup1'],
-                    payload['mailgroup2'],
-                    payload['website'],
-                    payload['project_legal_status'],
-                    payload['rules'],
-                    payload['completionyear'],
-                    payload['jurisdiction'],
-                    payload['taluka'],
-                    payload['corporationward'],
-                    payload['policechowkey'],
-                    payload['policestation'],
-                    payload['maintenance_details'],
-                    payload['numberoffloors'],
-                    payload['numberofbuildings'],
-                    payload['approxtotalunits'],
-                    payload['tenantstudentsallowed'],
-                    payload['tenantworkingbachelorsallowed'],
-                    payload['tenantforeignersallowed'],
-                    payload['otherdetails'],
-                    payload['duespayablemonth'],
-                    payload['dated'],
-                    payload['createdby'],
-                    payload['id']
-                ))
-                
-                # Commit the transaction
-                conn[0].commit()
-                
-                data= {
-                        "entered": payload['projectname'],
-                    }
-                return giveSuccess(payload['user_id'],role_access_status,data)
-        else:
-            return giveFailure("Access Denied",payload['user_id'],role_access_status)
-    except Exception as e:
-        print(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],0)
-
 @app.post('/deleteProject')
 async def delete_project(payload:dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'deleteProject: received payload <{payload}>')
@@ -3157,5 +3091,191 @@ async def delete_client_pma_agreement(payload: dict, conn: psycopg2.extensions.c
     except Exception as e:
         logging.info(traceback.print_exc())
         return giveFailure("Invalid Credentials",0,0)
+
+@app.post('/getClientPropertyByClientId')
+async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT DISTINCT a.id,concat_ws('-',a.project,b.propertydescription,a.suburb) as propertyname from get_client_property_view a LEFT JOIN client_property b ON a.projectid=b.id WHERE a.clientid=%s"
+                cursor.execute(query,(payload['client_id'],))
+                data = cursor.fetchall()
+            colnames = [desc[0] for desc in cursor.description]
+            res = []
+            for row in data:
+                row_dict = {key:value for key,value in zip(colnames,row)}
+                res.append(row_dict)
+            return giveSuccess(payload['user_id'],role_access_status,res)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+    
+@app.post('/getOrdersByClientId')
+async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT DISTINCT a.id,concat_ws('-',concat_ws(' ',b.firstname,b.lastname),briefdescription) as ordername from orders a LEFT JOIN usertable b ON a.owner=b.id WHERE clientid = %s"
+                cursor.execute(query,(payload['client_id'],))
+                data = cursor.fetchall()
+            colnames = [desc[0] for desc in cursor.description]
+            res = []
+            for row in data:
+                row_dict = {key:value for key,value in zip(colnames,row)}
+                res.append(row_dict)
+            return giveSuccess(payload['user_id'],role_access_status,res)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+
+@app.post('/getProjectById')
+async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+
+                #===============Project_info=====================
+                query = 'SELECT * FROM project where id=%s'
+                cursor.execute(query,(payload['id'],))
+                _data = cursor.fetchall()
+                colnames = [desc[0] for desc in cursor.description]
+
+                if _data:
+                    project_info = {col:val for col,val in zip(colnames,_data[0])}
+                else:
+                    project_info = {col:None for col in colnames}
+                
+                #======================Project_details============
+                query = 'SELECT * FROM project_amenities where projectid = %s'
+                cursor.execute(query,(payload['id'],))
+                _data = cursor.fetchall()
+                colnames = [desc[0] for desc in cursor.description]
+
+                if _data:
+                    project_amenities = {col:val for col,val in zip(colnames,_data[0])}
+                else:
+                    project_amenities = {col:None for col in colnames}
+
+                #================Project_Bank_details=============
+                query = 'SELECT * FROM project_bank_details where projectid=%s'
+                cursor.execute(query,(payload['id'],))
+                _data = cursor.fetchall()
+                colnames = [desc[0] for desc in cursor.description]
+
+                if _data:
+                    project_bank_details = [{col:val for col,val in zip(colnames,data)} for data in _data]
+                else:
+                    project_bank_details = [{col:None for col in colnames}]
+                
+                #==============Project_Contacts===================
+                query = 'SELECT * FROM project_contacts where projectid=%s'
+                cursor.execute(query,(payload['id'],))
+                _data = cursor.fetchall()
+                colnames = [desc[0] for desc in cursor.description]
+
+                if _data:
+                    project_contacts = [{col:val for col,val in zip(colnames,data)} for data in _data]
+                else:
+                    project_contacts = [{col:None for col in colnames}]
+
+                #=============Project_Photos======================
+                query = 'SELECT * FROM project_photos where projectid=%s'
+                cursor.execute(query,(payload['id'],))
+                _data = cursor.fetchall()
+                colnames = [desc[0] for desc in cursor.description]
+
+                if _data:
+                    project_photos = [{col:val for col,val in zip(colnames,data)} for data in _data]
+                else:
+                    project_photos = [{col:None for col in colnames}]
+
+                data = {
+                    'project_info':project_info,
+                    'project_amenities':project_amenities,
+                    'project_bank_details':project_bank_details,
+                    'project_photos':project_photos,
+                    'project_contacts':project_contacts
+                }
+                return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+
+@app.post('/editProject')
+async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+
+                #==============Project_Info=================
+                project_info = payload['project_info']
+                query = '''UPDATE project SET builderid=%s,projectname=%s,addressline1=%s,addressline2=%s,
+                        suburb=%s,city=%s,state=%s,country=%s,zip=%s,nearestlandmark=%s,project_type=%s,mailgroup1=%s,
+                        mailgroup2=%s,website=%s,project_legal_status=%s,rules=%s,completionyear=%s,jurisdiction=%s,
+                        taluka=%s,corporationward=%s,policechowkey=%s,maintenance_details=%s,numberoffloors=%s,
+                        numberofbuildings=%s,approxtotalunits=%s,tenantstudentsallowed=%s,tenantworkingbachelorsallowed=%s,
+                        tenantforeignersallowed=%s,otherdetails=%s,duespayablemonth=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
+                cursor.execute(query,(project_info["builderid"],project_info["projectname"],project_info["addressline1"],
+                                        project_info["addressline2"],project_info["suburb"],project_info["city"],
+                                        project_info["state"],project_info["country"],project_info["zip"],project_info["nearestlandmark"],
+                                        project_info["project_type"],project_info["mailgroup1"],project_info["mailgroup2"],project_info["website"],
+                                        project_info["project_legal_status"],project_info["rules"],project_info["completionyear"],
+                                        project_info["jurisdiction"],project_info["taluka"],project_info["corporationward"],project_info["policechowkey"],
+                                        project_info["maintenance_details"],project_info["numberoffloors"],project_info["numberofbuildings"],
+                                        project_info["approxtotalunits"],project_info["tenantstudentsallowed"],project_info["tenantworkingbachelorsallowed"],
+                                        project_info["tenantforeignersallowed"],project_info["otherdetails"],project_info["duespayablemonth"]
+                                        ,givenowtime(),payload['user_id'],False,project_info['id']))
+                if cursor.statusmessage == 'UPDATE 0':
+                    return giveFailure('No entry with given ID',payload['user_id'],role_access_status)
+                conn[0].commit()
+                #===============Project_Amenities===========
+                project_amenities = payload['project_amenities']
+                query = '''UPDATE project_amenities SET swimmingpool=%s,lift=%s,liftbatterybackup=%s,
+                        clubhouse=%s,gym=%s,childrensplayarea=%s,pipedgas=%s,cctvcameras=%s,otheramenities=%s,
+                        studio=%s,"1BHK"=%s,"2BHK"=%s,"3BHK"=%s,rowhouse=%s,otheraccomodationtypes=%s,sourceofwater=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
+                cursor.execute(query,(project_amenities["swimmingpool"],project_amenities["lift"],project_amenities["liftbatterybackup"],project_amenities["clubhouse"],
+                                        project_amenities["gym"],project_amenities["childrensplayarea"],project_amenities["pipedgas"],project_amenities["cctvcameras"],
+                                        project_amenities["otheramenities"],project_amenities["studio"],project_amenities["1BHK"],project_amenities["2BHK"],project_amenities["3BHK"],
+                                        project_amenities["rowhouse"],project_amenities["otheraccomodationtypes"],project_amenities["sourceofwater"],givenowtime(),
+                                        payload['user_id'],False,project_amenities['id']))
+                conn[0].commit()
+                #===============Project_Bank_Details========
+                if 'update' in payload['project_bank_details']:
+                    _bank_update = payload['project_bank_details']['update']
+                    for bank_update in _bank_update:
+                        query = '''UPDATE project_bank_details SET bankname=%s,bankbranch=%s,bankcity=%s,bankaccountholdername=%s,
+                                    bankaccountno=%s,bankifsccode=%s,banktypeofaccount=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
+                        cursor.execute(query,(bank_update["bankname"],bank_update["bankbranch"],bank_update["bankcity"],
+                                              bank_update["bankaccountholdername"],bank_update["bankaccountno"],bank_update["bankifsccode"],
+                                              bank_update["banktypeofaccount"],givenowtime(),payload['user_id'],False,bank_update['id']))
+                if 'insert' in payload['project_bank_details']:
+                    _bank_insert = payload['project_bank_details']['insert']
+                    for bank_insert in _bank_insert:
+                        query = '''INSERT INTO project_bank_details(bankname,bankbranch,bankcity,bankaccountholdername,bankaccountno,bankifsccode
+                                    ,banktypeofaccount,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+                        cursor.execute(query,(bank_insert["bankname"],bank_insert["bankbranch"],bank_insert["bankcity"],bank_insert["bankaccountholdername"],
+                                              bank_insert["bankaccountno"],bank_insert["bankifsccode"],bank_insert["banktypeofaccount"],
+                                              givenowtime(),payload['user_id'],False))
+                if 'delete' in payload['project_bank_details']:
+                    _bank_delete = payload['project_bank_details']['delete']
+                    for bank_delete in _bank_delete:
+                        query = '''DELETE FROM project_bank_details where id=%s'''
+                        cursor.execute(query,(bank_delete['id'],))
+                conn[0].commit()
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
 
 logger.info("program_started")

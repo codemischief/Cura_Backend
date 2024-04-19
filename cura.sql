@@ -524,29 +524,27 @@ CREATE VIEW get_orders_view AS
 SELECT
     a.id,
     a.clientid,
-    CONCAT(g.firstname,' ',g.lastname) as client_name,
+    CONCAT(g.firstname,' ',g.lastname) as clientname,
     a.orderdate,
     a.earlieststartdate,
     a.expectedcompletiondate,
     a.actualcompletiondate,
     a.owner,
-    CONCAT(b.firstname,' ',b.lastname) as owner_name,
+    CONCAT(b.firstname,' ',b.lastname) as ownername,
     a.comments,
     a.status,
-    a.description,
+    a.briefdescription,
+    a.additionalcomments,
     a.service,
+    e.service as servicename,
     a.clientpropertyid,
     a.vendorid,
     c.vendorname,
     a.assignedtooffice,
     d.name as officename,
-    a.billable,
-    a.statusupdatedtimestamp,
-    CONCAT(e.firstname,' ',e.lastname) as defaulttaskowner,
     a.dated,
     a.createdby,
     a.isdeleted,
-    a.glcode,
     a.entityid,
     f.name as entity,
     a.tallyledgerid
@@ -555,16 +553,23 @@ FROM
     usertable b,
     vendor c,
     office d,
-    usertable e,
+    service e,
     entity f,
     client g
 WHERE
     a.owner = b.id AND
     a.vendorid = c.id AND
     a.assignedtooffice = d.id AND
-    a.default_task_owner = e.id AND
+    a.service = e.id ANDz
     a.entityid = f.id AND
     a.clientid = g.id;
+
+
+
+CREATE SEQUENCE IF NOT EXISTS orders_id_seq OWNED BY orders.id;
+SELECT setval('orders_id_seq', COALESCE(max(id), 0) + 1, false) FROM orders;
+ALTER TABLE orders ALTER COLUMN id SET DEFAULT nextval('orders_id_seq');
+
 
 -- Create a new sequence if it doesn't exist starting from the maximum value of column id + 1
 CREATE SEQUENCE IF NOT EXISTS builder_id_seq OWNED BY builder.id;
@@ -738,8 +743,9 @@ SELECT DISTINCT
     a.clientpropertyid,
     concat_ws('-',d.project,d.suburb) as propertydescription,
     d.propertystatus,
-    e.name as propertystatusname,
+    d.status as propertystatusname,
     d.client as clientname,
+    d.clientid,
     d.status,
     a.startdate,
     a.enddate,
@@ -765,9 +771,7 @@ FROM
 LEFT JOIN
     orders b ON a.orderid = b.id
 LEFT JOIN
-    get_client_property_view d ON a.clientpropertyid = d.id
-LEFT JOIN
-    property_status e ON d.propertystatus = e.id;
+    get_client_property_view d ON a.clientpropertyid = d.id;
 
 
 CREATE OR REPLACE FUNCTION get_client_property_pma_view() RETURNS TRIGGER AS $$
@@ -789,9 +793,15 @@ CREATE VIEW get_client_property_lla_view AS
 SELECT DISTINCT
     a.id,
     a.clientpropertyid,
+    d.client as clientname,
+    d.clientid,
+    concat_ws('-',d.project,d.suburb) as propertydescription,
+    d.propertystatus,
+    d.status as propertystatusname,
     a.orderid,
     b.briefdescription as orderdescription,
     a.startdate,
+    a.actualenddate,
     a.durationinmonth,
     a.depositamount,
     a.rentamount,
@@ -806,7 +816,9 @@ SELECT DISTINCT
 FROM 
     client_property_leave_license_details a
 LEFT JOIN
-    orders b ON a.orderid = b.id;
+    orders b ON a.orderid = b.id
+LEFT JOIN
+    get_client_property_view d ON a.clientpropertyid = d.id;
 
 CREATE SEQUENCE IF NOT EXISTS client_property_leave_license_details_id_seq OWNED BY client_property_leave_license_details.id;
 SELECT setval('client_property_leave_license_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_leave_license_details;
@@ -826,3 +838,5 @@ CREATE TRIGGER get_client_property_lla_view
 INSTEAD OF DELETE ON get_client_property_lla_view
 FOR EACH ROW
 EXECUTE FUNCTION get_client_property_lla_view();
+
+CREATE VIEW get_orders
