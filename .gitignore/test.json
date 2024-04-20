@@ -1,0 +1,173 @@
+{
+  "user_id": 1234,
+  "projectid": 4375,
+  "project_info": {
+    "id": 4375,
+    "builderid": 10231,
+    "projectname": "testproject",
+    "addressline1": "addressline1",
+    "addressline2": "addressline2",
+    "suburb": "testsub",
+    "city": 847,
+    "state": "Maharashtra",
+    "country": 5,
+    "zip": "testzip",
+    "nearestlandmark": "landmark1",
+    "project_type": 2,
+    "mailgroup1": "mailgrouptest",
+    "mailgroup2": "newmailgrouptest",
+    "website": "websitetest.com",
+    "project_legal_status": 2,
+    "rules": "rule1, rule2, rule3",
+    "completionyear": 2021,
+    "jurisdiction": "ajuri",
+    "taluka": "tal",
+    "corporationward": "ward",
+    "policechowkey": "chowkey",
+    "maintenance_details": "deets",
+    "numberoffloors": 5,
+    "numberofbuildings": 4,
+    "approxtotalunits": 100,
+    "tenantstudentsallowed": true,
+    "tenantworkingbachelorsallowed": true,
+    "tenantforeignersallowed": true,
+    "otherdetails": true,
+    "duespayablemonth": 3
+  },
+  "project_amenities": {
+    "id": 4406,
+    "swimmingpool": true,
+    "lift": true,
+    "liftbatterybackup": true,
+    "clubhouse": true,
+    "gym": true,
+    "childrensplayarea": true,
+    "pipedgas": true,
+    "cctvcameras": true,
+    "otheramenities": "newdata",
+    "studio": "true",
+    "1BHK": false,
+    "2BHK": true,
+    "3BHK": true,
+    "rowhouse": false,
+    "otheraccomodationtypes": "4BHK",
+    "sourceofwater": "abc"
+  },
+  "project_bank_details": {
+    "update": [
+      {
+        "id": 53,
+        "bankname": "Banktest",
+        "bankbranch": "branchtest",
+        "bankcity": "Pune",
+        "bankaccountholdername": "Rudra",
+        "bankaccountno": "ABD102834732",
+        "bankifsccode": "PUN101",
+        "banktypeofaccount": "current"
+      },
+      {
+        "id": 54,
+        "bankname": "Banktest",
+        "bankbranch": "branchtest1",
+        "bankcity": "Pune",
+        "bankaccountholdername": "Rudra",
+        "bankaccountno": "ABD1046464732",
+        "bankifsccode": "PUN102",
+        "banktypeofaccount": "current"
+      }
+    ],
+    "insert": [
+      {
+        "bankname": "Banktest",
+        "bankbranch": "branchtest",
+        "bankcity": "Pune",
+        "bankaccountholdername": "Rudra",
+        "bankaccountno": "ABD102834732",
+        "bankifsccode": "PUN101",
+        "banktypeofaccount": "savings"
+      },
+      {
+        "bankname": "Banktest",
+        "bankbranch": "branchtest1",
+        "bankcity": "Pune",
+        "bankaccountholdername": "Rudra",
+        "bankaccountno": "ABD1046464732",
+        "bankifsccode": "PUN102",
+        "banktypeofaccount": "savings"
+      }
+    ],
+    "delete": []
+  },
+  "project_contacts": {
+    "update": [
+      {
+        "id": 3431,
+        "contactname": "Rudra",
+        "phone": "9796543567",
+        "email": "abc",
+        "role": "owner",
+        "effectivedate": "2021-02-04 10:00:00",
+        "tenureenddate": null,
+        "details": "hreiufhuire"
+      },
+      {
+        "id": 3432,
+        "contactname": "Rudra_3",
+        "phone": "9456545514",
+        "email": "efg",
+        "role": "manager",
+        "effectivedate": "2021-02-04 10:00:00",
+        "tenureenddate": "2024-02-04 10:00:00",
+        "details": "hreiufhuire"
+      }
+    ],
+    "insert": [
+      {
+        "contactname": "Rudra2",
+        "phone": "9796543567",
+        "email": "abc",
+        "role": "owner",
+        "effectivedate": "2021-02-04 10:00:00",
+        "tenureenddate": null,
+        "details": "hreiufhuire"
+      },
+      {
+        "contactname": "Rudra-4",
+        "phone": "9456545514",
+        "email": "efg",
+        "role": "manager",
+        "effectivedate": "2021-02-04 10:00:00",
+        "tenureenddate": "2024-02-04 10:00:00",
+        "details": "hreiufhuire"
+      }
+    ]
+  },
+  "project_photos": {
+    "update": [
+      {
+        "id": 19,
+        "photo_link": "link1",
+        "description": "Desc 1",
+        "date_taken": "2024-03-01"
+      },
+      {
+        "id": 20,
+        "photo_link": "link4",
+        "description": "Desc2",
+        "date_taken": "2024-01-01"
+      }
+    ],
+    "insert":[
+        {
+          "photo_link": "link3",
+          "description": "Desc 1",
+          "date_taken": "2024-03-01"
+        },
+        {
+          "photo_link": "link2",
+          "description": "Desc2",
+          "date_taken": "2024-01-01"
+        }
+    ]
+  }
+}
