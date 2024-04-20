@@ -3237,7 +3237,6 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                                         ,givenowtime(),payload['user_id'],False,project_info['id']))
                 if cursor.statusmessage == 'UPDATE 0':
                     return giveFailure('No entry with given ID',payload['user_id'],role_access_status)
-                conn[0].commit()
                 #===============Project_Amenities===========
                 project_amenities = payload['project_amenities']
                 query = '''UPDATE project_amenities SET swimmingpool=%s,lift=%s,liftbatterybackup=%s,
@@ -3248,7 +3247,6 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                                         project_amenities["otheramenities"],project_amenities["studio"],project_amenities["1BHK"],project_amenities["2BHK"],project_amenities["3BHK"],
                                         project_amenities["rowhouse"],project_amenities["otheraccomodationtypes"],project_amenities["sourceofwater"],givenowtime(),
                                         payload['user_id'],False,project_amenities['id']))
-                conn[0].commit()
                 #===============Project_Bank_Details========
                 if 'update' in payload['project_bank_details']:
                     _bank_update = payload['project_bank_details']['update']
@@ -3261,9 +3259,9 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                 if 'insert' in payload['project_bank_details']:
                     _bank_insert = payload['project_bank_details']['insert']
                     for bank_insert in _bank_insert:
-                        query = '''INSERT INTO project_bank_details(bankname,bankbranch,bankcity,bankaccountholdername,bankaccountno,bankifsccode
-                                    ,banktypeofaccount,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
-                        cursor.execute(query,(bank_insert["bankname"],bank_insert["bankbranch"],bank_insert["bankcity"],bank_insert["bankaccountholdername"],
+                        query = '''INSERT INTO project_bank_details(projectid,bankname,bankbranch,bankcity,bankaccountholdername,bankaccountno,bankifsccode
+                                    ,banktypeofaccount,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+                        cursor.execute(query,(payload['projectid'],bank_insert["bankname"],bank_insert["bankbranch"],bank_insert["bankcity"],bank_insert["bankaccountholdername"],
                                               bank_insert["bankaccountno"],bank_insert["bankifsccode"],bank_insert["banktypeofaccount"],
                                               givenowtime(),payload['user_id'],False))
                 if 'delete' in payload['project_bank_details']:
@@ -3271,7 +3269,41 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                     for bank_delete in _bank_delete:
                         query = '''DELETE FROM project_bank_details where id=%s'''
                         cursor.execute(query,(bank_delete['id'],))
-                conn[0].commit()
+                #===============Project_Photos===============
+                if 'update' in payload['project_photos']:
+                    _photo_update = payload['project_photos']['update']
+                    for photo_update in _photo_update:
+                        query = '''UPDATE project_photos SET photo_link=%s,description=%s,date_taken=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
+                        cursor.execute(query,(photo_update["photo_link"],photo_update["description"],photo_update["date_taken"],givenowtime(),payload['user_id'],False,photo_update['id']))
+                if 'insert' in payload['project_photos']:
+                    _photo_insert = payload['project_photos']['insert']
+                    for photo_insert in _photo_insert:
+                        query = '''INSERT INTO project_photos(projectid,photo_link,description,date_taken,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'''
+                        cursor.execute(query,(payload['projectid'],photo_insert["photo_link"],photo_insert["description"],photo_insert["date_taken"],
+                                              givenowtime(),payload['user_id'],False))
+                if 'delete' in payload['project_photos']:
+                    _photo_delete = payload['project_photos']['delete']
+                    for photo_delete in _photo_delete:
+                        query = '''DELETE FROM project_photos where id=%s'''
+                        cursor.execute(query,(photo_delete['id'],))
+                #============Project_Contacts==================
+                if 'update' in payload['project_contacts']:
+                    _contact_update = payload['project_contacts']['update']
+                    for contact_update in _contact_update:
+                        query = '''UPDATE project_contacts SET contactname=%s,phone=%s,email=%s,role=%s,effectivedate=%s,tenureenddate=%s,details=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
+                        cursor.execute(query,(contact_update["contactname"],contact_update["phone"],contact_update["email"],contact_update["role"],contact_update["effectivedate"],contact_update["tenureenddate"],contact_update["details"],givenowtime(),payload['user_id'],False,contact_update['id']))
+                if 'insert' in payload['project_contacts']:
+                    _contact_insert = payload['project_contacts']['insert']
+                    for contact_insert in _contact_insert:
+                        query = '''INSERT INTO project_contacts(projectid,contactname,phone,email,role,effectivedate,tenureenddate,details,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+                        cursor.execute(query,(payload['projectid'],contact_insert["contactname"],contact_insert["phone"],contact_insert["email"],contact_insert["role"],contact_insert["effectivedate"],contact_insert["tenureenddate"],contact_insert["details"],
+                                              givenowtime(),payload['user_id'],False))
+                if 'delete' in payload['project_contacts']:
+                    _contact_delete = payload['project_contacts']['delete']
+                    for contact_delete in _contact_delete:
+                        query = '''DELETE FROM project_contacts where id=%s'''
+                        cursor.execute(query,(contact_delete['id'],))
+                conn[0].commit() 
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
     except Exception as e:
