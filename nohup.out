@@ -1,0 +1,64 @@
+2024-04-22 11:00:08,042 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-04-22 11:00:08,042 - uvicorn.error - INFO - Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2024-04-22 11:00:08,043 - uvicorn.error - INFO - Started reloader process [6901] using statreload
+2024-04-22 11:00:08,159 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-22 11:00:08,837 - main - INFO - program_started
+2024-04-22 11:00:08,838 - uvicorn.error - INFO - Started server process [6904]
+2024-04-22 11:00:08,838 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-22 11:00:08,838 - uvicorn.error - INFO - Application startup complete.
+2024-04-22 11:00:16,414 - uvicorn.access - INFO - 127.0.0.1:53364 - "GET /docs HTTP/1.1" 200
+2024-04-22 11:00:16,813 - uvicorn.access - INFO - 127.0.0.1:53364 - "GET /openapi.json HTTP/1.1" 200
+2024-04-22 11:00:26,987 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-22 11:00:26,994 - uvicorn.error - INFO - Shutting down
+2024-04-22 11:00:27,094 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-22 11:00:27,095 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-22 11:00:27,095 - uvicorn.error - INFO - Finished server process [6904]
+2024-04-22 11:00:27,257 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-22 11:00:27,786 - main - INFO - program_started
+2024-04-22 11:00:27,787 - uvicorn.error - INFO - Started server process [6984]
+2024-04-22 11:00:27,787 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-22 11:00:27,788 - uvicorn.error - INFO - Application startup complete.
+2024-04-22 11:00:28,823 - uvicorn.access - INFO - 127.0.0.1:46612 - "GET /docs HTTP/1.1" 200
+2024-04-22 11:00:28,928 - uvicorn.access - INFO - 127.0.0.1:46612 - "GET /openapi.json HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3288, in add_cities
+    cursor.execute(query,[
+psycopg2.errors.SyntaxError: syntax error at or near "("
+LINE 1: INSERT INTO (city,state,countryid) VALUES ('cityname','newst...
+                    ^
+
+2024-04-22 11:00:57,593 - root - INFO - None
+2024-04-22 11:00:57,594 - uvicorn.access - INFO - 127.0.0.1:36530 - "POST /addCities HTTP/1.1" 200
+2024-04-22 11:01:11,639 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-22 11:01:11,735 - uvicorn.error - INFO - Shutting down
+2024-04-22 11:01:11,836 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-22 11:01:11,837 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-22 11:01:11,837 - uvicorn.error - INFO - Finished server process [6984]
+2024-04-22 11:01:12,027 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-22 11:01:12,540 - main - INFO - program_started
+2024-04-22 11:01:12,541 - uvicorn.error - INFO - Started server process [7169]
+2024-04-22 11:01:12,541 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-22 11:01:12,541 - uvicorn.error - INFO - Application startup complete.
+2024-04-22 11:01:14,125 - uvicorn.access - INFO - 127.0.0.1:39240 - "POST /addCities HTTP/1.1" 200
+2024-04-22 11:01:40,274 - uvicorn.access - INFO - 127.0.0.1:60274 - "POST /editCities HTTP/1.1" 200
+2024-04-22 11:02:25,032 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-22 11:02:25,101 - uvicorn.error - INFO - Shutting down
+2024-04-22 11:02:25,202 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-22 11:02:25,202 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-22 11:02:25,202 - uvicorn.error - INFO - Finished server process [7169]
+2024-04-22 11:02:25,414 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-22 11:02:26,047 - main - INFO - program_started
+2024-04-22 11:02:26,047 - uvicorn.error - INFO - Started server process [7468]
+2024-04-22 11:02:26,048 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-22 11:02:26,048 - uvicorn.error - INFO - Application startup complete.
+2024-04-22 11:02:40,198 - uvicorn.access - INFO - 127.0.0.1:50334 - "POST /deleteCities HTTP/1.1" 200
+2024-04-22 11:02:49,432 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-22 11:02:49,524 - uvicorn.error - INFO - Shutting down
+2024-04-22 11:02:49,625 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-22 11:02:49,626 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-22 11:02:49,626 - uvicorn.error - INFO - Finished server process [7468]
+2024-04-22 11:02:49,784 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-22 11:02:50,305 - main - INFO - program_started
+2024-04-22 11:02:50,306 - uvicorn.error - INFO - Started server process [7569]
+2024-04-22 11:02:50,306 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-22 11:02:50,306 - uvicorn.error - INFO - Application startup complete.

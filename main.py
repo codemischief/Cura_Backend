@@ -3310,4 +3310,66 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
         logging.info(traceback.print_exc())
         return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
 
+@app.post('/addCities')
+async def add_cities(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO cities (city,state,countryid) VALUES (%s,%s,%s)'
+                cursor.execute(query,[
+                    payload['city'],
+                    payload['state'],
+                    payload['countryid']
+                ])
+                conn[0].commit()
+            return giveSuccess(payload['user_id'],role_access_status,{"inserted_city":payload['city']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
+  
+@app.post('/editCities')
+async def edit_cities(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE cities SET city=%s,state=%s,countryid=%s WHERE id=%s'
+                cursor.execute(query,[
+                    payload['city'],
+                    payload['state'],
+                    payload['countryid'],
+                    payload['id']
+                ])
+                conn[0].commit()
+                if cursor.statusmessage == 'UPDATE 0':
+                    return giveFailure('Does not exist',payload['user_id'],role_access_status)
+            return giveSuccess(payload['user_id'],role_access_status,{"editted_city":payload['city']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
+   
+@app.post('/deleteCities')
+async def delete_cities(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM cities WHERE id=%s'
+                cursor.execute(query,[
+                    payload['id']
+                ])
+                conn[0].commit()
+            return giveSuccess(payload['user_id'],role_access_status,{"deleted_city":payload['id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
+
+
 logger.info("program_started")
