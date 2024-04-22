@@ -62,3 +62,60 @@ LINE 1: INSERT INTO (city,state,countryid) VALUES ('cityname','newst...
 2024-04-22 11:02:50,306 - uvicorn.error - INFO - Started server process [7569]
 2024-04-22 11:02:50,306 - uvicorn.error - INFO - Waiting for application startup.
 2024-04-22 11:02:50,306 - uvicorn.error - INFO - Application startup complete.
+2024-04-22 20:14:12,317 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-04-22 20:14:12,317 - uvicorn.error - ERROR - [Errno 98] Address already in use
+2024-04-22 20:15:38,501 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-04-22 20:15:38,501 - uvicorn.error - INFO - Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2024-04-22 20:15:38,501 - uvicorn.error - INFO - Started reloader process [73935] using statreload
+2024-04-22 20:15:38,615 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-22 20:15:39,229 - main - INFO - program_started
+2024-04-22 20:15:39,229 - uvicorn.error - INFO - Started server process [73938]
+2024-04-22 20:15:39,230 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-22 20:15:39,230 - uvicorn.error - INFO - Application startup complete.
+2024-04-22 20:15:49,507 - root - INFO - The data is <[('', '', '', '', '', 'Pune', 'Maharashtra', '5', '', '', None, '', '', None, '', None, None, '', '')]>
+2024-04-22 20:15:49,508 - uvicorn.access - INFO - 127.0.0.1:41768 - "POST /getClientPropertyById HTTP/1.1" 200
+2024-04-22 20:15:56,571 - uvicorn.access - INFO - 127.0.0.1:53716 - "POST /addClientProperty HTTP/1.1" 200
+2024-04-22 20:16:00,668 - root - INFO - The data is <[('', '', '', '', '', 'Pune', 'Maharashtra', '5', '', '', None, '', '', None, '', None, None, '', '')]>
+2024-04-22 20:16:00,670 - uvicorn.access - INFO - 127.0.0.1:53716 - "POST /getClientPropertyById HTTP/1.1" 200
+2024-04-22 20:16:05,687 - root - INFO - The data is <[('', '', '', '', '', 'Pune', 'Maharashtra', '5', '', '', None, '', '', None, '', None, None, '', '')]>
+2024-04-22 20:16:05,690 - uvicorn.access - INFO - 127.0.0.1:53716 - "POST /getClientPropertyById HTTP/1.1" 200
+2024-04-22 21:13:20,854 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-22 21:13:20,860 - uvicorn.error - INFO - Shutting down
+2024-04-22 21:13:20,961 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-22 21:13:20,962 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-22 21:13:20,962 - uvicorn.error - INFO - Finished server process [73938]
+2024-04-22 21:13:21,119 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-22 21:13:21,601 - main - INFO - program_started
+2024-04-22 21:13:21,602 - uvicorn.error - INFO - Started server process [87688]
+2024-04-22 21:13:21,602 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-22 21:13:21,602 - uvicorn.error - INFO - Application startup complete.
+2024-04-22 21:13:21,867 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-22 21:13:21,904 - uvicorn.error - INFO - Shutting down
+2024-04-22 21:13:22,005 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-22 21:13:22,006 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-22 21:13:22,006 - uvicorn.error - INFO - Finished server process [87688]
+2024-04-22 21:13:22,171 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-22 21:13:22,647 - main - INFO - program_started
+2024-04-22 21:13:22,647 - uvicorn.error - INFO - Started server process [87693]
+2024-04-22 21:13:22,648 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-22 21:13:22,648 - uvicorn.error - INFO - Application startup complete.
+2024-04-22 21:13:22,924 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-22 21:13:22,950 - uvicorn.error - INFO - Shutting down
+2024-04-22 21:13:23,051 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-22 21:13:23,052 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-22 21:13:23,052 - uvicorn.error - INFO - Finished server process [87693]
+2024-04-22 21:13:23,205 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-22 21:13:23,669 - main - INFO - program_started
+2024-04-22 21:13:23,669 - uvicorn.error - INFO - Started server process [87698]
+2024-04-22 21:13:23,670 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-22 21:13:23,670 - uvicorn.error - INFO - Application startup complete.
+2024-04-22 21:13:23,957 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-22 21:13:23,972 - uvicorn.error - INFO - Shutting down
+2024-04-22 21:13:24,073 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-22 21:13:24,074 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-22 21:13:24,074 - uvicorn.error - INFO - Finished server process [87698]
+2024-04-22 21:13:24,218 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-22 21:13:24,687 - main - INFO - program_started
+2024-04-22 21:13:24,687 - uvicorn.error - INFO - Started server process [87703]
+2024-04-22 21:13:24,688 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-22 21:13:24,688 - uvicorn.error - INFO - Application startup complete.
