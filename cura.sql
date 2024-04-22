@@ -521,7 +521,7 @@ FOR EACH ROW
 EXECUTE FUNCTION delete_from_get_client_property_view();
 
 CREATE VIEW get_orders_view AS
-SELECT
+SELECT DISTINCT
     a.id,
     a.clientid,
     CONCAT(g.firstname,' ',g.lastname) as clientname,
@@ -533,11 +533,13 @@ SELECT
     CONCAT(b.firstname,' ',b.lastname) as ownername,
     a.comments,
     a.status,
+    h.name as orderstatus,
     a.briefdescription,
     a.additionalcomments,
     a.service,
     e.service as servicename,
     a.clientpropertyid,
+    concat_ws('-',i.suburb,i.description) as clientproperty,
     a.vendorid,
     c.vendorname,
     a.assignedtooffice,
@@ -549,20 +551,23 @@ SELECT
     f.name as entity,
     a.tallyledgerid
 FROM
-    orders a,
-    usertable b,
-    vendor c,
-    office d,
-    service e,
-    entity f,
-    client g
-WHERE
-    a.owner = b.id AND
-    a.vendorid = c.id AND
-    a.assignedtooffice = d.id AND
-    a.service = e.id ANDz
-    a.entityid = f.id AND
-    a.clientid = g.id;
+    orders a
+LEFT JOIN
+    usertable b ON a.owner = b.id
+LEFT JOIN
+    vendor c ON a.vendorid = c.id
+LEFT JOIN
+    office d ON a.assignedtooffice = d.id
+LEFT JOIN
+    services e ON a.service = e.id
+LEFT JOIN
+    entity f ON a.entityid = f.id
+LEFT JOIN
+    client g ON a.clientid = g.id
+LEFT JOIN
+    order_status h ON a.status = h.id
+LEFT JOIN
+    get_client_property_view i ON a.clientpropertyid = i.id;
 
 
 
@@ -839,4 +844,6 @@ INSTEAD OF DELETE ON get_client_property_lla_view
 FOR EACH ROW
 EXECUTE FUNCTION get_client_property_lla_view();
 
-CREATE VIEW get_orders
+CREATE SEQUENCE IF NOT EXISTS order_status_change_id_seq OWNED BY order_status_change.id;
+SELECT setval('order_status_change_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_status_change;
+ALTER TABLE order_status_change ALTER COLUMN id SET DEFAULT nextval('order_status_change_id_seq');
