@@ -62,3 +62,142 @@ LINE 1: INSERT INTO (city,state,countryid) VALUES ('cityname','newst...
 2024-04-22 11:02:50,306 - uvicorn.error - INFO - Started server process [7569]
 2024-04-22 11:02:50,306 - uvicorn.error - INFO - Waiting for application startup.
 2024-04-22 11:02:50,306 - uvicorn.error - INFO - Application startup complete.
+2024-04-23 10:42:56,309 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-04-23 10:42:56,310 - uvicorn.error - INFO - Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2024-04-23 10:42:56,310 - uvicorn.error - INFO - Started reloader process [492] using statreload
+2024-04-23 10:42:56,469 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-23 10:42:58,030 - main - INFO - program_started
+2024-04-23 10:42:58,031 - uvicorn.error - INFO - Started server process [494]
+2024-04-23 10:42:58,031 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-23 10:42:58,031 - uvicorn.error - INFO - Application startup complete.
+2024-04-23 10:43:13,956 - uvicorn.access - INFO - 127.0.0.1:45072 - "GET /docs HTTP/1.1" 200
+2024-04-23 10:43:14,132 - uvicorn.access - INFO - 127.0.0.1:45072 - "GET /openapi.json HTTP/1.1" 200
+2024-04-23 10:43:41,787 - uvicorn.access - INFO - 127.0.0.1:60262 - "POST /paymentForAdmin HTTP/1.1" 500
+2024-04-23 10:43:41,788 - uvicorn.error - ERROR - Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/uvicorn/protocols/http/h11_impl.py", line 373, in run_asgi
+    result = await app(self.scope, self.receive, self.send)
+  File "/usr/lib/python3/dist-packages/uvicorn/middleware/proxy_headers.py", line 75, in __call__
+    return await self.app(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/cors.py", line 148, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 776, in app
+    await route.handle(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/routing.py", line 269, in app
+    solved_result = await solve_dependencies(
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/dependencies/utils.py", line 596, in solve_dependencies
+    solved = await solve_generator(
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/dependencies/utils.py", line 521, in solve_generator
+    return await stack.enter_async_context(cm)
+  File "/usr/lib/python3.10/contextlib.py", line 619, in enter_async_context
+    result = await _cm_type.__aenter__(cm)
+  File "/usr/lib/python3.10/contextlib.py", line 199, in __aenter__
+    return await anext(self.gen)
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+  File "/usr/lib/python3.10/contextlib.py", line 153, in __exit__
+    self.gen.throw(typ, value, traceback)
+psycopg2.OperationalError: connection to server at "20.197.13.140", port 5432 failed: No route to host
+	Is the server running on that host and accepting TCP/IP connections?
+
+2024-04-23 12:48:50,317 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-04-23 12:48:50,318 - uvicorn.error - INFO - Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2024-04-23 12:48:50,318 - uvicorn.error - INFO - Started reloader process [1022] using statreload
+2024-04-23 12:48:50,475 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-23 12:48:51,236 - main - INFO - program_started
+2024-04-23 12:48:51,237 - uvicorn.error - INFO - Started server process [1024]
+2024-04-23 12:48:51,237 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-23 12:48:51,238 - uvicorn.error - INFO - Application startup complete.
+2024-04-23 12:49:02,913 - uvicorn.access - INFO - 127.0.0.1:49058 - "GET /docs HTTP/1.1" 200
+2024-04-23 12:49:03,271 - uvicorn.access - INFO - 127.0.0.1:49058 - "GET /openapi.json HTTP/1.1" 200
+2024-04-23 12:49:43,684 - uvicorn.access - INFO - 127.0.0.1:35026 - "POST /getOrders HTTP/1.1" 500
+2024-04-23 12:49:43,685 - uvicorn.error - ERROR - Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/uvicorn/protocols/http/h11_impl.py", line 373, in run_asgi
+    result = await app(self.scope, self.receive, self.send)
+  File "/usr/lib/python3/dist-packages/uvicorn/middleware/proxy_headers.py", line 75, in __call__
+    return await self.app(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/cors.py", line 148, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 776, in app
+    await route.handle(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/routing.py", line 269, in app
+    solved_result = await solve_dependencies(
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/dependencies/utils.py", line 596, in solve_dependencies
+    solved = await solve_generator(
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/dependencies/utils.py", line 521, in solve_generator
+    return await stack.enter_async_context(cm)
+  File "/usr/lib/python3.10/contextlib.py", line 619, in enter_async_context
+    result = await _cm_type.__aenter__(cm)
+  File "/usr/lib/python3.10/contextlib.py", line 199, in __aenter__
+    return await anext(self.gen)
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+  File "/usr/lib/python3.10/contextlib.py", line 153, in __exit__
+    self.gen.throw(typ, value, traceback)
+psycopg2.OperationalError: connection to server at "20.197.13.140", port 5432 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+
+2024-04-23 12:50:06,206 - root - INFO - get_orders_view:RT: received payload <{'user_id': 1234, 'rows': ['id', 'clientid', 'clientname', 'orderdate', 'earlieststartdate', 'expectedcompletiondate', 'actualcompletiondate', 'owner', 'ownername', 'comments', 'status', 'orderstatus', 'briefdescription', 'additionalcomments', 'service', 'servicename', 'clientpropertyid', 'clientproperty', 'vendorid', 'vendorname', 'assignedtooffice', 'officename', 'dated', 'createdby', 'isdeleted', 'entityid', 'entity', 'tallyledgerid'], 'filters': [], 'sort_by': [], 'order': 'asc', 'pg_no': 1, 'pg_size': 15, 'table_name': 'get_orders_view'}>
+2024-04-23 12:50:06,236 - root - INFO - Pagination
+2024-04-23 12:50:06,237 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,clientid,clientname,orderdate,earlieststartdate,expectedcompletiondate,actualcompletiondate,owner,ownername,comments,status,orderstatus,briefdescription,additionalcomments,service,servicename,clientpropertyid,clientproperty,vendorid,vendorname,assignedtooffice,officename,dated,createdby,isdeleted,entityid,entity,tallyledgerid FROM get_orders_view LIMIT 15 OFFSET 0]
+2024-04-23 12:50:16,752 - root - INFO - Cursor message is SELECT 15
+2024-04-23 12:50:28,520 - root - INFO - filterAndPaginate_v2: Given filter yeilds <15806> entries
+2024-04-23 12:50:28,525 - root - INFO - Formatting in progress for process get_orders_view
+2024-04-23 12:50:28,528 - uvicorn.access - INFO - 127.0.0.1:39936 - "POST /getOrders HTTP/1.1" 200

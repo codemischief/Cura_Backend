@@ -1421,7 +1421,7 @@ async def get_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            table_name = 'lob'
+            table_name = 'get_lob_view'
             data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
@@ -2437,7 +2437,7 @@ async def add_client_property(payload: dict, conn: psycopg2.extensions.connectio
                 client_property_photos_list = payload['client_property_photos']
                 client_property_poa = payload['client_property_poa']
                 client_property_owner = payload['client_property_owner']
-                query = "INSERT INTO client_property (clientid,projectid,propertydescription,propertytype,suburb,city,state,country,layoutdetails,numberofparkings,internalfurnitureandfittings,leveloffurnishing,status,initialpossessiondate,poagiven,poaid,electricityconsumernumber,electricitybillingunit,otherelectricitydetails,gasconnectiondetails,propertytaxnumber,clientservicemanager,propertymanager,comments,propertyownedbyclientonly,textforposting,electricitybillingduedate,dated,createdby,isdeleted,indexiicollected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
+                query = "INSERT INTO client_property (clientid,projectid,propertydescription,propertytype,suburb,city,state,country,layoutdetails,numberofparkings,internalfurnitureandfittings,leveloffurnishing,status,initialpossessiondate,poagiven,poaid,electricityconsumernumber,electricitybillingunit,otherelectricitydetails,gasconnectiondetails,propertytaxnumber,clientservicemanager,propertymanager,comments,propertyownedbyclientonly,textforposting,electricitybillingduedate,dated,createdby,isdeleted,indexiicollected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
                 cursor.execute(query,(client_property["clientid"],client_property["projectid"],client_property["propertydescription"],client_property['propertytype'],client_property["suburb"],client_property["city"],client_property["state"],client_property["country"],client_property["layoutdetails"],client_property["numberofparkings"],client_property["internalfurnitureandfittings"],client_property["leveloffurnishing"],client_property["status"],client_property["initialpossessiondate"],client_property["poagiven"],client_property["poaid"],client_property["electricityconsumernumber"],client_property["electricitybillingunit"],client_property["otherelectricitydetails"],client_property["gasconnectiondetails"],client_property["propertytaxnumber"],client_property["clientservicemanager"],client_property["propertymanager"],client_property["comments"],client_property["propertyownedbyclientonly"],client_property["textforposting"],client_property["electricitybillingduedate"],givenowtime(),payload['user_id'],False,client_property['indexiicollected']))
                 prop_id = cursor.fetchone()[0]
                 conn[0].commit()
@@ -3376,7 +3376,7 @@ async def get_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
     payload['table_name'] = 'get_orders_view'
     return await runInTryCatch(
         conn=conn,
-        fname = 'get_orders',
+        fname = 'get_orders_view',
         payload=payload,
         isPaginationRequired=True,
         whereinquery=False,
@@ -3388,7 +3388,7 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             order_info = payload['order_info']
-            order_status_change = payload['order_status_change']
+            _order_status_change = payload['order_status_change']
             with conn[0].cursor() as cursor:
                 #===============Order_Info===========================
                 query = 'INSERT INTO orders (assignedtooffice,entityid,owner,status,clientpropertyid,service,clientid,orderdate,earlieststartdate,expectedcompletiondate,actualcompletiondate,vendorid,tallyledgerid,briefdescription,comments,additionalcomments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
@@ -3396,9 +3396,10 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
                 data = cursor.fetchone()[0]
                 conn[0].commit()
                 #===============Order_Status_Change==================
-                query = 'INSERT INTO order_status_change (orderid,statusid,dated) VALUES (%s,%s,%s)'
-                cursor.execute(query,(order_status_change['orderid'],order_status_change['statusid'],order_status_change['timestamp']))
-                conn[0].commit()               
+                for order_status_change in _order_status_change:
+                    query = 'INSERT INTO order_status_change (orderid,statusid,dated) VALUES (%s,%s,%s)'
+                    cursor.execute(query,(order_status_change['orderid'],order_status_change['statusid'],order_status_change['timestamp']))
+                    conn[0].commit()               
                 return giveSuccess(payload['user_id'],role_access_status,data={"inserted data":data})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -3406,4 +3407,55 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
         logging.info(traceback.print_exc())
         return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
     
+@app.post('/editOrders')
+async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            order_info = payload['order_info']
+            _order_status_change_update = payload['order_status_change']['update']
+            _order_status_change_insert = payload['order_status_change']['insert']
+            with conn[0].cursor() as cursor:
+                #===============Order_Info===========================
+                query = 'UPDATE orders SET assignedtooffice=%s,entityid=%s,owner=%s.status=%s,clientpropertyid=%s,service=%s,clientid=%s,orderdate=%s,earlieststartdate=%s,expectedcompletiondate=%s,actualcompletiondate=%s,vendorid=%s,tallyledgerid=%s,description=%s,comments=%s,additionalcomments=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
+                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],order_info['clientpropertyid'],order_info['service'],order_info['clientid'],order_info['orderdate'],order_info['earlieststartdate'],order_info['expectedcompletiondate'],order_info['actualcompletiondate'],order_info['vendorid'],order_info['tallyledgerid'],order_info['description'],order_info['comments'],order_info['additionalcomments'],givenowtime(),payload['user_id'],False,order_info['id']))
+                data = cursor.fetchone()[0]
+                conn[0].commit()
+                #===============Order_Status_Change==================
+                for order_status_change_update in _order_status_change_insert:
+                    query = 'UPDATE order_status_change SET orderid=%s,statusid=%s,dated=%s WHERE id=%s'
+                    cursor.execute(query,(order_status_change_update['orderid'],order_status_change_update['statusid'],order_status_change_update['timestamp'],order_status_change_update['id']))
+                    conn[0].commit()       
+                for order_status_change_insert in _order_status_change_insert:
+                    query = 'INSERT INTO order_status_change (orderid,statusid,dated) VALUES (%s,%s,%s)'
+                    cursor.execute(query,(order_status_change_insert['orderid'],order_status_change_insert['statusid'],order_status_change_insert['timestamp']))
+                    conn[0].commit()      
+                return giveSuccess(payload['user_id'],role_access_status,data={"edited data":data})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)    
+
+@app.post('/deleteOrders')
+async def delete_orders(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM orders WHERE id=%s'
+                cursor.execute(query,[payload['order_id']])
+                query = 'DELETE FROM order_status_change WHERE orderid=%s'
+                cursor.execute(query,[payload['order_id']])
+                query = 'DELETE FROM order_photos WHERE orderid = %s'
+                cursor.execute(query,[payload['order_id']])
+                conn[0].commit()
+                if cursor.statusmessage == 'DELETE 0':
+                    return giveFailure("No record available",payload['user_id'],role_access_status)
+            return giveSuccess(payload['user_id'],role_access_status,{"Deleted Data":payload['order_id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
 logger.info("program_started")
