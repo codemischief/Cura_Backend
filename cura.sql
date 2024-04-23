@@ -847,3 +847,18 @@ EXECUTE FUNCTION get_client_property_lla_view();
 CREATE SEQUENCE IF NOT EXISTS order_status_change_id_seq OWNED BY order_status_change.id;
 SELECT setval('order_status_change_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_status_change;
 ALTER TABLE order_status_change ALTER COLUMN id SET DEFAULT nextval('order_status_change_id_seq');
+
+CREATE TABLE order_photos (
+    id int,
+    orderid int,
+    photolink text,
+    description text,
+    phototakenwhen timestamp,
+    dated timestamp,
+    createdby int,
+    isdeleted boolean
+);
+
+CREATE SEQUENCE IF NOT EXISTS order_photos_id_seq OWNED BY order_photos.id;
+SELECT setval('order_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_photos;
+ALTER TABLE order_photos ALTER COLUMN id SET DEFAULT nextval('order_photos_id_seq');
