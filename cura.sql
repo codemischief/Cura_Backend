@@ -539,7 +539,7 @@ SELECT DISTINCT
     a.service,
     e.service as servicename,
     a.clientpropertyid,
-    concat_ws('-',i.suburb,i.description) as clientproperty,
+    concat_ws('-',i.suburb,i.propertydescription) as clientproperty,
     a.vendorid,
     c.vendorname,
     a.assignedtooffice,
@@ -567,7 +567,7 @@ LEFT JOIN
 LEFT JOIN
     order_status h ON a.status = h.id
 LEFT JOIN
-    get_client_property_view i ON a.clientpropertyid = i.id;
+    client_property i ON a.clientpropertyid = i.id;
 
 
 
