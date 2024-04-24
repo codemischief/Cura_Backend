@@ -1718,7 +1718,7 @@ async def get_vendor_admin(payload: dict, conn : psycopg2.extensions.connection 
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT id,vendorname FROM vendor order by vendorname'
+                query = 'SELECT DISTINCT id,vendorname FROM vendor order by vendorname'
                 cursor.execute(query)
                 data = cursor.fetchall()
                 return giveSuccess(payload['user_id'],role_access_status,data)
@@ -3389,6 +3389,7 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
         if role_access_status == 1:
             order_info = payload['order_info']
             _order_status_change = payload['order_status_change']
+            _order_photos = payload['order_photos']
             with conn[0].cursor() as cursor:
                 #===============Order_Info===========================
                 query = 'INSERT INTO orders (assignedtooffice,entityid,owner,status,clientpropertyid,service,clientid,orderdate,earlieststartdate,expectedcompletiondate,actualcompletiondate,vendorid,tallyledgerid,briefdescription,comments,additionalcomments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
@@ -3399,7 +3400,12 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
                 for order_status_change in _order_status_change:
                     query = 'INSERT INTO order_status_change (orderid,statusid,dated) VALUES (%s,%s,%s)'
                     cursor.execute(query,(order_status_change['orderid'],order_status_change['statusid'],order_status_change['timestamp']))
-                    conn[0].commit()               
+                    conn[0].commit()  
+                #==============Order_Photos=========================
+                for order_photos in _order_photos:
+                    query = 'INSERT INTO order_photos (orderid,photolink,description,phototakenwhen,dated,createdby.isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'
+                    cursor.execute(query,(data,order_photos['photolink'],order_photos['description'],order_photos['phototakenwhen'],givenowtime(),payload['user_id'],False))
+                    conn[0].commit()                            
                 return giveSuccess(payload['user_id'],role_access_status,data={"inserted data":data})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -3415,6 +3421,8 @@ async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depe
             order_info = payload['order_info']
             _order_status_change_update = payload['order_status_change']['update']
             _order_status_change_insert = payload['order_status_change']['insert']
+            _order_photos_update = payload['order_status_change']['update']
+            _order_photos_insert = payload['order_status_change']['insert']
             with conn[0].cursor() as cursor:
                 #===============Order_Info===========================
                 query = 'UPDATE orders SET assignedtooffice=%s,entityid=%s,owner=%s.status=%s,clientpropertyid=%s,service=%s,clientid=%s,orderdate=%s,earlieststartdate=%s,expectedcompletiondate=%s,actualcompletiondate=%s,vendorid=%s,tallyledgerid=%s,description=%s,comments=%s,additionalcomments=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
@@ -3422,7 +3430,7 @@ async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depe
                 data = cursor.fetchone()[0]
                 conn[0].commit()
                 #===============Order_Status_Change==================
-                for order_status_change_update in _order_status_change_insert:
+                for order_status_change_update in _order_status_change_update:
                     query = 'UPDATE order_status_change SET orderid=%s,statusid=%s,dated=%s WHERE id=%s'
                     cursor.execute(query,(order_status_change_update['orderid'],order_status_change_update['statusid'],order_status_change_update['timestamp'],order_status_change_update['id']))
                     conn[0].commit()       
@@ -3430,6 +3438,15 @@ async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depe
                     query = 'INSERT INTO order_status_change (orderid,statusid,dated) VALUES (%s,%s,%s)'
                     cursor.execute(query,(order_status_change_insert['orderid'],order_status_change_insert['statusid'],order_status_change_insert['timestamp']))
                     conn[0].commit()      
+                #==============Order_Photos=========================
+                for order_photos_update in _order_photos_update:
+                    query = 'UPDATE order_photos SET orderid=%s,statusid=%s,dated=%s WHERE id=%s'
+                    cursor.execute(query,(order_photos_update['orderid'],order_photos_update['photolink'],order_photos_update['description'],order_photos_update['phototakenwhen'],givenowtime(),payload['user_id'],False,payload['id']))
+                    conn[0].commit()       
+                for order_photos_insert in _order_photos_insert:
+                    query = 'INSERT INTO order_photos (orderid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'
+                    cursor.execute(query,(order_photos_insert['orderid'],order_photos_insert['photolink'],order_photos_insert['description'],order_photos_insert['phototakenwhen'],givenowtime(),payload['user_id'],False))
+                    conn[0].commit() 
                 return giveSuccess(payload['user_id'],role_access_status,data={"edited data":data})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -3458,4 +3475,104 @@ async def delete_orders(payload: dict, conn: psycopg2.extensions.connection = De
     except Exception as e:
         logging.info(traceback.print_exc())
         return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+    
+@app.post('/getOrdersInvoice')
+async def get_orders_invoice(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'get_orders_invoice_view'
+    return await runInTryCatch(
+        conn=conn,
+        fname='get_orders_invoice',
+        payload=payload,
+        whereinquery=False,
+        formatData=True,
+        isPaginationRequired=True
+    )
+
+@app.post('/addOrdersInvoice')
+async def add_order_invoice(payload: dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO order_invoice (clientid,orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
+                cursor.execute(query,[
+                    payload["clientid"],payload["orderid"],payload["estimatedate"],payload["estimateamount"],
+                    payload["invoicedate"],payload["invoiceamount"],payload["quotedescription"],payload["createdon"],
+                    payload["baseamount"],payload["tax"],payload["entity"],givenowtime(),payload['user_id'],False
+                ])
+                data = cursor.fetchone()[0]
+            conn[0].commit()
+            return giveSuccess(payload['user_id'],role_access_status,{"inserted data":data})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)   
+
+@app.post('/getServiceAdmin')
+async def get_service_admin(payload: dict, conn :psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT id,service FROM services order by service'
+                cursor.execute(query)
+                data = cursor.fetchall()
+                logging.info(data)
+                return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        giveFailure('Invalid Credentials',payload['user_id'],0)
+
+@app.post('/getClientPropertyAdmin')
+async def get_client_property_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT id,concat_ws(' ',project,description) as property FROM get_client_property_view order by project"
+                cursor.execute(query)
+                data = cursor.fetchall()
+                logging.info(data)
+                return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        giveFailure('Invalid Credentials',payload['user_id'],0)
+
+@app.post('/getOrderStatusAdmin')
+async def get_order_status_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT id,name FROM order_status order by name"
+                cursor.execute(query)
+                data = cursor.fetchall()
+                logging.info(data)
+                return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        giveFailure('Invalid Credentials',payload['user_id'],0)   
+
+@app.post('/getTallyLedgerAdmin')
+async def get_tally_ledger_admin(payload: dict, conn: psycopg2.extensions.connection=Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT DISTINCT id,tallyledger FROM tallyledger order by tallyledger"
+                cursor.execute(query)
+                data = cursor.fetchall()
+                logging.info(data)
+                return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        giveFailure('Invalid Credentials',payload['user_id'],0)     
+
 logger.info("program_started")
