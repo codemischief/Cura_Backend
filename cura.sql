@@ -862,3 +862,70 @@ CREATE TABLE order_photos (
 CREATE SEQUENCE IF NOT EXISTS order_photos_id_seq OWNED BY order_photos.id;
 SELECT setval('order_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_photos;
 ALTER TABLE order_photos ALTER COLUMN id SET DEFAULT nextval('order_photos_id_seq');
+
+ALTER TABLE order_invoice ALTER COLUMN invoicedate type date;
+
+CREATE VIEW get_orders_invoice_view AS
+SELECT DISTINCT
+    a.id,
+    a.clientid,
+    concat_ws(' ',b.firstname,b.middlename,b.lastname) as clientname,
+    a.orderid,
+    d.briefdescription as ordername,
+    a.estimatedate,
+    a.estimateamount,
+    a.invoicedate,
+    a.invoiceamount,
+    a.quotedescription,
+    a.createdon,
+    a.baseamount,
+    a.tax,
+    a.entityid,
+    c.name as entityname
+FROM
+    order_invoice a
+LEFT JOIN
+    client b ON a.clientid = b.id
+LEFT JOIN
+    entity c ON a.entityid = c.id
+LEFT JOIN
+    orders d ON a.orderid = d.id;
+
+ alter table order_receipt alter column recddate type date;
+
+ CREATE VIEW get_orders_receipt_view AS
+ SELECT DISTINCT
+    a.id,
+    a.receivedby,
+    concat_ws(' ',b.firstname,b.lastname) as receivedbyname,
+    a.amount,
+    a.tds,
+    a.recddate,
+    a.paymentmode,
+    c.name as paymentmodename,
+    a.orderid,
+    d.briefdescription,
+    a.dated,
+    a.createdby,
+    a.isdeleted,
+    a.createdon,
+    a.entityid,
+    f.name as entity,
+    a.officeid,
+    g.name as office
+FROM
+    order_receipt a
+LEFT JOIN
+    usertable b ON a.receivedby = b.id
+LEFT JOIN
+    mode_of_payment c ON a.paymentmode = c.id
+LEFT JOIN
+    orders d ON a.orderid = d.id
+LEFT JOIN
+    entity f ON a.entityid = f.id
+LEFT JOIN
+    office g ON a.officeid = g.id;
+
+CREATE SEQUENCE IF NOT EXISTS order_receipt_id_seq OWNED BY order_receipt.id;
+SELECT setval('order_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_receipt;
+ALTER TABLE order_receipt ALTER COLUMN id SET DEFAULT nextval('order_receipt_id_seq');
