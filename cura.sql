@@ -5,8 +5,9 @@ CREATE INDEX ON payment_for(id);
 CREATE INDEX ON z_paymentrequeststatus(id);
 --CREATE INDEX ON paymentrequeststatus(id);
 CREATE INDEX ON entity(id);
+
 CREATE VIEW get_payments_view AS
-SELECT
+SELECT DISTINCT
     a.id,
     CONCAT(b.firstname, ' ', b.lastname) AS paymentby,
     CONCAT(c.firstname, ' ', c.lastname) AS paymentto,
@@ -70,7 +71,7 @@ EXECUTE FUNCTION delete_from_get_payments_view();
 
 
 CREATE VIEW get_employee_view AS
-SELECT
+SELECT DISTINCT
     a.id,
     a.employeename,
     a.employeeid,
@@ -96,18 +97,17 @@ SELECT
     a.lastdateofworking,
     a.designation
 FROM
-    employee a,
-    role b,
-    cities c,
-    country d,
-    entity e,
-    lob f
-WHERE
-    (a.roleid = b.id) AND
-    a.city = c.id AND
-    a.country = d.id AND
-    (a.entityid = e.id) AND
-    (a.lobid = f.id);
+    employee a
+LEFT JOIN 
+    role b ON a.roleid = b.id
+LEFT JOIN
+    cities c ON a.city = c.id
+LEFT JOIN
+    country d ON a.country = d.id
+LEFT JOIN
+    entity e ON a.entityid = e.id
+LEFT JOIN
+    lob f ON a.lobid = f.id;
 
 
 
@@ -881,7 +881,10 @@ SELECT DISTINCT
     a.baseamount,
     a.tax,
     a.entityid,
-    c.name as entityname
+    c.name as entityname,
+    a.dated,
+    a.createdby,
+    concat_ws(' ',e.firstname,e.lastname) as createdbyname
 FROM
     order_invoice a
 LEFT JOIN
@@ -889,7 +892,9 @@ LEFT JOIN
 LEFT JOIN
     entity c ON a.entityid = c.id
 LEFT JOIN
-    orders d ON a.orderid = d.id;
+    orders d ON a.orderid = d.id
+LEFT JOIN
+    usertable e ON a.createdby = e.id;
 
  alter table order_receipt alter column recddate type date;
 
@@ -904,9 +909,15 @@ LEFT JOIN
     a.paymentmode,
     c.name as paymentmodename,
     a.orderid,
+    i.clientid,
+    concat_ws(' ',j.firstname,j.middlename,j.lastname) as clientname,
+    i.clientpropertyid,
+    concat_ws(' ',k.suburb,k.propertydescription) as clientproperty,
     d.briefdescription,
+    a.receiptdesc,
     a.dated,
     a.createdby,
+    concat_ws(' ',h.firstname,h.lastname) as createdbyname,
     a.isdeleted,
     a.createdon,
     a.entityid,
@@ -924,7 +935,15 @@ LEFT JOIN
 LEFT JOIN
     entity f ON a.entityid = f.id
 LEFT JOIN
-    office g ON a.officeid = g.id;
+    office g ON a.officeid = g.id
+LEFT JOIN
+    usertable h ON a.createdby = h.id
+LEFT JOIN
+    orders i ON a.orderid = i.id
+LEFT JOIN
+    client j ON i.clientid = j.id
+LEFT JOIN
+    client_property k ON i.clientpropertyid = k.id;
 
 CREATE SEQUENCE IF NOT EXISTS order_receipt_id_seq OWNED BY order_receipt.id;
 SELECT setval('order_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_receipt;
