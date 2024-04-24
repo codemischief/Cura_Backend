@@ -644,3 +644,572 @@ LINE 1: SELECT id,name FROM order_status order by project
 2024-04-23 23:08:48,620 - uvicorn.error - INFO - Application startup complete.
 2024-04-23 23:08:50,329 - root - INFO - [(29, 'Advertisement Expenses'), (30, 'Audit Fees'), (18, 'Bank Charges'), (5, 'Brokerage expense'), (19, 'Cash'), (35, 'Client Property tax'), (36, 'Client Society Maintenance'), (38, 'Club membership fees'), (28, 'Computer repairs'), (47, 'Contra-B2B'), (4, 'Contract Fee'), (10, 'Director Payment'), (20, 'Electricity bill'), (45, 'Fixed Asset'), (8, 'Fuel expense reimbursement'), (39, 'IT Development fees'), (44, 'Income tax Paid'), (21, 'Internet charges'), (27, 'Lawyer fees'), (11, 'Loan From Director'), (33, 'Office Rent'), (7, 'Other reimbursement'), (1, 'Performance Incentive'), (43, 'Petrol Expenses'), (46, 'Police Verification'), (25, 'Printing & Stationery'), (23, 'Profession Tax paid'), (34, 'Property repairs'), (9, 'Salaries and Wages'), (40, 'Service Revenue-Agency'), (17, 'Service tax paid-Agency'), (42, 'Service tax-Repairs'), (41, 'ServiceTax-LateInterest'), (32, 'Staff Welfare'), (24, 'Stamp Duty & Registration charges'), (13, 'TDS-192-Salary'), (12, 'TDS-194-C-Contractor'), (14, 'TDS-194-H-Brokerage'), (15, 'TDS-194-I-Rent'), (16, 'TDS-194-J-Professional Fees'), (22, 'TDS-Late Interest'), (31, 'Tax Consultant Fees'), (26, 'Telephone Expenses')]
 2024-04-23 23:08:50,330 - uvicorn.access - INFO - 127.0.0.1:58508 - "POST /getTallyLedgerAdmin HTTP/1.1" 200
+2024-04-23 23:16:24,519 - uvicorn.access - INFO - 127.0.0.1:34360 - "GET /docs HTTP/1.1" 200
+2024-04-23 23:16:24,770 - uvicorn.access - INFO - 127.0.0.1:34360 - "GET /openapi.json HTTP/1.1" 200
+2024-04-23 23:16:37,010 - root - INFO - getVendorAdmin: received payload <{'user_id': 1234}>
+2024-04-23 23:16:37,092 - uvicorn.access - INFO - 127.0.0.1:51574 - "POST /getVendorAdmin HTTP/1.1" 200
+2024-04-23 23:16:59,160 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-23 23:16:59,248 - uvicorn.error - INFO - Shutting down
+2024-04-23 23:16:59,349 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-23 23:16:59,350 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-23 23:16:59,350 - uvicorn.error - INFO - Finished server process [84691]
+2024-04-23 23:16:59,515 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-23 23:17:00,005 - main - INFO - program_started
+2024-04-23 23:17:00,005 - uvicorn.error - INFO - Started server process [86656]
+2024-04-23 23:17:00,006 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-23 23:17:00,006 - uvicorn.error - INFO - Application startup complete.
+2024-04-23 23:17:03,019 - root - INFO - getVendorAdmin: received payload <{'user_id': 1234}>
+2024-04-23 23:17:03,083 - uvicorn.access - INFO - 127.0.0.1:40024 - "POST /getVendorAdmin HTTP/1.1" 200
+2024-04-23 23:17:03,818 - root - INFO - getVendorAdmin: received payload <{'user_id': 1234}>
+2024-04-23 23:17:03,884 - uvicorn.access - INFO - 127.0.0.1:40024 - "POST /getVendorAdmin HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3402, in add_orders
+    cursor.execute(query,(order_status_change['orderid'],order_status_change['statusid'],order_status_change['timestamp']))
+TypeError: string indices must be integers
+2024-04-23 23:31:37,871 - root - INFO - None
+2024-04-23 23:31:37,872 - uvicorn.access - INFO - 127.0.0.1:42470 - "POST /addOrders HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3407, in add_orders
+    cursor.execute(query,(data,order_photos['photolink'],order_photos['description'],order_photos['phototakenwhen'],givenowtime(),payload['user_id'],False))
+psycopg2.errors.SyntaxError: INSERT has more expressions than target columns
+LINE 1: ...ion','2024-01-01 00:00:00','2024-04-23 23:32:11',1234,false)
+                                                                 ^
+
+2024-04-23 23:32:11,823 - root - INFO - None
+2024-04-23 23:32:11,824 - uvicorn.access - INFO - 127.0.0.1:53754 - "POST /addOrders HTTP/1.1" 200
+2024-04-23 23:33:00,276 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-23 23:33:00,345 - uvicorn.error - INFO - Shutting down
+2024-04-23 23:33:00,446 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-23 23:33:00,447 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-23 23:33:00,447 - uvicorn.error - INFO - Finished server process [86656]
+2024-04-23 23:33:00,615 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-23 23:33:01,229 - main - INFO - program_started
+2024-04-23 23:33:01,230 - uvicorn.error - INFO - Started server process [89052]
+2024-04-23 23:33:01,230 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-23 23:33:01,231 - uvicorn.error - INFO - Application startup complete.
+2024-04-23 23:33:09,682 - uvicorn.access - INFO - 127.0.0.1:41968 - "POST /addOrders HTTP/1.1" 200
+2024-04-24 10:58:23,221 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-04-24 10:58:23,222 - uvicorn.error - INFO - Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2024-04-24 10:58:23,222 - uvicorn.error - INFO - Started reloader process [7146] using statreload
+2024-04-24 10:58:23,332 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 10:58:23,963 - main - INFO - program_started
+2024-04-24 10:58:23,964 - uvicorn.error - INFO - Started server process [7149]
+2024-04-24 10:58:23,964 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 10:58:23,965 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 10:58:25,846 - uvicorn.access - INFO - 127.0.0.1:36524 - "GET /docs HTTP/1.1" 200
+2024-04-24 10:58:26,160 - uvicorn.access - INFO - 127.0.0.1:36524 - "GET /openapi.json HTTP/1.1" 200
+2024-04-24 11:01:03,604 - uvicorn.access - INFO - 127.0.0.1:32912 - "GET /docs HTTP/1.1" 200
+2024-04-24 11:01:03,832 - uvicorn.access - INFO - 127.0.0.1:32912 - "GET /openapi.json HTTP/1.1" 200
+2024-04-24 11:01:12,602 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'receivedbyname', 'amount', 'tds', 'recddate', 'paymentmode', 'paymentmodename', 'orderid', 'briefdescription', 'paymentstatus', 'paymentsource', 'paymentsourcename', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'entity', 'officeid', 'office'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': [], 'sort_order': 'asc', 'table_name': 'get_order_receipt_view'}>
+2024-04-24 11:01:12,629 - root - INFO - Pagination
+2024-04-24 11:01:12,629 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,receivedbyname,amount,tds,recddate,paymentmode,paymentmodename,orderid,briefdescription,paymentstatus,paymentsource,paymentsourcename,dated,createdby,isdeleted,createdon,entityid,entity,officeid,office FROM get_order_receipt_view LIMIT 15 OFFSET 0]
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 340, in filterAndPaginate_v2
+    cur.execute(query)
+psycopg2.errors.UndefinedTable: relation "get_order_receipt_view" does not exist
+LINE 1: ...ed,createdon,entityid,entity,officeid,office FROM get_order_...
+                                                             ^
+
+2024-04-24 11:01:12,753 - root - ERROR - filtAndPagination_v2: exception None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 340, in filterAndPaginate_v2
+    cur.execute(query)
+psycopg2.errors.UndefinedTable: relation "get_order_receipt_view" does not exist
+LINE 1: ...ed,createdon,entityid,entity,officeid,office FROM get_order_...
+                                                             ^
+
+2024-04-24 11:01:12,754 - root - ERROR - get_order_receipt_EXCEPTION: <'colnames'>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 1752, in runInTryCatch
+    colnames = data['colnames']
+KeyError: 'colnames'
+2024-04-24 11:01:12,755 - uvicorn.access - INFO - 127.0.0.1:55544 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 11:01:34,529 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 11:01:34,611 - uvicorn.error - INFO - Shutting down
+2024-04-24 11:01:34,712 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 11:01:34,713 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 11:01:34,713 - uvicorn.error - INFO - Finished server process [7149]
+2024-04-24 11:01:34,897 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 11:01:35,545 - main - INFO - program_started
+2024-04-24 11:01:35,546 - uvicorn.error - INFO - Started server process [7921]
+2024-04-24 11:01:35,546 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 11:01:35,546 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 11:01:36,643 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'receivedbyname', 'amount', 'tds', 'recddate', 'paymentmode', 'paymentmodename', 'orderid', 'briefdescription', 'paymentstatus', 'paymentsource', 'paymentsourcename', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'entity', 'officeid', 'office'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': [], 'sort_order': 'asc', 'table_name': 'get_orders_receipt_view'}>
+2024-04-24 11:01:36,665 - root - INFO - Pagination
+2024-04-24 11:01:36,665 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,receivedbyname,amount,tds,recddate,paymentmode,paymentmodename,orderid,briefdescription,paymentstatus,paymentsource,paymentsourcename,dated,createdby,isdeleted,createdon,entityid,entity,officeid,office FROM get_orders_receipt_view LIMIT 15 OFFSET 0]
+2024-04-24 11:01:37,991 - root - INFO - Cursor message is SELECT 15
+2024-04-24 11:01:40,032 - root - INFO - filterAndPaginate_v2: Given filter yeilds <15034> entries
+2024-04-24 11:01:40,035 - root - INFO - Formatting in progress for process get_order_receipt
+2024-04-24 11:01:40,037 - uvicorn.access - INFO - 127.0.0.1:45194 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 11:03:25,753 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'receivedbyname', 'amount', 'tds', 'recddate', 'paymentmode', 'paymentmodename', 'orderid', 'briefdescription', 'paymentstatus', 'paymentsource', 'paymentsourcename', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'entity', 'officeid', 'office'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': [], 'sort_order': 'asc', 'table_name': 'get_orders_receipt_view'}>
+2024-04-24 11:03:25,782 - root - INFO - Pagination
+2024-04-24 11:03:25,783 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,receivedbyname,amount,tds,recddate,paymentmode,paymentmodename,orderid,briefdescription,paymentstatus,paymentsource,paymentsourcename,dated,createdby,isdeleted,createdon,entityid,entity,officeid,office FROM get_orders_receipt_view LIMIT 15 OFFSET 0]
+2024-04-24 11:03:27,167 - root - INFO - Cursor message is SELECT 15
+2024-04-24 11:03:29,405 - root - INFO - filterAndPaginate_v2: Given filter yeilds <15034> entries
+2024-04-24 11:03:29,409 - root - INFO - Formatting in progress for process get_order_receipt
+2024-04-24 11:03:29,411 - uvicorn.access - INFO - 127.0.0.1:41324 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 11:05:41,389 - uvicorn.access - INFO - 127.0.0.1:45024 - "POST /getOrderReceipt HTTP/1.1" 422
+2024-04-24 11:05:50,303 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'receivedbyname', 'amount', 'tds', 'recddate', 'paymentmode', 'paymentmodename', 'orderid', 'briefdescription', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'entity', 'officeid', 'office'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': [], 'sort_order': 'asc', 'table_name': 'get_orders_receipt_view'}>
+2024-04-24 11:05:50,362 - root - INFO - Pagination
+2024-04-24 11:05:50,363 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,receivedbyname,amount,tds,recddate,paymentmode,paymentmodename,orderid,briefdescription,dated,createdby,isdeleted,createdon,entityid,entity,officeid,office FROM get_orders_receipt_view LIMIT 15 OFFSET 0]
+2024-04-24 11:05:51,383 - root - INFO - Cursor message is SELECT 15
+2024-04-24 11:05:53,755 - root - INFO - filterAndPaginate_v2: Given filter yeilds <15034> entries
+2024-04-24 11:05:53,758 - root - INFO - Formatting in progress for process get_order_receipt
+2024-04-24 11:05:53,760 - uvicorn.access - INFO - 127.0.0.1:59760 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 11:07:41,555 - uvicorn.access - INFO - 127.0.0.1:57114 - "POST /addOrdersInvoice HTTP/1.1" 200
+2024-04-24 11:08:28,196 - uvicorn.access - INFO - 127.0.0.1:51958 - "POST /editOrdersInvoice HTTP/1.1" 200
+2024-04-24 11:09:07,955 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 11:09:07,996 - uvicorn.error - INFO - Shutting down
+2024-04-24 11:09:08,096 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 11:09:08,097 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 11:09:08,097 - uvicorn.error - INFO - Finished server process [7921]
+2024-04-24 11:09:08,276 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 11:09:08,854 - main - INFO - program_started
+2024-04-24 11:09:08,855 - uvicorn.error - INFO - Started server process [9770]
+2024-04-24 11:09:08,855 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 11:09:08,856 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 11:09:10,509 - uvicorn.access - INFO - 127.0.0.1:48346 - "POST /editOrdersInvoice HTTP/1.1" 200
+2024-04-24 11:09:18,497 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 11:09:18,531 - uvicorn.error - INFO - Shutting down
+2024-04-24 11:09:18,632 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 11:09:18,632 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 11:09:18,632 - uvicorn.error - INFO - Finished server process [9770]
+2024-04-24 11:09:18,812 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 11:09:19,347 - main - INFO - program_started
+2024-04-24 11:09:19,348 - uvicorn.error - INFO - Started server process [9817]
+2024-04-24 11:09:19,348 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 11:09:19,348 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 11:09:20,436 - uvicorn.access - INFO - 127.0.0.1:43264 - "POST /editOrdersInvoice HTTP/1.1" 200
+2024-04-24 11:09:39,196 - uvicorn.access - INFO - 127.0.0.1:32932 - "POST /editOrdersInvoice HTTP/1.1" 200
+2024-04-24 11:10:00,228 - root - INFO - get_orders_invoice:RT: received payload <{'user_id': 1234, 'rows': ['id', 'clientid', 'clientname', 'orderid', 'ordername', 'estimatedate', 'estimateamount', 'invoicedate', 'invoiceamount', 'quotedescription', 'createdon', 'baseamount', 'tax', 'entityid', 'entityname'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': [], 'sort_order': 'asc', 'table_name': 'get_orders_invoice_view'}>
+2024-04-24 11:10:00,255 - root - INFO - Pagination
+2024-04-24 11:10:00,255 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,clientid,clientname,orderid,ordername,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,entityname FROM get_orders_invoice_view LIMIT 15 OFFSET 0]
+2024-04-24 11:10:00,556 - root - INFO - Cursor message is SELECT 15
+2024-04-24 11:10:01,923 - root - INFO - filterAndPaginate_v2: Given filter yeilds <21145> entries
+2024-04-24 11:10:01,927 - root - INFO - Formatting in progress for process get_orders_invoice
+2024-04-24 11:10:01,929 - uvicorn.access - INFO - 127.0.0.1:53130 - "POST /getOrdersInvoice HTTP/1.1" 200
+2024-04-24 11:10:14,703 - root - INFO - get_orders_invoice:RT: received payload <{'user_id': 1234, 'rows': ['id', 'clientid', 'clientname', 'orderid', 'ordername', 'estimatedate', 'estimateamount', 'invoicedate', 'invoiceamount', 'quotedescription', 'createdon', 'baseamount', 'tax', 'entityid', 'entityname'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': ['id'], 'sort_order': 'desc', 'table_name': 'get_orders_invoice_view'}>
+2024-04-24 11:10:14,723 - root - INFO - Pagination
+2024-04-24 11:10:14,724 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,clientid,clientname,orderid,ordername,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,entityname FROM get_orders_invoice_view ORDER BY id None LIMIT 15 OFFSET 0]
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 340, in filterAndPaginate_v2
+    cur.execute(query)
+psycopg2.errors.SyntaxError: syntax error at or near "None"
+LINE 1: ...tityname FROM get_orders_invoice_view ORDER BY id None LIMIT...
+                                                             ^
+
+2024-04-24 11:10:14,859 - root - ERROR - filtAndPagination_v2: exception None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 340, in filterAndPaginate_v2
+    cur.execute(query)
+psycopg2.errors.SyntaxError: syntax error at or near "None"
+LINE 1: ...tityname FROM get_orders_invoice_view ORDER BY id None LIMIT...
+                                                             ^
+
+2024-04-24 11:10:14,860 - root - ERROR - get_orders_invoice_EXCEPTION: <'colnames'>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 1752, in runInTryCatch
+    colnames = data['colnames']
+KeyError: 'colnames'
+2024-04-24 11:10:14,861 - uvicorn.access - INFO - 127.0.0.1:44648 - "POST /getOrdersInvoice HTTP/1.1" 200
+2024-04-24 11:10:22,226 - root - INFO - get_orders_invoice:RT: received payload <{'user_id': 1234, 'rows': ['id', 'clientid', 'clientname', 'orderid', 'ordername', 'estimatedate', 'estimateamount', 'invoicedate', 'invoiceamount', 'quotedescription', 'createdon', 'baseamount', 'tax', 'entityid', 'entityname'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': ['id'], 'order': 'desc', 'table_name': 'get_orders_invoice_view'}>
+2024-04-24 11:10:22,248 - root - INFO - Pagination
+2024-04-24 11:10:22,248 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,clientid,clientname,orderid,ordername,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,entityname FROM get_orders_invoice_view ORDER BY id desc LIMIT 15 OFFSET 0]
+2024-04-24 11:10:22,709 - root - INFO - Cursor message is SELECT 15
+2024-04-24 11:10:23,952 - root - INFO - filterAndPaginate_v2: Given filter yeilds <21145> entries
+2024-04-24 11:10:23,955 - root - INFO - Formatting in progress for process get_orders_invoice
+2024-04-24 11:10:23,957 - uvicorn.access - INFO - 127.0.0.1:53510 - "POST /getOrdersInvoice HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3607, in delete_order_invoice
+    payload['orderid']
+KeyError: 'orderid'
+2024-04-24 11:12:25,127 - root - INFO - None
+2024-04-24 11:12:25,128 - uvicorn.access - INFO - 127.0.0.1:44652 - "POST /deleteOrdersInvoice HTTP/1.1" 200
+2024-04-24 11:12:33,404 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 11:12:33,492 - uvicorn.error - INFO - Shutting down
+2024-04-24 11:12:33,593 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 11:12:33,594 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 11:12:33,594 - uvicorn.error - INFO - Finished server process [9817]
+2024-04-24 11:12:33,783 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 11:12:34,351 - main - INFO - program_started
+2024-04-24 11:12:34,352 - uvicorn.error - INFO - Started server process [10609]
+2024-04-24 11:12:34,352 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 11:12:34,352 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 11:12:34,748 - uvicorn.access - INFO - 127.0.0.1:42930 - "POST /deleteOrdersInvoice HTTP/1.1" 200
+2024-04-24 11:13:01,920 - root - INFO - get_orders_invoice:RT: received payload <{'user_id': 1234, 'rows': ['id', 'clientid', 'clientname', 'orderid', 'ordername', 'estimatedate', 'estimateamount', 'invoicedate', 'invoiceamount', 'quotedescription', 'createdon', 'baseamount', 'tax', 'entityid', 'entityname'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': ['id'], 'order': 'desc', 'table_name': 'get_orders_invoice_view'}>
+2024-04-24 11:13:01,952 - root - INFO - Pagination
+2024-04-24 11:13:01,953 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,clientid,clientname,orderid,ordername,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,entityname FROM get_orders_invoice_view ORDER BY id desc LIMIT 15 OFFSET 0]
+2024-04-24 11:13:02,464 - root - INFO - Cursor message is SELECT 15
+2024-04-24 11:13:04,163 - root - INFO - filterAndPaginate_v2: Given filter yeilds <21144> entries
+2024-04-24 11:13:04,167 - root - INFO - Formatting in progress for process get_orders_invoice
+2024-04-24 11:13:04,169 - uvicorn.access - INFO - 127.0.0.1:49826 - "POST /getOrdersInvoice HTTP/1.1" 200
+2024-04-24 12:23:08,654 - root - INFO - get_orders_invoice:RT: received payload <{'user_id': 1234, 'rows': ['clientid', 'orderid', 'estimatedate', 'estimateamount', 'invoicedate', 'invoiceamount', 'quotedescription', 'createdon', 'baseamount', 'tax', 'entityid'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': ['id'], 'order': 'desc', 'table_name': 'get_orders_invoice_view'}>
+2024-04-24 12:23:08,679 - root - INFO - Pagination
+2024-04-24 12:23:08,680 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT clientid,orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid FROM get_orders_invoice_view ORDER BY id desc LIMIT 15 OFFSET 0]
+2024-04-24 12:23:09,140 - root - INFO - Cursor message is SELECT 15
+2024-04-24 12:23:10,010 - root - INFO - filterAndPaginate_v2: Given filter yeilds <21144> entries
+2024-04-24 12:23:10,014 - root - INFO - Formatting in progress for process get_orders_invoice
+2024-04-24 12:23:10,018 - uvicorn.access - INFO - 127.0.0.1:46216 - "POST /getOrdersInvoice HTTP/1.1" 200
+2024-04-24 12:24:46,131 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'amount', 'tds', 'recddate', 'paymentmode', 'orderid', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'officeid'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': [], 'sort_order': 'asc', 'table_name': 'get_orders_receipt_view'}>
+2024-04-24 12:24:46,158 - root - INFO - Pagination
+2024-04-24 12:24:46,158 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,amount,tds,recddate,paymentmode,orderid,dated,createdby,isdeleted,createdon,entityid,officeid FROM get_orders_receipt_view LIMIT 15 OFFSET 0]
+2024-04-24 12:24:47,337 - root - INFO - Cursor message is SELECT 15
+2024-04-24 12:24:48,605 - root - INFO - filterAndPaginate_v2: Given filter yeilds <15034> entries
+2024-04-24 12:24:48,607 - root - INFO - Formatting in progress for process get_order_receipt
+2024-04-24 12:24:48,609 - uvicorn.access - INFO - 127.0.0.1:48400 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 12:25:45,582 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'amount', 'tds', 'recddate', 'paymentmode', 'orderid', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'dated', 'createdby', 'isdeleted'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': [], 'sort_order': 'asc', 'table_name': 'get_orders_receipt_view'}>
+2024-04-24 12:25:45,604 - root - INFO - Pagination
+2024-04-24 12:25:45,604 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,amount,tds,recddate,paymentmode,orderid,dated,createdby,isdeleted,createdon,entityid,dated,createdby,isdeleted FROM get_orders_receipt_view LIMIT 15 OFFSET 0]
+2024-04-24 12:25:46,720 - root - INFO - Cursor message is SELECT 15
+2024-04-24 12:25:48,374 - root - INFO - filterAndPaginate_v2: Given filter yeilds <15034> entries
+2024-04-24 12:25:48,376 - root - INFO - Formatting in progress for process get_order_receipt
+2024-04-24 12:25:48,377 - uvicorn.access - INFO - 127.0.0.1:39112 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 12:28:03,211 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:28:03,219 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:28:03,320 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:28:03,321 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:28:03,321 - uvicorn.error - INFO - Finished server process [10609]
+2024-04-24 12:28:03,499 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:28:03,976 - main - INFO - program_started
+2024-04-24 12:28:03,977 - uvicorn.error - INFO - Started server process [28760]
+2024-04-24 12:28:03,977 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:28:03,977 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 12:28:30,496 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:28:30,546 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:28:30,647 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:28:30,648 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:28:30,648 - uvicorn.error - INFO - Finished server process [28760]
+2024-04-24 12:28:30,814 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:28:31,411 - main - INFO - program_started
+2024-04-24 12:28:31,411 - uvicorn.error - INFO - Started server process [28868]
+2024-04-24 12:28:31,412 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:28:31,412 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 12:28:52,460 - uvicorn.access - INFO - 127.0.0.1:47776 - "GET /docs HTTP/1.1" 200
+2024-04-24 12:28:52,643 - uvicorn.access - INFO - 127.0.0.1:47776 - "GET /openapi.json HTTP/1.1" 200
+2024-04-24 12:31:29,972 - uvicorn.access - INFO - 127.0.0.1:53354 - "GET /docs HTTP/1.1" 200
+2024-04-24 12:31:30,075 - uvicorn.access - INFO - 127.0.0.1:53354 - "GET /openapi.json HTTP/1.1" 200
+2024-04-24 12:31:46,549 - uvicorn.access - INFO - 127.0.0.1:51698 - "POST /addOrderReceipt HTTP/1.1" 422
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3636, in add_order_receipt
+    cursor.execute(query,[payload["user_id"],payload["id"],payload["receivedby"],
+KeyError: 'id'
+2024-04-24 12:31:54,251 - root - INFO - None
+2024-04-24 12:31:54,252 - uvicorn.access - INFO - 127.0.0.1:60154 - "POST /addOrderReceipt HTTP/1.1" 200
+2024-04-24 12:32:14,924 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:32:15,006 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:32:15,107 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:32:15,108 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:32:15,108 - uvicorn.error - INFO - Finished server process [28868]
+2024-04-24 12:32:15,272 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:32:15,805 - main - INFO - program_started
+2024-04-24 12:32:15,806 - uvicorn.error - INFO - Started server process [29787]
+2024-04-24 12:32:15,806 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:32:15,806 - uvicorn.error - INFO - Application startup complete.
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3639, in add_order_receipt
+    payload["createdon"],payload["entityid"],payload['officeid']])
+KeyError: 'officeid'
+2024-04-24 12:32:18,236 - root - INFO - None
+2024-04-24 12:32:18,237 - uvicorn.access - INFO - 127.0.0.1:46420 - "POST /addOrderReceipt HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3636, in add_order_receipt
+    cursor.execute(query,[payload["user_id"],payload["receivedby"],
+IndexError: list index out of range
+2024-04-24 12:32:49,778 - root - INFO - None
+2024-04-24 12:32:49,779 - uvicorn.access - INFO - 127.0.0.1:41958 - "POST /addOrderReceipt HTTP/1.1" 200
+2024-04-24 12:33:02,434 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:33:02,454 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:33:02,555 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:33:02,555 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:33:02,556 - uvicorn.error - INFO - Finished server process [29787]
+2024-04-24 12:33:02,758 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:33:03,354 - main - INFO - program_started
+2024-04-24 12:33:03,354 - uvicorn.error - INFO - Started server process [29985]
+2024-04-24 12:33:03,355 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:33:03,355 - uvicorn.error - INFO - Application startup complete.
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3636, in add_order_receipt
+    cursor.execute(query,[payload["user_id"],payload["receivedby"],
+IndexError: list index out of range
+2024-04-24 12:33:04,041 - root - INFO - None
+2024-04-24 12:33:04,042 - uvicorn.access - INFO - 127.0.0.1:39184 - "POST /addOrderReceipt HTTP/1.1" 200
+2024-04-24 12:33:13,195 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:33:13,284 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:33:13,385 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:33:13,385 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:33:13,386 - uvicorn.error - INFO - Finished server process [29985]
+2024-04-24 12:33:13,568 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:33:14,178 - main - INFO - program_started
+2024-04-24 12:33:14,178 - uvicorn.error - INFO - Started server process [30033]
+2024-04-24 12:33:14,179 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:33:14,179 - uvicorn.error - INFO - Application startup complete.
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3636, in add_order_receipt
+    cursor.execute(query,[payload["user_id"],payload["receivedby"],
+IndexError: list index out of range
+2024-04-24 12:33:15,188 - root - INFO - None
+2024-04-24 12:33:15,189 - uvicorn.access - INFO - 127.0.0.1:38046 - "POST /addOrderReceipt HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3636, in add_order_receipt
+    cursor.execute(query,[payload["user_id"],payload["receivedby"],
+IndexError: list index out of range
+2024-04-24 12:33:27,690 - root - INFO - None
+2024-04-24 12:33:27,691 - uvicorn.access - INFO - 127.0.0.1:38406 - "POST /addOrderReceipt HTTP/1.1" 200
+2024-04-24 12:34:03,728 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:34:03,815 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:34:03,916 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:34:03,916 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:34:03,917 - uvicorn.error - INFO - Finished server process [30033]
+2024-04-24 12:34:04,091 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:34:04,626 - main - INFO - program_started
+2024-04-24 12:34:04,627 - uvicorn.error - INFO - Started server process [30242]
+2024-04-24 12:34:04,627 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:34:04,628 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 12:34:05,365 - uvicorn.access - INFO - 127.0.0.1:36782 - "POST /addOrderReceipt HTTP/1.1" 200
+2024-04-24 12:38:02,127 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:38:02,175 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:38:02,276 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:38:02,276 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:38:02,277 - uvicorn.error - INFO - Finished server process [30242]
+2024-04-24 12:38:02,421 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:38:03,026 - main - INFO - program_started
+2024-04-24 12:38:03,027 - uvicorn.error - INFO - Started server process [31203]
+2024-04-24 12:38:03,027 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:38:03,027 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 12:38:36,526 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:38:36,613 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:38:36,713 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:38:36,714 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:38:36,714 - uvicorn.error - INFO - Finished server process [31203]
+2024-04-24 12:38:36,893 - asyncio - DEBUG - Using selector: EpollSelector
+Process SpawnProcess-13:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3/dist-packages/uvicorn/subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 68, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 76, in serve
+    config.load()
+  File "/usr/lib/python3/dist-packages/uvicorn/config.py", line 448, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/lib/python3/dist-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1017, in get_code
+  File "<frozen importlib._bootstrap_external>", line 947, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/mnt/e/cura/cura_backend/./main.py", line 3656
+    cursor.execute(query,[[payload["receivedby"],payload["amount"],payload["tds"],
+                          ^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+2024-04-24 12:38:44,717 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:38:44,824 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:38:45,364 - main - INFO - program_started
+2024-04-24 12:38:45,365 - uvicorn.error - INFO - Started server process [31372]
+2024-04-24 12:38:45,365 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:38:45,365 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 12:38:58,597 - uvicorn.access - INFO - 127.0.0.1:34494 - "GET /docs HTTP/1.1" 200
+2024-04-24 12:38:58,746 - uvicorn.access - INFO - 127.0.0.1:34494 - "GET /openapi.json HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3659, in edit_order_receipt
+    payload["createdon"],payload["entityid"],payload['officeid']],
+KeyError: 'officeid'
+2024-04-24 12:39:17,127 - root - INFO - None
+2024-04-24 12:39:17,128 - uvicorn.access - INFO - 127.0.0.1:39994 - "POST /editOrdersReceipt HTTP/1.1" 200
+2024-04-24 12:39:53,310 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:39:53,343 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:39:53,443 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:39:53,444 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:39:53,444 - uvicorn.error - INFO - Finished server process [31372]
+2024-04-24 12:39:53,627 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:39:54,256 - main - INFO - program_started
+2024-04-24 12:39:54,257 - uvicorn.error - INFO - Started server process [31658]
+2024-04-24 12:39:54,257 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:39:54,258 - uvicorn.error - INFO - Application startup complete.
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 3656, in edit_order_receipt
+    cursor.execute(query,[[payload["receivedby"],payload["amount"],payload["tds"],
+IndexError: list index out of range
+2024-04-24 12:39:55,508 - root - INFO - None
+2024-04-24 12:39:55,509 - uvicorn.access - INFO - 127.0.0.1:49552 - "POST /editOrdersReceipt HTTP/1.1" 200
+2024-04-24 12:40:29,591 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:40:29,648 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:40:29,749 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:40:29,749 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:40:29,750 - uvicorn.error - INFO - Finished server process [31658]
+2024-04-24 12:40:29,905 - asyncio - DEBUG - Using selector: EpollSelector
+Process SpawnProcess-16:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3/dist-packages/uvicorn/subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 68, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 76, in serve
+    config.load()
+  File "/usr/lib/python3/dist-packages/uvicorn/config.py", line 448, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/lib/python3/dist-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1017, in get_code
+  File "<frozen importlib._bootstrap_external>", line 947, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/mnt/e/cura/cura_backend/./main.py", line 3661
+    ])
+     ^
+SyntaxError: closing parenthesis ')' does not match opening parenthesis '[' on line 3656
+2024-04-24 12:41:17,162 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:41:17,258 - asyncio - DEBUG - Using selector: EpollSelector
+Process SpawnProcess-17:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3/dist-packages/uvicorn/subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 68, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 76, in serve
+    config.load()
+  File "/usr/lib/python3/dist-packages/uvicorn/config.py", line 448, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/lib/python3/dist-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1017, in get_code
+  File "<frozen importlib._bootstrap_external>", line 947, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/mnt/e/cura/cura_backend/./main.py", line 3660
+    payload['officeid'],payload['id']])
+                                      ^
+SyntaxError: closing parenthesis ')' does not match opening parenthesis '[' on line 3656
+2024-04-24 12:41:38,332 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:41:38,439 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:41:38,933 - main - INFO - program_started
+2024-04-24 12:41:38,934 - uvicorn.error - INFO - Started server process [32083]
+2024-04-24 12:41:38,934 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:41:38,934 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 12:41:43,019 - uvicorn.access - INFO - 127.0.0.1:52616 - "POST /editOrdersReceipt HTTP/1.1" 200
+2024-04-24 12:41:50,850 - uvicorn.access - INFO - 127.0.0.1:41364 - "POST /editOrdersReceipt HTTP/1.1" 200
+2024-04-24 12:42:15,137 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'receivedbyname', 'amount', 'tds', 'recddate', 'paymentmode', 'paymentmodename', 'orderid', 'briefdescription', 'paymentstatus', 'paymentsource', 'paymentsourcename', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'entity', 'officeid', 'office'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': [], 'sort_order': 'asc', 'table_name': 'get_orders_receipt_view'}>
+2024-04-24 12:42:15,164 - root - INFO - Pagination
+2024-04-24 12:42:15,164 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,receivedbyname,amount,tds,recddate,paymentmode,paymentmodename,orderid,briefdescription,paymentstatus,paymentsource,paymentsourcename,dated,createdby,isdeleted,createdon,entityid,entity,officeid,office FROM get_orders_receipt_view LIMIT 15 OFFSET 0]
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 340, in filterAndPaginate_v2
+    cur.execute(query)
+psycopg2.errors.UndefinedColumn: column "paymentstatus" does not exist
+LINE 1: ...mentmode,paymentmodename,orderid,briefdescription,paymentsta...
+                                                             ^
+
+2024-04-24 12:42:15,301 - root - ERROR - filtAndPagination_v2: exception None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 340, in filterAndPaginate_v2
+    cur.execute(query)
+psycopg2.errors.UndefinedColumn: column "paymentstatus" does not exist
+LINE 1: ...mentmode,paymentmodename,orderid,briefdescription,paymentsta...
+                                                             ^
+
+2024-04-24 12:42:15,302 - root - ERROR - get_order_receipt_EXCEPTION: <'colnames'>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 1752, in runInTryCatch
+    colnames = data['colnames']
+KeyError: 'colnames'
+2024-04-24 12:42:15,304 - uvicorn.access - INFO - 127.0.0.1:44464 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 12:42:41,642 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'receivedbyname', 'amount', 'tds', 'recddate', 'paymentmode', 'paymentmodename', 'orderid', 'briefdescription', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'entity', 'officeid', 'office'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': [], 'sort_order': 'asc', 'table_name': 'get_orders_receipt_view'}>
+2024-04-24 12:42:41,663 - root - INFO - Pagination
+2024-04-24 12:42:41,664 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,receivedbyname,amount,tds,recddate,paymentmode,paymentmodename,orderid,briefdescription,dated,createdby,isdeleted,createdon,entityid,entity,officeid,office FROM get_orders_receipt_view LIMIT 15 OFFSET 0]
+2024-04-24 12:42:42,723 - root - INFO - Cursor message is SELECT 15
+2024-04-24 12:42:44,395 - root - INFO - filterAndPaginate_v2: Given filter yeilds <15035> entries
+2024-04-24 12:42:44,397 - root - INFO - Formatting in progress for process get_order_receipt
+2024-04-24 12:42:44,399 - uvicorn.access - INFO - 127.0.0.1:55980 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 12:42:54,390 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'receivedbyname', 'amount', 'tds', 'recddate', 'paymentmode', 'paymentmodename', 'orderid', 'briefdescription', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'entity', 'officeid', 'office'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': ['id'], 'sort_order': 'desc', 'table_name': 'get_orders_receipt_view'}>
+2024-04-24 12:42:54,416 - root - INFO - Pagination
+2024-04-24 12:42:54,417 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,receivedbyname,amount,tds,recddate,paymentmode,paymentmodename,orderid,briefdescription,dated,createdby,isdeleted,createdon,entityid,entity,officeid,office FROM get_orders_receipt_view ORDER BY id None LIMIT 15 OFFSET 0]
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 340, in filterAndPaginate_v2
+    cur.execute(query)
+psycopg2.errors.SyntaxError: syntax error at or near "None"
+LINE 1: ...d,office FROM get_orders_receipt_view ORDER BY id None LIMIT...
+                                                             ^
+
+2024-04-24 12:42:54,532 - root - ERROR - filtAndPagination_v2: exception None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 340, in filterAndPaginate_v2
+    cur.execute(query)
+psycopg2.errors.SyntaxError: syntax error at or near "None"
+LINE 1: ...d,office FROM get_orders_receipt_view ORDER BY id None LIMIT...
+                                                             ^
+
+2024-04-24 12:42:54,534 - root - ERROR - get_order_receipt_EXCEPTION: <'colnames'>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 1752, in runInTryCatch
+    colnames = data['colnames']
+KeyError: 'colnames'
+2024-04-24 12:42:54,535 - uvicorn.access - INFO - 127.0.0.1:43030 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 12:43:03,511 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'receivedbyname', 'amount', 'tds', 'recddate', 'paymentmode', 'paymentmodename', 'orderid', 'briefdescription', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'entity', 'officeid', 'office'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': ['id'], 'order': 'desc', 'table_name': 'get_orders_receipt_view'}>
+2024-04-24 12:43:03,541 - root - INFO - Pagination
+2024-04-24 12:43:03,541 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,receivedbyname,amount,tds,recddate,paymentmode,paymentmodename,orderid,briefdescription,dated,createdby,isdeleted,createdon,entityid,entity,officeid,office FROM get_orders_receipt_view ORDER BY id desc LIMIT 15 OFFSET 0]
+2024-04-24 12:43:04,803 - root - INFO - Cursor message is SELECT 15
+2024-04-24 12:43:06,558 - root - INFO - filterAndPaginate_v2: Given filter yeilds <15035> entries
+2024-04-24 12:43:06,562 - root - INFO - Formatting in progress for process get_order_receipt
+2024-04-24 12:43:06,563 - uvicorn.access - INFO - 127.0.0.1:44854 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 12:43:25,203 - uvicorn.access - INFO - 127.0.0.1:52948 - "POST /editOrdersReceipt HTTP/1.1" 200
+2024-04-24 12:43:32,231 - root - INFO - get_order_receipt:RT: received payload <{'user_id': 1234, 'rows': ['id', 'receivedby', 'receivedbyname', 'amount', 'tds', 'recddate', 'paymentmode', 'paymentmodename', 'orderid', 'briefdescription', 'dated', 'createdby', 'isdeleted', 'createdon', 'entityid', 'entity', 'officeid', 'office'], 'filter': [], 'pg_no': 1, 'pg_size': 15, 'sort_by': ['id'], 'order': 'desc', 'table_name': 'get_orders_receipt_view'}>
+2024-04-24 12:43:32,258 - root - INFO - Pagination
+2024-04-24 12:43:32,258 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,receivedby,receivedbyname,amount,tds,recddate,paymentmode,paymentmodename,orderid,briefdescription,dated,createdby,isdeleted,createdon,entityid,entity,officeid,office FROM get_orders_receipt_view ORDER BY id desc LIMIT 15 OFFSET 0]
+2024-04-24 12:43:33,534 - root - INFO - Cursor message is SELECT 15
+2024-04-24 12:43:35,399 - root - INFO - filterAndPaginate_v2: Given filter yeilds <15035> entries
+2024-04-24 12:43:35,403 - root - INFO - Formatting in progress for process get_order_receipt
+2024-04-24 12:43:35,405 - uvicorn.access - INFO - 127.0.0.1:33416 - "POST /getOrderReceipt HTTP/1.1" 200
+2024-04-24 12:45:11,487 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 12:45:11,545 - uvicorn.error - INFO - Shutting down
+2024-04-24 12:45:11,646 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 12:45:11,647 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 12:45:11,647 - uvicorn.error - INFO - Finished server process [32083]
+2024-04-24 12:45:11,809 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 12:45:12,323 - main - INFO - program_started
+2024-04-24 12:45:12,323 - uvicorn.error - INFO - Started server process [32955]
+2024-04-24 12:45:12,324 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 12:45:12,324 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 12:45:16,752 - uvicorn.access - INFO - 127.0.0.1:54058 - "GET /docs HTTP/1.1" 200
+2024-04-24 12:45:16,942 - uvicorn.access - INFO - 127.0.0.1:54058 - "GET /openapi.json HTTP/1.1" 200
+2024-04-24 12:45:50,922 - uvicorn.access - INFO - 127.0.0.1:41414 - "POST /deleteOrdersReceipt HTTP/1.1" 200
