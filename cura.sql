@@ -274,7 +274,7 @@ FOR EACH ROW
 EXECUTE FUNCTION delete_from_get_cities_view();
 
 CREATE VIEW get_projects_view AS
-SELECT
+SELECT DISTINCT
     b.buildername,
     a.builderid,
     a.projectname,

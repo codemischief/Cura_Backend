@@ -3462,13 +3462,13 @@ async def delete_orders(payload: dict, conn: psycopg2.extensions.connection = De
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM orders WHERE id=%s'
                 cursor.execute(query,[payload['order_id']])
+                if cursor.statusmessage == 'DELETE 0':
+                    return giveFailure("No record available",payload['user_id'],role_access_status)
                 query = 'DELETE FROM order_status_change WHERE orderid=%s'
                 cursor.execute(query,[payload['order_id']])
                 query = 'DELETE FROM order_photos WHERE orderid = %s'
                 cursor.execute(query,[payload['order_id']])
                 conn[0].commit()
-                if cursor.statusmessage == 'DELETE 0':
-                    return giveFailure("No record available",payload['user_id'],role_access_status)
             return giveSuccess(payload['user_id'],role_access_status,{"Deleted Data":payload['order_id']})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -3683,4 +3683,50 @@ async def delete_order_receipt(payload: dict,conn:psycopg2.extensions.connection
     except Exception as e:
         logging.info(traceback.print_exc())
         return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+
+
+
+@app.post('/getOrderById')
+async def get_order_by_id(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        data = {}
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                #====================ORDER-INFO===================
+                query = 'SELECT assignedtooffice,entityid,owner,status,clientpropertyid,service,clientid,orderdate,earlieststartdate,expectedcompletiondate,actualcompletiondate,vendorid,tallyledgerid,briefdescription,comments,additionalcomments FROM orders WHERE id=%s'
+                cursor.execute(query,[payload['id']])
+                order_info_ = cursor.fetchall()
+
+                colnames = [desc[0] for desc in cursor.description]
+                order_info = dict()
+                for row in order_info_:
+                    row_dict = {colname: value for colname, value in zip(colnames, row)}
+                    order_info = row_dict
+                if not order_info:
+                    order_info = {colname: None for colname in colnames}
+                data["order_info"]  = order_info
+                #====================ORDER-PHOTOS=================
+                query = f'''
+                    select photolink,description,phototakenwhen  
+                    from client_property_photos where clientpropertyid = {payload['id']}
+                '''
+                cursor.execute(query)
+                colnames = [desc[0] for desc in cursor.description]
+                _data = cursor.fetchall()
+                order_photos = []
+                for row in _data:
+                    row_dict = {colname: value for colname, value in zip(colnames, row)}
+                    order_photos.append(row_dict)  
+                if order_photos == []:
+                    order_photos = [{colname:None for colname in colnames}]             
+                data["order_photos"] = order_photos
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+
+
 logger.info("program_started")

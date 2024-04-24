@@ -1213,3 +1213,95 @@ KeyError: 'colnames'
 2024-04-24 12:45:16,752 - uvicorn.access - INFO - 127.0.0.1:54058 - "GET /docs HTTP/1.1" 200
 2024-04-24 12:45:16,942 - uvicorn.access - INFO - 127.0.0.1:54058 - "GET /openapi.json HTTP/1.1" 200
 2024-04-24 12:45:50,922 - uvicorn.access - INFO - 127.0.0.1:41414 - "POST /deleteOrdersReceipt HTTP/1.1" 200
+2024-04-24 13:18:19,552 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 13:18:19,611 - uvicorn.error - INFO - Shutting down
+2024-04-24 13:18:19,712 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 13:18:19,713 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 13:18:19,713 - uvicorn.error - INFO - Finished server process [32955]
+2024-04-24 13:18:19,946 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 13:18:20,769 - main - INFO - program_started
+2024-04-24 13:18:20,771 - uvicorn.error - INFO - Started server process [40976]
+2024-04-24 13:18:20,771 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 13:18:20,772 - uvicorn.error - INFO - Application startup complete.
+2024-04-24 13:42:00,785 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 13:42:00,821 - uvicorn.error - INFO - Shutting down
+2024-04-24 13:42:00,922 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-24 13:42:00,923 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-24 13:42:00,923 - uvicorn.error - INFO - Finished server process [40976]
+2024-04-24 13:42:01,120 - asyncio - DEBUG - Using selector: EpollSelector
+Process SpawnProcess-21:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3/dist-packages/uvicorn/subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 68, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 76, in serve
+    config.load()
+  File "/usr/lib/python3/dist-packages/uvicorn/config.py", line 448, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/lib/python3/dist-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1017, in get_code
+  File "<frozen importlib._bootstrap_external>", line 947, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/mnt/e/cura/cura_backend/./main.py", line 3464
+    cursor.execute(query,[payload['order_id']]
+                  ^
+SyntaxError: '(' was never closed
+2024-04-24 13:42:54,388 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 13:42:54,525 - asyncio - DEBUG - Using selector: EpollSelector
+Process SpawnProcess-22:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3/dist-packages/uvicorn/subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 68, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 76, in serve
+    config.load()
+  File "/usr/lib/python3/dist-packages/uvicorn/config.py", line 448, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/lib/python3/dist-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1017, in get_code
+  File "<frozen importlib._bootstrap_external>", line 947, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/mnt/e/cura/cura_backend/./main.py", line 3464
+    cursor.execute(query,[payload['order_id'])
+                                             ^
+SyntaxError: closing parenthesis ')' does not match opening parenthesis '['
+2024-04-24 13:43:02,491 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-24 13:43:02,633 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-24 13:43:03,322 - main - INFO - program_started
+2024-04-24 13:43:03,322 - uvicorn.error - INFO - Started server process [46943]
+2024-04-24 13:43:03,323 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-24 13:43:03,323 - uvicorn.error - INFO - Application startup complete.
