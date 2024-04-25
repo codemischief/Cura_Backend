@@ -3388,7 +3388,7 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             order_info = payload['order_info']
-            _order_status_change = payload['order_status_change']
+            # _order_status_change = payload['order_status_change']
             _order_photos = payload['order_photos']
             with conn[0].cursor() as cursor:
                 #===============Order_Info===========================
@@ -3400,8 +3400,10 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
                 #==============Order_Photos=========================
                 for order_photos in _order_photos:
                     query = 'INSERT INTO order_photos (orderid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'
+                    logging.info('inserting photos')
                     cursor.execute(query,(data,order_photos['photolink'],order_photos['description'],order_photos['phototakenwhen'],givenowtime(),payload['user_id'],False))
-                    conn[0].commit()                            
+                logging.info(cursor.statusmessage)
+                conn[0].commit()                            
                 return giveSuccess(payload['user_id'],role_access_status,data={"inserted data":data})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -3412,28 +3414,29 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
 @app.post('/editOrders')
 async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
+        logging.info(f'payload for edit_orders : <{payload}>')
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             order_info = payload['order_info']
-            _order_status_change_update = payload['order_status_change']['update']
-            _order_status_change_insert = payload['order_status_change']['insert']
-            _order_photos_update = payload['order_status_change']['update']
-            _order_photos_insert = payload['order_status_change']['insert']
+            # _order_status_change_update = payload['order_status_change']['update']
+            # _order_status_change_insert = payload['order_status_change']['insert']
+            _order_photos_update = payload['order_photos']['update']
+            _order_photos_insert = payload['order_photos']['insert']
             with conn[0].cursor() as cursor:
                 #===============Order_Info===========================
-                query = 'UPDATE orders SET assignedtooffice=%s,entityid=%s,owner=%s.status=%s,clientpropertyid=%s,service=%s,clientid=%s,orderdate=%s,earlieststartdate=%s,expectedcompletiondate=%s,actualcompletiondate=%s,vendorid=%s,tallyledgerid=%s,description=%s,comments=%s,additionalcomments=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
-                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],order_info['clientpropertyid'],order_info['service'],order_info['clientid'],order_info['orderdate'],order_info['earlieststartdate'],order_info['expectedcompletiondate'],order_info['actualcompletiondate'],order_info['vendorid'],order_info['tallyledgerid'],order_info['description'],order_info['comments'],order_info['additionalcomments'],givenowtime(),payload['user_id'],False,order_info['id']))
-                data = cursor.fetchone()[0]
+                query = 'UPDATE orders SET assignedtooffice=%s,entityid=%s,owner=%s,status=%s,clientpropertyid=%s,service=%s,clientid=%s,orderdate=%s,earlieststartdate=%s,expectedcompletiondate=%s,actualcompletiondate=%s,vendorid=%s,tallyledgerid=%s,comments=%s,additionalcomments=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
+                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],order_info['clientpropertyid'],order_info['service'],order_info['clientid'],order_info['orderdate'],order_info['earlieststartdate'],order_info['expectedcompletiondate'],order_info['actualcompletiondate'],order_info['vendorid'],order_info['tallyledgerid'],order_info['comments'],order_info['additionalcomments'],givenowtime(),payload['user_id'],False,order_info['id']))
+                # data = cursor.fetchone()[0]
                 conn[0].commit()
                 #===============Order_Status_Change==================
-                for order_status_change_update in _order_status_change_update:
-                    query = 'UPDATE order_status_change SET orderid=%s,statusid=%s,dated=%s WHERE id=%s'
-                    cursor.execute(query,(order_status_change_update['orderid'],order_status_change_update['statusid'],order_status_change_update['timestamp'],order_status_change_update['id']))
-                    conn[0].commit()       
-                for order_status_change_insert in _order_status_change_insert:
-                    query = 'INSERT INTO order_status_change (orderid,statusid,dated) VALUES (%s,%s,%s)'
-                    cursor.execute(query,(order_status_change_insert['orderid'],order_status_change_insert['statusid'],order_status_change_insert['timestamp']))
-                    conn[0].commit()      
+                # for order_status_change_update in _order_status_change_update:
+                #     query = 'UPDATE order_status_change SET orderid=%s,statusid=%s,dated=%s WHERE id=%s'
+                #     cursor.execute(query,(order_status_change_update['orderid'],order_status_change_update['statusid'],order_status_change_update['timestamp'],order_status_change_update['id']))
+                #     conn[0].commit()       
+                # for order_status_change_insert in _order_status_change_insert:
+                #     query = 'INSERT INTO order_status_change (orderid,statusid,dated) VALUES (%s,%s,%s)'
+                #     cursor.execute(query,(order_status_change_insert['orderid'],order_status_change_insert['statusid'],order_status_change_insert['timestamp']))
+                #     conn[0].commit()      
                 #==============Order_Photos=========================
                 for order_photos_update in _order_photos_update:
                     query = 'UPDATE order_photos SET orderid=%s,statusid=%s,dated=%s WHERE id=%s'
@@ -3443,7 +3446,7 @@ async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depe
                     query = 'INSERT INTO order_photos (orderid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'
                     cursor.execute(query,(order_photos_insert['orderid'],order_photos_insert['photolink'],order_photos_insert['description'],order_photos_insert['phototakenwhen'],givenowtime(),payload['user_id'],False))
                     conn[0].commit() 
-                return giveSuccess(payload['user_id'],role_access_status,data={"edited data":data})
+                return giveSuccess(payload['user_id'],role_access_status,data={"edited data":order_info['id']})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
     except Exception as e:
@@ -3493,7 +3496,7 @@ async def add_order_invoice(payload: dict,conn:psycopg2.extensions.connection = 
                 query = 'INSERT INTO order_invoice (clientid,orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
                 cursor.execute(query,[
                     payload["clientid"],payload["orderid"],payload["estimatedate"],payload["estimateamount"],
-                    payload["invoicedate"],payload["invoiceamount"],payload["quotedescription"],payload["createdon"],
+                    payload["invoicedate"],payload["invoiceamount"],payload["quotedescription"],datetime.date.today(),
                     payload["baseamount"],payload["tax"],payload["entity"],givenowtime(),payload['user_id'],False
                 ])
                 data = cursor.fetchone()[0]
@@ -3580,7 +3583,7 @@ async def edit_order_invoice(payload: dict,conn:psycopg2.extensions.connection =
                 query = 'UPDATE order_invoice SET clientid=%s,orderid=%s,estimatedate=%s,estimateamount=%s,invoicedate=%s,invoiceamount=%s,quotedescription=%s,createdon=%s,baseamount=%s,tax=%s,entityid=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
                 cursor.execute(query,[
                     payload["clientid"],payload["orderid"],payload["estimatedate"],payload["estimateamount"],
-                    payload["invoicedate"],payload["invoiceamount"],payload["quotedescription"],payload["createdon"],
+                    payload["invoicedate"],payload["invoiceamount"],payload["quotedescription"],datetime.date.today(),
                     payload["baseamount"],payload["tax"],payload["entity"],givenowtime(),payload['user_id'],False,
                     payload['id']
                 ])
@@ -3632,7 +3635,7 @@ async def add_order_receipt(payload: dict, conn: psycopg2.extensions.connection 
                 cursor.execute(query,[payload["receivedby"],payload["amount"],payload["tds"],
                                       payload["recddate"],payload["receiptdesc"],payload["paymentmode"],
                                       payload["orderid"],givenowtime(),payload["user_id"],False,
-                                      payload["createdon"],payload["entityid"],payload['officeid']])
+                                      datetime.date.today(),payload["entityid"],payload['officeid']])
                 conn[0].commit()
                 data = cursor.fetchone()[0]
                 
@@ -3653,7 +3656,7 @@ async def edit_order_receipt(payload: dict,conn:psycopg2.extensions.connection =
                 cursor.execute(query,[payload["receivedby"],payload["amount"],payload["tds"],
                                       payload["recddate"],payload["receiptdesc"],payload["paymentmode"],
                                       payload["orderid"],givenowtime(),payload["user_id"],False,
-                                      payload["createdon"],payload["entityid"],
+                                      datetime.date.today(),payload["entityid"],
                                       payload['officeid'],payload['id']])
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"edited data":payload['id']})
@@ -3705,8 +3708,8 @@ async def get_order_by_id(payload: dict, conn : psycopg2.extensions.connection =
                 data["order_info"]  = order_info
                 #====================ORDER-PHOTOS=================
                 query = f'''
-                    select photolink,description,phototakenwhen  
-                    from client_property_photos where clientpropertyid = {payload['id']}
+                    select id,orderid,photolink,description,phototakenwhen  
+                    from order_photos where orderid = {payload['id']}
                 '''
                 cursor.execute(query)
                 colnames = [desc[0] for desc in cursor.description]
