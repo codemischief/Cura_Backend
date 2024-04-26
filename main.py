@@ -120,7 +120,7 @@ def entity(conn):
 def roles(conn):
     try:
         with conn.cursor() as cursor:
-            query = 'SELECT DISTINCT id,name from role order by name'
+            query = 'SELECT DISTINCT id,role_name from roles order by role_name'
             cursor.execute(query)
             data = cursor.fetchall()
         res = {}
@@ -2446,8 +2446,8 @@ async def add_client_property(payload: dict, conn: psycopg2.extensions.connectio
                     cursor.execute (query,(prop_id,client_property_photos["photolink"],client_property_photos["description"],client_property_photos["phototakenwhen"],givenowtime(),payload['user_id'],False))
                 query = "INSERT INTO client_property_poa (clientpropertyid,poalegalname,poapanno,poaaddressline1,poaaddressline2,poasuburb,poacity,poastate,poacountry,poazip,poaoccupation,poabirthyear,poaphoto,poaemployername,poarelation,poarelationwith,poaeffectivedate,poaenddate,poafor,scancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
                 cursor.execute (query,(prop_id,client_property_poa["poalegalname"],client_property_poa["poapanno"],client_property_poa["poaaddressline1"],client_property_poa["poaaddressline2"],client_property_poa["poasuburb"],client_property_poa["poacity"],client_property_poa["poastate"],client_property_poa["poacountry"],client_property_poa["poazip"],client_property_poa["poaoccupation"],client_property_poa["poabirthyear"],client_property_poa["poaphoto"],client_property_poa["poaemployername"],client_property_poa["poarelation"],client_property_poa["poarelationwith"],client_property_poa["poaeffectivedate"],client_property_poa["poaenddate"],client_property_poa["poafor"],client_property_poa["scancopy"],givenowtime(),payload['user_id'],False))
-                query = "INSERT INTO client_property_owner (propertyid,owner1name,owner1addressline1,owner1addressline2,owner1suburb,owner1city,owner1state,owner1country,owner1zip,owner1panno,owner1occupation,owner1employername,owner1birthyear,owner1relation,owner1relationwith,owner2name,owner2addressline1,owner2addressline2,owner2suburb,owner2city,owner2state,owner2country,owner2zip,owner2panno,owner2occupation,owner2employer,owner2birthyr,owner2relation,owner2relationwith,otherownerdetails,owner3name,owner3panno,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                cursor.execute (query,(prop_id,client_property_owner["owner1name"],client_property_owner["owner1addressline1"],client_property_owner["owner1addressline2"],client_property_owner["owner1suburb"],client_property_owner["owner1city"],client_property_owner["owner1state"],client_property_owner["owner1country"],client_property_owner["owner1zip"],client_property_owner["owner1panno"],client_property_owner["owner1occupation"],client_property_owner["owner1employername"],client_property_owner["owner1birthyear"],client_property_owner["owner1relation"],client_property_owner["owner1relationwith"],client_property_owner["owner2name"],client_property_owner["owner2addressline1"],client_property_owner["owner2addressline2"],client_property_owner["owner2suburb"],client_property_owner["owner2city"],client_property_owner["owner2state"],client_property_owner["owner2country"],client_property_owner["owner2zip"],client_property_owner["owner2panno"],client_property_owner["owner2occupation"],client_property_owner["owner2employername"],client_property_owner["owner2birthyear"],client_property_owner["owner2relation"],client_property_owner["owner2relationwith"],client_property_owner["otherownerdetails"],client_property_owner["owner3name"],client_property_owner["owner3panno"],givenowtime(),payload['user_id'],False))
+                query = "INSERT INTO client_property_owner (propertyid,owner1name,owner1panno,owner1aadhaarno,owner1pancollected,owner1aadhaarcollected,owner2name,owner2panno,owner2aadhaarno,owner2pancollected,owner2aadhaarcollected,owner3name,owner3panno,owner3aadhaarno,owner3pancollected,owner3aadhaarcollected,comments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                cursor.execute (query,(prop_id,client_property_owner["owner1name"],client_property_owner["owner1panno"],client_property_owner["owner1aadhaarno"],client_property_owner["owner1pancollected"],client_property_owner["owner1aadhaarcollected"],client_property_owner["owner2name"],client_property_owner["owner2panno"],client_property_owner["owner2aadhaarno"],client_property_owner["owner2pancollected"],client_property_owner["owner2aadhaarcollected"],client_property_owner["owner3name"],client_property_owner["owner3panno"],client_property_owner["owner3aadhaarno"],client_property_owner["owner3pancollected"],client_property_owner["owner3aadhaarcollected"],client_property_owner["comments"],givenowtime(),payload['user_id'],False))
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"inserted_property":prop_id})
     except Exception as e:
@@ -2709,23 +2709,9 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
 
     #             # update client legalinfo in 'client_legal_info' table
                 li = payload['client_property_owner']
-                query = ('UPDATE client_property_owner SET '
-                         'owner1name=%s,' 'owner1addressline1=%s,' 'owner1addressline2=%s,' 'owner1suburb=%s,' 'owner1city=%s,'
-                         'owner1state=%s,' 'owner1country=%s,' 'owner1zip=%s,' 'owner1panno=%s,' 'owner1occupation=%s,'
-                         'owner1employername=%s,' 'owner1relation=%s,' 'owner1relationwith=%s,' 'owner1birthyear=%s,'
-                         'owner2name=%s,' 'owner2addressline1=%s,' 'owner2addressline2=%s,' 'owner2suburb=%s,' 'owner2city=%s,'
-                         'owner2state=%s,' 'owner2country=%s,' 'owner2zip=%s,' 'owner2panno=%s,' 'owner2occupation=%s,'
-                         'owner2employer=%s,' 'owner2relation=%s,' 'owner2relationwith=%s,' 'owner2birthyr=%s,'
-                         'owner3name=%s,' 'owner3panno=%s,' 'otherownerdetails=%s'
-                         ' WHERE propertyid=%s')
+                query = ('UPDATE client_property_owner SET owner1name=%s,owner1panno=%s,owner1aadhaarno=%s,owner1pancollected=%s,owner1aadhaarcollected=%s,owner2name=%s,owner2panno=%s,owner2aadhaarno=%s,owner2pancollected=%s,owner2aadhaarcollected=%s,owner3name=%s,owner3panno=%s,owner3aadhaarno=%s,owner3pancollected=%s,owner3aadhaarcollected=%s,comments=%s WHERE propertyid=%s')
                 data = cursor.execute(
-                    ''.join(query),(li['owner1name'],li['owner1addressline1'], li['owner1addressline2'], li['owner1suburb'],
-                           li['owner1city'], li['owner1state'], li['owner1country'], li['owner1zip'], li['owner1panno'], li['owner1occupation'],
-                           li['owner1employername'], li['owner1relation'], li['owner1relationwith'], li['owner1birthyear'],
-                           li['owner2name'],li['owner2addressline1'], li['owner2addressline2'], li['owner2suburb'],
-                           li['owner2city'], li['owner2state'], li['owner2country'], li['owner2zip'], li['owner2panno'], li['owner2occupation'],
-                           li['owner2employer'], li['owner2relation'], li['owner2relationwith'], li['owner2birthyr'],
-                           li['owner3name'],li['owner3panno'],li['otherownerdetails'],
+                    query,(li["owner1name"],li["owner1panno"],li["owner1aadhaarno"],li["owner1pancollected"],li["owner1aadhaarcollected"],li["owner2name"],li["owner2panno"],li["owner2aadhaarno"],li["owner2pancollected"],li["owner2aadhaarcollected"],li["owner3name"],li["owner3panno"],li["owner3aadhaarno"],li["owner3pancollected"],li["owner3aadhaarcollected"],li["comments"],
                            propertyid))
                 conn[0].commit()
                 logging.info(f'editClientProperty: client_property_owner update status is <{cursor.statusmessage}>')
@@ -2796,12 +2782,7 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
 
                 ############### Arrage Client Property Owner Info ##################
                 query = f'''
-                    select distinct owner1name,owner1addressline1,owner1addressline2,owner1suburb,owner1city,
-                    owner1state,owner1country,owner1zip,owner1panno,owner1occupation,owner1employername,
-                    owner1relation,owner1birthyear,owner1relationwith,owner2name,owner2addressline1,
-                    owner2addressline2,owner2suburb,owner2city,owner2state,owner2country,owner2zip,
-                    owner2panno,owner2occupation,owner2employer,owner2relation,owner2relationwith,
-                    owner2birthyr,owner3name,owner3panno,otherownerdetails from client_property_owner 
+                    select distinct propertyid,owner1name,owner1panno,owner1aadhaarno,owner1pancollected,owner1aadhaarcollected,owner2name,owner2panno,owner2aadhaarno,owner2pancollected,owner2aadhaarcollected,owner3name,owner3panno,owner3aadhaarno,owner3pancollected,owner3aadhaarcollected,comments from client_property_owner 
                     where propertyid = {payload['id']}
                 '''
                 cursor.execute(query)
@@ -3393,7 +3374,7 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
             with conn[0].cursor() as cursor:
                 #===============Order_Info===========================
                 query = 'INSERT INTO orders (assignedtooffice,entityid,owner,status,clientpropertyid,service,clientid,orderdate,earlieststartdate,expectedcompletiondate,actualcompletiondate,vendorid,tallyledgerid,briefdescription,comments,additionalcomments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
-                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],order_info['clientpropertyid'],order_info['service'],order_info['clientid'],order_info['orderdate'],order_info['earlieststartdate'],order_info['expectedcompletiondate'],order_info['actualcompletiondate'],order_info['vendorid'],order_info['tallyledgerid'],order_info['additionalcomments'],order_info['comments'],order_info['additionalcomments'],givenowtime(),payload['user_id'],False))
+                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],order_info['clientpropertyid'],order_info['service'],order_info['clientid'],order_info['orderdate'],order_info['earlieststartdate'],order_info['expectedcompletiondate'],order_info['actualcompletiondate'],order_info['vendorid'],order_info['tallyledgerid'],order_info['briefdescription'],order_info['comments'],order_info['additionalcomments'],givenowtime(),payload['user_id'],False))
                 data = cursor.fetchone()[0]
                 conn[0].commit()
   
@@ -3439,8 +3420,8 @@ async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depe
                 #     conn[0].commit()      
                 #==============Order_Photos=========================
                 for order_photos_update in _order_photos_update:
-                    query = 'UPDATE order_photos SET orderid=%s,statusid=%s,dated=%s WHERE id=%s'
-                    cursor.execute(query,(order_photos_update['orderid'],order_photos_update['photolink'],order_photos_update['description'],order_photos_update['phototakenwhen'],givenowtime(),payload['user_id'],False,payload['id']))
+                    query = 'UPDATE order_photos SET orderid=%s,photolink=%s,description=%s,phototakenwhen=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
+                    cursor.execute(query,(order_photos_update['orderid'],order_photos_update['photolink'],order_photos_update['description'],order_photos_update['phototakenwhen'],givenowtime(),payload['user_id'],False,order_photos_update['id']))
                     conn[0].commit()       
                 for order_photos_insert in _order_photos_insert:
                     query = 'INSERT INTO order_photos (orderid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'
@@ -3732,7 +3713,7 @@ async def get_order_status_history(payload: dict,conn:psycopg2.extensions.connec
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT distinct * FROM order_status_change WHERE orderid = %s'
+                query = 'SELECT distinct a.id,b.briefdescription,c.name,a.dated FROM order_status_change a LEFT JOIN orders b ON a.orderid = b.id LEFT JOIN order_status c ON a.statusid = c.id WHERE a.orderid = %s'
                 cursor.execute(query,[payload['id']])
                 data = cursor.fetchall()
             
