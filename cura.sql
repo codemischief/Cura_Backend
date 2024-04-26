@@ -76,7 +76,7 @@ SELECT DISTINCT
     a.employeename,
     a.employeeid,
     a.userid,
-    b.name AS role,
+    b.role_name AS role,
     a.roleid,
     a.dateofjoining,
     a.dob,
@@ -99,7 +99,7 @@ SELECT DISTINCT
 FROM
     employee a
 LEFT JOIN 
-    role b ON a.roleid = b.id
+    roles b ON a.roleid = b.id
 LEFT JOIN
     cities c ON a.city = c.id
 LEFT JOIN
@@ -126,6 +126,17 @@ CREATE TRIGGER delete_trigger_for_get_employee_view
 INSTEAD OF DELETE ON get_employee_view
 FOR EACH ROW
 EXECUTE FUNCTION delete_from_get_employee_view();
+
+CREATE VIEW get_lob_view AS
+ SELECT DISTINCT a.id,
+    a.name,
+    concat_ws(' '::text, b.firstname, b.lastname) AS lob_head,
+    a.company,
+    c.name AS entity
+   FROM lob a
+     LEFT JOIN usertable_old b ON a.lob_head = b.id
+     LEFT JOIN entity_old c ON a.entityid = c.id;
+
 
 
 CREATE VIEW get_locality_view AS
@@ -327,7 +338,7 @@ CREATE OR REPLACE FUNCTION delete_from_get_projects_view() RETURNS TRIGGER AS $$
 BEGIN
     -- Perform delete operation on the underlying table(s)
     DELETE FROM projects WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
+    -- You might need additional delete operations if data is spread across multiple
     -- If so, add DELETE statements for those tables here.
     RETURN OLD;
 END;
@@ -456,6 +467,7 @@ SELECT DISTINCT
     a.clientid,
     c.projectname as project,
     a.projectid,
+    a.propertydescription as description,
     a.propertytype as propertytypeid,
     d.name as propertytype,
     a.suburb,

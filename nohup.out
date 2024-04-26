@@ -1861,3 +1861,216 @@ KeyError: 'id'
 2024-04-25 19:21:46,816 - uvicorn.error - INFO - Started server process [205604]
 2024-04-25 19:21:46,817 - uvicorn.error - INFO - Waiting for application startup.
 2024-04-25 19:21:46,817 - uvicorn.error - INFO - Application startup complete.
+2024-04-26 02:03:03,209 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-26 02:03:03,268 - uvicorn.error - INFO - Shutting down
+2024-04-26 02:03:03,370 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-26 02:03:03,372 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-26 02:03:03,372 - uvicorn.error - INFO - Finished server process [205604]
+2024-04-26 02:03:03,621 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-26 02:03:04,364 - main - INFO - program_started
+2024-04-26 02:03:04,364 - uvicorn.error - INFO - Started server process [205934]
+2024-04-26 02:03:04,364 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-26 02:03:04,365 - uvicorn.error - INFO - Application startup complete.
+2024-04-26 02:05:54,575 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-26 02:05:54,584 - uvicorn.error - INFO - Shutting down
+2024-04-26 02:05:54,685 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-26 02:05:54,685 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-26 02:05:54,685 - uvicorn.error - INFO - Finished server process [205934]
+2024-04-26 02:05:54,843 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-26 02:05:55,395 - main - INFO - program_started
+2024-04-26 02:05:55,396 - uvicorn.error - INFO - Started server process [205940]
+2024-04-26 02:05:55,396 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-26 02:05:55,397 - uvicorn.error - INFO - Application startup complete.
+2024-04-26 02:06:20,072 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-26 02:06:20,161 - uvicorn.error - INFO - Shutting down
+2024-04-26 02:06:20,261 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-26 02:06:20,262 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-26 02:06:20,262 - uvicorn.error - INFO - Finished server process [205940]
+2024-04-26 02:06:20,427 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-26 02:06:21,023 - main - INFO - program_started
+2024-04-26 02:06:21,024 - uvicorn.error - INFO - Started server process [205942]
+2024-04-26 02:06:21,024 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-26 02:06:21,024 - uvicorn.error - INFO - Application startup complete.
+2024-04-26 02:10:17,965 - uvicorn.access - INFO - 127.0.0.1:37702 - "POST /editClientInfo HTTP/1.1" 422
+2024-04-26 02:10:27,928 - root - INFO - editClientInfo: received payload <{'user_id': 1234, 'client_property': {'clientid': 5140, 'propertytype': 1, 'leveloffurnishing': 3, 'numberofparkings': 0, 'state': 'Maharashtra', 'city': 'Pune', 'suburb': 'example', 'country': 5, 'projectid': '3344', 'status': 1, 'propertydescription': 'example', 'layoutdetails': '', 'email': '', 'website': '', 'initialpossessiondate': None, 'electricityconsumernumber': '', 'otherelectricitydetails': '', 'electricitybillingduedate': 17, 'comments': '', 'propertytaxnumber': '', 'clientservicemanager': None, 'propertymanager': None, 'propertyownedbyclientonly': False, 'gasconnectiondetails': '', 'internalfurnitureandfittings': '', 'textforposting': '', 'poagiven': True, 'poaid': 202, 'electricitybillingunit': '', 'indexiicollected': True}, 'client_property_photos': [{'photolink': '', 'description': '', 'phototakenwhen': None}], 'client_property_owner': {'owner1name': 'John Doe', 'owner1panno': 'ABCDE1234F', 'owner1aadhaarno': '123456789012', 'owner1pancollected': True, 'owner1aadhaarcollected': True, 'owner2name': 'Jane Smith', 'owner2panno': 'BCDEF1234G', 'owner2aadhaarno': '987654321098', 'owner2pancollected': True, 'owner2aadhaarcollected': True, 'owner3name': 'Alice Johnson', 'owner3panno': 'CDEFG1234H', 'owner3aadhaarno': '678901234567', 'owner3pancollected': True, 'owner3aadhaarcollected': True, 'comments': 'Additional details here.'}, 'client_property_poa': {'poalegalname': '', 'poapanno': '', 'poaaddressline1': '', 'poaaddressline2': '', 'poasuburb': '', 'poacity': 'Pune', 'poastate': 'Maharashtra', 'poacountry': 5, 'poazip': '', 'poaoccupation': '', 'poabirthyear': None, 'poaphoto': '', 'poaemployername': '', 'poarelation': None, 'poarelationwith': '', 'poaeffectivedate': None, 'poaenddate': None, 'poafor': '', 'scancopy': ''}}>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 2469, in edit_client_info
+    data = f"successfully edited client info for clientid {payload['client_id']}"
+KeyError: 'client_id'
+2024-04-26 02:10:27,936 - root - INFO - None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 2469, in edit_client_info
+    data = f"successfully edited client info for clientid {payload['client_id']}"
+KeyError: 'client_id'
+2024-04-26 02:10:27,939 - uvicorn.access - INFO - 127.0.0.1:34830 - "POST /editClientInfo HTTP/1.1" 200
+2024-04-26 02:10:50,308 - root - INFO - editClientInfo: received payload <{'user_id': 1234, 'client_property': {'clientid': 5140, 'propertytype': 1, 'leveloffurnishing': 3, 'numberofparkings': 0, 'state': 'Maharashtra', 'city': 'Pune', 'suburb': 'example', 'country': 5, 'projectid': '3344', 'status': 1, 'propertydescription': 'example', 'layoutdetails': '', 'email': '', 'website': '', 'initialpossessiondate': None, 'electricityconsumernumber': '', 'otherelectricitydetails': '', 'electricitybillingduedate': 17, 'comments': '', 'propertytaxnumber': '', 'clientservicemanager': None, 'propertymanager': None, 'propertyownedbyclientonly': False, 'gasconnectiondetails': '', 'internalfurnitureandfittings': '', 'textforposting': '', 'poagiven': True, 'poaid': 202, 'electricitybillingunit': '', 'indexiicollected': True}, 'client_property_photos': [{'photolink': '', 'description': '', 'phototakenwhen': None}], 'client_property_owner': {'owner1name': 'John Doe', 'owner1panno': 'ABCDE1234F', 'owner1aadhaarno': '123456789012', 'owner1pancollected': True, 'owner1aadhaarcollected': True, 'owner2name': 'Jane Smith', 'owner2panno': 'BCDEF1234G', 'owner2aadhaarno': '987654321098', 'owner2pancollected': True, 'owner2aadhaarcollected': True, 'owner3name': 'Alice Johnson', 'owner3panno': 'CDEFG1234H', 'owner3aadhaarno': '678901234567', 'owner3pancollected': True, 'owner3aadhaarcollected': True, 'comments': 'Additional details here.'}, 'client_property_poa': {'poalegalname': '', 'poapanno': '', 'poaaddressline1': '', 'poaaddressline2': '', 'poasuburb': '', 'poacity': 'Pune', 'poastate': 'Maharashtra', 'poacountry': 5, 'poazip': '', 'poaoccupation': '', 'poabirthyear': None, 'poaphoto': '', 'poaemployername': '', 'poarelation': None, 'poarelationwith': '', 'poaeffectivedate': None, 'poaenddate': None, 'poafor': '', 'scancopy': ''}}>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 2469, in edit_client_info
+    data = f"successfully edited client info for clientid {payload['client_id']}"
+KeyError: 'client_id'
+2024-04-26 02:10:50,311 - root - INFO - None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 2469, in edit_client_info
+    data = f"successfully edited client info for clientid {payload['client_id']}"
+KeyError: 'client_id'
+2024-04-26 02:10:50,313 - uvicorn.access - INFO - 127.0.0.1:52498 - "POST /editClientInfo HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 2450, in add_client_property
+    cursor.execute (query,(prop_id,payload["owner1name"],payload["owner1panno"],payload["owner1aadhaarno"],payload["owner1pancollected"],payload["owner1aadhaarcollected"],payload["owner2name"],payload["owner2panno"],payload["owner2aadhaarno"],payload["owner2pancollected"],payload["owner2aadhaarcollected"],payload["owner3name"],payload["owner3panno"],payload["owner3aadhaarno"],payload["owner3pancollected"],payload["owner3aadhaarcollected"],payload["comments"],givenowtime(),payload['user_id'],False))
+KeyError: 'owner1name'
+None
+2024-04-26 02:11:18,236 - uvicorn.access - INFO - 127.0.0.1:56002 - "POST /addClientProperty HTTP/1.1" 200
+2024-04-26 02:12:39,092 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-26 02:12:39,136 - uvicorn.error - INFO - Shutting down
+2024-04-26 02:12:39,237 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-26 02:12:39,238 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-26 02:12:39,238 - uvicorn.error - INFO - Finished server process [205942]
+2024-04-26 02:12:39,419 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-26 02:12:39,978 - main - INFO - program_started
+2024-04-26 02:12:39,979 - uvicorn.error - INFO - Started server process [205966]
+2024-04-26 02:12:39,979 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-26 02:12:39,979 - uvicorn.error - INFO - Application startup complete.
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 2450, in add_client_property
+    cursor.execute (query,(prop_id,client_property_owner["owner1name"],client_property_owner["owner1panno"],client_property_owner["owner1aadhaarno"],client_property_owner["owner1pancollected"],client_property_owner["owner1aadhaarcollected"],client_property_owner["owner2name"],client_property_owner["owner2panno"],client_property_owner["owner2aadhaarno"],client_property_owner["owner2pancollected"],client_property_owner["owner2aadhaarcollected"],client_property_owner["owner3name"],client_property_owner["owner3panno"],client_property_owner["owner3aadhaarno"],client_property_owner["owner3pancollected"],client_property_owner["owner3aadhaarcollected"],client_property_owner["comments"],givenowtime(),payload['user_id'],False))
+psycopg2.errors.SyntaxError: INSERT has more expressions than target columns
+LINE 1: ...78901234567',true,true,'Additional details here.','2024-04-2...
+                                                             ^
+
+None
+2024-04-26 02:12:43,179 - uvicorn.access - INFO - 127.0.0.1:53166 - "POST /addClientProperty HTTP/1.1" 200
+2024-04-26 02:13:25,514 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-26 02:13:25,589 - uvicorn.error - INFO - Shutting down
+2024-04-26 02:13:25,690 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-26 02:13:25,690 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-26 02:13:25,691 - uvicorn.error - INFO - Finished server process [205966]
+2024-04-26 02:13:25,887 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-26 02:13:26,566 - main - INFO - program_started
+2024-04-26 02:13:26,567 - uvicorn.error - INFO - Started server process [205972]
+2024-04-26 02:13:26,567 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-26 02:13:26,568 - uvicorn.error - INFO - Application startup complete.
+2024-04-26 02:13:30,160 - uvicorn.access - INFO - 127.0.0.1:47332 - "POST /addClientProperty HTTP/1.1" 200
+2024-04-26 02:14:33,631 - uvicorn.access - INFO - 127.0.0.1:60740 - "POST /editClientInfo HTTP/1.1" 422
+2024-04-26 02:15:32,107 - root - INFO - The data is <[('', '', '', '', '', 'Pune', 'Maharashtra', '5', '', '', None, '', '', None, '', None, None, '', '')]>
+2024-04-26 02:15:32,109 - uvicorn.access - INFO - 127.0.0.1:58570 - "POST /getClientPropertyById HTTP/1.1" 200
+2024-04-26 02:15:47,710 - root - INFO - The data is <[('', '', '', '', '', 'Pune', 'Maharashtra', '5', '', '', None, '', '', None, '', None, None, '', '')]>
+2024-04-26 02:15:47,711 - uvicorn.access - INFO - 127.0.0.1:35500 - "POST /getClientPropertyById HTTP/1.1" 200
+2024-04-26 02:16:53,131 - uvicorn.access - INFO - 127.0.0.1:40748 - "POST /editClientInfo HTTP/1.1" 422
+2024-04-26 02:17:18,573 - root - INFO - editClientInfo: received payload <{'user_id': 1234, 'client_property_id': 9, 'client_property_info': {'clientid': 44598, 'propertytype': 2, 'leveloffurnishing': 2, 'numberofparkings': 4, 'state': 'GHI', 'city': 847, 'suburb': 'dhuef', 'projectid': 4373, 'status': 1, 'propertydescription': 'abcdefg', 'layoutdetails': 'hijklmno', 'email': 'emailid', 'website': 'website', 'initialpossessiondate': '2024-02-01 10:00:00', 'electricityconsumernumber': '637864598475', 'otherelectricitydetails': '9855645531', 'electricitybillingduedate': 24, 'comments': 'abcd', 'gasconnectiondetails': 'jwdiuheduhef', 'textforposting': 'ghijklm', 'indexiicollected': True}, 'client_property_photos': {'update': [{'id': 36, 'photolink': '1', 'description': 'desc', 'phototakenwhen': '10-04-2024 19:52:00'}], 'insert': [{'photolink': '1', 'description': 'desc', 'phototakenwhen': '10-04-2024 19:52:00'}], 'delete': []}, 'client_property_owner': {'owner1name': 'John Doe', 'owner1panno': 'ABCDE1234F', 'owner1aadhaarno': '123456789012', 'owner1pancollected': True, 'owner1aadhaarcollected': True, 'owner2name': 'Jane Smith', 'owner2panno': 'BCDEF1234G', 'owner2aadhaarno': '987654321098', 'owner2pancollected': True, 'owner2aadhaarcollected': True, 'owner3name': 'Alice Johnson', 'owner3panno': 'CDEFG1234H', 'owner3aadhaarno': '678901234567', 'owner3pancollected': True, 'owner3aadhaarcollected': True, 'comments': 'Additional details here.'}, 'client_poa': {'poalegalname': 'abcdef ghijkl', 'poapanno': '647364873', 'poaaddressline1': 'eyge rfhrughur rf', 'poaaddressline2': 'jrijg fruhfur ijf', 'poasuburb': 'sub', 'poacity': 'Mumbai', 'poastate': 'Maharashtra', 'poacountry': '5', 'poazip': 'zipcode', 'poaoccupation': 'person', 'poabirthyear': 2003, 'poaphoto': 'fjr furhfusfufbrf', 'poaemployername': 'frijiurgh nfr', 'poarelation': 2, 'poarelationwith': 'ABC DEF', 'poaeffectivedate': '2024-03-02', 'poaenddate': '2024-03-03', 'poafor': 'ABC EFG', 'scancopy': 'dhegfhuefu'}}>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 2469, in edit_client_info
+    data = f"successfully edited client info for clientid {payload['client_id']}"
+KeyError: 'client_id'
+2024-04-26 02:17:18,582 - root - INFO - None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 2469, in edit_client_info
+    data = f"successfully edited client info for clientid {payload['client_id']}"
+KeyError: 'client_id'
+2024-04-26 02:17:18,584 - uvicorn.access - INFO - 127.0.0.1:57986 - "POST /editClientInfo HTTP/1.1" 200
+2024-04-26 02:17:57,057 - root - INFO - editClientInfo: received payload <{'user_id': 1234, 'client_property_id': 9, 'client_property_info': {'clientid': 44598, 'propertytype': 2, 'leveloffurnishing': 2, 'numberofparkings': 4, 'state': 'GHI', 'city': 847, 'suburb': 'dhuef', 'projectid': 4373, 'status': 1, 'propertydescription': 'abcdefg', 'layoutdetails': 'hijklmno', 'email': 'emailid', 'website': 'website', 'initialpossessiondate': '2024-02-01 10:00:00', 'electricityconsumernumber': '637864598475', 'otherelectricitydetails': '9855645531', 'electricitybillingduedate': 24, 'comments': 'abcd', 'gasconnectiondetails': 'jwdiuheduhef', 'textforposting': 'ghijklm', 'indexiicollected': True}, 'client_property_photos': {'update': [{'id': 36, 'photolink': '1', 'description': 'desc', 'phototakenwhen': '10-04-2024 19:52:00'}], 'insert': [{'photolink': '1', 'description': 'desc', 'phototakenwhen': '10-04-2024 19:52:00'}], 'delete': []}, 'client_property_owner': {'owner1name': 'John Doe', 'owner1panno': 'ABCDE1234F', 'owner1aadhaarno': '123456789012', 'owner1pancollected': True, 'owner1aadhaarcollected': True, 'owner2name': 'Jane Smith', 'owner2panno': 'BCDEF1234G', 'owner2aadhaarno': '987654321098', 'owner2pancollected': True, 'owner2aadhaarcollected': True, 'owner3name': 'Alice Johnson', 'owner3panno': 'CDEFG1234H', 'owner3aadhaarno': '678901234567', 'owner3pancollected': True, 'owner3aadhaarcollected': True, 'comments': 'Additional details here.'}, 'client_poa': {'poalegalname': 'abcdef ghijkl', 'poapanno': '647364873', 'poaaddressline1': 'eyge rfhrughur rf', 'poaaddressline2': 'jrijg fruhfur ijf', 'poasuburb': 'sub', 'poacity': 'Mumbai', 'poastate': 'Maharashtra', 'poacountry': '5', 'poazip': 'zipcode', 'poaoccupation': 'person', 'poabirthyear': 2003, 'poaphoto': 'fjr furhfusfufbrf', 'poaemployername': 'frijiurgh nfr', 'poarelation': 2, 'poarelationwith': 'ABC DEF', 'poaeffectivedate': '2024-03-02', 'poaenddate': '2024-03-03', 'poafor': 'ABC EFG', 'scancopy': 'dhegfhuefu'}}>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 2469, in edit_client_info
+    data = f"successfully edited client info for clientid {payload['client_id']}"
+KeyError: 'client_id'
+2024-04-26 02:17:57,059 - root - INFO - None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 2469, in edit_client_info
+    data = f"successfully edited client info for clientid {payload['client_id']}"
+KeyError: 'client_id'
+2024-04-26 02:17:57,061 - uvicorn.access - INFO - 127.0.0.1:53918 - "POST /editClientInfo HTTP/1.1" 200
+2024-04-26 02:20:32,415 - uvicorn.access - INFO - 127.0.0.1:55376 - "POST /editClientProperty HTTP/1.1" 422
+2024-04-26 02:20:58,153 - root - INFO - editClientproperty: client_property_info update status is <UPDATE 1>
+2024-04-26 02:20:58,199 - root - INFO - editClientProperty: client_property_photos clientid <18242> INSERT status is <INSERT 0 1>
+2024-04-26 02:20:58,256 - root - INFO - editClientProperty: client_property_owner update status is <UPDATE 1>
+2024-04-26 02:20:58,311 - root - INFO - editClientProperty: client_property_poa update status is <UPDATE 1>
+2024-04-26 02:20:58,312 - uvicorn.access - INFO - 127.0.0.1:35822 - "POST /editClientProperty HTTP/1.1" 200
+2024-04-26 02:21:28,474 - root - INFO - editClientproperty: client_property_info update status is <UPDATE 1>
+2024-04-26 02:21:28,510 - root - INFO - editClientProperty: client_property_photos clientid <18242> INSERT status is <INSERT 0 1>
+2024-04-26 02:21:28,547 - root - INFO - editClientProperty: client_property_owner update status is <UPDATE 1>
+2024-04-26 02:21:28,585 - root - INFO - editClientProperty: client_property_poa update status is <UPDATE 1>
+2024-04-26 02:21:28,586 - uvicorn.access - INFO - 127.0.0.1:60812 - "POST /editClientProperty HTTP/1.1" 200
+2024-04-26 02:21:47,803 - root - INFO - The data is <[('', '', '', '', '', 'Pune', 'Maharashtra', '5', '', '', None, '', '', None, '', None, None, '', '')]>
+2024-04-26 02:21:47,804 - uvicorn.access - INFO - 127.0.0.1:37996 - "POST /getClientPropertyById HTTP/1.1" 200
+2024-04-26 02:36:40,840 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-26 02:36:40,889 - uvicorn.error - INFO - Shutting down
+2024-04-26 02:36:40,990 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-26 02:36:40,990 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-26 02:36:40,990 - uvicorn.error - INFO - Finished server process [205972]
+2024-04-26 02:36:41,179 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-26 02:36:41,803 - main - INFO - program_started
+2024-04-26 02:36:41,803 - uvicorn.error - INFO - Started server process [206057]
+2024-04-26 02:36:41,804 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-26 02:36:41,804 - uvicorn.error - INFO - Application startup complete.
+2024-04-26 02:38:49,452 - uvicorn.access - INFO - 127.0.0.1:36784 - "GET /docs HTTP/1.1" 200
+2024-04-26 02:38:49,611 - uvicorn.access - INFO - 127.0.0.1:36784 - "GET /openapi.json HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 124, in roles
+    cursor.execute(query)
+psycopg2.errors.UndefinedColumn: column "name" does not exist
+LINE 1: SELECT DISTINCT id,name from roles order by name
+                           ^
+
+2024-04-26 02:39:01,956 - root - INFO - None
+2024-04-26 02:39:01,956 - root - INFO - Error is column "name" does not exist
+LINE 1: SELECT DISTINCT id,name from roles order by name
+                           ^
+
+2024-04-26 02:39:01,957 - uvicorn.access - INFO - 127.0.0.1:43376 - "POST /getRolesAdmin HTTP/1.1" 200
+2024-04-26 02:39:37,317 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-26 02:39:37,390 - uvicorn.error - INFO - Shutting down
+2024-04-26 02:39:37,491 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-26 02:39:37,491 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-26 02:39:37,491 - uvicorn.error - INFO - Finished server process [206057]
+2024-04-26 02:39:37,680 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-26 02:39:38,255 - main - INFO - program_started
+2024-04-26 02:39:38,256 - uvicorn.error - INFO - Started server process [206114]
+2024-04-26 02:39:38,256 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-26 02:39:38,256 - uvicorn.error - INFO - Application startup complete.
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 124, in roles
+    cursor.execute(query)
+psycopg2.errors.UndefinedColumn: column "name" does not exist
+LINE 1: SELECT DISTINCT id,role_name from roles order by name
+                                                         ^
+
+2024-04-26 02:39:41,028 - root - INFO - None
+2024-04-26 02:39:41,029 - root - INFO - Error is column "name" does not exist
+LINE 1: SELECT DISTINCT id,role_name from roles order by name
+                                                         ^
+
+2024-04-26 02:39:41,030 - uvicorn.access - INFO - 127.0.0.1:40584 - "POST /getRolesAdmin HTTP/1.1" 200
+2024-04-26 02:40:00,894 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-26 02:40:00,918 - uvicorn.error - INFO - Shutting down
+2024-04-26 02:40:01,019 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-26 02:40:01,019 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-26 02:40:01,020 - uvicorn.error - INFO - Finished server process [206114]
+2024-04-26 02:40:01,191 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-26 02:40:01,859 - main - INFO - program_started
+2024-04-26 02:40:01,859 - uvicorn.error - INFO - Started server process [206119]
+2024-04-26 02:40:01,860 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-26 02:40:01,860 - uvicorn.error - INFO - Application startup complete.
+2024-04-26 02:40:03,959 - uvicorn.access - INFO - 127.0.0.1:47082 - "POST /getRolesAdmin HTTP/1.1" 200
+2024-04-26 02:56:51,581 - root - INFO - getEmployee: received payload <{'user_id': 1234, 'rows': ['id', 'employeename', 'employeeid', 'phoneno', 'email', 'userid', 'roleid', 'panno', 'dateofjoining', 'lastdateofworking', 'status'], 'filters': [['role', 'contains', 'min', 'String']], 'sort_by': ['id'], 'order': 'desc', 'pg_no': 1, 'pg_size': 15, 'search_key': ''}>
+2024-04-26 02:56:51,640 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,employeename,employeeid,phoneno,email,userid,roleid,panno,dateofjoining,lastdateofworking,status FROM get_employee_view WHERE lower(role) LIKE '%min%' ORDER BY id desc]
+2024-04-26 02:56:51,785 - root - INFO - Cursor message is SELECT 3
+2024-04-26 02:56:51,798 - root - INFO - filterAndPaginate_v2: Given filter yeilds <3> entries
+2024-04-26 02:56:51,798 - root - INFO - filterAndPaginate_v2: Given search key <> yeilds <3> entries
+['id', 'employeename', 'employeeid', 'phoneno', 'email', 'userid', 'roleid', 'panno', 'dateofjoining', 'lastdateofworking', 'status']
+[{'id': 328, 'employeename': 'Test User', 'employeeid': '34334', 'phoneno': '903', 'email': 'dsdsddsdssd', 'userid': 1236, 'roleid': 1, 'panno': 'pan100', 'dateofjoining': datetime.datetime(2024, 4, 11, 0, 0), 'lastdateofworking': None, 'status': False}, {'id': 323, 'employeename': 'test123', 'employeeid': 'test001', 'phoneno': '1234567', 'email': 'test@gmail', 'userid': 1236, 'roleid': 1, 'panno': '1234', 'dateofjoining': datetime.datetime(2024, 4, 19, 0, 0), 'lastdateofworking': None, 'status': False}, {'id': 79, 'employeename': 'Shreya Bhanot', 'employeeid': 'D052', 'phoneno': '9822376477', 'email': 'shreeyabhanot6@gmail.com', 'userid': 1150, 'roleid': 1, 'panno': 'BNNPB9852N', 'dateofjoining': datetime.datetime(2019, 10, 1, 0, 0), 'lastdateofworking': None, 'status': False}]
+2024-04-26 02:56:51,799 - uvicorn.access - INFO - 127.0.0.1:53798 - "POST /getEmployee HTTP/1.1" 200
+2024-04-26 02:57:13,424 - root - INFO - getEmployee: received payload <{'user_id': 1234, 'rows': ['id', 'employeename', 'employeeid', 'phoneno', 'email', 'userid', 'roleid', 'role', 'panno', 'dateofjoining', 'lastdateofworking', 'status'], 'filters': [['role', 'contains', 'min', 'String']], 'sort_by': ['id'], 'order': 'desc', 'pg_no': 1, 'pg_size': 15, 'search_key': ''}>
+2024-04-26 02:57:13,494 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,employeename,employeeid,phoneno,email,userid,roleid,role,panno,dateofjoining,lastdateofworking,status FROM get_employee_view WHERE lower(role) LIKE '%min%' ORDER BY id desc]
+2024-04-26 02:57:13,595 - root - INFO - Cursor message is SELECT 3
+2024-04-26 02:57:13,607 - root - INFO - filterAndPaginate_v2: Given filter yeilds <3> entries
+2024-04-26 02:57:13,608 - root - INFO - filterAndPaginate_v2: Given search key <> yeilds <3> entries
+['id', 'employeename', 'employeeid', 'phoneno', 'email', 'userid', 'roleid', 'role', 'panno', 'dateofjoining', 'lastdateofworking', 'status']
+[{'id': 328, 'employeename': 'Test User', 'employeeid': '34334', 'phoneno': '903', 'email': 'dsdsddsdssd', 'userid': 1236, 'roleid': 1, 'role': 'Admin', 'panno': 'pan100', 'dateofjoining': datetime.datetime(2024, 4, 11, 0, 0), 'lastdateofworking': None, 'status': False}, {'id': 323, 'employeename': 'test123', 'employeeid': 'test001', 'phoneno': '1234567', 'email': 'test@gmail', 'userid': 1236, 'roleid': 1, 'role': 'Admin', 'panno': '1234', 'dateofjoining': datetime.datetime(2024, 4, 19, 0, 0), 'lastdateofworking': None, 'status': False}, {'id': 79, 'employeename': 'Shreya Bhanot', 'employeeid': 'D052', 'phoneno': '9822376477', 'email': 'shreeyabhanot6@gmail.com', 'userid': 1150, 'roleid': 1, 'role': 'Admin', 'panno': 'BNNPB9852N', 'dateofjoining': datetime.datetime(2019, 10, 1, 0, 0), 'lastdateofworking': None, 'status': False}]
+2024-04-26 02:57:13,609 - uvicorn.access - INFO - 127.0.0.1:49700 - "POST /getEmployee HTTP/1.1" 200
+2024-04-26 03:00:12,210 - root - INFO - getEmployee: received payload <{'user_id': 1234, 'rows': ['id', 'employeename', 'employeeid', 'phoneno', 'email', 'userid', 'roleid', 'panno', 'dateofjoining', 'lastdateofworking', 'status'], 'filters': [['role', 'contains', 'min', 'String']], 'sort_by': ['id'], 'order': 'desc', 'pg_no': 1, 'pg_size': 15, 'search_key': ''}>
+2024-04-26 03:00:12,294 - root - INFO - filtAndPagination_v2: Prepared final query [SELECT id,employeename,employeeid,phoneno,email,userid,roleid,panno,dateofjoining,lastdateofworking,status FROM get_employee_view WHERE lower(role) LIKE '%min%' ORDER BY id desc]
+2024-04-26 03:00:12,444 - root - INFO - Cursor message is SELECT 3
+2024-04-26 03:00:12,462 - root - INFO - filterAndPaginate_v2: Given filter yeilds <3> entries
+2024-04-26 03:00:12,462 - root - INFO - filterAndPaginate_v2: Given search key <> yeilds <3> entries
+['id', 'employeename', 'employeeid', 'phoneno', 'email', 'userid', 'roleid', 'panno', 'dateofjoining', 'lastdateofworking', 'status']
+[{'id': 328, 'employeename': 'Test User', 'employeeid': '34334', 'phoneno': '903', 'email': 'dsdsddsdssd', 'userid': 1236, 'roleid': 1, 'panno': 'pan100', 'dateofjoining': datetime.datetime(2024, 4, 11, 0, 0), 'lastdateofworking': None, 'status': False}, {'id': 323, 'employeename': 'test123', 'employeeid': 'test001', 'phoneno': '1234567', 'email': 'test@gmail', 'userid': 1236, 'roleid': 1, 'panno': '1234', 'dateofjoining': datetime.datetime(2024, 4, 19, 0, 0), 'lastdateofworking': None, 'status': False}, {'id': 79, 'employeename': 'Shreya Bhanot', 'employeeid': 'D052', 'phoneno': '9822376477', 'email': 'shreeyabhanot6@gmail.com', 'userid': 1150, 'roleid': 1, 'panno': 'BNNPB9852N', 'dateofjoining': datetime.datetime(2019, 10, 1, 0, 0), 'lastdateofworking': None, 'status': False}]
+2024-04-26 03:00:12,463 - uvicorn.access - INFO - 127.0.0.1:42520 - "POST /getEmployee HTTP/1.1" 200
