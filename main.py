@@ -3373,8 +3373,15 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
             _order_photos = payload['order_photos']
             with conn[0].cursor() as cursor:
                 #===============Order_Info===========================
-                query = 'INSERT INTO orders (assignedtooffice,entityid,owner,status,clientpropertyid,service,clientid,orderdate,earlieststartdate,expectedcompletiondate,actualcompletiondate,vendorid,tallyledgerid,briefdescription,comments,additionalcomments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
-                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],order_info['clientpropertyid'],order_info['service'],order_info['clientid'],order_info['orderdate'],order_info['earlieststartdate'],order_info['expectedcompletiondate'],order_info['actualcompletiondate'],order_info['vendorid'],order_info['tallyledgerid'],order_info['briefdescription'],order_info['comments'],order_info['additionalcomments'],givenowtime(),payload['user_id'],False))
+                query = ('INSERT INTO orders (assignedtooffice,entityid,owner,status,clientpropertyid,service,'
+                         'clientid,orderdate,earlieststartdate,expectedcompletiondate,actualcompletiondate,'
+                         'vendorid,tallyledgerid,briefdescription,comments,additionalcomments,dated,createdby,isdeleted) '
+                         'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id')
+                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],
+                                      order_info['clientpropertyid'],order_info['service'],order_info['clientid'],
+                                      order_info['orderdate'],order_info['earlieststartdate'],order_info['expectedcompletiondate'],
+                                      order_info['actualcompletiondate'],order_info['vendorid'],order_info['tallyledgerid'],
+                                      order_info['briefdescription'],order_info['comments'],order_info['additionalcomments'],givenowtime(),payload['user_id'],False))
                 data = cursor.fetchone()[0]
                 conn[0].commit()
   
@@ -3405,8 +3412,15 @@ async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depe
             _order_photos_insert = payload['order_photos']['insert']
             with conn[0].cursor() as cursor:
                 #===============Order_Info===========================
-                query = 'UPDATE orders SET assignedtooffice=%s,entityid=%s,owner=%s,status=%s,clientpropertyid=%s,service=%s,clientid=%s,orderdate=%s,earlieststartdate=%s,expectedcompletiondate=%s,actualcompletiondate=%s,vendorid=%s,tallyledgerid=%s,comments=%s,additionalcomments=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
-                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],order_info['clientpropertyid'],order_info['service'],order_info['clientid'],order_info['orderdate'],order_info['earlieststartdate'],order_info['expectedcompletiondate'],order_info['actualcompletiondate'],order_info['vendorid'],order_info['tallyledgerid'],order_info['comments'],order_info['additionalcomments'],givenowtime(),payload['user_id'],False,order_info['id']))
+                query = ('UPDATE orders SET assignedtooffice=%s,entityid=%s,owner=%s,status=%s,'
+                         'clientpropertyid=%s,service=%s,clientid=%s,orderdate=%s,earlieststartdate=%s,'
+                         'expectedcompletiondate=%s,actualcompletiondate=%s,vendorid=%s,' 'tallyledgerid=%s,'
+                         'comments=%s,additionalcomments=%s,dated=%s,createdby=%s,isdeleted=%s, briefdescription=%s WHERE id=%s')
+                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],
+                                      order_info['clientpropertyid'],order_info['service'],order_info['clientid'],order_info['orderdate'],
+                                      order_info['earlieststartdate'],order_info['expectedcompletiondate'],order_info['actualcompletiondate'],
+                                      order_info['vendorid'],order_info['tallyledgerid'],order_info['comments'],order_info['additionalcomments'],
+                                      givenowtime(),payload['user_id'],False,order_info['briefdescription'],order_info['id']))
                 # data = cursor.fetchone()[0]
                 conn[0].commit()
                 #===============Order_Status_Change==================
@@ -3498,7 +3512,6 @@ async def get_service_admin(payload: dict, conn :psycopg2.extensions.connection 
                 query = 'SELECT id,service FROM services order by service'
                 cursor.execute(query)
                 data = cursor.fetchall()
-                logging.info(data)
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3514,7 +3527,6 @@ async def get_client_property_admin(payload: dict, conn : psycopg2.extensions.co
                 query = "SELECT id,concat_ws(' ',project,description) as property FROM get_client_property_view order by project"
                 cursor.execute(query)
                 data = cursor.fetchall()
-                logging.info(data)
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3530,7 +3542,6 @@ async def get_order_status_admin(payload: dict, conn : psycopg2.extensions.conne
                 query = "SELECT id,name FROM order_status order by name"
                 cursor.execute(query)
                 data = cursor.fetchall()
-                logging.info(data)
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3547,7 +3558,6 @@ async def get_tally_ledger_admin(payload: dict, conn: psycopg2.extensions.connec
                 query = "SELECT DISTINCT id,tallyledger FROM tallyledger order by tallyledger"
                 cursor.execute(query)
                 data = cursor.fetchall()
-                logging.info(data)
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
