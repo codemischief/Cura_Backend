@@ -3200,6 +3200,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
 
                 #==============Project_Info=================
                 project_info = payload['project_info']
+                logging.info(f'project id is <{payload["projectid"]}>')
                 query = '''UPDATE project SET builderid=%s,projectname=%s,addressline1=%s,addressline2=%s,
                         suburb=%s,city=%s,state=%s,country=%s,zip=%s,nearestlandmark=%s,project_type=%s,mailgroup1=%s,
                         mailgroup2=%s,website=%s,project_legal_status=%s,rules=%s,completionyear=%s,jurisdiction=%s,
@@ -3285,6 +3286,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                         query = '''DELETE FROM project_contacts where id=%s'''
                         cursor.execute(query,(contact_delete['id'],))
                 conn[0].commit() 
+                return giveSuccess(payload['user_id'],role_access_status,{"edited project":payload['projectid']})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
     except Exception as e:
@@ -3749,6 +3751,145 @@ async def add_order_status_change(payload: dict, conn: psycopg2.extensions.conne
                 cursor.execute(query,(payload['orderid'],payload['statusid'],givenowtime()))
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"edited history":payload['orderid']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+
+@app.post('/getBuildersAdmin')
+async def get_builders_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT id,buildername from builder ORDER BY buildername'
+                cursor.execute(query)
+                data = cursor.fetchall()
+
+                colnames = [desc[0] for desc in cursor.description]
+                res = []
+                for row in data:
+                    row_dict = {col:value for col,value in zip(colnames,row)}
+                    res.append(row_dict)
+                return giveSuccess(payload['user_id'],role_access_status,res)
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+
+@app.post('/getProjectLegalStatusAdmin')
+async def get_project_legal_status_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT id,name from project_legal_status ORDER BY name'
+                cursor.execute(query)
+                data = cursor.fetchall()
+
+                colnames = [desc[0] for desc in cursor.description]
+                res = []
+                for row in data:
+                    row_dict = {col:value for col,value in zip(colnames,row)}
+                    res.append(row_dict)
+                return giveSuccess(payload['user_id'],role_access_status,res)
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
+     
+
+@app.post('/getProjectTypeAdmin')
+async def get_project_type_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT id,name from project_type ORDER BY name'
+                cursor.execute(query)
+                data = cursor.fetchall()
+
+                colnames = [desc[0] for desc in cursor.description]
+                res = []
+                for row in data:
+                    row_dict = {col:value for col,value in zip(colnames,row)}
+                    res.append(row_dict)
+                return giveSuccess(payload['user_id'],role_access_status,res)
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
+
+@app.post('/getVendors')
+async def get_vendors(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'get_vendor_view'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'get_orders',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True
+    )
+
+@app.post('/addVendors')
+async def add_vendors(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO vendor (vendorname,addressline1,addressline2,suburb,city,state,country,type,details,category,phone1,email,ownerinfo,panno,tanno,gstservicetaxno,tdssection,bankname,bankbranch,bankcity,bankacctholdername,bankacctno,bankifsccode,bankaccttype,companydeductee,tallyledgerid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
+                cursor.execute(query,[payload["vendorname"],payload["addressline1"],payload["addressline2"],payload["suburb"],payload["city"],
+                                      payload["state"],payload["country"],payload["type"],payload["details"],payload["category"],payload["phone1"],
+                                      payload["email"],payload["ownerinfo"],payload["panno"],payload["tanno"],payload["gstservicetaxno"],
+                                      payload["tdssection"],payload["bankname"],payload["bankbranch"],payload["bankcity"],
+                                      payload["bankacctholdername"],payload["bankacctno"],payload["bankifsccode"],payload["bankaccttype"],
+                                      payload["companydeductee"],payload["tallyledgerid"],givenowtime(),payload['user_id'],False])
+                id = cursor.fetchone()[0]
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted Vendor":id})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
+
+@app.post('/editVendors')
+async def edit_vendors(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE vendor SET vendorname=%s,addressline1=%s,addressline2=%s,suburb=%s,city=%s,state=%s,country=%s,type=%s,details=%s,category=%s,phone1=%s,email=%s,ownerinfo=%s,panno=%s,tanno=%s,gstservicetaxno=%s,tdssection=%s,bankname=%s,bankbranch=%s,bankcity=%s,bankacctholdername=%s,bankacctno=%s,bankifsccode=%s,bankaccttype=%s,companydeductee=%s,tallyledgerid=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
+                cursor.execute(query,[payload["vendorname"],payload["addressline1"],payload["addressline2"],payload["suburb"],payload["city"],
+                                      payload["state"],payload["country"],payload["type"],payload["details"],payload["category"],payload["phone1"],
+                                      payload["email"],payload["ownerinfo"],payload["panno"],payload["tanno"],payload["gstservicetaxno"],
+                                      payload["tdssection"],payload["bankname"],payload["bankbranch"],payload["bankcity"],
+                                      payload["bankacctholdername"],payload["bankacctno"],payload["bankifsccode"],payload["bankaccttype"],
+                                      payload["companydeductee"],payload["tallyledgerid"],givenowtime(),payload['user_id'],False,
+                                      payload["id"]])
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited Vendor":payload['id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+
+@app.post('/deleteVendors')
+async def delete_vendors(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM vendor WHERE id=%s'
+                cursor.execute(query,[payload['id']])
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
     except Exception as e:

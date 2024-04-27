@@ -2074,3 +2074,106 @@ LINE 1: SELECT DISTINCT id,role_name from roles order by name
 ['id', 'employeename', 'employeeid', 'phoneno', 'email', 'userid', 'roleid', 'panno', 'dateofjoining', 'lastdateofworking', 'status']
 [{'id': 328, 'employeename': 'Test User', 'employeeid': '34334', 'phoneno': '903', 'email': 'dsdsddsdssd', 'userid': 1236, 'roleid': 1, 'panno': 'pan100', 'dateofjoining': datetime.datetime(2024, 4, 11, 0, 0), 'lastdateofworking': None, 'status': False}, {'id': 323, 'employeename': 'test123', 'employeeid': 'test001', 'phoneno': '1234567', 'email': 'test@gmail', 'userid': 1236, 'roleid': 1, 'panno': '1234', 'dateofjoining': datetime.datetime(2024, 4, 19, 0, 0), 'lastdateofworking': None, 'status': False}, {'id': 79, 'employeename': 'Shreya Bhanot', 'employeeid': 'D052', 'phoneno': '9822376477', 'email': 'shreeyabhanot6@gmail.com', 'userid': 1150, 'roleid': 1, 'panno': 'BNNPB9852N', 'dateofjoining': datetime.datetime(2019, 10, 1, 0, 0), 'lastdateofworking': None, 'status': False}]
 2024-04-26 03:00:12,463 - uvicorn.access - INFO - 127.0.0.1:42520 - "POST /getEmployee HTTP/1.1" 200
+Usage: uvicorn [OPTIONS] APP
+Try 'uvicorn --help' for help.
+
+Error: No such option: --host0.0.0.0 Did you mean --host?
+2024-04-27 09:34:26,004 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/Cura_Backend']
+2024-04-27 09:34:26,004 - uvicorn.error - ERROR - [Errno 98] Address already in use
+2024-04-27 09:35:04,327 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/Cura_Backend']
+2024-04-27 09:35:04,327 - uvicorn.error - INFO - Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+2024-04-27 09:35:04,328 - uvicorn.error - INFO - Started reloader process [141802] using statreload
+2024-04-27 09:35:04,425 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-27 09:35:04,892 - main - INFO - program_started
+2024-04-27 09:35:04,893 - uvicorn.error - INFO - Started server process [141804]
+2024-04-27 09:35:04,893 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-27 09:35:04,893 - uvicorn.error - INFO - Application startup complete.
+2024-04-27 09:35:16,372 - uvicorn.access - INFO - 127.0.0.1:45462 - "GET /docs HTTP/1.1" 200
+2024-04-27 09:35:16,469 - uvicorn.access - INFO - 127.0.0.1:45462 - "GET /openapi.json HTTP/1.1" 200
+2024-04-27 09:35:37,931 - uvicorn.access - INFO - 127.0.0.1:59944 - "POST /getBuildersAdmin HTTP/1.1" 200
+2024-04-27 09:42:12,397 - root - INFO - addProject: received payload <{'user_id': 1234, 'project_info': {'builderid': 10231, 'projectname': 'testproject', 'addressline1': 'addressline1', 'addressline2': 'addressline2', 'suburb': 'testsub', 'city': 847, 'state': 'Maharashtra', 'country': 5, 'zip': 'testzip', 'nearestlandmark': 'landmark1', 'project_type': 2, 'mailgroup1': 'mailgrouptest', 'mailgroup2': 'newmailgrouptest', 'website': 'websitetest.com', 'project_legal_status': 2, 'rules': 'rule1, rule2, rule3', 'completionyear': 2021, 'jurisdiction': 'ajuri', 'taluka': 'tal', 'corporationward': 'ward', 'policechowkey': 'chowkey', 'maintenance_details': 'deets', 'numberoffloors': 5, 'numberofbuildings': 4, 'approxtotalunits': 100, 'tenantstudentsallowed': True, 'tenantworkingbachelorsallowed': True, 'tenantforeignersallowed': True, 'otherdetails': True, 'duespayablemonth': 3}, 'project_amenities': {'swimmingpool': True, 'lift': True, 'liftbatterybackup': True, 'clubhouse': True, 'gym': True, 'childrensplayarea': True, 'pipedgas': True, 'cctvcameras': True, 'otheramenities': 'newdata', 'studio': 'true', '1BHK': False, '2BHK': True, '3BHK': True, 'rowhouse': False, 'otheraccomodationtypes': '4BHK', 'sourceofwater': 'abc'}, 'project_bank_details': [{'bankname': 'Banktest', 'bankbranch': 'branchtest', 'bankcity': 'Pune', 'bankaccountholdername': 'Rudra', 'bankaccountno': 'ABD102834732', 'bankifsccode': 'PUN101', 'banktypeofaccount': 'savings'}, {'bankname': 'Banktest', 'bankbranch': 'branchtest1', 'bankcity': 'Pune', 'bankaccountholdername': 'Rudra', 'bankaccountno': 'ABD1046464732', 'bankifsccode': 'PUN102', 'banktypeofaccount': 'savings'}], 'project_contacts': [{'contactname': 'Rudra', 'phone': '9796543567', 'email': 'abc', 'role': 'owner', 'effectivedate': '2021-02-04 10:00:00', 'tenureenddate': None, 'details': 'hreiufhuire'}, {'contactname': 'Rudra_2', 'phone': '9456545514', 'email': 'efg', 'role': 'manager', 'effectivedate': '2021-02-04 10:00:00', 'tenureenddate': '2024-02-04 10:00:00', 'details': 'hreiufhuire'}], 'project_photos': [{'photo_link': 'link1', 'description': 'Desc 1', 'date_taken': '2024-03-01'}, {'photo_link': 'link2', 'description': 'Desc2', 'date_taken': '2024-01-01'}]}>
+2024-04-27 09:42:12,699 - uvicorn.access - INFO - 127.0.0.1:33594 - "POST /addProject HTTP/1.1" 200
+2024-04-27 09:42:39,516 - uvicorn.access - INFO - 127.0.0.1:35462 - "POST /getProjectById HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/Cura_Backend/./main.py", line 3245, in edit_project
+    cursor.execute(query,(payload['projectid'],bank_insert["bankname"],bank_insert["bankbranch"],bank_insert["bankcity"],bank_insert["bankaccountholdername"],
+KeyError: 'projectid'
+2024-04-27 09:44:21,895 - root - INFO - None
+2024-04-27 09:44:21,896 - uvicorn.access - INFO - 127.0.0.1:47342 - "POST /editProject HTTP/1.1" 200
+2024-04-27 09:44:55,236 - uvicorn.access - INFO - 127.0.0.1:40794 - "POST /editProject HTTP/1.1" 422
+2024-04-27 09:45:03,448 - uvicorn.access - INFO - 127.0.0.1:44182 - "POST /editProject HTTP/1.1" 200
+2024-04-27 09:46:26,572 - uvicorn.access - INFO - 127.0.0.1:36990 - "POST /editProject HTTP/1.1" 200
+2024-04-27 09:48:05,988 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-27 09:48:06,075 - uvicorn.error - INFO - Shutting down
+2024-04-27 09:48:06,176 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-27 09:48:06,176 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-27 09:48:06,177 - uvicorn.error - INFO - Finished server process [141804]
+2024-04-27 09:48:06,335 - asyncio - DEBUG - Using selector: EpollSelector
+Process SpawnProcess-2:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3/dist-packages/uvicorn/subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 68, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 76, in serve
+    config.load()
+  File "/usr/lib/python3/dist-packages/uvicorn/config.py", line 448, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/lib/python3/dist-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1017, in get_code
+  File "<frozen importlib._bootstrap_external>", line 947, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/mnt/e/cura/Cura_Backend/./main.py", line 3203
+    logging.info(f'project id is <{payload['projectid']}>')
+                                            ^^^^^^^^^
+SyntaxError: f-string: unmatched '['
+2024-04-27 09:48:33,094 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-27 09:48:33,191 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-27 09:48:33,687 - main - INFO - program_started
+2024-04-27 09:48:33,688 - uvicorn.error - INFO - Started server process [145052]
+2024-04-27 09:48:33,688 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-27 09:48:33,689 - uvicorn.error - INFO - Application startup complete.
+2024-04-27 09:48:34,703 - root - INFO - project id is <4378>
+2024-04-27 09:48:34,881 - uvicorn.access - INFO - 127.0.0.1:38350 - "POST /editProject HTTP/1.1" 200
+2024-04-27 09:48:39,360 - root - INFO - project id is <4378>
+2024-04-27 09:48:39,542 - uvicorn.access - INFO - 127.0.0.1:38350 - "POST /editProject HTTP/1.1" 200
+2024-04-27 09:49:15,607 - root - INFO - project id is <4378>
+2024-04-27 09:49:15,893 - uvicorn.access - INFO - 127.0.0.1:39190 - "POST /editProject HTTP/1.1" 200
+2024-04-27 09:49:52,188 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-27 09:49:52,198 - uvicorn.error - INFO - Shutting down
+2024-04-27 09:49:52,299 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-27 09:49:52,300 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-27 09:49:52,300 - uvicorn.error - INFO - Finished server process [145052]
+2024-04-27 09:49:52,452 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-27 09:49:52,964 - main - INFO - program_started
+2024-04-27 09:49:52,965 - uvicorn.error - INFO - Started server process [145373]
+2024-04-27 09:49:52,965 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-27 09:49:52,966 - uvicorn.error - INFO - Application startup complete.
+2024-04-27 09:49:58,070 - root - INFO - project id is <4378>
+2024-04-27 09:49:58,261 - uvicorn.access - INFO - 127.0.0.1:43662 - "POST /editProject HTTP/1.1" 200
+2024-04-27 09:50:06,293 - uvicorn.access - INFO - 127.0.0.1:51880 - "POST /getProjectById HTTP/1.1" 200
+2024-04-27 09:55:54,460 - root - INFO - project id is <4378>
+2024-04-27 09:55:54,571 - uvicorn.access - INFO - 127.0.0.1:41460 - "POST /editProject HTTP/1.1" 200
+2024-04-27 09:56:02,113 - uvicorn.access - INFO - 127.0.0.1:50268 - "POST /getProjectById HTTP/1.1" 200
+2024-04-27 09:56:46,673 - root - INFO - project id is <4378>
+2024-04-27 09:56:46,840 - uvicorn.access - INFO - 127.0.0.1:57696 - "POST /editProject HTTP/1.1" 200
+2024-04-27 09:56:52,626 - uvicorn.access - INFO - 127.0.0.1:40272 - "POST /getProjectById HTTP/1.1" 200
+2024-04-27 09:57:37,111 - root - INFO - project id is <4378>
+2024-04-27 09:57:37,212 - uvicorn.access - INFO - 127.0.0.1:40246 - "POST /editProject HTTP/1.1" 200
+2024-04-27 09:57:41,592 - uvicorn.access - INFO - 127.0.0.1:40246 - "POST /getProjectById HTTP/1.1" 200

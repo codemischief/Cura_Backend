@@ -960,3 +960,90 @@ LEFT JOIN
 CREATE SEQUENCE IF NOT EXISTS order_receipt_id_seq OWNED BY order_receipt.id;
 SELECT setval('order_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_receipt;
 ALTER TABLE order_receipt ALTER COLUMN id SET DEFAULT nextval('order_receipt_id_seq');
+
+CREATE VIEW get_vendor_view AS
+SELECT DISTINCT
+    a.id,
+    a.vendorname,
+    a.addressline1,
+    a.addressline2,
+    a.suburb,
+    b.city AS city,
+    a.state,
+    c.name AS country,
+    a.type,
+    a.details,
+    e.name AS category, -- Using table e for vendor_Category
+    a.phone1,
+    a.email,
+    a.ownerinfo,
+    a.panno,
+    a.tanno,
+    a.vattinno,
+    a.gstservicetaxno,
+    a.lbtno,
+    a.tdssection,
+    a.bankname,
+    a.bankbranch,
+    a.bankcity,
+    a.bankacctholdername,
+    a.bankacctno,
+    a.bankifsccode,
+    a.bankaccttype,
+    a.dated,
+    a.createdby,
+    a.isdeleted,
+    a.companydeductee,
+    a.tallyledgerid,
+    d.tallyledger
+FROM vendor a
+LEFT JOIN cities b ON a.city = b.id
+LEFT JOIN country c ON a.country = c.id
+LEFT JOIN tallyledger d ON a.tallyledgerid = d.id
+LEFT JOIN vendor_Category e ON a.category = e.id; -- Joining with vendor_Category table using alias e
+
+CREATE SEQUENCE IF NOT EXISTS vendor_id_seq OWNED BY vendor.id;
+SELECT setval('vendor_id_seq', COALESCE(max(id), 0) + 1, false) FROM vendor;
+ALTER TABLE vendor ALTER COLUMN id SET DEFAULT nextval('vendor_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS order_vendorEstimate_id_seq OWNED BY vendor.id;
+SELECT setval('vendor_id_seq', COALESCE(max(id), 0) + 1, false) FROM vendor;
+ALTER TABLE vendor ALTER COLUMN id SET DEFAULT nextval('vendor_id_seq');
+
+alter table order_vendorestimate alter column invoicedate type date;
+alter table order_vendorestimate alter column estimatedate type date;
+
+CREATE VIEW get_vendor_invoice_view AS
+SELECT DISTINCT
+    a.id,
+    a.estimatedate,
+    a.amount,
+    a.estimatedesc,
+    a.orderid,
+    b.briefdescription,
+    a.vendorid,
+    c.vendorname,
+    a.invoiceamount,
+    a.dated,
+    a.createdby,
+    a.isdeleted,
+    a.createdon,
+    a.notes,
+    a.vat1,
+    a.vat2,
+    a.servicetax,
+    a.invoicenumber,
+    a.entityid,
+    d.name as entity,
+    a.officeid,
+    e.name as office
+FROM
+    order_vendorestimate a
+LEFT JOIN
+    orders b ON a.orderid = b.id
+LEFT JOIN
+    vendor c ON a.vendorid = c.id
+LEFT JOIN
+    entity d ON a.entityid = d.id
+LEFT JOIN
+    office e ON a.officeid = e.id;
