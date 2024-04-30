@@ -2123,3 +2123,415 @@ Call stack:
     logger.info(message, extra={"color_message": color_message})
 Message: 'Stopping reloader process [4299]'
 Arguments: ()
+2024-04-30 18:02:04,705 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-04-30 18:02:04,706 - uvicorn.error - INFO - Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2024-04-30 18:02:04,706 - uvicorn.error - INFO - Started reloader process [20485] using statreload
+2024-04-30 18:02:04,812 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-30 18:02:05,408 - main - INFO - program_started
+2024-04-30 18:02:05,408 - uvicorn.error - INFO - Started server process [20488]
+2024-04-30 18:02:05,409 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:02:05,409 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:02:24,623 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:02:24,667 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:02:24,767 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:02:24,768 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:02:24,768 - uvicorn.error - INFO - Finished server process [20488]
+2024-04-30 18:02:24,990 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-30 18:02:25,798 - main - INFO - program_started
+2024-04-30 18:02:25,799 - uvicorn.error - INFO - Started server process [20569]
+2024-04-30 18:02:25,799 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:02:25,800 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:03:38,818 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:03:38,908 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:03:39,009 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:03:39,010 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:03:39,010 - uvicorn.error - INFO - Finished server process [20569]
+2024-04-30 18:03:39,171 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-30 18:03:39,762 - main - INFO - program_started
+2024-04-30 18:03:39,763 - uvicorn.error - INFO - Started server process [20863]
+2024-04-30 18:03:39,763 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:03:39,764 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:04:14,884 - root - INFO - get_users_admin:payload received is {'user_id': 1234}
+2024-04-30 18:04:14,947 - uvicorn.access -send INFO - 127.0.0.1:33960 - "POST /getUsersAdmin HTTP/1.1" 200
+2024-04-30 18:04:48,369 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:04:48,464 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:04:48,565 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:04:48,565 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:04:48,566 - uvicorn.error - INFO - Finished server process [20863]
+2024-04-30 18:04:48,737 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-30 18:04:49,335 - main - INFO - program_started
+2024-04-30 18:04:49,336 - uvicorn.error - INFO - Started server process [21144]
+2024-04-30 18:04:49,336 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:04:49,336 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:04:51,919 - root - INFO - get_users_admin:payload received is {'user_id': 1234}
+2024-04-30 18:04:51,956 - root - INFO - QUERY IS : <b'SELECT firstname,lastname,id FROM usertable order by firstname'>
+2024-04-30 18:04:51,958 - uvicorn.access -send INFO - 127.0.0.1:60838 - "POST /getUsersAdmin HTTP/1.1" 200
+2024-04-30 18:05:45,193 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:05:45,208 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:05:45,309 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:05:45,309 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:05:45,310 - uvicorn.error - INFO - Finished server process [21144]
+2024-04-30 18:05:45,478 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-30 18:05:46,135 - main - INFO - program_started
+2024-04-30 18:05:46,135 - uvicorn.error - INFO - Started server process [21376]
+2024-04-30 18:05:46,136 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:05:46,136 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:05:48,579 - root - INFO - get_users_admin:payload received is {'user_id': 1234}
+2024-04-30 18:05:48,615 - root - DEBUG - QUERY IS : <b'SELECT firstname,lastname,id FROM usertable order by firstname'>
+2024-04-30 18:05:48,617 - uvicorn.access -send INFO - 127.0.0.1:43462 - "POST /getUsersAdmin HTTP/1.1" 200
+2024-04-30 18:07:38,222 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:07:38,263 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:07:38,364 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:07:38,364 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:07:38,365 - uvicorn.error - INFO - Finished server process [21376]
+2024-04-30 18:07:38,527 - asyncio - DEBUG - Using selector: EpollSelector
+2024-04-30 18:07:39,113 - main - INFO - program_started
+2024-04-30 18:07:39,114 - uvicorn.error - INFO - Started server process [21829]
+2024-04-30 18:07:39,114 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:07:39,114 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:08:29,097 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:08:29,158 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:08:29,259 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:08:29,260 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:08:29,260 - uvicorn.error - INFO - Finished server process [21829]
+2024-04-30 18:08:29,478 -DEFAULT- asyncio - DEBUG - Using selector: EpollSelector
+2024-04-30 18:08:30,182 -DEFAULT- main - INFO - program_started
+2024-04-30 18:08:30,182 -DEFAULT- uvicorn.error - INFO - Started server process [22032]
+2024-04-30 18:08:30,183 -DEFAULT- uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:08:30,183 -DEFAULT- uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:08:33,536 -DEFAULT- root - INFO - get_users_admin:payload received is {'user_id': 1234}
+2024-04-30 18:08:33,567 -DEFAULT- root - INFO - QUERY IS : <b'SELECT firstname,lastname,id FROM usertable order by firstname'>
+2024-04-30 18:08:33,568 -ACCESS- uvicorn.access -send INFO - 127.0.0.1:36410 - "POST /getUsersAdmin HTTP/1.1" 200
+2024-04-30 18:08:58,967 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:08:59,067 -DEFAULT- uvicorn.error - INFO - Shutting down
+2024-04-30 18:08:59,168 -DEFAULT- uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:08:59,168 -DEFAULT- uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:08:59,169 -DEFAULT- uvicorn.error - INFO - Finished server process [22032]
+2024-04-30 18:08:59,348 -ACCESS- asyncio -__init__ DEBUG - Using selector: EpollSelector
+2024-04-30 18:08:59,965 -ACCESS- main -<module> INFO - program_started
+2024-04-30 18:08:59,965 -DEFAULT- uvicorn.error - INFO - Started server process [22155]
+2024-04-30 18:08:59,966 -DEFAULT- uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:08:59,966 -DEFAULT- uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:09:18,559 -ACCESS- root -get_users_admin INFO - get_users_admin:payload received is {'user_id': 1234}
+2024-04-30 18:09:18,598 -ACCESS- root -usernames INFO - QUERY IS : <b'SELECT firstname,lastname,id FROM usertable order by firstname'>
+2024-04-30 18:09:18,601 -ACCESS- uvicorn.access -send INFO - 127.0.0.1:40652 - "POST /getUsersAdmin HTTP/1.1" 200
+2024-04-30 18:09:43,269 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:09:43,299 -DEFAULT- uvicorn.error - INFO - Shutting down
+2024-04-30 18:09:43,400 -DEFAULT- uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:09:43,401 -DEFAULT- uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:09:43,401 -DEFAULT- uvicorn.error - INFO - Finished server process [22155]
+2024-04-30 18:09:43,616 - asyncio -__init__ DEBUG - Using selector: EpollSelector
+2024-04-30 18:09:44,301 - main -<module> INFO - program_started
+2024-04-30 18:09:44,302 - uvicorn.error - INFO - Started server process [22335]
+2024-04-30 18:09:44,303 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:09:44,303 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:09:49,848 - root -get_users_admin INFO - get_users_admin:payload received is {'user_id': 1234}
+2024-04-30 18:09:49,880 - root -usernames INFO - QUERY IS : <b'SELECT firstname,lastname,id FROM usertable order by firstname'>
+2024-04-30 18:09:49,882 - uvicorn.access -send INFO - 127.0.0.1:52130 - "POST /getUsersAdmin HTTP/1.1" 200
+2024-04-30 18:10:04,059 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:10:04,060 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:10:04,161 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:10:04,161 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:10:04,162 - uvicorn.error - INFO - Finished server process [22335]
+2024-04-30 18:10:04,350 - asyncio - __init__ DEBUG - Using selector: EpollSelector
+2024-04-30 18:10:04,963 - main - <module> INFO - program_started
+2024-04-30 18:10:04,963 - uvicorn.error - INFO - Started server process [22424]
+2024-04-30 18:10:04,964 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:10:04,964 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:10:06,405 - root - get_users_admin INFO - get_users_admin:payload received is {'user_id': 1234}
+2024-04-30 18:10:06,447 - root - usernames INFO - QUERY IS : <b'SELECT firstname,lastname,id FROM usertable order by firstname'>
+2024-04-30 18:10:06,449 - uvicorn.access - send INFO - 127.0.0.1:53984 - "POST /getUsersAdmin HTTP/1.1" 200
+2024-04-30 18:10:28,610 - root - get_users_admin INFO - get_users_admin:payload received is {'user_id': 1234}
+2024-04-30 18:10:28,671 - root - usernames INFO - QUERY IS : <b'SELECT firstname,lastname,id FROM usertable order by firstname'>
+2024-04-30 18:10:28,674 - uvicorn.access - send INFO - 127.0.0.1:43088 - "POST /getUsersAdmin HTTP/1.1" 200
+2024-04-30 18:10:39,502 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:10:39,505 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:10:39,606 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:10:39,607 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:10:39,607 - uvicorn.error - INFO - Finished server process [22424]
+2024-04-30 18:10:39,816 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:10:40,459 - main - <module> - INFO - program_started
+2024-04-30 18:10:40,460 - uvicorn.error - INFO - Started server process [22572]
+2024-04-30 18:10:40,460 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:10:40,460 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:10:48,258 - root - get_users_admin - INFO - get_users_admin:payload received is {'user_id': 1234}
+2024-04-30 18:10:48,316 - root - usernames - INFO - QUERY IS : <b'SELECT firstname,lastname,id FROM usertable order by firstname'>
+2024-04-30 18:10:48,318 - uvicorn.access - send - INFO - 127.0.0.1:33922 - "POST /getUsersAdmin HTTP/1.1" 200
+2024-04-30 18:13:52,228 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:13:52,234 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:13:52,334 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:13:52,335 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:13:52,335 - uvicorn.error - INFO - Finished server process [22572]
+2024-04-30 18:13:52,506 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+Process SpawnProcess-12:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3/dist-packages/uvicorn/subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 68, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 76, in serve
+    config.load()
+  File "/usr/lib/python3/dist-packages/uvicorn/config.py", line 448, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/lib/python3/dist-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1017, in get_code
+  File "<frozen importlib._bootstrap_external>", line 947, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/mnt/e/cura/cura_backend/./main.py", line 470
+    msg = logMessage(cursor,query,(payload['username'],))
+                                                         ^
+IndentationError: unindent does not match any outer indentation level
+2024-04-30 18:14:51,011 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:14:51,115 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:14:51,779 - main - <module> - INFO - program_started
+2024-04-30 18:14:51,780 - uvicorn.error - INFO - Started server process [23572]
+2024-04-30 18:14:51,780 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:14:51,781 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:16:54,651 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:16:54,729 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:16:54,830 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:16:54,830 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:16:54,830 - uvicorn.error - INFO - Finished server process [23572]
+2024-04-30 18:16:55,000 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:16:55,508 - main - <module> - INFO - program_started
+2024-04-30 18:16:55,508 - uvicorn.error - INFO - Started server process [24067]
+2024-04-30 18:16:55,509 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:16:55,509 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:20:24,545 - root - add_builder_info - INFO - add_builder_info: received payload <{'user_id': 1234, 'buildername': 'Rudra', 'phone1': '9999999999', 'phone2': '8888888888', 'email1': 'abc@def.com', 'addressline1': 'abc area, def house', 'addressline2': 'ghi locality', 'suburb': 'ijkl', 'city': 360, 'state': 'Maharashtra', 'country': 5, 'zip': '1234', 'website': 'www.abc.example.com', 'comments': 'comment1\ncomment2\ncomment3', 'dated': '10-03-2024 08:29:00', 'createdby': 1234, 'isdeleted': False}>
+2024-04-30 18:20:24,620 - uvicorn.access - send - INFO - 127.0.0.1:36690 - "POST /addBuilderInfo HTTP/1.1" 200
+2024-04-30 18:21:38,406 - uvicorn.access - send - INFO - 127.0.0.1:54946 - "POST /addCountry HTTP/1.1" 422
+2024-04-30 18:21:46,957 - root - add_country - INFO - add_country: received payload <{'user_id': 1234, 'new_country': 'testabc'}>
+2024-04-30 18:21:46,978 - uvicorn.access - send - INFO - 127.0.0.1:57416 - "POST /addCountry HTTP/1.1" 200
+2024-04-30 18:22:09,316 - root - add_country - INFO - add_country: received payload <{'user_id': 1234, 'country_name': 'testabc'}>
+2024-04-30 18:22:09,355 - root - ifNotExist - INFO - 0
+2024-04-30 18:22:09,379 - uvicorn.access - send - INFO - 127.0.0.1:40292 - "POST /addCountry HTTP/1.1" 200
+2024-04-30 18:23:24,708 - root - get_modes_admin - INFO - get_modes_admin: received payload <{'user_id': 1234}>
+2024-04-30 18:23:24,746 - uvicorn.access - send - INFO - 127.0.0.1:41552 - "POST /getModesAdmin HTTP/1.1" 200
+2024-04-30 18:24:26,753 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:24:26,817 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:24:26,918 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:24:26,918 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:24:26,918 - uvicorn.error - INFO - Finished server process [24067]
+2024-04-30 18:24:27,116 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:24:27,820 - main - <module> - INFO - program_started
+2024-04-30 18:24:27,821 - uvicorn.error - INFO - Started server process [25878]
+2024-04-30 18:24:27,822 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:24:27,822 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:24:31,630 - root - get_modes_admin - INFO - get_modes_admin: received payload <{'user_id': 1234}>
+2024-04-30 18:24:31,653 - root - check_role_access - INFO - QUERY IS : <SELECT roleid FROM usertable WHERE id = 1234>
+2024-04-30 18:24:31,669 - uvicorn.access - send - INFO - 127.0.0.1:45680 - "POST /getModesAdmin HTTP/1.1" 200
+2024-04-30 18:26:18,361 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:26:18,369 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:26:18,470 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:26:18,471 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:26:18,471 - uvicorn.error - INFO - Finished server process [25878]
+2024-04-30 18:26:18,630 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:26:19,253 - main - <module> - INFO - program_started
+2024-04-30 18:26:19,254 - uvicorn.error - INFO - Started server process [26328]
+2024-04-30 18:26:19,254 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:26:19,255 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:26:22,112 - root - get_modes_admin - INFO - get_modes_admin: received payload <{'user_id': 1234}>
+2024-04-30 18:26:22,138 - root - check_role_access - INFO - QUERY IS : <SELECT roleid FROM usertable WHERE id = 1234>
+2024-04-30 18:26:22,154 - uvicorn.access - send - INFO - 127.0.0.1:43592 - "POST /getModesAdmin HTTP/1.1" 200
+2024-04-30 18:27:19,403 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:27:19,428 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:27:19,529 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:27:19,529 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:27:19,530 - uvicorn.error - INFO - Finished server process [26328]
+2024-04-30 18:27:19,722 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:27:20,327 - main - <module> - INFO - program_started
+2024-04-30 18:27:20,328 - uvicorn.error - INFO - Started server process [26574]
+2024-04-30 18:27:20,328 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:27:20,328 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:27:23,724 - root - get_modes_admin - INFO - get_modes_admin: received payload <{'user_id': 1234}>
+2024-04-30 18:27:23,764 - root - check_role_access - INFO - QUERY IS : <SELECT roleid FROM usertable WHERE id = 1234>
+2024-04-30 18:27:23,784 - uvicorn.access - send - INFO - 127.0.0.1:60466 - "POST /getModesAdmin HTTP/1.1" 200
+2024-04-30 18:28:24,059 - root - validate_credentials - INFO - validate_credentials: received payload <{'username': 'ruderaw', 'password': '1234567', 'company_key': 9632}>
+2024-04-30 18:28:24,090 - root - validate_credentials - INFO - QUERY IS : <SELECT password,id,roleid FROM usertable where username = 'ruderaw'>
+2024-04-30 18:28:24,104 - root - validate_credentials - INFO - QUERY IS : <SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = '9632')>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 479, in validate_credentials
+    return giveFailure("User does not exist")
+TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid'
+2024-04-30 18:28:24,112 - root - validate_credentials - ERROR - None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 479, in validate_credentials
+    return giveFailure("User does not exist")
+TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid'
+2024-04-30 18:28:24,114 - uvicorn.access - send - INFO - 127.0.0.1:38746 - "POST /validateCredentials HTTP/1.1" 200
+2024-04-30 18:28:47,177 - root - validate_credentials - INFO - validate_credentials: received payload <{'username': 'ruderaw', 'password': 'abcdefg', 'company_key': 9632}>
+2024-04-30 18:28:47,198 - root - validate_credentials - INFO - QUERY IS : <SELECT password,id,roleid FROM usertable where username = 'ruderaw'>
+2024-04-30 18:28:47,210 - root - validate_credentials - INFO - QUERY IS : <SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = '9632')>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 479, in validate_credentials
+    return giveFailure("User does not exist")
+TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid'
+2024-04-30 18:28:47,211 - root - validate_credentials - ERROR - None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 479, in validate_credentials
+    return giveFailure("User does not exist")
+TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid'
+2024-04-30 18:28:47,213 - uvicorn.access - send - INFO - 127.0.0.1:48788 - "POST /validateCredentials HTTP/1.1" 200
+2024-04-30 18:29:34,225 - root - validate_credentials - INFO - validate_credentials: received payload <{'username': 'ruderaw', 'password': 'abcdefg', 'company_key': '9632'}>
+2024-04-30 18:29:34,246 - root - validate_credentials - INFO - QUERY IS : <SELECT password,id,roleid FROM usertable where username = 'ruderaw'>
+2024-04-30 18:29:34,254 - root - validate_credentials - INFO - QUERY IS : <SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = '9632')>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 479, in validate_credentials
+    return giveFailure("User does not exist")
+TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid'
+2024-04-30 18:29:34,256 - root - validate_credentials - ERROR - None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 479, in validate_credentials
+    return giveFailure("User does not exist")
+TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid'
+2024-04-30 18:29:34,257 - uvicorn.access - send - INFO - 127.0.0.1:56920 - "POST /validateCredentials HTTP/1.1" 200
+2024-04-30 18:29:49,884 - root - validate_credentials - INFO - validate_credentials: received payload <{'username': 'ruderaw', 'password': 'abcdefg', 'company_key': '9632'}>
+2024-04-30 18:29:49,924 - root - validate_credentials - INFO - QUERY IS : <SELECT password,id,roleid FROM usertable where username = 'ruderaw'>
+2024-04-30 18:29:49,945 - root - validate_credentials - INFO - QUERY IS : <SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = '9632')>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 479, in validate_credentials
+    return giveFailure("User does not exist")
+TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid'
+2024-04-30 18:29:49,946 - root - validate_credentials - ERROR - None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 479, in validate_credentials
+    return giveFailure("User does not exist")
+TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid'
+2024-04-30 18:29:49,948 - uvicorn.access - send - INFO - 127.0.0.1:42570 - "POST /validateCredentials HTTP/1.1" 200
+2024-04-30 18:30:27,143 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:30:27,152 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:30:27,253 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:30:27,253 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:30:27,254 - uvicorn.error - INFO - Finished server process [26574]
+2024-04-30 18:30:27,446 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:30:28,063 - main - <module> - INFO - program_started
+2024-04-30 18:30:28,064 - uvicorn.error - INFO - Started server process [27336]
+2024-04-30 18:30:28,065 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:30:28,065 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:30:31,089 - root - validate_credentials - INFO - validate_credentials: received payload <{'username': 'ruderaw', 'password': 'abcdefg', 'company_key': '9632'}>
+2024-04-30 18:30:31,117 - root - validate_credentials - INFO - QUERY IS : <SELECT password,id,roleid FROM usertable where username = 'ruderaw'>
+2024-04-30 18:30:31,117 - root - validate_credentials - INFO - [('$2a$12$pT07xTktKj9e1KWuib8/z.riX4asy1vyk8jvIaGxtPELi9UhM9OQC', 1234, 1)]
+2024-04-30 18:30:31,131 - root - validate_credentials - INFO - QUERY IS : <SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = '9632')>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 480, in validate_credentials
+    return giveFailure("User does not exist")
+TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid'
+2024-04-30 18:30:31,140 - root - validate_credentials - ERROR - None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 480, in validate_credentials
+    return giveFailure("User does not exist")
+TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid'
+2024-04-30 18:30:31,141 - uvicorn.access - send - INFO - 127.0.0.1:46124 - "POST /validateCredentials HTTP/1.1" 200
+2024-04-30 18:31:22,662 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:31:22,723 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:31:22,824 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:31:22,824 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:31:22,824 - uvicorn.error - INFO - Finished server process [27336]
+2024-04-30 18:31:23,009 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:31:23,629 - main - <module> - INFO - program_started
+2024-04-30 18:31:23,630 - uvicorn.error - INFO - Started server process [27561]
+2024-04-30 18:31:23,630 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:31:23,631 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:31:25,375 - root - validate_credentials - INFO - validate_credentials: received payload <{'username': 'ruderaw', 'password': 'abcdefg', 'company_key': '9632'}>
+2024-04-30 18:31:25,406 - root - validate_credentials - INFO - QUERY IS : <SELECT password,id,roleid FROM usertable where username = 'ruderaw'>
+2024-04-30 18:31:25,417 - root - validate_credentials - INFO - QUERY IS : <SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = '9632')>
+2024-04-30 18:31:25,418 - uvicorn.access - send - INFO - 127.0.0.1:45640 - "POST /validateCredentials HTTP/1.1" 200
+2024-04-30 18:32:35,540 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:32:35,638 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:32:35,739 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:32:35,739 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:32:35,740 - uvicorn.error - INFO - Finished server process [27561]
+2024-04-30 18:32:35,921 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:32:36,566 - main - <module> - INFO - program_started
+2024-04-30 18:32:36,567 - uvicorn.error - INFO - Started server process [27854]
+2024-04-30 18:32:36,567 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:32:36,568 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:32:38,271 - root - validate_credentials - INFO - validate_credentials: received payload <{'username': 'ruderaw', 'password': 'abcdefg', 'company_key': '9632'}>
+2024-04-30 18:32:38,298 - root - validate_credentials - INFO - QUERY IS : <SELECT password,id,roleid FROM usertable where username = 'ruderaw'>
+2024-04-30 18:32:38,298 - root - validate_credentials - INFO - None
+2024-04-30 18:32:38,315 - root - validate_credentials - INFO - QUERY IS : <SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = '9632')>
+2024-04-30 18:32:38,316 - uvicorn.access - send - INFO - 127.0.0.1:54794 - "POST /validateCredentials HTTP/1.1" 200
+2024-04-30 18:33:06,001 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:33:06,097 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:33:06,198 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:33:06,199 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:33:06,199 - uvicorn.error - INFO - Finished server process [27854]
+2024-04-30 18:33:06,376 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:33:07,010 - main - <module> - INFO - program_started
+2024-04-30 18:33:07,011 - uvicorn.error - INFO - Started server process [27980]
+2024-04-30 18:33:07,012 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:33:07,012 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:33:09,068 - root - validate_credentials - INFO - validate_credentials: received payload <{'username': 'ruderaw', 'password': 'abcdefg', 'company_key': '9632'}>
+2024-04-30 18:33:09,094 - root - validate_credentials - INFO - QUERY IS : <SELECT password,id,roleid FROM usertable where username = 'ruderaw'>
+2024-04-30 18:33:09,094 - root - validate_credentials - INFO - ('$2a$12$pT07xTktKj9e1KWuib8/z.riX4asy1vyk8jvIaGxtPELi9UhM9OQC', 1234, 1)
+2024-04-30 18:33:09,109 - root - validate_credentials - INFO - QUERY IS : <SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = '9632')>
+2024-04-30 18:33:09,109 - main - validate_credentials - INFO - $2a$12$pT07xTktKj9e1KWuib8/z.riX4asy1vyk8jvIaGxtPELi9UhM9OQC is password hashed
+2024-04-30 18:33:09,109 - main - validate_credentials - INFO - <class 'bytes'> is type
+2024-04-30 18:33:09,331 - main - validate_credentials - INFO - Password is ok
+2024-04-30 18:33:09,332 - uvicorn.access - send - INFO - 127.0.0.1:36352 - "POST /validateCredentials HTTP/1.1" 200
+2024-04-30 18:33:38,412 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:33:38,416 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:33:38,517 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:33:38,517 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:33:38,518 - uvicorn.error - INFO - Finished server process [27980]
+2024-04-30 18:33:38,688 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:33:39,336 - main - <module> - INFO - program_started
+2024-04-30 18:33:39,337 - uvicorn.error - INFO - Started server process [28112]
+2024-04-30 18:33:39,338 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:33:39,338 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 18:34:19,574 - root - add_country - INFO - add_country: received payload <{'user_id': 1234, 'country_name': 'testabce'}>
+2024-04-30 18:34:19,614 - root - check_role_access - INFO - QUERY IS : <SELECT roleid FROM usertable WHERE id = 1234>
+2024-04-30 18:34:19,631 - root - ifNotExist - INFO - 0
+2024-04-30 18:34:19,650 - root - add_country - INFO - QUERY IS : <INSERT INTO country (name) VALUES ('testabce')>
+2024-04-30 18:34:19,671 - uvicorn.access - send - INFO - 127.0.0.1:60622 - "POST /addCountry HTTP/1.1" 200
+2024-04-30 18:35:35,865 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 18:35:35,882 - uvicorn.error - INFO - Shutting down
+2024-04-30 18:35:35,983 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 18:35:35,983 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 18:35:35,984 - uvicorn.error - INFO - Finished server process [28112]
+2024-04-30 18:35:36,162 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 18:35:36,808 - main - <module> - INFO - program_started
+2024-04-30 18:35:36,809 - uvicorn.error - INFO - Started server process [28586]
+2024-04-30 18:35:36,809 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 18:35:36,810 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 19:21:35,075 - root - add_country - INFO - add_country: received payload <{'user_id': 1234, 'country_name': 'testabcde'}>
+2024-04-30 19:21:35,097 - root - check_role_access - INFO - QUERY IS : <SELECT roleid FROM usertable WHERE id = 1234>
+2024-04-30 19:21:35,108 - root - ifNotExist - INFO - 0
+2024-04-30 19:21:35,118 - root - add_country - INFO - QUERY IS : <INSERT INTO country (name) VALUES ('testabcde')>
+2024-04-30 19:21:35,134 - uvicorn.access - send - INFO - 127.0.0.1:45424 - "POST /addCountry HTTP/1.1" 200
+2024-04-30 19:35:30,340 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 19:35:30,390 - uvicorn.error - INFO - Shutting down
+2024-04-30 19:35:30,491 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 19:35:30,491 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 19:35:30,492 - uvicorn.error - INFO - Finished server process [28586]
+2024-04-30 19:35:30,724 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 19:35:31,370 - main - <module> - INFO - program_started
+2024-04-30 19:35:31,371 - uvicorn.error - INFO - Started server process [42880]
+2024-04-30 19:35:31,371 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 19:35:31,372 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 20:05:19,311 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-04-30 20:05:19,320 - uvicorn.error - INFO - Shutting down
+2024-04-30 20:05:19,421 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 20:05:19,422 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 20:05:19,422 - uvicorn.error - INFO - Finished server process [42880]
+2024-04-30 20:05:19,633 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-04-30 20:05:20,321 - main - <module> - INFO - program_started
+2024-04-30 20:05:20,321 - uvicorn.error - INFO - Started server process [49975]
+2024-04-30 20:05:20,322 - uvicorn.error - INFO - Waiting for application startup.
+2024-04-30 20:05:20,322 - uvicorn.error - INFO - Application startup complete.
