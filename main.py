@@ -11,6 +11,10 @@ import datetime
 # from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
 
+def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: list = None):
+    cursor.execute(query,arr)
+    logging.info(f'QUERY IS : <{cursor.mogrify(query,arr)}>')
+
 # PostgreSQL database URL
 #todo : need to source user, password and ip port from variables
 DATABASE_URL = "postgresql://postgres:cura123@20.197.13.140:5432/cura_db"
@@ -68,7 +72,7 @@ def paymentfor(conn: psycopg2.extensions.connection):
         logging.info(traceback.print_exc())
         logging.info(f"Error is {e}")
         return None
-
+    
 def paymentreqstatus(conn: psycopg2.extensions.connection):
     try:
         with conn.cursor() as cursor:
@@ -446,7 +450,7 @@ app.add_middleware(
 
 @app.post('/validateCredentials')
 async def validate_credentials(payload : dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getCredentials: received payload <{payload}>')
+    logging.info(f'validate_credentials: received payload <{payload}>')
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT password,id,roleid FROM usertable where username = %s'
@@ -551,6 +555,8 @@ def check_role_access(conn, payload: dict):
 
 @app.post('/paymentForAdmin')
 async def payment_for_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f':payload received is {payload}')
+
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -567,7 +573,7 @@ async def payment_for_admin(payload: dict, conn: psycopg2.extensions.connection 
 # FastAPI route to get roleid based on id or username
 @app.post("/getRoleID")
 async def get_role_id(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getRoleID: received payload <{payload}>')
+    logging.info(f'get_role_id:payload received is {payload}')
     role_id = check_role_access(conn, payload)
     if role_id is not None:
         if role_id!=0:
@@ -589,8 +595,8 @@ async def get_role_id(payload: dict, conn: psycopg2.extensions.connection = Depe
             }
 
 @app.post('/getCountries')
-def getCountries(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getCountries: received payload <{payload}>')
+def get_countries(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'get_countries: received payload <{payload}>')
     #todo: need to add pagination and filteration arrangement here
     try:
         role_access_status = check_role_access(conn,payload)
@@ -614,7 +620,7 @@ def getCountries(payload : dict,conn: psycopg2.extensions.connection = Depends(g
 
 @app.post('/addCountry')
 async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addCountry: received payload <{payload}>')
+    logging.info(f'add_country: received payload <{payload}>')
     try:
         with conn[0].cursor() as cursor:
             role_access_status = check_role_access(conn,payload)
@@ -624,7 +630,7 @@ async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depend
             if role_access_status == 1 and ifNotExist('name','country',conn,payload['country_name']):
             # Insert new country data into the database
                 query_insert = 'INSERT INTO country (name) VALUES (%s)'
-                cursor.execute(query_insert, ( payload['country_name'],))
+                logMessage(conn[0].cursor(),query_insert, ( payload['country_name'],))
 
             # Commit the transaction
                 conn[0].commit()
@@ -655,7 +661,7 @@ def checkcountry(payload: str,conn: psycopg2.extensions.connection = Depends(get
 
 @app.post("/editCountry")
 async def edit_country(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'editCountry: received payload <{payload}>')
+    logging.info(f'edit_country: received payload <{payload}>')
     try:
         # Check user role
         role_access_status = check_role_access(conn,payload)
@@ -687,7 +693,7 @@ async def edit_country(payload: dict, conn: psycopg2.extensions.connection = Dep
 
 @app.post('/deleteCountry')
 async def delete_country(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'deleteCountry: received payload <{payload}>')
+    logging.info(f'delete_country: received payload <{payload}>')
     try:
         with conn[0].cursor() as cursor:
             role_access_status = check_role_access(conn,payload)
@@ -715,10 +721,10 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
 
 @app.post('/addBuilderInfo')
 async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addBuilderInfo: received payload <{payload}>')
+    logging.info(f'add_builder_info: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1 and ifNotExist('buildername','builder',conn,payload['buildername']):
+        if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''
                     INSERT INTO builder (
@@ -726,7 +732,7 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
                         suburb, city, state, country, zip, website, comments, dated, createdby, isdeleted
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                    )
+                    ) RETURNING id
                 '''
                 cursor.execute(query, (
                     payload['buildername'],
@@ -743,17 +749,15 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
                     payload['zip'],
                     payload['website'],
                     payload['comments'],
-                    payload['dated'],
-                    payload['createdby'],
-                    payload['isdeleted']
+                    givenowtime(),
+                    payload['user_id'],
+                    False
                 ))
+                id = cursor.fetchone()[0]
                  # Commit the transaction
                 conn[0].commit()
-                
-                # Get the ID of the last inserted row
-                last_row_id = cursor.lastrowid
                 data= {
-                    "entered": payload["buildername"]
+                    "entered":id
                 }
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
@@ -767,7 +771,7 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
 #BUILDER UPDATED
 @app.post('/getBuilderInfo')
 def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getBuilderInfo: received payload <{payload}>')
+    logging.info(f'get_builder_info: received payload <{payload}>')
     countries = get_countries_from_id(conn=conn)
     cities = get_city_from_id(conn=conn)
     try:
@@ -802,7 +806,7 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
 
 @app.post("/editBuilder")
 async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'editBuilder: received payload <{payload}>')
+    logging.info(f'edit_builder: received payload <{payload}>')
     try:
         # Check user role
         role_access_status = check_role_access(conn, payload)
@@ -861,7 +865,7 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
 
 @app.post('/deleteBuilder')
 async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'deleteBuilder: received payload <{payload}>')
+    logging.info(f'delete_builder: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -891,7 +895,7 @@ async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Dep
 #STATES UPDATED
 @app.post('/getStatesAdmin')
 async def get_states_admin(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getStatesAdmin: received payload <{payload}>')
+    logging.info(f'get_states_admin: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -907,7 +911,7 @@ async def get_states_admin(payload:dict,conn: psycopg2.extensions.connection = D
 
 @app.post('/getStates')
 async def get_states(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getStates: received payload <{payload}>')
+    logging.info(f'get_states: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         logging.info(role_access_status)
@@ -933,7 +937,7 @@ async def get_states(payload : dict,conn: psycopg2.extensions.connection = Depen
 
 @app.post('/getCities')
 async def get_cities(payload : dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getCities: received payload <{payload}>')
+    logging.info(f'get_cities: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -959,7 +963,7 @@ async def get_cities(payload : dict, conn: psycopg2.extensions.connection = Depe
 #CITIES UPDATED
 @app.post('/getCitiesAdmin')
 async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getCitiesAdmin: received payload <{payload}>')
+    logging.info(f'get_cities_admin: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         cities = get_city_from_id(conn)
@@ -1003,7 +1007,7 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
     
 @app.post('/deleteProject')
 async def delete_project(payload:dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'deleteProject: received payload <{payload}>')
+    logging.info(f'delete_project: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
@@ -1028,7 +1032,7 @@ async def delete_project(payload:dict,conn : psycopg2.extensions.connection = De
     
 @app.post('/addNewBuilderContact')
 async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addNewBuilderContact: received payload <{payload}>')
+    logging.info(f'add_new_builder_contact: received payload <{payload}>')
     try:
         if 'builderid' not in payload:
             return {
@@ -1084,7 +1088,7 @@ async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.conne
 
 @app.post('/getLocality')
 async def get_localties(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getLocalities: received payload <{payload}>')
+    logging.info(f'get_localities: received payload <{payload}>')
     try:
         cities = get_city_from_id(conn)
         role_access_status = check_role_access(conn,payload)
@@ -1110,7 +1114,7 @@ async def get_localties(payload: dict, conn: psycopg2.extensions.connection = De
 
 @app.post('/addLocality')
 async def add_localities(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addLocality: received payload <{payload}>')
+    logging.info(f'add_locality: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1 and ifNotExist('locality','locality',conn,payload['locality']):
@@ -1133,7 +1137,7 @@ async def add_localities(payload: dict, conn : psycopg2.extensions.connection = 
 
 @app.post('/editLocality')
 async def edit_localities(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'editLocality: received payload <{payload}>')
+    logging.info(f'edit_locality: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -1153,7 +1157,7 @@ async def edit_localities(payload: dict, conn : psycopg2.extensions.connection =
 
 @app.post('/deleteLocality')
 async def delete_localities(payload : dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'deleteLocality: received payload <{payload}>')
+    logging.info(f'delete_locality: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1171,7 +1175,7 @@ async def delete_localities(payload : dict,conn : psycopg2.extensions.connection
 
 @app.post('/getBankSt')
 async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getBankSt: received payload <{payload}>')
+    logging.info(f'get_bank_statement: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -1194,7 +1198,7 @@ async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
 
 @app.post('/addBankSt')
 async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addBankSt: received payload <{payload}>')
+    logging.info(f'add_bank_statement: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -1220,7 +1224,7 @@ async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
 
 @app.post('/editBankSt')
 async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'editBankSt: received payload <{payload}>')
+    logging.info(f'edit_bank_statement: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1245,7 +1249,7 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
 
 @app.post('/deleteBankSt')
 async def delete_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'deleteBankSt: received payload <{payload}>')
+    logging.info(f'delete_bank_statement: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1267,7 +1271,7 @@ async def delete_bank_statement(payload : dict, conn : psycopg2.extensions.conne
 
 @app.post('/getEmployee')
 async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getEmployee: received payload <{payload}>')
+    logging.info(f'get_employee: received payload <{payload}>')
     cities = get_city_from_id(conn)
     countries = get_countries_from_id(conn)
     try:
@@ -1302,7 +1306,7 @@ async def get_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
 
 @app.post('/addEmployee')
 async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addEmployee: received payload <{payload}>')
+    logging.info(f'add_employee: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1 and ifNotExist('employeeid','employee',conn,payload['employeeid']):
@@ -1348,7 +1352,7 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
 
 @app.post('/editEmployee')
 async def edit_employee(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'editEmployee: received payload <{payload}>')
+    logging.info(f'edit_employee: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -1395,7 +1399,7 @@ async def edit_employee(payload: dict, conn : psycopg2.extensions.connection = D
 
 @app.post('/deleteEmployee')
 async def delete_employee(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'deleteEmployee: received payload <{payload}>')
+    logging.info(f'delete_employee: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -1417,7 +1421,7 @@ async def delete_employee(payload: dict, conn : psycopg2.extensions.connection =
 
 @app.post('/getLob')
 async def get_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getLob: received payload <{payload}>')
+    logging.info(f'get_lob: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -1441,7 +1445,7 @@ async def get_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(
 
 @app.post('/addLob')
 async def add_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addLob: received payload <{payload}>')
+    logging.info(f'add_lob: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1 and ifNotExist('name','lob',conn,payload['name']):
@@ -1464,7 +1468,7 @@ async def add_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(
 
 @app.post('/editLob')
 async def edit_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'editLob: received payload <{payload}>')
+    logging.info(f'edit_lob: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1488,7 +1492,7 @@ async def edit_lob(payload: dict, conn: psycopg2.extensions.connection = Depends
 
 @app.post('/deleteLob')
 async def delete_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'deleteLob: received payload <{payload}>')
+    logging.info(f'delete_lob: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1510,7 +1514,7 @@ async def delete_lob(payload: dict, conn: psycopg2.extensions.connection = Depen
         
 @app.post('/getResearchProspect')
 async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getResearchProspect: received payload <{payload}>')
+    logging.info(f'get_research_prospect: received payload <{payload}>')
     countries = get_countries_from_id(conn)
     print(countries)
     try:
@@ -1540,7 +1544,7 @@ async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connect
         
 @app.post('/addResearchProspect')
 async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addResearchProspect: received payload <{payload}>')
+    logging.info(f'add_research_prospect: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1561,7 +1565,7 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
 
 @app.post('/editResearchProspect')
 async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'editResearchProspect: received payload <{payload}>')
+    logging.info(f'edit_research_prospect: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1585,7 +1589,7 @@ async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.conne
 
 @app.post('/deleteResearchProspect')
 async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'deleteResearchProspect: received payload <{payload}>')
+    logging.info(f'delete_research_prospect: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1607,7 +1611,7 @@ async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.con
 
 @app.post('/getPayments')
 async def get_payments(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getPayments: received payload <{payload}>')
+    logging.info(f'get_payments: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -1644,7 +1648,7 @@ async def get_payments(payload: dict, conn : psycopg2.extensions.connection = De
 
 @app.post('/addPayment')
 async def add_payment(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addPayment: received payload <{payload}>')
+    logging.info(f'add_payment: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1667,7 +1671,7 @@ async def add_payment(payload: dict,conn: psycopg2.extensions.connection = Depen
 
 @app.post('/editPayment')
 async def edit_payment(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'editPayment: received payload <{payload}>')
+    logging.info(f'edit_payment: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1688,7 +1692,7 @@ async def edit_payment(payload: dict, conn: psycopg2.extensions.connection = Dep
 
 @app.post('/deletePayment')
 async def delete_payment(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'deletePayment: received payload <{payload}>')
+    logging.info(f'delete_payment: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1713,7 +1717,7 @@ async def delete_payment(payload: dict, conn: psycopg2.extensions.connection = D
 
 @app.post('/getVendorAdmin')
 async def get_vendor_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getVendorAdmin: received payload <{payload}>')
+    logging.info(f'get_vendor_admin: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -1791,7 +1795,7 @@ async def get_client_admin_paginated(payload: dict, conn: psycopg2.extensions.co
 
 @app.post('/getClientAdmin')
 async def get_client_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getClientAdmin: received payload <{payload}>')
+    logging.info(f'get_client_admin: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
@@ -1808,7 +1812,7 @@ async def get_client_admin(payload: dict, conn: psycopg2.extensions.connection =
 
 @app.post('/getModesAdmin')
 async def get_modes_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getModesAdmin: received payload <{payload}>')
+    logging.info(f'get_modes_admin: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
@@ -1825,7 +1829,7 @@ async def get_modes_admin(payload: dict, conn: psycopg2.extensions.connection = 
 
 @app.post('/getEntityAdmin')
 async def get_entity_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getModesAdmin: received payload <{payload}>')
+    logging.info(f'get_entity_admin: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
@@ -1842,7 +1846,7 @@ async def get_entity_admin(payload: dict, conn: psycopg2.extensions.connection =
 
 @app.post('/getHowReceivedAdmin')
 async def get_howreceived_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getHowReceivedAdmin: received payload <{payload}>')
+    logging.info(f'get_howreceived_admin: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
@@ -1859,6 +1863,7 @@ async def get_howreceived_admin(payload: dict, conn: psycopg2.extensions.connect
 
 @app.post('/getUsersAdmin')
 async def get_users_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'get_users_admin:payload received is {payload}')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -1874,6 +1879,7 @@ async def get_users_admin(payload: dict, conn : psycopg2.extensions.connection =
 
 @app.post('/getRolesAdmin')
 async def get_roles(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'get_roles:payload received is {payload}')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -1907,7 +1913,7 @@ def clienttype(payload,conn):
 
 @app.post('/getClientInfo')
 async def get_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getClientInfo_: received payload <{payload}>')
+    logging.info(f'get_client_info: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
 
@@ -1944,11 +1950,10 @@ async def get_client_info(payload : dict, conn : psycopg2.extensions.connection 
         return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 
-def createDictRowFromCursorResult(column_names):
-    pass
 
 @app.post('/getClientInfoByClientId')
 async def get_client_info_by_clientid(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_client_info_by_clientid:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn, payload)
 
@@ -2042,6 +2047,7 @@ async def get_client_info_by_clientid(payload : dict, conn : psycopg2.extensions
     
 @app.post('/getItembyId')
 async def get_item_by_id(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f":get_item_by_idreceived payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -2067,7 +2073,7 @@ async def get_item_by_id(payload: dict, conn: psycopg2.extensions.connection = D
         
 @app.post('/getViewScreenDataTypes')
 async def get_view_screen_types(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getViewScreenDataTypes: received payload <{payload}>')
+    logging.info(f'get_view_screen_data_types: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2099,6 +2105,7 @@ async def get_view_screen_types(payload: dict, conn : psycopg2.extensions.connec
         
 @app.post('/getProjectsByBuilderId')
 async def get_projects_by_builder_id(payload: dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_projects_by_builder_id:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -2125,6 +2132,7 @@ async def get_projects_by_builder_id(payload: dict,conn : psycopg2.extensions.co
 
 @app.post('/getBuilderContactsById')
 async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_builder_contacts:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -2151,7 +2159,7 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
 
 @app.post('/getClientProperty')
 async def get_client_property(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getClientProperty: received payload <{payload}>')
+    logging.info(f'get_client_property: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
@@ -2182,7 +2190,7 @@ async def get_client_property(payload : dict, conn : psycopg2.extensions.connect
 
 @app.post('/getBuildersAndProjectsList')
 async def get_builders_and_projects_list(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'getBuildersAndProjectsList: received payload <{payload}>')
+    logging.info(f'get_builders_and_projects_list: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
@@ -2204,6 +2212,7 @@ async def get_builders_and_projects_list(payload: dict, conn: psycopg2.extension
 
 @app.post('/addClientInfo')
 async def add_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_client_info:received payload <{payload}>")
     try:
         role_access_status =check_role_access(conn,payload)
         client_info = payload['client_info']
@@ -2281,6 +2290,7 @@ async def add_client_info(payload : dict, conn : psycopg2.extensions.connection 
 
 @app.post('/getClientTypeAdmin')
 async def get_client_type_admin(payload : dict, conn: psycopg2.extensions.connection =Depends(get_db_connection)):
+    logging.info(f":get_client_type_adminreceived payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2303,6 +2313,7 @@ async def get_client_type_admin(payload : dict, conn: psycopg2.extensions.connec
     
 @app.post('/getRelationAdmin')
 async def get_relation_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_relation_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2325,6 +2336,7 @@ async def get_relation_admin(payload: dict, conn: psycopg2.extensions.connection
        
 @app.post('/getTenantOfPropertyAdmin')
 async def get_tenant_of_property_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_tenant_of_property_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2349,6 +2361,7 @@ async def get_tenant_of_property_admin(payload: dict, conn: psycopg2.extensions.
     
 @app.post('/deleteClientInfo')
 async def delete_client_info(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_client_info:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2379,7 +2392,7 @@ async def delete_client_info(payload: dict, conn: psycopg2.extensions.connection
 
 @app.post("/addProject")
 async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'addProject: received payload <{payload}>')
+    logging.info(f'add_project: received payload <{payload}>')
     try:
         global id
         role_access_status = check_role_access(conn, payload)
@@ -2390,18 +2403,18 @@ async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depe
             project_contacts_list = payload['project_contacts']
             project_photos_list = payload['project_photos']
             with conn[0].cursor() as cursor:
-                query = "insert into project(builderid,projectname,addressline1,addressline2,suburb,city,state,country,zip,nearestlandmark,project_type,mailgroup1,mailgroup2,website,project_legal_status,rules,completionyear,jurisdiction,taluka,corporationward,policechowkey,maintenance_details,numberoffloors,numberofbuildings,approxtotalunits,tenantstudentsallowed,tenantworkingbachelorsallowed,tenantforeignersallowed,otherdetails,duespayablemonth,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id"
-                cursor.execute(query,(project_info["builderid"],project_info["projectname"],project_info["addressline1"],project_info["addressline2"],project_info["suburb"],project_info["city"],project_info["state"],project_info["country"],project_info["zip"],project_info["nearestlandmark"],project_info["project_type"],project_info["mailgroup1"],project_info["mailgroup2"],project_info["website"],project_info["project_legal_status"],project_info["rules"],project_info["completionyear"],project_info["jurisdiction"],project_info["taluka"],project_info["corporationward"],project_info["policechowkey"],project_info["maintenance_details"],project_info["numberoffloors"],project_info["numberofbuildings"],project_info["approxtotalunits"],project_info["tenantstudentsallowed"],project_info["tenantworkingbachelorsallowed"],project_info["tenantforeignersallowed"],project_info["otherdetails"],project_info["duespayablemonth"],givenowtime(),payload['user_id'],False))
+                query = "insert into project(builderid,projectname,addressline1,addressline2,suburb,city,state,country,zip,nearestlandmark,project_type,mailgroup1,mailgroup2,website,project_legal_status,rules,completionyear,jurisdiction,taluka,corporationward,policestation,policechowkey,maintenance_details,numberoffloors,numberofbuildings,approxtotalunits,tenantstudentsallowed,tenantworkingbachelorsallowed,tenantforeignersallowed,otherdetails,duespayablemonth,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id"
+                cursor.execute(query,(project_info["builderid"],project_info["projectname"],project_info["addressline1"],project_info["addressline2"],project_info["suburb"],project_info["city"],project_info["state"],project_info["country"],project_info["zip"],project_info["nearestlandmark"],project_info["project_type"],project_info["mailgroup1"],project_info["mailgroup2"],project_info["website"],project_info["project_legal_status"],project_info["rules"],project_info["completionyear"],project_info["jurisdiction"],project_info["taluka"],project_info["corporationward"],project_info["policestation"],project_info["policechowkey"],project_info["maintenance_details"],project_info["numberoffloors"],project_info["numberofbuildings"],project_info["approxtotalunits"],project_info["tenantstudentsallowed"],project_info["tenantworkingbachelorsallowed"],project_info["tenantforeignersallowed"],project_info["otherdetails"],project_info["duespayablemonth"],givenowtime(),payload['user_id'],False))
                 id = cursor.fetchone()[0]
                 conn[0].commit()
-                query = 'insert into project_amenities(projectid,swimmingpool,lift,liftbatterybackup,clubhouse,gym,childrensplayarea,pipedgas,cctvcameras,otheramenities,studio,"1BHK","2BHK","3BHK",rowhouse,otheraccomodationtypes,sourceofwater,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id'
-                cursor.execute(query,(id,project_amenities["swimmingpool"],project_amenities["lift"],project_amenities["liftbatterybackup"],project_amenities["clubhouse"],project_amenities["gym"],project_amenities["childrensplayarea"],project_amenities["pipedgas"],project_amenities["cctvcameras"],project_amenities["otheramenities"],project_amenities["studio"],project_amenities["1BHK"],project_amenities["2BHK"],project_amenities["3BHK"],project_amenities["rowhouse"],project_amenities["otheraccomodationtypes"],project_amenities["sourceofwater"],givenowtime(),payload['user_id'],False))
+                query = 'insert into project_amenities(projectid,swimmingpool,lift,liftbatterybackup,clubhouse,gym,childrensplayarea,pipedgas,cctvcameras,otheramenities,studio,"1BHK","2BHK","3BHK","4BHK","RK",other,duplex,penthouse,rowhouse,otheraccomodationtypes,sourceofwater,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id'
+                cursor.execute(query,(id,project_amenities["swimmingpool"],project_amenities["lift"],project_amenities["liftbatterybackup"],project_amenities["clubhouse"],project_amenities["gym"],project_amenities["childrensplayarea"],project_amenities["pipedgas"],project_amenities["cctvcameras"],project_amenities["otheramenities"],project_amenities["studio"],project_amenities["1BHK"],project_amenities["2BHK"],project_amenities["3BHK"],project_amenities["4BHK"],project_amenities["RK"],project_amenities["other"],project_amenities["duplex"],project_amenities["penthouse"],project_amenities["rowhouse"],project_amenities["otheraccomodationtypes"],project_amenities["sourceofwater"],givenowtime(),payload['user_id'],False))
                 data = {
                     "added project id":id
                 }
                 for bank_details in bank_details_list:
-                    query = 'insert into project_bank_details(projectid,bankname,bankbranch,bankcity,bankaccountholdername,bankaccountno,bankifsccode,banktypeofaccount,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-                    cursor.execute(query,(id,bank_details["bankname"],bank_details["bankbranch"],bank_details["bankcity"],bank_details["bankaccountholdername"],bank_details["bankaccountno"],bank_details["bankifsccode"],bank_details["banktypeofaccount"],givenowtime(),payload['user_id'],False))
+                    query = 'insert into project_bank_details(projectid,bankname,bankbranch,bankcity,bankaccountholdername,bankaccountno,bankifsccode,banktypeofaccount,bankmicrcode,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                    cursor.execute(query,(id,bank_details["bankname"],bank_details["bankbranch"],bank_details["bankcity"],bank_details["bankaccountholdername"],bank_details["bankaccountno"],bank_details["bankifsccode"],bank_details["banktypeofaccount"],bank_details['bankmicrcode'],givenowtime(),payload['user_id'],False))
                 for project_contacts in project_contacts_list:
                     query = 'insert into project_contacts(projectid,contactname,phone,email,role,effectivedate,tenureenddate,details,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                     cursor.execute(query,(id,project_contacts["contactname"],project_contacts["phone"],project_contacts["email"],project_contacts["role"],project_contacts["effectivedate"],project_contacts["tenureenddate"],project_contacts["details"],givenowtime(),payload['user_id'],False))
@@ -2428,6 +2441,7 @@ async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depe
 
 @app.post('/addClientProperty')
 async def add_client_property(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_client_property:received payload <{payload}>")
     try:
         global prop_id
         role_access_status = check_role_access(conn,payload)
@@ -2464,7 +2478,7 @@ async def add_client_property(payload: dict, conn: psycopg2.extensions.connectio
 
 @app.post('/editClientInfo')
 async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'editClientInfo: received payload <{payload}>')
+    logging.info(f'edit_client_info: received payload <{payload}>')
     try:
         data = f"successfully edited client info for clientid {payload['client_id']}"
         role_access_status = check_role_access(conn,payload)
@@ -2547,11 +2561,11 @@ async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection =
                          'poaaddressline1=%s,' 'poaaddressline2=%s,' 'poabirthyear=%s,' 'poacity=%s,' 'poacountry=%s,'
                          'poaeffectivedate=%s,' 'poaemployername=%s,' 'poaenddate=%s,' 'poafor=%s,' 'poalegalname=%s,'
                          'poaoccupation=%s,' 'poapanno=%s,' 'poaphoto=%s,' 'poarelation=%s, poarelationwith=%s, poastate=%s,'
-                         'poasuburb=%s, poazip=%s WHERE ID=%s and clientid=%s')
+                         'poasuburb=%s, poazip=%s,scancopy=%s WHERE ID=%s and clientid=%s')
                 data = cursor.execute( query,(pi['poaaddressline1'],pi['poaaddressline2'], pi['poabirthyear'], pi['poacity'], pi['poacountry'],
                            pi['poaeffectivedate'], pi['poaemployername'], pi['poaenddate'], pi['poafor'], pi['poalegalname'],
                            pi['poaoccupation'], pi['poapanno'], pi['poaphoto'], pi['poarelation'], pi['poarelationwith'],
-                           pi['poastate'],pi['poasuburb'], pi['poazip'], pi['id'], clientid))
+                           pi['poastate'],pi['poasuburb'], pi['poazip'],pi['scancopy'],pi['id'], clientid))
                 conn[0].commit()
                 logging.info(f'editClientInfo: client_poa update status is <{cursor.statusmessage}>')
         return giveSuccess(payload['user_id'],role_access_status,data)
@@ -2561,6 +2575,7 @@ async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection =
 
 @app.post('/deleteClientProperty')
 async def delete_client_property(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_client_property:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2590,6 +2605,7 @@ async def delete_client_property(payload: dict, conn: psycopg2.extensions.connec
 
 @app.post('/getPropertyStatusAdmin')
 async def get_property_status_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_property_status_admin:received payload <{payload}>")
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT DISTINCT id,name from property_status order by id'
@@ -2609,6 +2625,7 @@ async def get_property_status_admin(payload: dict, conn: psycopg2.extensions.con
 
 @app.post('/getLevelOfFurnishingAdmin')
 async def get_level_of_furnishing(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_level_of_furnishing:received payload <{payload}>")
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT DISTINCT id,name from level_of_furnishing order by id'
@@ -2630,6 +2647,7 @@ async def get_level_of_furnishing(payload: dict, conn: psycopg2.extensions.conne
 
 @app.post('/getPropertyType')
 async def get_property_type(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_property_type :received payload <{payload}>")
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT DISTINCT id,name from property_type order by id'
@@ -2650,6 +2668,7 @@ async def get_property_type(payload: dict, conn: psycopg2.extensions.connection 
 
 @app.post('/editClientProperty')
 async def edit_client_property(payload: dict,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_client_property :received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2737,6 +2756,7 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
 
 @app.post('/getClientPropertyById')
 async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_client_property_by_id:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn, payload)
 
@@ -2836,6 +2856,7 @@ async def get_client_receipt(payload: dict,conn : psycopg2.extensions.connection
 
 @app.post('/addClientReceipt')
 async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_client_receipt :received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2869,6 +2890,7 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
     
 @app.post('/editClientReceipt')
 async def edit_client_receipt(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_client_receipt:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2905,6 +2927,7 @@ async def edit_client_receipt(payload: dict, conn : psycopg2.extensions.connecti
 
 @app.post('/deleteClientReceipt')
 async def delete_client_receipt(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_client_receipt :received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2936,6 +2959,7 @@ async def get_client_pma_agreement(payload: dict, conn: psycopg2.extensions.conn
 
 @app.post('/addClientPMAAgreement')
 async def add_client_pma_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_client_pma_agreement:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2958,6 +2982,7 @@ async def add_client_pma_agreement(payload: dict, conn: psycopg2.extensions.conn
 
 @app.post('/editClientPMAAgreement')
 async def edit_client_pma_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_client_pma_agreement:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -2982,6 +3007,7 @@ async def edit_client_pma_agreement(payload: dict, conn: psycopg2.extensions.con
 
 @app.post('/deleteClientPMAAgreement')
 async def delete_client_pma_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_client_pma_agreement:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3013,6 +3039,7 @@ async def get_ll_agreement(payload: dict, conn:psycopg2.extensions.connection = 
 
 @app.post('/addClientLLAgreement')
 async def add_client_ll_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_client_ll_agreement:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3034,6 +3061,7 @@ async def add_client_ll_agreement(payload: dict, conn: psycopg2.extensions.conne
 
 @app.post('/editClientLLAgreement')
 async def edit_client_ll_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_client_ll_agreement:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3056,6 +3084,7 @@ async def edit_client_ll_agreement(payload: dict, conn: psycopg2.extensions.conn
     
 @app.post('/deleteClientLLAgreement')
 async def delete_client_pma_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_client_pma_agreement:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3075,6 +3104,7 @@ async def delete_client_pma_agreement(payload: dict, conn: psycopg2.extensions.c
 
 @app.post('/getClientPropertyByClientId')
 async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_client_property_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3096,6 +3126,7 @@ async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.con
     
 @app.post('/getOrdersByClientId')
 async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_client_property_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3117,6 +3148,7 @@ async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.con
 
 @app.post('/getProjectById')
 async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"getprojectbyid:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3193,6 +3225,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
 
 @app.post('/editProject')
 async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_project:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3204,7 +3237,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                 query = '''UPDATE project SET builderid=%s,projectname=%s,addressline1=%s,addressline2=%s,
                         suburb=%s,city=%s,state=%s,country=%s,zip=%s,nearestlandmark=%s,project_type=%s,mailgroup1=%s,
                         mailgroup2=%s,website=%s,project_legal_status=%s,rules=%s,completionyear=%s,jurisdiction=%s,
-                        taluka=%s,corporationward=%s,policechowkey=%s,maintenance_details=%s,numberoffloors=%s,
+                        taluka=%s,corporationward=%s,policechowkey=%s,policestation=%s,maintenance_details=%s,numberoffloors=%s,
                         numberofbuildings=%s,approxtotalunits=%s,tenantstudentsallowed=%s,tenantworkingbachelorsallowed=%s,
                         tenantforeignersallowed=%s,otherdetails=%s,duespayablemonth=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
                 cursor.execute(query,(project_info["builderid"],project_info["projectname"],project_info["addressline1"],
@@ -3212,7 +3245,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                                         project_info["state"],project_info["country"],project_info["zip"],project_info["nearestlandmark"],
                                         project_info["project_type"],project_info["mailgroup1"],project_info["mailgroup2"],project_info["website"],
                                         project_info["project_legal_status"],project_info["rules"],project_info["completionyear"],
-                                        project_info["jurisdiction"],project_info["taluka"],project_info["corporationward"],project_info["policechowkey"],
+                                        project_info["jurisdiction"],project_info["taluka"],project_info["corporationward"],project_info['policestation'],project_info["policechowkey"],
                                         project_info["maintenance_details"],project_info["numberoffloors"],project_info["numberofbuildings"],
                                         project_info["approxtotalunits"],project_info["tenantstudentsallowed"],project_info["tenantworkingbachelorsallowed"],
                                         project_info["tenantforeignersallowed"],project_info["otherdetails"],project_info["duespayablemonth"]
@@ -3223,10 +3256,12 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                 project_amenities = payload['project_amenities']
                 query = '''UPDATE project_amenities SET swimmingpool=%s,lift=%s,liftbatterybackup=%s,
                         clubhouse=%s,gym=%s,childrensplayarea=%s,pipedgas=%s,cctvcameras=%s,otheramenities=%s,
-                        studio=%s,"1BHK"=%s,"2BHK"=%s,"3BHK"=%s,rowhouse=%s,otheraccomodationtypes=%s,sourceofwater=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
+                        studio=%s,"1BHK"=%s,"2BHK"=%s,"3BHK"=%s,"4BHK"=%s,"RK"=%s,other=%s,duplex=%s,penthouse=%s,
+                        rowhouse=%s,otheraccomodationtypes=%s,sourceofwater=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
                 cursor.execute(query,(project_amenities["swimmingpool"],project_amenities["lift"],project_amenities["liftbatterybackup"],project_amenities["clubhouse"],
                                         project_amenities["gym"],project_amenities["childrensplayarea"],project_amenities["pipedgas"],project_amenities["cctvcameras"],
                                         project_amenities["otheramenities"],project_amenities["studio"],project_amenities["1BHK"],project_amenities["2BHK"],project_amenities["3BHK"],
+                                        project_amenities["4BHK"],project_amenities["RK"],project_amenities["other"],project_amenities["duplex"],project_amenities["penthouse"],
                                         project_amenities["rowhouse"],project_amenities["otheraccomodationtypes"],project_amenities["sourceofwater"],givenowtime(),
                                         payload['user_id'],False,project_amenities['id']))
                 #===============Project_Bank_Details========
@@ -3234,17 +3269,18 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                     _bank_update = payload['project_bank_details']['update']
                     for bank_update in _bank_update:
                         query = '''UPDATE project_bank_details SET bankname=%s,bankbranch=%s,bankcity=%s,bankaccountholdername=%s,
-                                    bankaccountno=%s,bankifsccode=%s,banktypeofaccount=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
+                                    bankaccountno=%s,bankifsccode=%s,banktypeofaccount=%s,bankmicrcode=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
                         cursor.execute(query,(bank_update["bankname"],bank_update["bankbranch"],bank_update["bankcity"],
                                               bank_update["bankaccountholdername"],bank_update["bankaccountno"],bank_update["bankifsccode"],
-                                              bank_update["banktypeofaccount"],givenowtime(),payload['user_id'],False,bank_update['id']))
+                                              bank_update["banktypeofaccount"],bank_update['bankmicrcode'],givenowtime(),
+                                              payload['user_id'],False,bank_update['id']))
                 if 'insert' in payload['project_bank_details']:
                     _bank_insert = payload['project_bank_details']['insert']
                     for bank_insert in _bank_insert:
                         query = '''INSERT INTO project_bank_details(projectid,bankname,bankbranch,bankcity,bankaccountholdername,bankaccountno,bankifsccode
-                                    ,banktypeofaccount,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
+                                    ,banktypeofaccount,bankmicrcode,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
                         cursor.execute(query,(payload['projectid'],bank_insert["bankname"],bank_insert["bankbranch"],bank_insert["bankcity"],bank_insert["bankaccountholdername"],
-                                              bank_insert["bankaccountno"],bank_insert["bankifsccode"],bank_insert["banktypeofaccount"],
+                                              bank_insert["bankaccountno"],bank_insert["bankifsccode"],bank_insert["banktypeofaccount"],bank_insert["bankmicrcode"],
                                               givenowtime(),payload['user_id'],False))
                 if 'delete' in payload['project_bank_details']:
                     _bank_delete = payload['project_bank_details']['delete']
@@ -3295,6 +3331,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
 
 @app.post('/addCities')
 async def add_cities(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_cities:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3315,6 +3352,7 @@ async def add_cities(payload: dict, conn: psycopg2.extensions.connection = Depen
   
 @app.post('/editCities')
 async def edit_cities(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_cities:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3338,6 +3376,7 @@ async def edit_cities(payload: dict, conn: psycopg2.extensions.connection = Depe
    
 @app.post('/deleteCities')
 async def delete_cities(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_cities:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3367,6 +3406,7 @@ async def get_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
     )
 @app.post('/addOrders')
 async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_orders:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3403,6 +3443,7 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
     
 @app.post('/editOrders')
 async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_orders:received payload <{payload}>")
     try:
         logging.info(f'payload for edit_orders : <{payload}>')
         role_access_status = check_role_access(conn,payload)
@@ -3452,6 +3493,7 @@ async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depe
 
 @app.post('/deleteOrders')
 async def delete_orders(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_orders:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3486,6 +3528,7 @@ async def get_orders_invoice(payload: dict, conn: psycopg2.extensions.connection
 
 @app.post('/addOrdersInvoice')
 async def add_order_invoice(payload: dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_order_invoice:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3507,6 +3550,7 @@ async def add_order_invoice(payload: dict,conn:psycopg2.extensions.connection = 
 
 @app.post('/getServiceAdmin')
 async def get_service_admin(payload: dict, conn :psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_service_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3522,6 +3566,7 @@ async def get_service_admin(payload: dict, conn :psycopg2.extensions.connection 
 
 @app.post('/getClientPropertyAdmin')
 async def get_client_property_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_client_property_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3537,6 +3582,7 @@ async def get_client_property_admin(payload: dict, conn : psycopg2.extensions.co
 
 @app.post('/getOrderStatusAdmin')
 async def get_order_status_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_order_status_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3553,6 +3599,7 @@ async def get_order_status_admin(payload: dict, conn : psycopg2.extensions.conne
 
 @app.post('/getTallyLedgerAdmin')
 async def get_tally_ledger_admin(payload: dict, conn: psycopg2.extensions.connection=Depends(get_db_connection)):
+    logging.info(f"get_tally_ledger_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3569,6 +3616,7 @@ async def get_tally_ledger_admin(payload: dict, conn: psycopg2.extensions.connec
 
 @app.post('/editOrdersInvoice')
 async def edit_order_invoice(payload: dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_order_invoice:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3590,6 +3638,7 @@ async def edit_order_invoice(payload: dict,conn:psycopg2.extensions.connection =
 
 @app.post('/deleteOrdersInvoice')
 async def delete_order_invoice(payload: dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_order_invoice:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3620,6 +3669,7 @@ async def get_order_receipt(payload: dict, conn : psycopg2.extensions.connection
 
 @app.post('/addOrderReceipt')
 async def add_order_receipt(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_order_receipt:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3641,6 +3691,7 @@ async def add_order_receipt(payload: dict, conn: psycopg2.extensions.connection 
 
 @app.post('/editOrdersReceipt')
 async def edit_order_receipt(payload: dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"editOrdersReceipt:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3661,6 +3712,7 @@ async def edit_order_receipt(payload: dict,conn:psycopg2.extensions.connection =
     
 @app.post('/deleteOrdersReceipt')
 async def delete_order_receipt(payload: dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_order_receipt:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3681,6 +3733,7 @@ async def delete_order_receipt(payload: dict,conn:psycopg2.extensions.connection
 
 @app.post('/getOrderById')
 async def get_order_by_id(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_order_by_id:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         data = {}
@@ -3721,6 +3774,7 @@ async def get_order_by_id(payload: dict, conn : psycopg2.extensions.connection =
 
 @app.post('/getOrderStatusHistory')
 async def get_order_status_history(payload: dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_order_status_history:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
@@ -3743,6 +3797,7 @@ async def get_order_status_history(payload: dict,conn:psycopg2.extensions.connec
     
 @app.post('/addOrderStatusChange')
 async def add_order_status_change(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_order_status_change:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3759,6 +3814,7 @@ async def add_order_status_change(payload: dict, conn: psycopg2.extensions.conne
 
 @app.post('/getBuildersAdmin')
 async def get_builders_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_builders_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3781,6 +3837,7 @@ async def get_builders_admin(payload: dict, conn: psycopg2.extensions.connection
 
 @app.post('/getProjectLegalStatusAdmin')
 async def get_project_legal_status_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"getProjectLegalStatusAdmin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3804,6 +3861,7 @@ async def get_project_legal_status_admin(payload: dict, conn: psycopg2.extension
 
 @app.post('/getProjectTypeAdmin')
 async def get_project_type_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"getProjectTypeAdmin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3838,6 +3896,7 @@ async def get_vendors(payload : dict, conn : psycopg2.extensions.connection = De
 
 @app.post('/addVendors')
 async def add_vendors(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_vendors:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3860,6 +3919,7 @@ async def add_vendors(payload : dict, conn : psycopg2.extensions.connection = De
 
 @app.post('/editVendors')
 async def edit_vendors(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_vendors:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3882,6 +3942,7 @@ async def edit_vendors(payload : dict, conn : psycopg2.extensions.connection = D
 
 @app.post('/deleteVendors')
 async def delete_vendors(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_vendors:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
@@ -3890,6 +3951,178 @@ async def delete_vendors(payload : dict, conn : psycopg2.extensions.connection =
                 cursor.execute(query,[payload['id']])
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+
+@app.post('/getVendorInvoice')
+async def get_vendor_invoice(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = "get_vendor_invoice_view"
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'get_vendor_invoice',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True
+    )
+
+@app.post('/addVendorInvoice')
+async def add_vendor_invoice(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_vendor_invoice:received payload <{payload}>")
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO order_vendorestimate (estimatedate,amount,estimatedesc,orderid,vendorid,invoicedate,invoiceamount,notes,vat1,vat2,servicetax,invoicenumber,entityid,officeid,dated,createdby,createdon,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
+                cursor.execute(query,[
+                    payload["estimatedate"],payload["amount"],payload["estimatedesc"],payload["orderid"],
+                    payload["vendorid"],payload["invoicedate"],payload["invoiceamount"],payload["notes"],
+                    payload["vat1"],payload["vat2"],payload["servicetax"],payload["invoicenumber"],
+                    payload["entityid"],payload["officeid"],givenowtime(),payload['user_id'],datetime.date.today(),False
+                ])
+                id = cursor.fetchone()[0]
+                conn[0].commit()
+            return giveSuccess(payload['user_id'],role_access_status,{"Inserted Invoice":id})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+                
+@app.post('/editVendorInvoice')
+async def edit_vendor_invoice(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_vendor_invoice:received payload <{payload}>")
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE order_vendorestimate SET estimatedate=%s,amount=%s,estimatedesc=%s,orderid=%s,vendorid=%s,invoicedate=%s,invoiceamount=%s,notes=%s,vat1=%s,vat2=%s,servicetax=%s,invoicenumber=%s,entityid=%s,officeid=%s,dated=%s,createdby=%s,createdon=%s,isdeleted=%s WHERE id=%s'
+                cursor.execute(query,[
+                    payload["estimatedate"],payload["amount"],payload["estimatedesc"],payload["orderid"],
+                    payload["vendorid"],payload["invoicedate"],payload["invoiceamount"],payload["notes"],
+                    payload["vat1"],payload["vat2"],payload["servicetax"],payload["invoicenumber"],
+                    payload["entityid"],payload["officeid"],givenowtime(),payload['user_id'],datetime.date.today(),False,payload["id"]
+                ])
+                conn[0].commit()
+            return giveSuccess(payload['user_id'],role_access_status,{"Edited Invoice":payload['id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)    
+
+@app.post('/deleteVendorInvoice')
+async def delete_vendor_invoice(payload: dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_vendor_invoice:received payload <{payload}>")
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM order_vendorestimate WHERE id=%s'
+                cursor.execute(query,[payload['id']])
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
+
+@app.post('/getVendorCategoryAdmin')
+async def get_vendor_category_admin(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_vendor_category_admin:received payload <{payload}>")
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT id,name FROM vendor_category' 
+                cursor.execute(query) 
+                data = cursor.fetchall()
+
+                colnames = [desc[0] for desc in cursor.description]
+                res = []
+                for row in data:
+                    row_dict = {col:value for col,value in zip(colnames,row)}
+                    res.append(row_dict)
+                return giveSuccess(payload['user_id'],role_access_status,res)
+
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+
+@app.post("/getVendorPayment")
+async def get_vendor_payment(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'get_vendor_payment_view'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'get_vendor_payment',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True
+    )
+
+@app.post('/addVendorPayment')
+async def add_vendor_payment(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"add_vendor_payment:received payload <{payload}>")
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'INSERT INTO order_payment (paymentby,amount,paymentdate,orderid,vendorid,mode,description,tds,servicetaxamount,entityid,officeid,dated,createdby,isdeleted,createdon) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
+                cursor.execute(query,[
+                    payload["paymentby"],payload["amount"],payload["paymentdate"],payload["orderid"],
+                    payload["vendorid"],payload["mode"],payload["description"],payload["tds"],
+                    payload["servicetaxamount"],payload["entityid"],payload["officeid"],givenowtime(),payload['user_id'],
+                    False,datetime.date.today()
+                ])
+                id = cursor.fetchone()[0]
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted Payment":id})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+    
+@app.post('/editVendorPayment')
+async def edit_vendor_payment(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"edit_vendor_payment:received payload <{payload}>")
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE order_payment SET paymentby=%s,amount=%s,paymentdate=%s,orderid=%s,vendorid=%s,mode=%s,description=%s,tds=%s,servicetaxamount=%s,entityid=%s,officeid=%s,dated=%s,createdby=%s,isdeleted=%s,createdon=%s WHERE id=%s'
+                cursor.execute(query,[
+                    payload["paymentby"],payload["amount"],payload["paymentdate"],payload["orderid"],
+                    payload["vendorid"],payload["mode"],payload["description"],payload["tds"],
+                    payload["servicetaxamount"],payload["entityid"],payload["officeid"],givenowtime(),payload['user_id'],
+                    False,datetime.date.today(),payload['id']
+                ])
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited Payment":payload['id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+    
+@app.post('/deleteVendorPayment')
+async def delete_vendor_payment(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"delete_vendor_payment:received payload <{payload}>")
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'DELETE FROM order_payment WHERE id=%s'
+                cursor.execute(query,[payload['id']])
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Deleted Payment":payload['id']})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
     except Exception as e:
