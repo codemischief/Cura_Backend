@@ -215,7 +215,7 @@ EXECUTE FUNCTION delete_from_get_research_prospect_view();
 
 
 CREATE VIEW get_builder_view AS
-SELECT
+SELECT DISTINCT
     a.id,
     a.buildername,
     a.phone1,
@@ -234,13 +234,12 @@ SELECT
     a.dated,
     a.createdby,
     a.isdeleted
-FROM 
-    builder a,
-    cities b,
-    country c
-WHERE 
-    a.city = b.id AND
-    a.country = c.id;
+FROM
+    builder a
+LEFT JOIN
+    cities b ON a.city = b.id
+LEFT JOIN
+    country c ON a.country = c.id;
 
 CREATE OR REPLACE FUNCTION delete_from_get_builder_view() RETURNS TRIGGER AS $$
 BEGIN
@@ -325,14 +324,13 @@ SELECT DISTINCT
     a.isdeleted,
     a.id
 FROM
-    project a,
-    builder b,
-    project_type c,
-    project_legal_status d
-WHERE
-    a.builderid = b.id AND
-    a.project_type = c.id AND
-    a.project_legal_status = d.id;
+    project a
+LEFT JOIN
+    builder b ON a.builderid = b.id
+LEFT JOIN
+    project_type c ON a.project_type = c.id
+LEFT JOIN
+    project_legal_status d ON a.project_legal_status = d.id;
 
 CREATE OR REPLACE FUNCTION delete_from_get_projects_view() RETURNS TRIGGER AS $$
 BEGIN
@@ -960,3 +958,152 @@ LEFT JOIN
 CREATE SEQUENCE IF NOT EXISTS order_receipt_id_seq OWNED BY order_receipt.id;
 SELECT setval('order_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_receipt;
 ALTER TABLE order_receipt ALTER COLUMN id SET DEFAULT nextval('order_receipt_id_seq');
+
+CREATE VIEW get_vendor_view AS
+SELECT DISTINCT
+    a.id,
+    a.vendorname,
+    a.addressline1,
+    a.addressline2,
+    a.suburb,
+    b.city AS city,
+    a.state,
+    c.name AS country,
+    a.type,
+    a.details,
+    e.name AS category, -- Using table e for vendor_Category
+    a.phone1,
+    a.email,
+    a.ownerinfo,
+    a.panno,
+    a.tanno,
+    a.vattinno,
+    a.gstservicetaxno,
+    a.lbtno,
+    a.tdssection,
+    a.bankname,
+    a.bankbranch,
+    a.bankcity,
+    a.bankacctholdername,
+    a.bankacctno,
+    a.bankifsccode,
+    a.bankaccttype,
+    a.dated,
+    a.createdby,
+    a.isdeleted,
+    a.companydeductee,
+    a.tallyledgerid,
+    d.tallyledger
+FROM vendor a
+LEFT JOIN cities b ON a.city = b.id
+LEFT JOIN country c ON a.country = c.id
+LEFT JOIN tallyledger d ON a.tallyledgerid = d.id
+LEFT JOIN vendor_Category e ON a.category = e.id; -- Joining with vendor_Category table using alias e
+
+CREATE SEQUENCE IF NOT EXISTS vendor_id_seq OWNED BY vendor.id;
+SELECT setval('vendor_id_seq', COALESCE(max(id), 0) + 1, false) FROM vendor;
+ALTER TABLE vendor ALTER COLUMN id SET DEFAULT nextval('vendor_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS order_vendorestimate_id_seq OWNED BY order_vendorestimate.id;
+SELECT setval('order_vendorestimate_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_vendorestimate;
+ALTER TABLE order_vendorestimate ALTER COLUMN id SET DEFAULT nextval('order_vendorestimate_id_seq');
+
+alter table order_vendorestimate alter column invoicedate type date;
+alter table order_vendorestimate alter column estimatedate type date;
+
+CREATE VIEW get_vendor_invoice_view AS
+SELECT DISTINCT
+    a.id,
+    a.estimatedate,
+    a.amount,
+    a.estimatedesc,
+    a.orderid,
+    b.briefdescription,
+    b.clientid,
+    concat_ws(' ',f.firstname,f.lastname) as clientname,
+    a.vendorid,
+    c.vendorname,
+    a.invoicedate,
+    a.invoiceamount,
+    a.dated,
+    a.createdby,
+    concat_ws(' ',g.firstname,g.lastname) as createdbyname,
+    a.isdeleted,
+    a.createdon,
+    a.notes,
+    a.vat1,
+    a.vat2,
+    a.servicetax,
+    a.invoicenumber,
+    a.entityid,
+    d.name as entity,
+    a.officeid,
+    e.name as office
+FROM
+    order_vendorestimate a
+LEFT JOIN
+    orders b ON a.orderid = b.id
+LEFT JOIN
+    vendor c ON a.vendorid = c.id
+LEFT JOIN
+    entity d ON a.entityid = d.id
+LEFT JOIN
+    office e ON a.officeid = e.id
+LEFT JOIN
+    client f ON b.clientid = f.id
+LEFT JOIN
+    usertable g ON a.createdby = g.id;
+
+alter table project_amenities add column "4BHK" bool;
+alter table project_amenities add column other bool;
+alter table project_amenities add column "RK" bool;
+alter table project_amenities add column other bool;
+alter table project_amenities add column duplex bool;
+
+alter table order_payment alter column paymentdate type date;
+
+CREATE VIEW get_vendor_payment_view AS
+SELECT DISTINCT
+    a.id,
+    a.paymentby,
+    concat_ws(' ',b.firstname,b.lastname) as paymentbyname,
+    a.amount,
+    a.paymentdate,
+    a.orderid,
+    c.briefdescription,
+    a.vendorid,
+    d.vendorname,
+    a.mode,
+    e.name as modeofpayment,
+    a.description,
+    a.tds,
+    a.servicetaxamount,
+    a.dated,
+    a.createdby,
+    concat_ws(' ',f.firstname,f.lastname) as createdbyname,
+    a.isdeleted,
+    a.createdon,
+    a.entityid,
+    g.name as entity,
+    a.officeid,
+    h.name as office
+FROM
+    order_payment a
+LEFT JOIN
+    usertable b ON a.paymentby = b.id
+LEFT JOIN
+    orders c ON a.orderid = c.id
+LEFT JOIN
+    vendor d ON a.vendorid = d.id
+LEFT JOIN
+    mode_of_payment e ON a.mode = e.id
+LEFT JOIN
+    usertable f ON a.createdby = f.id
+LEFT JOIN
+    entity g ON a.entityid = g.id
+LEFT JOIN
+    office h ON a.officeid = h.id;
+
+CREATE SEQUENCE IF NOT EXISTS order_payment_id_seq OWNED BY order_payment.id;
+SELECT setval('order_payment_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_payment;
+ALTER TABLE order_payment ALTER COLUMN id SET DEFAULT nextval('order_payment_id_seq');
