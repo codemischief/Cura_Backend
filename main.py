@@ -7,15 +7,18 @@ from pydantic import BaseModel
 import logging
 import traceback
 import datetime
-# import os
+
 # from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
 
 def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: list = None):
     cursor.execute(query,arr)
-    logging.info(f'QUERY IS : <{cursor.mogrify(query,arr)}>')
+    if arr is not None:
+        return f'QUERY IS : <{cursor.mogrify(query,arr).decode("utf-8")}>'
+    else:
+        return f'QUERY IS : <{query}>'
 
-# PostgreSQL database URL
+# PostgreSQL database UR
 #todo : need to source user, password and ip port from variables
 DATABASE_URL = "postgresql://postgres:cura123@20.197.13.140:5432/cura_db"
 
@@ -32,7 +35,7 @@ def ifNotExist(criteria : str,table_name : str,conn: psycopg2.extensions.connect
     try:
         with conn[0].cursor() as cursor:
             query = f"SELECT {criteria} FROM {table_name} WHERE {criteria} = %s"
-            cursor.execute(query,(value,))
+            logMessage(cursor,query,(value,))
             s = len(cursor.fetchall())
             logging.info(s)
         if s!=0:
@@ -46,7 +49,8 @@ def usernames(conn : psycopg2.extensions.connection):
     try:
         with conn.cursor() as cursor:
             query = 'SELECT firstname,lastname,id FROM usertable order by firstname'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
         if data:
             res = {}
@@ -61,7 +65,8 @@ def paymentfor(conn: psycopg2.extensions.connection):
     try:
         with conn.cursor() as cursor:
             query = 'SELECT DISTINCT id,name from payment_for order by name'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
         res = {}
         for i in data:
@@ -77,7 +82,8 @@ def paymentreqstatus(conn: psycopg2.extensions.connection):
     try:
         with conn.cursor() as cursor:
             query = 'SELECT DISTINCT id,status from z_paymentrequeststatus order by status'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
         res = {}
         for i in data:
@@ -94,7 +100,8 @@ def paymentmode(conn: psycopg2.extensions.connection):
     try:
         with conn.cursor() as cursor:
             query = 'SELECT DISTINCT id,name from mode_of_payment order by name'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+
             data = cursor.fetchall()
         res = {}
         for i in data:
@@ -109,7 +116,8 @@ def entity(conn):
     try:
         with conn.cursor() as cursor:
             query = 'SELECT DISTINCT id,name from entity order by name'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
         res = {}
         for i in data:
@@ -125,7 +133,8 @@ def roles(conn):
     try:
         with conn.cursor() as cursor:
             query = 'SELECT DISTINCT id,role_name from roles order by role_name'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
         res = {}
         for i in data:
@@ -395,7 +404,8 @@ def get_countries_from_id(conn: psycopg2.extensions.connection = Depends(get_db_
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT * FROM country'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
             res = {}
             for row in data:
@@ -409,7 +419,8 @@ def get_city_from_id(conn: psycopg2.extensions.connection = Depends(get_db_conne
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT id,city FROM cities'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
             res = {}
             for row in data:
@@ -429,7 +440,8 @@ def get_city_details(conn: psycopg2.extensions.connection = Depends(get_db_conne
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT id,city,state,countryid FROM cities '
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
             res = {}
             for row in data:
@@ -455,12 +467,15 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
         with conn[0].cursor() as cursor:
             query = 'SELECT password,id,roleid FROM usertable where username = %s'
             query2 = "SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = %s)"
-            cursor.execute(query, (payload['username'],))
+
+            msg = logMessage(cursor,query,(payload['username'],))
+            logging.info(msg)
             userdata = cursor.fetchone()
-            cursor.execute(query2, (str(payload['company_key']),))
+            msg = logMessage(cursor,query2, (str(payload['company_key']),))
+            logging.info(msg)
             company_key = cursor.fetchone()
             if userdata is None:
-                return giveFailure("User does not exist")
+                return giveFailure("User does not exist",None,None)
             logger.info(f"{userdata[0]} is password hashed")
             encoded_pw = payload['password'].encode('utf-8')
             logger.info(f"{type(encoded_pw)} is type")
@@ -531,9 +546,11 @@ def check_role_access(conn, payload: dict):
     cursor = conn[0].cursor()
     try:
         if identifier_id:
-            cursor.execute("SELECT roleid FROM usertable WHERE id = %s", (identifier_id,))
+            msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE id = %s", (identifier_id,))
+            logging.info(msg)
         elif identifier_name:
-            cursor.execute("SELECT roleid FROM usertable WHERE username = %s", (identifier_name,))
+            msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE username = %s", (identifier_name,))
+            logging.info(msg)
         else:
             return None
         role_id = cursor.fetchone()
@@ -596,7 +613,7 @@ async def get_role_id(payload: dict, conn: psycopg2.extensions.connection = Depe
 
 @app.post('/getCountries')
 def get_countries(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'get_countries: received payload <{payload}>')
+    logging.info(f'received payload <{payload}>')
     #todo: need to add pagination and filteration arrangement here
     try:
         role_access_status = check_role_access(conn,payload)
@@ -625,12 +642,13 @@ async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depend
         with conn[0].cursor() as cursor:
             role_access_status = check_role_access(conn,payload)
             # if 'country_id' not in payload:
-            #     cursor.execute('select max(id) from country')
+            #     logMessage(cursor,'select max(id) from country')
             #     payload['country_id'] = cursor.fetchone()[0]+1
             if role_access_status == 1 and ifNotExist('name','country',conn,payload['country_name']):
             # Insert new country data into the database
                 query_insert = 'INSERT INTO country (name) VALUES (%s)'
-                logMessage(conn[0].cursor(),query_insert, ( payload['country_name'],))
+                msg = logMessage(cursor,query_insert, ( payload['country_name'],))
+                logging.info(msg)
 
             # Commit the transaction
                 conn[0].commit()
@@ -649,7 +667,8 @@ def checkcountry(payload: str,conn: psycopg2.extensions.connection = Depends(get
     try:
         with conn[0].cursor() as cursor:
             query_find = "SELECT EXISTS (SELECT 1 FROM country WHERE name=%s)"
-            cursor.execute(query_find, (payload,))
+            msg = logMessage(cursor,query_find, (payload,))
+            logging.info(msg)
             ans = cursor.fetchone()[0]
             if ans==1:
                 return True
@@ -670,8 +689,8 @@ async def edit_country(payload: dict, conn: psycopg2.extensions.connection = Dep
             with conn[0].cursor() as cursor:
                 # Update country name in the database
                 query_update = "UPDATE country SET name = %s WHERE name = %s"
-                cursor.execute(query_update, (payload['new_country_name'], payload['old_country_name']))
-
+                msg = logMessage(cursor,query_update, (payload['new_country_name'], payload['old_country_name']))
+                logging.info(msg)
                 # Commit the transaction
                 conn[0].commit()
                 data={
@@ -700,7 +719,8 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
             if role_access_status == 1 and checkcountry(payload['country_name'],conn):
             # Delete country data from the database
                 query_delete = 'DELETE FROM country WHERE name = %s'
-                cursor.execute(query_delete,(payload['country_name'],))
+                msg = logMessage(cursor,query_delete,(payload['country_name'],))
+                logging.info(msg)
             # Commit the transaction
                 conn[0].commit()
                 data = {
@@ -734,7 +754,7 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     ) RETURNING id
                 '''
-                cursor.execute(query, (
+                msg = logMessage(cursor,query, (
                     payload['buildername'],
                     payload['phone1'],
                     payload['phone2'],
@@ -753,6 +773,7 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
                     payload['user_id'],
                     False
                 ))
+                logging.info(msg)
                 id = cursor.fetchone()[0]
                  # Commit the transaction
                 conn[0].commit()
@@ -814,7 +835,8 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
         with conn[0].cursor() as cursor:
             # Check if the builder exists
             query_check_builder = "SELECT EXISTS (SELECT 1 FROM builder WHERE id = %s)"
-            cursor.execute(query_check_builder, (payload['builder_id'],))
+            msg = logMessage(cursor,query_check_builder, (payload['builder_id'],))
+            logging.info(msg)
             builder_exists = cursor.fetchone()[0]
             logging.info(builder_exists)
         if role_access_status == 1 and builder_exists:
@@ -828,7 +850,7 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
                     dated = %s, createdby = %s, isdeleted = %s
                     WHERE id = %s
                 """
-                cursor.execute(query_update, (
+                msg = logMessage(cursor,query_update, (
                     payload['builder_name'],
                     payload['phone_1'],
                     payload['phone_2'],
@@ -847,7 +869,7 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
                     payload['isdeleted'],
                     payload['builder_id']
                 ))
-
+                logging.info(msg)
                 # Commit the transaction
                 conn[0].commit()
 
@@ -871,12 +893,12 @@ async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Dep
         if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT distinct * FROM builder where id=%s'
-                cursor.execute(query,(payload['builder_id'],))
+                logMessage(cursor,query,(payload['builder_id'],))
                 exists = cursor.fetchone()
                 logging.info(exists)
                 if exists:
                     query = 'DELETE FROM builder where id = %s'
-                    cursor.execute(query,(payload['builder_id'],))
+                    logMessage(cursor,query,(payload['builder_id'],))
                     conn[0].commit()
                     data = {
                         "deleted_user":payload['builder_id']
@@ -919,8 +941,9 @@ async def get_states(payload : dict,conn: psycopg2.extensions.connection = Depen
             if role_access_status == 1:
                 with conn[0].cursor() as cursor:
                     query = "SELECT DISTINCT state FROM cities WHERE countryid = %s order by state"
-                    cursor.execute(query,(payload['country_id'],))
+                    msg =logMessage(cursor,query,(payload['country_id'],))
                     #data = [i[0] for i in cursor.fetchall()]
+                    logging.info(msg)
                     data = cursor.fetchall()
 
                 return giveSuccess(payload['user_id'],role_access_status,data)
@@ -943,7 +966,8 @@ async def get_cities(payload : dict, conn: psycopg2.extensions.connection = Depe
         if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = "SELECT distinct id,city FROM cities where state=%s order by city"
-                cursor.execute(query,(payload['state_name'],))
+                msg = logMessage(cursor,query,(payload['state_name'],))
+                logging.info(msg)
                 data = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
                 
@@ -1012,14 +1036,10 @@ async def delete_project(payload:dict,conn : psycopg2.extensions.connection = De
         role_access_status = check_role_access(conn, payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                cursor.execute("""DELETE FROM project WHERE id=%s""",(payload['id'],))
-                
+                msg = logMessage(cursor,"""DELETE FROM project WHERE id=%s""",(payload['id'],))
+                logging.info(msg)
                 # Commit the transaction
                 conn[0].commit()
-                
-                # Get the ID of the last inserted row
-                last_row_id = cursor.lastrowid
-                print("Inserted row ID:", last_row_id)
                 data= {
                         "deleted": payload['id']
                     }
@@ -1053,7 +1073,7 @@ async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.conne
                         zip, notes, dated, createdby, isdeleted
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 '''
-                cursor.execute(query, (
+                msg = logMessage(cursor,query, (
                     payload['builderid'],
                     payload['contactname'],
                     payload['email1'],
@@ -1073,7 +1093,7 @@ async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.conne
                     payload['createdby'],
                     payload['isdeleted']
                 ))
-                
+                logging.info(msg)
                 # Commit changes to the database
                 conn[0].commit()
             data= {
@@ -1121,7 +1141,8 @@ async def add_localities(payload: dict, conn : psycopg2.extensions.connection = 
             payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO locality (locality,cityid) VALUES (%s,%s)'
-                cursor.execute(query,(payload['locality'],payload['cityid']))
+                msg = logMessage(cursor,query,(payload['locality'],payload['cityid']))
+                logging.info(msg)
                 conn[0].commit()
             data = {
                 "Inserted Locality" : payload['locality']
@@ -1144,7 +1165,8 @@ async def edit_localities(payload: dict, conn : psycopg2.extensions.connection =
             payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
                 query = 'UPDATE locality SET locality = %s,cityid = %s WHERE id=%s'
-                cursor.execute(query,(payload['locality'],payload['cityid'],payload['id']))
+                msg =logMessage(cursor,query,(payload['locality'],payload['cityid'],payload['id']))
+                logging.info(msg)
                 conn[0].commit()
             data = {
                 "Updated Locality":payload['locality']
@@ -1163,7 +1185,8 @@ async def delete_localities(payload : dict,conn : psycopg2.extensions.connection
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM locality WHERE id=%s'
-                cursor.execute(query, (payload['id'],))
+                msg =logMessage(cursor,query, (payload['id'],))
+                logging.info(msg)
                 conn[0].commit()
             data = {"Deleted Locality ID":payload['id']}
             return giveSuccess(payload['user_id'],role_access_status,data)
@@ -1208,7 +1231,8 @@ async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
                     'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,vendorid,createdby) '
                     'VALUES (%s,%s,%s,%s,%s,%s,%s)'
                          )
-                cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['createdby']))
+                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['createdby']))
+                logging.info(msg)
                 conn[0].commit()
             data = {
                 "added_data": f"added bank statement for amount <{payload['amount']}>"
@@ -1233,7 +1257,8 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
                 query = ('UPDATE bankst SET modeofpayment=%s,'
                          'date=%s,amount=%s,particulars=%s,'
                          'crdr=%s,vendorid=%s,createdby=%s WHERE id=%s')
-                cursor.execute(query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['createdby'],payload['id']))
+                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['createdby'],payload['id']))
+                logging.info(msg)
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
                 conn[0].commit()
@@ -1255,7 +1280,8 @@ async def delete_bank_statement(payload : dict, conn : psycopg2.extensions.conne
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM bankst WHERE id=%s'
-                cursor.execute(query,(payload['id'],))
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
                 if cursor.statusmessage == "DELETE 0":
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
                 conn[0].commit()
@@ -1313,7 +1339,7 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO employee (employeename,employeeid, userid,roleid, dateofjoining, dob, panno,status, phoneno, email, addressline1, addressline2,suburb, city, state, country, zip,dated, createdby, isdeleted, entityid,lobid, lastdateofworking, designation)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-                cursor.execute(query,(  payload['employeename'],
+                msg = logMessage(cursor,query,(  payload['employeename'],
                                         payload['employeeid'],
                                         payload['userid'],
                                         payload['roleid'],
@@ -1337,6 +1363,7 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
                                         payload['lobid'],
                                         payload['lastdateofworking'],     
                                         payload['designation']))
+                logging.info(msg)
                 conn[0].commit()
             data = {
                 "Inserted Employee" : payload['employeename']
@@ -1359,7 +1386,7 @@ async def edit_employee(payload: dict, conn : psycopg2.extensions.connection = D
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = '''UPDATe employee SET employeename=%s,employeeid=%s, userid=%s,roleid=%s, dateofjoining=%s, dob=%s, panno=%s,status=%s, phoneno=%s, email=%s, addressline1=%s, addressline2=%s,suburb=%s, city=%s, state=%s, country=%s, zip=%s,dated=%s, createdby=%s, isdeleted=%s, entityid=%s,lobid=%s, lastdateofworking=%s, designation=%s WHERE id=%s'''
-                cursor.execute(query,(
+                msg = logMessage(cursor,query,(
                                         payload['employeename'],
                                         payload['employeeid'],
                                         payload['userid'],
@@ -1385,6 +1412,7 @@ async def edit_employee(payload: dict, conn : psycopg2.extensions.connection = D
                                         payload['lastdateofworking'],     
                                         payload['designation'],
                                         payload['id'],))
+                logging.info(msg)
                 conn[0].commit()
             data = {
                 "Updated Employee":payload['employeename']
@@ -1405,7 +1433,8 @@ async def delete_employee(payload: dict, conn : psycopg2.extensions.connection =
         if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM employee WHERE id=%s'
-                cursor.execute(query,(payload['id'],))
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
                 conn[0].commit()
                 if cursor.statusmessage == "DELETE 0":
                     return giveFailure("No record exists",payload['user_id'],role_access_status)        
@@ -1452,7 +1481,8 @@ async def add_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO lob (name) VALUES (%s)'
-                cursor.execute("INSERT INTO lob (name) VALUES (%s)",(payload['name'],))
+                msg = logMessage(cursor,query,(payload['name'],))
+                logging.info(msg)
                 conn[0].commit()
             data = {
                 "added_data":payload['name']
@@ -1475,7 +1505,8 @@ async def edit_lob(payload: dict, conn: psycopg2.extensions.connection = Depends
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'UPDATE lob SET name=%s WHERE name=%s'
-                cursor.execute(query,(payload['new_name'],payload['old_name']))
+                msg = logMessage(cursor,query,(payload['new_name'],payload['old_name']))
+                logging.info(msg)
                 logging.info(f'editLob: cursor status message is <{cursor.statusmessage}>')
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure(f"No lob <{payload['old_name']}> exists. unable to edit",payload['user_id'],role_access_status)
@@ -1498,7 +1529,8 @@ async def delete_lob(payload: dict, conn: psycopg2.extensions.connection = Depen
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM lob WHERE name=%s'
-                cursor.execute(query,(payload['name'],))
+                msg = logMessage(cursor,query,(payload['name'],))
+                logging.info(msg)
                 if cursor.statusmessage == "DELETE 0":
                     return giveFailure(f"No LOB available with name <{payload['name']}>",payload['user_id'],role_access_status)
                 conn[0].commit()
@@ -1551,7 +1583,8 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO research_prospect (personname,suburb,city,state,country,propertylocation,possibleservices,dated,createdby,isdeleted,phoneno,email1) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-                cursor.execute(query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['phoneno'],payload['email1']))
+                msg =logMessage(cursor,query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['phoneno'],payload['email1']))
+                logging.info(msg)
                 conn[0].commit()
             data = {
                 "added_data":payload['personname']
@@ -1573,7 +1606,8 @@ async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.conne
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                 query = 'UPDATE research_prospect SET personname=%s,suburb=%s,city=%s,state=%s,country=%s,propertylocation=%s,possibleservices=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
-                cursor.execute(query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['id']))
+                msg =logMessage(cursor,query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['id']))
+                logging.info(msg)
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Prospect available",payload['user_id'],role_access_status)
                 conn[0].commit()
@@ -1595,7 +1629,8 @@ async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.con
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM research_prospect WHERE id=%s'
-                cursor.execute(query,(payload['id'],))
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
                 if cursor.statusmessage == "DELETE 0":
                     return giveFailure("No Prospect available",payload['user_id'],role_access_status)
                 conn[0].commit()
@@ -1655,7 +1690,8 @@ async def add_payment(payload: dict,conn: psycopg2.extensions.connection = Depen
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO ref_contractual_payments (paymentto,paymentby,amount,paidon,paymentmode,description,paymentfor,dated,createdby,entityid,tds,professiontax,month) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'                
-                cursor.execute(query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['description'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['entityid'],payload['tds'],payload['professiontax'],payload['month']))
+                msg = logMessage(cursor,query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['description'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['entityid'],payload['tds'],payload['professiontax'],payload['month']))
+                logging.info(msg)
                 id = cursor.fetchone()
                 conn[0].commit()
                 conn[0].close()
@@ -1678,7 +1714,8 @@ async def edit_payment(payload: dict, conn: psycopg2.extensions.connection = Dep
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'UPDATE ref_contractual_payments SET paymentto=%s,paymentby=%s,amount=%s,paidon=%s,paymentmode=%s,description=%s,paymentfor=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s,officeid=%s,tds=%s,professiontax=%s,month=%s,deduction=%s WHERE id=%s'
-                cursor.execute(query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['description'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction'],payload['id']))
+                msg = logMessage(cursor,query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['description'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['entityid'],payload['officeid'],payload['tds'],payload['professiontax'],payload['month'],payload['deduction'],payload['id']))
+                logging.info(msg)
                 conn[0].commit()
             data = {
                 "edited_data":payload['id']
@@ -1698,7 +1735,8 @@ async def delete_payment(payload: dict, conn: psycopg2.extensions.connection = D
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM ref_contractual_payments WHERE id=%s'
-                cursor.execute(query,(payload['id'],))
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
                 if cursor.statusmessage == "DELETE 0":
                     return giveFailure("No Payment available",payload['user_id'],role_access_status)
                 else:
@@ -1723,7 +1761,8 @@ async def get_vendor_admin(payload: dict, conn : psycopg2.extensions.connection 
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT DISTINCT id,vendorname FROM vendor order by vendorname'
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -1757,7 +1796,7 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                     total_count = data['total_count']
                     data = data['data']
                 else:
-                    cursor.execute(query)
+                    logMessage(cursor,query)
                     res_ = cursor.fetchall()
                     colnames = [desc[0] for desc in cursor.description]
                     data = res_
@@ -1801,7 +1840,8 @@ async def get_client_admin(payload: dict, conn: psycopg2.extensions.connection =
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "select distinct id, concat_ws(' ',firstname,lastname) as client_name from client order by concat_ws(' ',firstname,lastname)"
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
@@ -1818,7 +1858,8 @@ async def get_modes_admin(payload: dict, conn: psycopg2.extensions.connection = 
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "select distinct id, name, entityid from mode_of_payment order by name"
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
@@ -1835,7 +1876,8 @@ async def get_entity_admin(payload: dict, conn: psycopg2.extensions.connection =
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "select distinct id, name from entity order by name"
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
@@ -1852,7 +1894,8 @@ async def get_howreceived_admin(payload: dict, conn: psycopg2.extensions.connect
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "select distinct id, name from howreceived order by name"
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
@@ -1899,7 +1942,8 @@ def clienttype(payload,conn):
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT distinct id,name from client_type'
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
             res = {}
@@ -1969,7 +2013,8 @@ async def get_client_info_by_clientid(payload : dict, conn : psycopg2.extensions
                     localcontact2address, employername, entityid, comments, tenantof, tenantofproperty 
                     from client where id = {payload['id']}
                 '''
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 colnames = [desc[0] for desc in cursor.description]
                 client_info_ = cursor.fetchall()
                 client_info = dict()
@@ -1982,7 +2027,8 @@ async def get_client_info_by_clientid(payload : dict, conn : psycopg2.extensions
                     select id,clientid, onlinemailid, onlinepwd, onlineclue  
                     from client_access where clientid = {payload['id']}
                 '''
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 colnames = [desc[0] for desc in cursor.description]
                 _data = cursor.fetchall()
                 client_access = []
@@ -1997,7 +2043,8 @@ async def get_client_info_by_clientid(payload : dict, conn : psycopg2.extensions
                     bankifsccode, bankmicrcode, bankaccounttype,description
                     from client_bank_info where clientid = {payload['id']}
                 '''
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 colnames = [desc[0] for desc in cursor.description]
                 _data = cursor.fetchall()
                 client_bankinfo = []
@@ -2011,7 +2058,8 @@ async def get_client_info_by_clientid(payload : dict, conn : psycopg2.extensions
                     select distinct id, fulllegalname, panno, addressline1, addressline2, suburb, city, state, country, zip, occupation, birthyear, employername, relation, relationwith
                     from client_legal_info where clientid = {payload['id']}
                 '''
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 colnames = [desc[0] for desc in cursor.description]
                 _data = cursor.fetchall()
                 client_legalinfo = dict()
@@ -2026,7 +2074,8 @@ async def get_client_info_by_clientid(payload : dict, conn : psycopg2.extensions
                     poarelation, poarelationwith, poaeffectivedate, poaenddate, poafor, scancopy 
                     from client_poa where clientid = {payload['id']}
                 '''
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 colnames = [desc[0] for desc in cursor.description]
                 _data = cursor.fetchall()
                 client_poainfo = dict()
@@ -2054,7 +2103,8 @@ async def get_item_by_id(payload: dict, conn: psycopg2.extensions.connection = D
             
             with conn[0].cursor() as cursor:
                 query = f"SELECT * FROM {payload['table_name']} WHERe id =%s LIMIT 1"
-                cursor.execute(query,(payload['item_id'],))
+                msg = logMessage(cursor,query,(payload['item_id'],))
+                logging.info(msg)
                 data = cursor.fetchone()
                 
                 colnames = [desc[0] for desc in cursor.description]
@@ -2083,7 +2133,8 @@ async def get_view_screen_types(payload: dict, conn : psycopg2.extensions.connec
                 query = """SELECT column_name,data_type
                     FROM information_schema.columns
                     WHERE table_name = %s"""
-                cursor.execute(query,(payload['table_name'],))
+                msg = logMessage(cursor,query,(payload['table_name'],))
+                logging.info(msg)
                 columns = cursor.fetchall()
                 column_info_list = [{"column": col[0], "type": col[1]} for col in columns]
             else:
@@ -2094,7 +2145,7 @@ async def get_view_screen_types(payload: dict, conn : psycopg2.extensions.connec
                         WHERE table_name = %s
                         AND column_name = %s
                     """
-                    cursor.execute(query, (payload['table_name'], column_name))
+                    logMessage(cursor,query, (payload['table_name'], column_name))
                     data_type = cursor.fetchone()[0]
                     column_info_list.append({"column": column_name, "type": data_type})
             return giveSuccess(payload['user_id'],role_access_status,column_info_list)
@@ -2196,7 +2247,8 @@ async def get_builders_and_projects_list(payload: dict, conn: psycopg2.extension
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'select distinct a.id as builderid, a.buildername, b.id as projectid, b.projectname from builder a, project b where a.id = b.builderid order by a.buildername asc'
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data_ = cursor.fetchall()
                 data = []
                 for row in data_:
@@ -2226,7 +2278,8 @@ async def add_client_info(payload : dict, conn : psycopg2.extensions.connection 
             global id
             with conn[0].cursor() as cursor:
                 query = "INSERT INTO client (firstname,middlename,lastname,salutation,clienttype,addressline1,addressline2,suburb,city,state,country,zip,homephone,workphone,mobilephone,email1,email2,employername,comments,photo,onlineaccreated,localcontact1name,localcontact1address,localcontact1details,localcontact2name,localcontact2address,localcontact2details,includeinmailinglist,dated,createdby,isdeleted,entityid,tenantof,tenantofproperty) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
-                cursor.execute(query,(client_info["firstname"],client_info["middlename"],client_info["lastname"],client_info["salutation"],client_info["clienttype"],client_info["addressline1"],client_info["addressline2"],client_info["suburb"],client_info["city"],client_info["state"],client_info["country"],client_info["zip"],client_info["homephone"],client_info["workphone"],client_info["mobilephone"],client_info["email1"],client_info["email2"],client_info["employername"],client_info["comments"],client_info["photo"],client_info["onlineaccreated"],client_info["localcontact1name"],client_info["localcontact1address"],client_info["localcontact1details"],client_info["localcontact2name"],client_info["localcontact2address"],client_info["localcontact2details"],client_info["includeinmailinglist"],givenowtime(),payload['user_id'],False,client_info["entityid"],client_info["tenantof"],client_info["tenantofproperty"]))
+                msg = logMessage(cursor,query,(client_info["firstname"],client_info["middlename"],client_info["lastname"],client_info["salutation"],client_info["clienttype"],client_info["addressline1"],client_info["addressline2"],client_info["suburb"],client_info["city"],client_info["state"],client_info["country"],client_info["zip"],client_info["homephone"],client_info["workphone"],client_info["mobilephone"],client_info["email1"],client_info["email2"],client_info["employername"],client_info["comments"],client_info["photo"],client_info["onlineaccreated"],client_info["localcontact1name"],client_info["localcontact1address"],client_info["localcontact1details"],client_info["localcontact2name"],client_info["localcontact2address"],client_info["localcontact2details"],client_info["includeinmailinglist"],givenowtime(),payload['user_id'],False,client_info["entityid"],client_info["tenantof"],client_info["tenantofproperty"]))
+                logging.info(msg)
                 #--insert query for client_access table--
                 id = cursor.fetchone()[0]
                 conn[0].commit()
@@ -2237,19 +2290,19 @@ async def add_client_info(payload : dict, conn : psycopg2.extensions.connection 
                 for client_access in client_access_list:
                     client_access['clientid'] = id 
                     query = "INSERT INTO client_access (clientid,onlinemailid,onlinepwd,onlineclue,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)"
-                    cursor.execute(query,(client_access['clientid'],client_access["onlinemailid"],client_access["onlinepwd"],client_access["onlineclue"],givenowtime(),payload['user_id'],False))
+                    logMessage(cursor,query,(client_access['clientid'],client_access["onlinemailid"],client_access["onlinepwd"],client_access["onlineclue"],givenowtime(),payload['user_id'],False))
                 for client_bank_info in client_bank_info_list:
                     client_bank_info['clientid'] = id
                     query = "INSERT INTO client_bank_info (clientid,bankname,bankbranch,bankcity,bankaccountno,bankaccountholdername,bankifsccode,bankmicrcode,bankaccounttype,dated,createdby,isdeleted,description) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                    cursor.execute(query,(client_bank_info['clientid'],client_bank_info["bankname"],client_bank_info["bankbranch"],client_bank_info["bankcity"],client_bank_info["bankaccountno"],client_bank_info["bankaccountholdername"],client_bank_info["bankifsccode"],client_bank_info["bankmicrcode"],client_bank_info["bankaccounttype"],givenowtime(),payload['user_id'],False,client_bank_info["description"]))
+                    logMessage(cursor,query,(client_bank_info['clientid'],client_bank_info["bankname"],client_bank_info["bankbranch"],client_bank_info["bankcity"],client_bank_info["bankaccountno"],client_bank_info["bankaccountholdername"],client_bank_info["bankifsccode"],client_bank_info["bankmicrcode"],client_bank_info["bankaccounttype"],givenowtime(),payload['user_id'],False,client_bank_info["description"]))
                 client_legal_info['clientid'] = id
                 query = "INSERT INTO client_legal_info (clientid,fulllegalname,panno,addressline1,addressline2,suburb,city,state,country,zip,occupation,birthyear,employername,relation,relationwith,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                cursor.execute(query,(client_legal_info['clientid'],client_legal_info["fulllegalname"],client_legal_info["panno"],client_legal_info["addressline1"],client_legal_info["addressline2"],client_legal_info["suburb"],client_legal_info["city"],client_legal_info["state"],client_legal_info["country"],client_legal_info["zip"],client_legal_info["occupation"],client_legal_info["birthyear"],client_legal_info["employername"],client_legal_info["relation"],client_legal_info["relationwith"],givenowtime(),payload['user_id'],False))
+                logMessage(cursor,query,(client_legal_info['clientid'],client_legal_info["fulllegalname"],client_legal_info["panno"],client_legal_info["addressline1"],client_legal_info["addressline2"],client_legal_info["suburb"],client_legal_info["city"],client_legal_info["state"],client_legal_info["country"],client_legal_info["zip"],client_legal_info["occupation"],client_legal_info["birthyear"],client_legal_info["employername"],client_legal_info["relation"],client_legal_info["relationwith"],givenowtime(),payload['user_id'],False))
                 client_poa['clientid'] = id
                 query = ("INSERT INTO client_poa (clientid,poalegalname,poapanno,poaaddressline1,poaaddressline2,poasuburb,poacity,"
                          "poastate,poacountry,poazip,poaoccupation,poabirthyear,poaphoto,poaemployername,poarelation,poarelationwith,"
                          "poaeffectivedate,poaenddate,poafor,scancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
-                cursor.execute(query,(client_poa['clientid'],client_poa["poalegalname"],client_poa["poapanno"],client_poa["poaaddressline1"],
+                logMessage(cursor,query,(client_poa['clientid'],client_poa["poalegalname"],client_poa["poapanno"],client_poa["poaaddressline1"],
                                       client_poa["poaaddressline2"],client_poa["poasuburb"],client_poa["poacity"],client_poa["poastate"],
                                       client_poa["poacountry"],client_poa["poazip"],client_poa["poaoccupation"],client_poa["poabirthyear"],
                                       client_poa["poaphoto"],client_poa["poaemployername"],client_poa["poarelation"],client_poa["poarelationwith"],
@@ -2264,7 +2317,8 @@ async def add_client_info(payload : dict, conn : psycopg2.extensions.connection 
         try:
             conn = psycopg2.cursor(DATABASE_URL)
             with conn.cursor() as cursor:
-                cursor.execute("DELETE FROM client WHERE id=%s",(id,))
+                msg = logMessage(cursor,"DELETE FROM client WHERE id=%s",(id,))
+                logging.info(msg)
                 conn.commit()
             
             # conn[0].rollback()
@@ -2276,7 +2330,7 @@ async def add_client_info(payload : dict, conn : psycopg2.extensions.connection 
         # print(traceback.print_exc())
         try:
             with conn[0].cursor() as cursor:
-                cursor.execute("DELETE FROM client WHERE id=%s",(id,))
+                logMessage(cursor,"DELETE FROM client WHERE id=%s",(id,))
                 conn[0].commit()
             
             conn[0].rollback()
@@ -2296,7 +2350,8 @@ async def get_client_type_admin(payload : dict, conn: psycopg2.extensions.connec
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT distinct id,name from client_type order by name'
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
             res = []
@@ -2319,7 +2374,8 @@ async def get_relation_admin(payload: dict, conn: psycopg2.extensions.connection
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT distinct id,name from relation order by name'
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
             res = []
@@ -2342,7 +2398,8 @@ async def get_tenant_of_property_admin(payload: dict, conn: psycopg2.extensions.
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT distinct id,propertydescription,suburb from client_property order by suburb'
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
             res = []
@@ -2367,18 +2424,19 @@ async def delete_client_info(payload: dict, conn: psycopg2.extensions.connection
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM client WHERE id=%s'
-                cursor.execute(query,(payload['id'],))
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
                 if cursor.statusmessage == "DELETE 0":
                     return giveFailure("No CLient available",payload['user_id'],role_access_status)
 
                 query = "DELETE FROM client_access WHERE clientid = %s"
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 query = "DELETE FROM client_bank_info WHERE clientid = %s"
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 query = "DELETE FROM client_legal_info WHERE clientid = %s"
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 query = "DELETE FROM client_poa WHERE clientid = %s"
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 conn[0].commit()
             data = {
                 "deleted_client":payload['id']
@@ -2404,23 +2462,24 @@ async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depe
             project_photos_list = payload['project_photos']
             with conn[0].cursor() as cursor:
                 query = "insert into project(builderid,projectname,addressline1,addressline2,suburb,city,state,country,zip,nearestlandmark,project_type,mailgroup1,mailgroup2,website,project_legal_status,rules,completionyear,jurisdiction,taluka,corporationward,policestation,policechowkey,maintenance_details,numberoffloors,numberofbuildings,approxtotalunits,tenantstudentsallowed,tenantworkingbachelorsallowed,tenantforeignersallowed,otherdetails,duespayablemonth,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id"
-                cursor.execute(query,(project_info["builderid"],project_info["projectname"],project_info["addressline1"],project_info["addressline2"],project_info["suburb"],project_info["city"],project_info["state"],project_info["country"],project_info["zip"],project_info["nearestlandmark"],project_info["project_type"],project_info["mailgroup1"],project_info["mailgroup2"],project_info["website"],project_info["project_legal_status"],project_info["rules"],project_info["completionyear"],project_info["jurisdiction"],project_info["taluka"],project_info["corporationward"],project_info["policestation"],project_info["policechowkey"],project_info["maintenance_details"],project_info["numberoffloors"],project_info["numberofbuildings"],project_info["approxtotalunits"],project_info["tenantstudentsallowed"],project_info["tenantworkingbachelorsallowed"],project_info["tenantforeignersallowed"],project_info["otherdetails"],project_info["duespayablemonth"],givenowtime(),payload['user_id'],False))
+                msg = logMessage(cursor,query,(project_info["builderid"],project_info["projectname"],project_info["addressline1"],project_info["addressline2"],project_info["suburb"],project_info["city"],project_info["state"],project_info["country"],project_info["zip"],project_info["nearestlandmark"],project_info["project_type"],project_info["mailgroup1"],project_info["mailgroup2"],project_info["website"],project_info["project_legal_status"],project_info["rules"],project_info["completionyear"],project_info["jurisdiction"],project_info["taluka"],project_info["corporationward"],project_info["policestation"],project_info["policechowkey"],project_info["maintenance_details"],project_info["numberoffloors"],project_info["numberofbuildings"],project_info["approxtotalunits"],project_info["tenantstudentsallowed"],project_info["tenantworkingbachelorsallowed"],project_info["tenantforeignersallowed"],project_info["otherdetails"],project_info["duespayablemonth"],givenowtime(),payload['user_id'],False))
+                logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
                 query = 'insert into project_amenities(projectid,swimmingpool,lift,liftbatterybackup,clubhouse,gym,childrensplayarea,pipedgas,cctvcameras,otheramenities,studio,"1BHK","2BHK","3BHK","4BHK","RK",other,duplex,penthouse,rowhouse,otheraccomodationtypes,sourceofwater,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) returning id'
-                cursor.execute(query,(id,project_amenities["swimmingpool"],project_amenities["lift"],project_amenities["liftbatterybackup"],project_amenities["clubhouse"],project_amenities["gym"],project_amenities["childrensplayarea"],project_amenities["pipedgas"],project_amenities["cctvcameras"],project_amenities["otheramenities"],project_amenities["studio"],project_amenities["1BHK"],project_amenities["2BHK"],project_amenities["3BHK"],project_amenities["4BHK"],project_amenities["RK"],project_amenities["other"],project_amenities["duplex"],project_amenities["penthouse"],project_amenities["rowhouse"],project_amenities["otheraccomodationtypes"],project_amenities["sourceofwater"],givenowtime(),payload['user_id'],False))
+                logMessage(cursor,query,(id,project_amenities["swimmingpool"],project_amenities["lift"],project_amenities["liftbatterybackup"],project_amenities["clubhouse"],project_amenities["gym"],project_amenities["childrensplayarea"],project_amenities["pipedgas"],project_amenities["cctvcameras"],project_amenities["otheramenities"],project_amenities["studio"],project_amenities["1BHK"],project_amenities["2BHK"],project_amenities["3BHK"],project_amenities["4BHK"],project_amenities["RK"],project_amenities["other"],project_amenities["duplex"],project_amenities["penthouse"],project_amenities["rowhouse"],project_amenities["otheraccomodationtypes"],project_amenities["sourceofwater"],givenowtime(),payload['user_id'],False))
                 data = {
                     "added project id":id
                 }
                 for bank_details in bank_details_list:
                     query = 'insert into project_bank_details(projectid,bankname,bankbranch,bankcity,bankaccountholdername,bankaccountno,bankifsccode,banktypeofaccount,bankmicrcode,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-                    cursor.execute(query,(id,bank_details["bankname"],bank_details["bankbranch"],bank_details["bankcity"],bank_details["bankaccountholdername"],bank_details["bankaccountno"],bank_details["bankifsccode"],bank_details["banktypeofaccount"],bank_details['bankmicrcode'],givenowtime(),payload['user_id'],False))
+                    logMessage(cursor,query,(id,bank_details["bankname"],bank_details["bankbranch"],bank_details["bankcity"],bank_details["bankaccountholdername"],bank_details["bankaccountno"],bank_details["bankifsccode"],bank_details["banktypeofaccount"],bank_details['bankmicrcode'],givenowtime(),payload['user_id'],False))
                 for project_contacts in project_contacts_list:
                     query = 'insert into project_contacts(projectid,contactname,phone,email,role,effectivedate,tenureenddate,details,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-                    cursor.execute(query,(id,project_contacts["contactname"],project_contacts["phone"],project_contacts["email"],project_contacts["role"],project_contacts["effectivedate"],project_contacts["tenureenddate"],project_contacts["details"],givenowtime(),payload['user_id'],False))
+                    logMessage(cursor,query,(id,project_contacts["contactname"],project_contacts["phone"],project_contacts["email"],project_contacts["role"],project_contacts["effectivedate"],project_contacts["tenureenddate"],project_contacts["details"],givenowtime(),payload['user_id'],False))
                 for project_photos in project_photos_list:
                     query = 'insert into project_photos(projectid,photo_link,description,date_taken,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s)'
-                    cursor.execute(query,(id,project_photos["photo_link"],project_photos["description"],project_photos["date_taken"],givenowtime(),payload['user_id'],False))
+                    logMessage(cursor,query,(id,project_photos["photo_link"],project_photos["description"],project_photos["date_taken"],givenowtime(),payload['user_id'],False))
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
@@ -2432,7 +2491,8 @@ async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depe
             query = 'delete from client where id=%s'
             con = psycopg2.connect(DATABASE_URL)
             with con.cursor() as cursor:
-                cursor.execute(query,(id,))
+                msg = logMessage(cursor,query,(id,))
+                logging.info(msg)
             print(traceback.print_exc())
             return giveFailure("Invalid Credentials",payload['user_id'],0)
         except Exception as e:
@@ -2452,16 +2512,17 @@ async def add_client_property(payload: dict, conn: psycopg2.extensions.connectio
                 client_property_poa = payload['client_property_poa']
                 client_property_owner = payload['client_property_owner']
                 query = "INSERT INTO client_property (clientid,projectid,propertydescription,propertytype,suburb,city,state,country,layoutdetails,numberofparkings,internalfurnitureandfittings,leveloffurnishing,status,initialpossessiondate,poagiven,poaid,electricityconsumernumber,electricitybillingunit,otherelectricitydetails,gasconnectiondetails,propertytaxnumber,clientservicemanager,propertymanager,comments,propertyownedbyclientonly,textforposting,electricitybillingduedate,dated,createdby,isdeleted,indexiicollected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
-                cursor.execute(query,(client_property["clientid"],client_property["projectid"],client_property["propertydescription"],client_property['propertytype'],client_property["suburb"],client_property["city"],client_property["state"],client_property["country"],client_property["layoutdetails"],client_property["numberofparkings"],client_property["internalfurnitureandfittings"],client_property["leveloffurnishing"],client_property["status"],client_property["initialpossessiondate"],client_property["poagiven"],client_property["poaid"],client_property["electricityconsumernumber"],client_property["electricitybillingunit"],client_property["otherelectricitydetails"],client_property["gasconnectiondetails"],client_property["propertytaxnumber"],client_property["clientservicemanager"],client_property["propertymanager"],client_property["comments"],client_property["propertyownedbyclientonly"],client_property["textforposting"],client_property["electricitybillingduedate"],givenowtime(),payload['user_id'],False,client_property['indexiicollected']))
+                msg = logMessage(cursor,query,(client_property["clientid"],client_property["projectid"],client_property["propertydescription"],client_property['propertytype'],client_property["suburb"],client_property["city"],client_property["state"],client_property["country"],client_property["layoutdetails"],client_property["numberofparkings"],client_property["internalfurnitureandfittings"],client_property["leveloffurnishing"],client_property["status"],client_property["initialpossessiondate"],client_property["poagiven"],client_property["poaid"],client_property["electricityconsumernumber"],client_property["electricitybillingunit"],client_property["otherelectricitydetails"],client_property["gasconnectiondetails"],client_property["propertytaxnumber"],client_property["clientservicemanager"],client_property["propertymanager"],client_property["comments"],client_property["propertyownedbyclientonly"],client_property["textforposting"],client_property["electricitybillingduedate"],givenowtime(),payload['user_id'],False,client_property['indexiicollected']))
+                logging.info(msg)
                 prop_id = cursor.fetchone()[0]
                 conn[0].commit()
                 for client_property_photos in client_property_photos_list:
                     query = "INSERT INTO client_property_photos (clientpropertyid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)"
-                    cursor.execute (query,(prop_id,client_property_photos["photolink"],client_property_photos["description"],client_property_photos["phototakenwhen"],givenowtime(),payload['user_id'],False))
+                    logMessage (query,(prop_id,client_property_photos["photolink"],client_property_photos["description"],client_property_photos["phototakenwhen"],givenowtime(),payload['user_id'],False))
                 query = "INSERT INTO client_property_poa (clientpropertyid,poalegalname,poapanno,poaaddressline1,poaaddressline2,poasuburb,poacity,poastate,poacountry,poazip,poaoccupation,poabirthyear,poaphoto,poaemployername,poarelation,poarelationwith,poaeffectivedate,poaenddate,poafor,scancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                cursor.execute (query,(prop_id,client_property_poa["poalegalname"],client_property_poa["poapanno"],client_property_poa["poaaddressline1"],client_property_poa["poaaddressline2"],client_property_poa["poasuburb"],client_property_poa["poacity"],client_property_poa["poastate"],client_property_poa["poacountry"],client_property_poa["poazip"],client_property_poa["poaoccupation"],client_property_poa["poabirthyear"],client_property_poa["poaphoto"],client_property_poa["poaemployername"],client_property_poa["poarelation"],client_property_poa["poarelationwith"],client_property_poa["poaeffectivedate"],client_property_poa["poaenddate"],client_property_poa["poafor"],client_property_poa["scancopy"],givenowtime(),payload['user_id'],False))
+                logMessage (query,(prop_id,client_property_poa["poalegalname"],client_property_poa["poapanno"],client_property_poa["poaaddressline1"],client_property_poa["poaaddressline2"],client_property_poa["poasuburb"],client_property_poa["poacity"],client_property_poa["poastate"],client_property_poa["poacountry"],client_property_poa["poazip"],client_property_poa["poaoccupation"],client_property_poa["poabirthyear"],client_property_poa["poaphoto"],client_property_poa["poaemployername"],client_property_poa["poarelation"],client_property_poa["poarelationwith"],client_property_poa["poaeffectivedate"],client_property_poa["poaenddate"],client_property_poa["poafor"],client_property_poa["scancopy"],givenowtime(),payload['user_id'],False))
                 query = "INSERT INTO client_property_owner (propertyid,owner1name,owner1panno,owner1aadhaarno,owner1pancollected,owner1aadhaarcollected,owner2name,owner2panno,owner2aadhaarno,owner2pancollected,owner2aadhaarcollected,owner3name,owner3panno,owner3aadhaarno,owner3pancollected,owner3aadhaarcollected,comments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                cursor.execute (query,(prop_id,client_property_owner["owner1name"],client_property_owner["owner1panno"],client_property_owner["owner1aadhaarno"],client_property_owner["owner1pancollected"],client_property_owner["owner1aadhaarcollected"],client_property_owner["owner2name"],client_property_owner["owner2panno"],client_property_owner["owner2aadhaarno"],client_property_owner["owner2pancollected"],client_property_owner["owner2aadhaarcollected"],client_property_owner["owner3name"],client_property_owner["owner3panno"],client_property_owner["owner3aadhaarno"],client_property_owner["owner3pancollected"],client_property_owner["owner3aadhaarcollected"],client_property_owner["comments"],givenowtime(),payload['user_id'],False))
+                logMessage (query,(prop_id,client_property_owner["owner1name"],client_property_owner["owner1panno"],client_property_owner["owner1aadhaarno"],client_property_owner["owner1pancollected"],client_property_owner["owner1aadhaarcollected"],client_property_owner["owner2name"],client_property_owner["owner2panno"],client_property_owner["owner2aadhaarno"],client_property_owner["owner2pancollected"],client_property_owner["owner2aadhaarcollected"],client_property_owner["owner3name"],client_property_owner["owner3panno"],client_property_owner["owner3aadhaarno"],client_property_owner["owner3pancollected"],client_property_owner["owner3aadhaarcollected"],client_property_owner["comments"],givenowtime(),payload['user_id'],False))
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"inserted_property":prop_id})
     except Exception as e:
@@ -2495,7 +2556,7 @@ async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection =
                          'localcontact1name=%s,' 'localcontact1address=%s,' 'localcontact1details=%s,'
                          'localcontact2name=%s,' 'localcontact2address=%s,' 'localcontact2details=%s,' 
                          'includeinmailinglist=%s,' 'entityid=%s,' 'tenantof=%s,' 'tenantofproperty=%s WHERE ID=%s')
-                data = cursor.execute(
+                msg = logMessage(cursor,
                     query,(
                         ci["firstname"],ci["middlename"],ci["lastname"],ci["salutation"],
                         ci["clienttype"],ci["addressline1"],ci["addressline2"],ci["suburb"],ci["city"],ci["state"],
@@ -2504,19 +2565,20 @@ async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection =
                         ci["localcontact1name"],ci["localcontact1address"],ci["localcontact1details"],
                         ci["localcontact2name"],ci["localcontact2address"],ci["localcontact2details"],
                         ci["includeinmailinglist"], ci["entityid"], ci["tenantof"],ci["tenantofproperty"],ci['id']))
+                logging.info(msg)
                 conn[0].commit()
                 logging.info(f'editClientInfo: client_info update status is <{cursor.statusmessage}>')
                 # perform CRUD for client accesses in 'client_access' table
                 if 'client_access' in payload and 'update' in payload['client_access']:
                     for u in payload['client_access']['update']:
                         query = ('UPDATE client_access SET onlinemailid=%s,' 'onlinepwd=%s,' 'onlineclue=%s  WHERE ID=%s and clientid=%s')
-                        data = cursor.execute( query,(u["onlinemailid"], u["onlinepwd"], u["onlineclue"], u["id"], clientid))
+                        data = logMessage(cursor, query,(u["onlinemailid"], u["onlinepwd"], u["onlineclue"], u["id"], clientid))
                         conn[0].commit()
                         logging.info(f'editClientInfo: client_access clientid <{clientid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
                 if 'client_access' in payload and 'insert' in payload['client_access']:
                     for u in payload['client_access']['insert']:
                         query = ('INSERT into client_access (onlinemailid,onlinepwd,onlineclue,clientid) values (%s,%s,%s,%s)')
-                        data = cursor.execute( query,(u["onlinemailid"], u["onlinepwd"], u["onlineclue"], clientid))
+                        data = logMessage(cursor, query,(u["onlinemailid"], u["onlinepwd"], u["onlineclue"], clientid))
                         conn[0].commit()
                         logging.info(f'editClientInfo: client_access clientid <{clientid}> INSERT status is <{cursor.statusmessage}>')
 
@@ -2526,7 +2588,7 @@ async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection =
                         # todo: may need to add "description" when UI starts sending it. It is part of the bank_info section
                         query = ('UPDATE client_bank_info SET bankname=%s,bankaccountholdername=%s,bankaccountno=%s,bankaccounttype=%s,'
                                  'bankbranch=%s,bankcity=%s,bankifsccode=%s, bankmicrcode=%s, description=%s  WHERE ID=%s and clientid=%s')
-                        data = cursor.execute( query,(u['bankname'],
+                        data = logMessage(cursor, query,(u['bankname'],
                             u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
                             u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], u['description'],u["id"], clientid))
                         conn[0].commit()
@@ -2535,7 +2597,7 @@ async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection =
                     for u in payload['client_bank_info']['insert']:
                         query = ('INSERT into client_bank_info (bankname,bankaccountholdername,bankaccountno,bankaccounttype,bankbranch,bankcity,bankifsccode,bankmicrcode,description,clientid) '
                                  'values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)')
-                        data = cursor.execute( query,(u["bankname"],u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
+                        data = logMessage(cursor, query,(u["bankname"],u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
                             u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], u['description'],clientid))
                         conn[0].commit()
                         logging.info(f'editClientInfo: client_bank_info clientid <{clientid}> INSERT status is <{cursor.statusmessage}>')
@@ -2547,7 +2609,7 @@ async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection =
                          'city=%s,' 'state=%s,' 'country=%s,' 'zip=%s,' 'occupation=%s,'
                          'birthyear=%s,' 'employername=%s,' 'relation=%s,' 'relationwith=%s '
                          'WHERE ID=%s and clientid=%s')
-                data = cursor.execute(
+                data = logMessage(cursor,
                     query,(li['fulllegalname'],li['panno'], li['addressline1'], li['addressline2'],
                            li['suburb'], li['city'], li['state'], li['country'], li['zip'], li['occupation'],
                            li['birthyear'], li['employername'], li['relation'], li['relationwith'], li['id'],
@@ -2562,7 +2624,7 @@ async def edit_client_info(payload: dict, conn: psycopg2.extensions.connection =
                          'poaeffectivedate=%s,' 'poaemployername=%s,' 'poaenddate=%s,' 'poafor=%s,' 'poalegalname=%s,'
                          'poaoccupation=%s,' 'poapanno=%s,' 'poaphoto=%s,' 'poarelation=%s, poarelationwith=%s, poastate=%s,'
                          'poasuburb=%s, poazip=%s,scancopy=%s WHERE ID=%s and clientid=%s')
-                data = cursor.execute( query,(pi['poaaddressline1'],pi['poaaddressline2'], pi['poabirthyear'], pi['poacity'], pi['poacountry'],
+                data = logMessage(cursor, query,(pi['poaaddressline1'],pi['poaaddressline2'], pi['poabirthyear'], pi['poacity'], pi['poacountry'],
                            pi['poaeffectivedate'], pi['poaemployername'], pi['poaenddate'], pi['poafor'], pi['poalegalname'],
                            pi['poaoccupation'], pi['poapanno'], pi['poaphoto'], pi['poarelation'], pi['poarelationwith'],
                            pi['poastate'],pi['poasuburb'], pi['poazip'],pi['scancopy'],pi['id'], clientid))
@@ -2581,16 +2643,17 @@ async def delete_client_property(payload: dict, conn: psycopg2.extensions.connec
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM client_property WHERE id=%s'
-                cursor.execute(query,(payload['id'],))
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
                 if cursor.statusmessage == "DELETE 0":
                     return giveFailure("No Property available",payload['user_id'],role_access_status)
 
                 query = "DELETE FROM client_property_poa WHERE clientpropertyid = %s"
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 query = "DELETE FROM client_property_photos WHERE clientpropertyid = %s"
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 query = "DELETE FROM client_property_owner WHERE propertyid = %s"
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 conn[0].commit()
             data = {
                 "deleted_client_property":payload['id']
@@ -2609,7 +2672,8 @@ async def get_property_status_admin(payload: dict, conn: psycopg2.extensions.con
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT DISTINCT id,name from property_status order by id'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
         res = []
         for i in data:
@@ -2629,7 +2693,8 @@ async def get_level_of_furnishing(payload: dict, conn: psycopg2.extensions.conne
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT DISTINCT id,name from level_of_furnishing order by id'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
         res = []
         for i in data:
@@ -2651,7 +2716,8 @@ async def get_property_type(payload: dict, conn: psycopg2.extensions.connection 
     try:
         with conn[0].cursor() as cursor:
             query = 'SELECT DISTINCT id,name from property_type order by id'
-            cursor.execute(query)
+            msg = logMessage(cursor,query)
+            logging.info(msg)
             data = cursor.fetchall()
         res = []
         for i in data:
@@ -2682,13 +2748,14 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
                          'propertydescription=%s,' 'layoutdetails=%s,' 'email=%s,' 'website=%s,' 'initialpossessiondate=%s,'
                          'electricityconsumernumber=%s,' 'otherelectricitydetails=%s,' 'electricitybillingduedate=%s,' 'comments=%s,' 
                          'gasconnectiondetails=%s,' 'indexiicollected=%s,' 'textforposting=%s WHERE ID=%s'))
-                data = cursor.execute(
+                msg = logMessage(cursor,
                     query,(
                         ci["clientid"],ci["propertytype"],ci["leveloffurnishing"],ci["numberofparkings"],
                         ci["state"],ci["city"],ci["suburb"],ci["projectid"],ci["status"],ci["propertydescription"],
                         ci["layoutdetails"],ci["email"],ci["website"],ci["initialpossessiondate"],ci["electricityconsumernumber"],
                         ci["otherelectricitydetails"],ci["electricitybillingduedate"],ci["comments"],ci["gasconnectiondetails"],
                         ci["indexiicollected"],ci["textforposting"],propertyid))
+                logging.info(msg)
                 conn[0].commit()
                 
                 logging.info(f'editClientproperty: client_property_info update status is <{cursor.statusmessage}>')
@@ -2696,13 +2763,13 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
                 if 'client_property_photos' in payload and 'update' in payload['client_property_photos']:
                     for u in payload['client_property_photos']['update']:
                         query = ('UPDATE client_property_photos SET photolink=%s,' 'description=%s,' 'phototakenwhen=%s  WHERE id=%s and clientpropertyid=%s')
-                        data = cursor.execute( query,(u["photolink"], u["description"], u["phototakenwhen"], u["id"], propertyid))
+                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], u["id"], propertyid))
                         conn[0].commit()
                         logging.info(f'editClientProperty: client_property_photos propertyid <{propertyid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
                 if 'client_property_photos' in payload and 'insert' in payload['client_property_photos']:
                     for u in payload['client_property_photos']['insert']:
                         query = ('INSERT into client_property_photos (photolink,description,phototakenwhen,clientpropertyid) values (%s,%s,%s,%s)')
-                        data = cursor.execute( query,(u["photolink"], u["description"], u["phototakenwhen"], propertyid))
+                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], propertyid))
                         conn[0].commit()
                         logging.info(f'editClientProperty: client_property_photos clientid <{propertyid}> INSERT status is <{cursor.statusmessage}>')
 
@@ -2712,7 +2779,7 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
                 #         # todo: may need to add "description" when UI starts sending it. It is part of the bank_info section
                 #         query = ('UPDATE client_bank_info SET bankaccountholdername=%s,bankaccountno=%s,bankaccounttype=%s,'
                 #                  'bankbranch=%s,bankcity=%s,bankifsccode=%s, bankmicrcode=%s  WHERE ID=%s and clientid=%s')
-                #         data = cursor.execute( query,(
+                #         data = logMessage(cursor, query,(
                 #             u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
                 #             u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], u["id"], propertyid))
                 #         conn[0].commit()
@@ -2721,7 +2788,7 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
                 #     for u in payload['client_bank_info']['insert']:
                 #         query = ('INSERT into client_bank_info (bankaccountholdername,bankaccountno,bankaccounttype,bankbranch,bankcity,bankifsccode,bankmicrcode,clientid) '
                 #                  'values (%s,%s,%s,%s,%s,%s,%s,%s)')
-                #         data = cursor.execute( query,(u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
+                #         data = logMessage(cursor, query,(u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
                 #             u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], propertyid))
                 #         conn[0].commit()
                 #         logging.info(f'editClientInfo: client_bank_info clientid <{propertyid}> INSERT status is <{cursor.statusmessage}>')
@@ -2729,7 +2796,7 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
     #             # update client legalinfo in 'client_legal_info' table
                 li = payload['client_property_owner']
                 query = ('UPDATE client_property_owner SET owner1name=%s,owner1panno=%s,owner1aadhaarno=%s,owner1pancollected=%s,owner1aadhaarcollected=%s,owner2name=%s,owner2panno=%s,owner2aadhaarno=%s,owner2pancollected=%s,owner2aadhaarcollected=%s,owner3name=%s,owner3panno=%s,owner3aadhaarno=%s,owner3pancollected=%s,owner3aadhaarcollected=%s,comments=%s WHERE propertyid=%s')
-                data = cursor.execute(
+                data = logMessage(cursor,
                     query,(li["owner1name"],li["owner1panno"],li["owner1aadhaarno"],li["owner1pancollected"],li["owner1aadhaarcollected"],li["owner2name"],li["owner2panno"],li["owner2aadhaarno"],li["owner2pancollected"],li["owner2aadhaarcollected"],li["owner3name"],li["owner3panno"],li["owner3aadhaarno"],li["owner3pancollected"],li["owner3aadhaarcollected"],li["comments"],
                            propertyid))
                 conn[0].commit()
@@ -2742,7 +2809,7 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
                          'poaeffectivedate=%s,' 'poaemployername=%s,' 'poaenddate=%s,' 'poafor=%s,' 'poalegalname=%s,'
                          'poaoccupation=%s,' 'poapanno=%s,' 'poaphoto=%s,' 'poarelation=%s, poarelationwith=%s, poastate=%s,'
                          'poasuburb=%s, poazip=%s WHERE clientpropertyid=%s')
-                data = cursor.execute( query,(pi['poaaddressline1'],pi['poaaddressline2'], pi['poabirthyear'], pi['poacity'], pi['poacountry'],
+                data = logMessage(cursor, query,(pi['poaaddressline1'],pi['poaaddressline2'], pi['poabirthyear'], pi['poacity'], pi['poacountry'],
                            pi['poaeffectivedate'], pi['poaemployername'], pi['poaenddate'], pi['poafor'], pi['poalegalname'],
                            pi['poaoccupation'], pi['poapanno'], pi['poaphoto'], pi['poarelation'], pi['poarelationwith'],
                            pi['poastate'],pi['poasuburb'], pi['poazip'], propertyid))
@@ -2774,7 +2841,8 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
                     textforposting,poagiven,poaid,electricitybillingunit,indexiicollected
                     from client_property where id = {payload['id']}
                 '''
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 colnames = [desc[0] for desc in cursor.description]
                 property_info_ = cursor.fetchall()
                 property_info = dict()
@@ -2789,7 +2857,7 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
                     select photolink,description,phototakenwhen  
                     from client_property_photos where clientpropertyid = {payload['id']}
                 '''
-                cursor.execute(query)
+                logMessage(cursor,query)
                 colnames = [desc[0] for desc in cursor.description]
                 _data = cursor.fetchall()
                 property_photos = []
@@ -2805,7 +2873,7 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
                     select distinct propertyid,owner1name,owner1panno,owner1aadhaarno,owner1pancollected,owner1aadhaarcollected,owner2name,owner2panno,owner2aadhaarno,owner2pancollected,owner2aadhaarcollected,owner3name,owner3panno,owner3aadhaarno,owner3pancollected,owner3aadhaarcollected,comments from client_property_owner 
                     where propertyid = {payload['id']}
                 '''
-                cursor.execute(query)
+                logMessage(cursor,query)
                 colnames = [desc[0] for desc in cursor.description]
                 _data = cursor.fetchall()
                 property_owner = dict()
@@ -2822,7 +2890,7 @@ async def get_client_property_by_id(payload: dict, conn: psycopg2.extensions.con
                     poarelation,poarelationwith,poaeffectivedate,poaenddate,poafor,scancopy
                     from client_property_poa where clientpropertyid = {payload['id']}
                 '''
-                cursor.execute(query)
+                logMessage(cursor,query)
                 colnames = [desc[0] for desc in cursor.description]
                 _data = cursor.fetchall()
                 logging.info(f'The data is <{_data}>')
@@ -2862,7 +2930,7 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "INSERT INTO client_receipt(receivedby,amount,tds,paymentmode,recddate,clientid,receiptdesc,serviceamount,reimbursementamount,entityid,howreceivedid,officeid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload["receivedby"],
                     payload["amount"],
                     payload["tds"],
@@ -2879,6 +2947,7 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
                     payload["user_id"],
                     False
                 ])
+                logging.info(msg)
                 data = cursor.fetchone()[0]
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted_Receipt":data})
@@ -2896,7 +2965,7 @@ async def edit_client_receipt(payload: dict, conn : psycopg2.extensions.connecti
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "UPDATE client_receipt SET receivedby = %s, amount = %s, tds = %s, paymentmode = %s,recddate=%s ,clientid = %s,receiptdesc = %s, serviceamount=%s, reimbursementamount = %s, entityid = %s, howreceivedid = %s,officeid = %s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s"
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload["receivedby"],
                     payload["amount"],
                     payload["tds"],
@@ -2914,6 +2983,7 @@ async def edit_client_receipt(payload: dict, conn : psycopg2.extensions.connecti
                     False,
                     payload["id"]
                 ])
+                logging.info(msg)
                 conn[0].commit()
                 if cursor.statusmessage!="UPDATE 0":
                     return giveSuccess(payload['user_id'],role_access_status,{"Edited_Receipt":payload['id']})
@@ -2933,7 +3003,8 @@ async def delete_client_receipt(payload: dict, conn: psycopg2.extensions.connect
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "DELETE FROM client_receipt WHERE id=%s"
-                cursor.execute(query,(payload['id'],))
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
                 conn[0].commit()
             if cursor.statusmessage !="DELETE 0":
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted_Receipt":payload['id']})
@@ -2965,12 +3036,13 @@ async def add_client_pma_agreement(payload: dict, conn: psycopg2.extensions.conn
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "INSERT INTO client_property_caretaking_Agreement (clientpropertyid,startdate,enddate,actualenddate,active,scancopy,reasonforearlyterminationifapplicable,description,rented,fixed,rentedtax,fixedtax,orderid,poastartdate,poaenddate,poaholder,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload["clientpropertyid"],payload["startdate"],payload["enddate"],payload["actualenddate"],payload["active"],
                     payload["scancopy"],payload["reasonforearlyterminationifapplicable"],payload["description"],payload["rented"],
                     payload["fixed"],payload["rentedtax"],payload["fixedtax"],payload["orderid"],payload["poastartdate"],payload["poaenddate"],
                     payload["poaholder"],givenowtime(),payload["user_id"],False
                 ])
+                logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted_PMA":id})
@@ -2988,12 +3060,13 @@ async def edit_client_pma_agreement(payload: dict, conn: psycopg2.extensions.con
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "UPDATE client_property_caretaking_agreement SET clientpropertyid=%s,startdate=%s,enddate=%s,actualenddate=%s,active=%s,scancopy=%s,reasonforearlyterminationifapplicable=%s,description=%s,rented=%s,fixed=%s,rentedtax=%s,fixedtax=%s,orderid=%s,poastartdate=%s,poaenddate=%s,poaholder=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s"
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload["clientpropertyid"],payload["startdate"],payload["enddate"],payload["actualenddate"],payload["active"],
                     payload["scancopy"],payload["reasonforearlyterminationifapplicable"],payload["description"],payload["rented"],
                     payload["fixed"],payload["rentedtax"],payload["fixedtax"],payload["orderid"],payload["poastartdate"],payload["poaenddate"],
                     payload["poaholder"],givenowtime(),payload["user_id"],False,payload['id']
                 ])
+                logging.info(msg)
                 conn[0].commit()
             if cursor.statusmessage !="UPDATE 0":
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited_PMA":payload['id']})
@@ -3013,7 +3086,8 @@ async def delete_client_pma_agreement(payload: dict, conn: psycopg2.extensions.c
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "DELETE FROM client_property_caretaking_agreement WHERE id=%s"
-                cursor.execute(query,(payload['id'],))
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
                 conn[0].commit()
             if cursor.statusmessage !="DELETE 0":
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted_PMA":payload['id']})
@@ -3045,11 +3119,12 @@ async def add_client_ll_agreement(payload: dict, conn: psycopg2.extensions.conne
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "INSERT INTO client_property_leave_license_details (clientpropertyid,orderid,durationinmonth,startdate,actualenddate,depositamount,rentamount,registrationtype,rentpaymentdate,noticeperiodindays,active,llscancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
-                cursor.execute(query,[payload["clientpropertyid"],payload["orderid"],payload["durationinmonth"],payload['startdate'],
+                msg = logMessage(cursor,query,[payload["clientpropertyid"],payload["orderid"],payload["durationinmonth"],payload['startdate'],
                                       payload['actualenddate'],payload['depositamount'],payload["rentamount"],payload["registrationtype"],
                                       payload["rentpaymentdate"],payload["noticeperiodindays"],payload["active"],
                                       payload["llscancopy"],givenowtime(),payload["user_id"],False
                 ])
+                logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted_L&L":id})
@@ -3067,10 +3142,11 @@ async def edit_client_ll_agreement(payload: dict, conn: psycopg2.extensions.conn
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE client_property_leave_license_details SET clientpropertyid=%s,orderid=%s,durationinmonth=%s,startdate=%s,depositamount=%s,actualenddate=%s,rentamount=%s,registrationtype=%s,rentpaymentdate=%s,noticeperiodindays=%s,active=%s,llscancopy=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
-                cursor.execute(query,[payload["clientpropertyid"],payload["orderid"],payload["durationinmonth"],payload["startdate"],payload['depositamount'],
+                msg = logMessage(cursor,query,[payload["clientpropertyid"],payload["orderid"],payload["durationinmonth"],payload["startdate"],payload['depositamount'],
                                       payload["actualenddate"],payload["rentamount"],payload["registrationtype"],payload["rentpaymentdate"],
                                       payload["noticeperiodindays"],payload["active"],payload["llscancopy"],givenowtime(),payload['user_id']
                                       ,False,payload['id']])
+                logging.info(msg)
             conn[0].commit()
             if cursor.statusmessage !="UPDATE 0":
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited_LLA":payload['id']})
@@ -3090,7 +3166,8 @@ async def delete_client_pma_agreement(payload: dict, conn: psycopg2.extensions.c
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "DELETE FROM client_property_leave_license_details WHERE id=%s"
-                cursor.execute(query,(payload['id'],))
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
                 conn[0].commit()
             if cursor.statusmessage !="DELETE 0":
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted_L&L":payload['id']})
@@ -3110,7 +3187,8 @@ async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.con
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "SELECT DISTINCT a.id,concat_ws('-',a.project,b.propertydescription,a.suburb) as propertyname from get_client_property_view a LEFT JOIN client_property b ON a.projectid=b.id WHERE a.clientid=%s"
-                cursor.execute(query,(payload['client_id'],))
+                msg = logMessage(cursor,query,(payload['client_id'],))
+                logging.info(msg)
                 data = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
             res = []
@@ -3132,7 +3210,8 @@ async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.con
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "SELECT DISTINCT a.id,concat_ws('-',concat_ws(' ',b.firstname,b.lastname),briefdescription) as ordername from orders a LEFT JOIN usertable b ON a.owner=b.id WHERE clientid = %s"
-                cursor.execute(query,(payload['client_id'],))
+                msg = logMessage(cursor,query,(payload['client_id'],))
+                logging.info(msg)
                 data = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
             res = []
@@ -3156,7 +3235,8 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
 
                 #===============Project_info=====================
                 query = 'SELECT * FROM project where id=%s'
-                cursor.execute(query,(payload['id'],))
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
                 _data = cursor.fetchall()
                 colnames = [desc[0] for desc in cursor.description]
 
@@ -3167,7 +3247,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                 
                 #======================Project_details============
                 query = 'SELECT * FROM project_amenities where projectid = %s'
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 _data = cursor.fetchall()
                 colnames = [desc[0] for desc in cursor.description]
 
@@ -3178,7 +3258,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
 
                 #================Project_Bank_details=============
                 query = 'SELECT * FROM project_bank_details where projectid=%s'
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 _data = cursor.fetchall()
                 colnames = [desc[0] for desc in cursor.description]
 
@@ -3189,7 +3269,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                 
                 #==============Project_Contacts===================
                 query = 'SELECT * FROM project_contacts where projectid=%s'
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 _data = cursor.fetchall()
                 colnames = [desc[0] for desc in cursor.description]
 
@@ -3200,7 +3280,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
 
                 #=============Project_Photos======================
                 query = 'SELECT * FROM project_photos where projectid=%s'
-                cursor.execute(query,(payload['id'],))
+                logMessage(cursor,query,(payload['id'],))
                 _data = cursor.fetchall()
                 colnames = [desc[0] for desc in cursor.description]
 
@@ -3240,7 +3320,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                         taluka=%s,corporationward=%s,policechowkey=%s,policestation=%s,maintenance_details=%s,numberoffloors=%s,
                         numberofbuildings=%s,approxtotalunits=%s,tenantstudentsallowed=%s,tenantworkingbachelorsallowed=%s,
                         tenantforeignersallowed=%s,otherdetails=%s,duespayablemonth=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
-                cursor.execute(query,(project_info["builderid"],project_info["projectname"],project_info["addressline1"],
+                msg = logMessage(cursor,query,(project_info["builderid"],project_info["projectname"],project_info["addressline1"],
                                         project_info["addressline2"],project_info["suburb"],project_info["city"],
                                         project_info["state"],project_info["country"],project_info["zip"],project_info["nearestlandmark"],
                                         project_info["project_type"],project_info["mailgroup1"],project_info["mailgroup2"],project_info["website"],
@@ -3250,6 +3330,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                                         project_info["approxtotalunits"],project_info["tenantstudentsallowed"],project_info["tenantworkingbachelorsallowed"],
                                         project_info["tenantforeignersallowed"],project_info["otherdetails"],project_info["duespayablemonth"]
                                         ,givenowtime(),payload['user_id'],False,project_info['id']))
+                logging.info(msg)
                 if cursor.statusmessage == 'UPDATE 0':
                     return giveFailure('No entry with given ID',payload['user_id'],role_access_status)
                 #===============Project_Amenities===========
@@ -3258,7 +3339,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                         clubhouse=%s,gym=%s,childrensplayarea=%s,pipedgas=%s,cctvcameras=%s,otheramenities=%s,
                         studio=%s,"1BHK"=%s,"2BHK"=%s,"3BHK"=%s,"4BHK"=%s,"RK"=%s,other=%s,duplex=%s,penthouse=%s,
                         rowhouse=%s,otheraccomodationtypes=%s,sourceofwater=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
-                cursor.execute(query,(project_amenities["swimmingpool"],project_amenities["lift"],project_amenities["liftbatterybackup"],project_amenities["clubhouse"],
+                logMessage(cursor,query,(project_amenities["swimmingpool"],project_amenities["lift"],project_amenities["liftbatterybackup"],project_amenities["clubhouse"],
                                         project_amenities["gym"],project_amenities["childrensplayarea"],project_amenities["pipedgas"],project_amenities["cctvcameras"],
                                         project_amenities["otheramenities"],project_amenities["studio"],project_amenities["1BHK"],project_amenities["2BHK"],project_amenities["3BHK"],
                                         project_amenities["4BHK"],project_amenities["RK"],project_amenities["other"],project_amenities["duplex"],project_amenities["penthouse"],
@@ -3270,7 +3351,7 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                     for bank_update in _bank_update:
                         query = '''UPDATE project_bank_details SET bankname=%s,bankbranch=%s,bankcity=%s,bankaccountholdername=%s,
                                     bankaccountno=%s,bankifsccode=%s,banktypeofaccount=%s,bankmicrcode=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
-                        cursor.execute(query,(bank_update["bankname"],bank_update["bankbranch"],bank_update["bankcity"],
+                        logMessage(cursor,query,(bank_update["bankname"],bank_update["bankbranch"],bank_update["bankcity"],
                                               bank_update["bankaccountholdername"],bank_update["bankaccountno"],bank_update["bankifsccode"],
                                               bank_update["banktypeofaccount"],bank_update['bankmicrcode'],givenowtime(),
                                               payload['user_id'],False,bank_update['id']))
@@ -3279,48 +3360,48 @@ async def edit_project(payload: dict, conn: psycopg2.extensions.connection = Dep
                     for bank_insert in _bank_insert:
                         query = '''INSERT INTO project_bank_details(projectid,bankname,bankbranch,bankcity,bankaccountholdername,bankaccountno,bankifsccode
                                     ,banktypeofaccount,bankmicrcode,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
-                        cursor.execute(query,(payload['projectid'],bank_insert["bankname"],bank_insert["bankbranch"],bank_insert["bankcity"],bank_insert["bankaccountholdername"],
+                        logMessage(cursor,query,(payload['projectid'],bank_insert["bankname"],bank_insert["bankbranch"],bank_insert["bankcity"],bank_insert["bankaccountholdername"],
                                               bank_insert["bankaccountno"],bank_insert["bankifsccode"],bank_insert["banktypeofaccount"],bank_insert["bankmicrcode"],
                                               givenowtime(),payload['user_id'],False))
                 if 'delete' in payload['project_bank_details']:
                     _bank_delete = payload['project_bank_details']['delete']
                     for bank_delete in _bank_delete:
                         query = '''DELETE FROM project_bank_details where id=%s'''
-                        cursor.execute(query,(bank_delete['id'],))
+                        logMessage(cursor,query,(bank_delete['id'],))
                 #===============Project_Photos===============
                 if 'update' in payload['project_photos']:
                     _photo_update = payload['project_photos']['update']
                     for photo_update in _photo_update:
                         query = '''UPDATE project_photos SET photo_link=%s,description=%s,date_taken=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
-                        cursor.execute(query,(photo_update["photo_link"],photo_update["description"],photo_update["date_taken"],givenowtime(),payload['user_id'],False,photo_update['id']))
+                        logMessage(cursor,query,(photo_update["photo_link"],photo_update["description"],photo_update["date_taken"],givenowtime(),payload['user_id'],False,photo_update['id']))
                 if 'insert' in payload['project_photos']:
                     _photo_insert = payload['project_photos']['insert']
                     for photo_insert in _photo_insert:
                         query = '''INSERT INTO project_photos(projectid,photo_link,description,date_taken,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'''
-                        cursor.execute(query,(payload['projectid'],photo_insert["photo_link"],photo_insert["description"],photo_insert["date_taken"],
+                        logMessage(cursor,query,(payload['projectid'],photo_insert["photo_link"],photo_insert["description"],photo_insert["date_taken"],
                                               givenowtime(),payload['user_id'],False))
                 if 'delete' in payload['project_photos']:
                     _photo_delete = payload['project_photos']['delete']
                     for photo_delete in _photo_delete:
                         query = '''DELETE FROM project_photos where id=%s'''
-                        cursor.execute(query,(photo_delete['id'],))
+                        logMessage(cursor,query,(photo_delete['id'],))
                 #============Project_Contacts==================
                 if 'update' in payload['project_contacts']:
                     _contact_update = payload['project_contacts']['update']
                     for contact_update in _contact_update:
                         query = '''UPDATE project_contacts SET contactname=%s,phone=%s,email=%s,role=%s,effectivedate=%s,tenureenddate=%s,details=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
-                        cursor.execute(query,(contact_update["contactname"],contact_update["phone"],contact_update["email"],contact_update["role"],contact_update["effectivedate"],contact_update["tenureenddate"],contact_update["details"],givenowtime(),payload['user_id'],False,contact_update['id']))
+                        logMessage(cursor,query,(contact_update["contactname"],contact_update["phone"],contact_update["email"],contact_update["role"],contact_update["effectivedate"],contact_update["tenureenddate"],contact_update["details"],givenowtime(),payload['user_id'],False,contact_update['id']))
                 if 'insert' in payload['project_contacts']:
                     _contact_insert = payload['project_contacts']['insert']
                     for contact_insert in _contact_insert:
                         query = '''INSERT INTO project_contacts(projectid,contactname,phone,email,role,effectivedate,tenureenddate,details,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'''
-                        cursor.execute(query,(payload['projectid'],contact_insert["contactname"],contact_insert["phone"],contact_insert["email"],contact_insert["role"],contact_insert["effectivedate"],contact_insert["tenureenddate"],contact_insert["details"],
+                        logMessage(cursor,query,(payload['projectid'],contact_insert["contactname"],contact_insert["phone"],contact_insert["email"],contact_insert["role"],contact_insert["effectivedate"],contact_insert["tenureenddate"],contact_insert["details"],
                                               givenowtime(),payload['user_id'],False))
                 if 'delete' in payload['project_contacts']:
                     _contact_delete = payload['project_contacts']['delete']
                     for contact_delete in _contact_delete:
                         query = '''DELETE FROM project_contacts where id=%s'''
-                        cursor.execute(query,(contact_delete['id'],))
+                        logMessage(cursor,query,(contact_delete['id'],))
                 conn[0].commit() 
                 return giveSuccess(payload['user_id'],role_access_status,{"edited project":payload['projectid']})
         else:
@@ -3337,11 +3418,12 @@ async def add_cities(payload: dict, conn: psycopg2.extensions.connection = Depen
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO cities (city,state,countryid) VALUES (%s,%s,%s)'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload['city'],
                     payload['state'],
                     payload['countryid']
                 ])
+                logging.info(msg)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"inserted_city":payload['city']})
         else:
@@ -3358,12 +3440,13 @@ async def edit_cities(payload: dict, conn: psycopg2.extensions.connection = Depe
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE cities SET city=%s,state=%s,countryid=%s WHERE id=%s'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload['city'],
                     payload['state'],
                     payload['countryid'],
                     payload['id']
                 ])
+                logging.info(msg)
                 conn[0].commit()
                 if cursor.statusmessage == 'UPDATE 0':
                     return giveFailure('Does not exist',payload['user_id'],role_access_status)
@@ -3382,9 +3465,10 @@ async def delete_cities(payload: dict, conn: psycopg2.extensions.connection = De
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM cities WHERE id=%s'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload['id']
                 ])
+                logging.info(msg)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"deleted_city":payload['id']})
         else:
@@ -3419,11 +3503,12 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
                          'clientid,orderdate,earlieststartdate,expectedcompletiondate,actualcompletiondate,'
                          'vendorid,tallyledgerid,briefdescription,comments,additionalcomments,dated,createdby,isdeleted) '
                          'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id')
-                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],
+                msg = logMessage(cursor,query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],
                                       order_info['clientpropertyid'],order_info['service'],order_info['clientid'],
                                       order_info['orderdate'],order_info['earlieststartdate'],order_info['expectedcompletiondate'],
                                       order_info['actualcompletiondate'],order_info['vendorid'],order_info['tallyledgerid'],
                                       order_info['briefdescription'],order_info['comments'],order_info['additionalcomments'],givenowtime(),payload['user_id'],False))
+                logging.info(msg)
                 data = cursor.fetchone()[0]
                 conn[0].commit()
   
@@ -3431,7 +3516,7 @@ async def add_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
                 for order_photos in _order_photos:
                     query = 'INSERT INTO order_photos (orderid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'
                     logging.info('inserting photos')
-                    cursor.execute(query,(data,order_photos['photolink'],order_photos['description'],order_photos['phototakenwhen'],givenowtime(),payload['user_id'],False))
+                    logMessage(cursor,query,(data,order_photos['photolink'],order_photos['description'],order_photos['phototakenwhen'],givenowtime(),payload['user_id'],False))
                 logging.info(cursor.statusmessage)
                 conn[0].commit()                            
                 return giveSuccess(payload['user_id'],role_access_status,data={"inserted data":data})
@@ -3459,30 +3544,31 @@ async def edit_orders(payload: dict, conn: psycopg2.extensions.connection = Depe
                          'clientpropertyid=%s,service=%s,clientid=%s,orderdate=%s,earlieststartdate=%s,'
                          'expectedcompletiondate=%s,actualcompletiondate=%s,vendorid=%s,' 'tallyledgerid=%s,'
                          'comments=%s,additionalcomments=%s,dated=%s,createdby=%s,isdeleted=%s, briefdescription=%s WHERE id=%s')
-                cursor.execute(query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],
+                msg = logMessage(cursor,query,(order_info['assignedtooffice'],order_info['entityid'],order_info['owner'],order_info['status'],
                                       order_info['clientpropertyid'],order_info['service'],order_info['clientid'],order_info['orderdate'],
                                       order_info['earlieststartdate'],order_info['expectedcompletiondate'],order_info['actualcompletiondate'],
                                       order_info['vendorid'],order_info['tallyledgerid'],order_info['comments'],order_info['additionalcomments'],
                                       givenowtime(),payload['user_id'],False,order_info['briefdescription'],order_info['id']))
                 # data = cursor.fetchone()[0]
+                logging.info(msg)
                 conn[0].commit()
                 #===============Order_Status_Change==================
                 # for order_status_change_update in _order_status_change_update:
                 #     query = 'UPDATE order_status_change SET orderid=%s,statusid=%s,dated=%s WHERE id=%s'
-                #     cursor.execute(query,(order_status_change_update['orderid'],order_status_change_update['statusid'],order_status_change_update['timestamp'],order_status_change_update['id']))
+                #     logMessage(cursor,query,(order_status_change_update['orderid'],order_status_change_update['statusid'],order_status_change_update['timestamp'],order_status_change_update['id']))
                 #     conn[0].commit()       
                 # for order_status_change_insert in _order_status_change_insert:
                 #     query = 'INSERT INTO order_status_change (orderid,statusid,dated) VALUES (%s,%s,%s)'
-                #     cursor.execute(query,(order_status_change_insert['orderid'],order_status_change_insert['statusid'],order_status_change_insert['timestamp']))
+                #     logMessage(cursor,query,(order_status_change_insert['orderid'],order_status_change_insert['statusid'],order_status_change_insert['timestamp']))
                 #     conn[0].commit()      
                 #==============Order_Photos=========================
                 for order_photos_update in _order_photos_update:
                     query = 'UPDATE order_photos SET orderid=%s,photolink=%s,description=%s,phototakenwhen=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
-                    cursor.execute(query,(order_photos_update['orderid'],order_photos_update['photolink'],order_photos_update['description'],order_photos_update['phototakenwhen'],givenowtime(),payload['user_id'],False,order_photos_update['id']))
+                    logMessage(cursor,query,(order_photos_update['orderid'],order_photos_update['photolink'],order_photos_update['description'],order_photos_update['phototakenwhen'],givenowtime(),payload['user_id'],False,order_photos_update['id']))
                     conn[0].commit()       
                 for order_photos_insert in _order_photos_insert:
                     query = 'INSERT INTO order_photos (orderid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'
-                    cursor.execute(query,(order_photos_insert['orderid'],order_photos_insert['photolink'],order_photos_insert['description'],order_photos_insert['phototakenwhen'],givenowtime(),payload['user_id'],False))
+                    logMessage(cursor,query,(order_photos_insert['orderid'],order_photos_insert['photolink'],order_photos_insert['description'],order_photos_insert['phototakenwhen'],givenowtime(),payload['user_id'],False))
                     conn[0].commit() 
                 return giveSuccess(payload['user_id'],role_access_status,data={"edited data":order_info['id']})
         else:
@@ -3499,13 +3585,14 @@ async def delete_orders(payload: dict, conn: psycopg2.extensions.connection = De
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM orders WHERE id=%s'
-                cursor.execute(query,[payload['order_id']])
+                msg = logMessage(cursor,query,[payload['order_id']])
+                logging.info(msg)
                 if cursor.statusmessage == 'DELETE 0':
                     return giveFailure("No record available",payload['user_id'],role_access_status)
                 query = 'DELETE FROM order_status_change WHERE orderid=%s'
-                cursor.execute(query,[payload['order_id']])
+                logMessage(cursor,query,[payload['order_id']])
                 query = 'DELETE FROM order_photos WHERE orderid = %s'
-                cursor.execute(query,[payload['order_id']])
+                logMessage(cursor,query,[payload['order_id']])
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"Deleted Data":payload['order_id']})
         else:
@@ -3534,11 +3621,12 @@ async def add_order_invoice(payload: dict,conn:psycopg2.extensions.connection = 
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO order_invoice (clientid,orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload["clientid"],payload["orderid"],payload["estimatedate"],payload["estimateamount"],
                     payload["invoicedate"],payload["invoiceamount"],payload["quotedescription"],datetime.date.today(),
                     payload["baseamount"],payload["tax"],payload["entity"],givenowtime(),payload['user_id'],False
                 ])
+                logging.info(msg)
                 data = cursor.fetchone()[0]
             conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"inserted data":data})
@@ -3556,7 +3644,8 @@ async def get_service_admin(payload: dict, conn :psycopg2.extensions.connection 
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT id,service FROM services order by service'
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -3572,7 +3661,8 @@ async def get_client_property_admin(payload: dict, conn : psycopg2.extensions.co
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "SELECT id,concat_ws(' ',project,description) as property FROM get_client_property_view order by project"
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -3588,7 +3678,8 @@ async def get_order_status_admin(payload: dict, conn : psycopg2.extensions.conne
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "SELECT id,name FROM order_status order by name"
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -3605,7 +3696,8 @@ async def get_tally_ledger_admin(payload: dict, conn: psycopg2.extensions.connec
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = "SELECT DISTINCT id,tallyledger FROM tallyledger order by tallyledger"
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -3622,12 +3714,13 @@ async def edit_order_invoice(payload: dict,conn:psycopg2.extensions.connection =
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE order_invoice SET clientid=%s,orderid=%s,estimatedate=%s,estimateamount=%s,invoicedate=%s,invoiceamount=%s,quotedescription=%s,createdon=%s,baseamount=%s,tax=%s,entityid=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload["clientid"],payload["orderid"],payload["estimatedate"],payload["estimateamount"],
                     payload["invoicedate"],payload["invoiceamount"],payload["quotedescription"],datetime.date.today(),
                     payload["baseamount"],payload["tax"],payload["entity"],givenowtime(),payload['user_id'],False,
                     payload['id']
                 ])
+                logging.info(msg)
             conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"edited data":payload['id']})
         else:
@@ -3644,9 +3737,10 @@ async def delete_order_invoice(payload: dict,conn:psycopg2.extensions.connection
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM order_invoice WHERE id=%s'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload['id']
                 ])
+                logging.info(msg)
             conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
         else:
@@ -3675,10 +3769,11 @@ async def add_order_receipt(payload: dict, conn: psycopg2.extensions.connection 
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO order_receipt (receivedby,amount,tds,recddate,receiptdesc,paymentmode,orderid,dated,createdby,isdeleted,createdon,entityid,officeid) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
-                cursor.execute(query,[payload["receivedby"],payload["amount"],payload["tds"],
+                msg = logMessage(cursor,query,[payload["receivedby"],payload["amount"],payload["tds"],
                                       payload["recddate"],payload["receiptdesc"],payload["paymentmode"],
                                       payload["orderid"],givenowtime(),payload["user_id"],False,
                                       datetime.date.today(),payload["entityid"],payload['officeid']])
+                logging.info(msg)
                 conn[0].commit()
                 data = cursor.fetchone()[0]
                 
@@ -3697,11 +3792,12 @@ async def edit_order_receipt(payload: dict,conn:psycopg2.extensions.connection =
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE order_receipt SET receivedby=%s,amount=%s,tds=%s,recddate=%s,receiptdesc=%s,paymentmode=%s,orderid=%s,dated=%s,createdby=%s,isdeleted=%s,createdon=%s,entityid=%s,officeid=%s WHERE id=%s'
-                cursor.execute(query,[payload["receivedby"],payload["amount"],payload["tds"],
+                msg = logMessage(cursor,query,[payload["receivedby"],payload["amount"],payload["tds"],
                                       payload["recddate"],payload["receiptdesc"],payload["paymentmode"],
                                       payload["orderid"],givenowtime(),payload["user_id"],False,
                                       datetime.date.today(),payload["entityid"],
                                       payload['officeid'],payload['id']])
+                logging.info(msg)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"edited data":payload['id']})
         else:
@@ -3718,9 +3814,10 @@ async def delete_order_receipt(payload: dict,conn:psycopg2.extensions.connection
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM order_receipt WHERE id=%s'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload['id']
                 ])
+                logging.info(msg)
             conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
         else:
@@ -3741,7 +3838,8 @@ async def get_order_by_id(payload: dict, conn : psycopg2.extensions.connection =
             with conn[0].cursor() as cursor:
                 #====================ORDER-INFO===================
                 query = 'SELECT assignedtooffice,entityid,owner,status,clientpropertyid,service,clientid,orderdate,earlieststartdate,expectedcompletiondate,actualcompletiondate,vendorid,tallyledgerid,briefdescription,comments,additionalcomments FROM orders WHERE id=%s'
-                cursor.execute(query,[payload['id']])
+                msg = logMessage(cursor,query,[payload['id']])
+                logging.info(msg)
                 order_info_ = cursor.fetchall()
 
                 colnames = [desc[0] for desc in cursor.description]
@@ -3757,7 +3855,7 @@ async def get_order_by_id(payload: dict, conn : psycopg2.extensions.connection =
                     select id,orderid,photolink,description,phototakenwhen  
                     from order_photos where orderid = {payload['id']}
                 '''
-                cursor.execute(query)
+                logMessage(cursor,query)
                 colnames = [desc[0] for desc in cursor.description]
                 _data = cursor.fetchall()
                 order_photos = []
@@ -3780,7 +3878,8 @@ async def get_order_status_history(payload: dict,conn:psycopg2.extensions.connec
         if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT distinct a.id,b.briefdescription,c.name,a.dated FROM order_status_change a LEFT JOIN orders b ON a.orderid = b.id LEFT JOIN order_status c ON a.statusid = c.id WHERE a.orderid = %s'
-                cursor.execute(query,[payload['id']])
+                msg = logMessage(cursor,query,[payload['id']])
+                logging.info(msg)
                 data = cursor.fetchall()
             
                 colnames = [desc[0] for desc in cursor.description]
@@ -3803,7 +3902,8 @@ async def add_order_status_change(payload: dict, conn: psycopg2.extensions.conne
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO order_status_change (orderid,statusid,dated) VALUES (%s,%s,%s)'
-                cursor.execute(query,(payload['orderid'],payload['statusid'],givenowtime()))
+                msg = logMessage(cursor,query,(payload['orderid'],payload['statusid'],givenowtime()))
+                logging.info(msg)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"edited history":payload['orderid']})
         else:
@@ -3820,7 +3920,8 @@ async def get_builders_admin(payload: dict, conn: psycopg2.extensions.connection
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT id,buildername from builder ORDER BY buildername'
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
 
                 colnames = [desc[0] for desc in cursor.description]
@@ -3843,7 +3944,8 @@ async def get_project_legal_status_admin(payload: dict, conn: psycopg2.extension
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT id,name from project_legal_status ORDER BY name'
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
 
                 colnames = [desc[0] for desc in cursor.description]
@@ -3867,7 +3969,8 @@ async def get_project_type_admin(payload: dict, conn: psycopg2.extensions.connec
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT id,name from project_type ORDER BY name'
-                cursor.execute(query)
+                msg = logMessage(cursor,query)
+                logging.info(msg)
                 data = cursor.fetchall()
 
                 colnames = [desc[0] for desc in cursor.description]
@@ -3902,12 +4005,13 @@ async def add_vendors(payload : dict, conn : psycopg2.extensions.connection = De
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO vendor (vendorname,addressline1,addressline2,suburb,city,state,country,type,details,category,phone1,email,ownerinfo,panno,tanno,gstservicetaxno,tdssection,bankname,bankbranch,bankcity,bankacctholdername,bankacctno,bankifsccode,bankaccttype,companydeductee,tallyledgerid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
-                cursor.execute(query,[payload["vendorname"],payload["addressline1"],payload["addressline2"],payload["suburb"],payload["city"],
+                msg = logMessage(cursor,query,[payload["vendorname"],payload["addressline1"],payload["addressline2"],payload["suburb"],payload["city"],
                                       payload["state"],payload["country"],payload["type"],payload["details"],payload["category"],payload["phone1"],
                                       payload["email"],payload["ownerinfo"],payload["panno"],payload["tanno"],payload["gstservicetaxno"],
                                       payload["tdssection"],payload["bankname"],payload["bankbranch"],payload["bankcity"],
                                       payload["bankacctholdername"],payload["bankacctno"],payload["bankifsccode"],payload["bankaccttype"],
                                       payload["companydeductee"],payload["tallyledgerid"],givenowtime(),payload['user_id'],False])
+                logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Vendor":id})
@@ -3925,13 +4029,14 @@ async def edit_vendors(payload : dict, conn : psycopg2.extensions.connection = D
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE vendor SET vendorname=%s,addressline1=%s,addressline2=%s,suburb=%s,city=%s,state=%s,country=%s,type=%s,details=%s,category=%s,phone1=%s,email=%s,ownerinfo=%s,panno=%s,tanno=%s,gstservicetaxno=%s,tdssection=%s,bankname=%s,bankbranch=%s,bankcity=%s,bankacctholdername=%s,bankacctno=%s,bankifsccode=%s,bankaccttype=%s,companydeductee=%s,tallyledgerid=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
-                cursor.execute(query,[payload["vendorname"],payload["addressline1"],payload["addressline2"],payload["suburb"],payload["city"],
+                msg = logMessage(cursor,query,[payload["vendorname"],payload["addressline1"],payload["addressline2"],payload["suburb"],payload["city"],
                                       payload["state"],payload["country"],payload["type"],payload["details"],payload["category"],payload["phone1"],
                                       payload["email"],payload["ownerinfo"],payload["panno"],payload["tanno"],payload["gstservicetaxno"],
                                       payload["tdssection"],payload["bankname"],payload["bankbranch"],payload["bankcity"],
                                       payload["bankacctholdername"],payload["bankacctno"],payload["bankifsccode"],payload["bankaccttype"],
                                       payload["companydeductee"],payload["tallyledgerid"],givenowtime(),payload['user_id'],False,
                                       payload["id"]])
+                logging.info(msg)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Vendor":payload['id']})
         else:
@@ -3948,7 +4053,8 @@ async def delete_vendors(payload : dict, conn : psycopg2.extensions.connection =
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM vendor WHERE id=%s'
-                cursor.execute(query,[payload['id']])
+                msg = logMessage(cursor,query,[payload['id']])
+                logging.info(msg)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
         else:
@@ -3977,12 +4083,13 @@ async def add_vendor_invoice(payload: dict, conn : psycopg2.extensions.connectio
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO order_vendorestimate (estimatedate,amount,estimatedesc,orderid,vendorid,invoicedate,invoiceamount,notes,vat1,vat2,servicetax,invoicenumber,entityid,officeid,dated,createdby,createdon,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload["estimatedate"],payload["amount"],payload["estimatedesc"],payload["orderid"],
                     payload["vendorid"],payload["invoicedate"],payload["invoiceamount"],payload["notes"],
                     payload["vat1"],payload["vat2"],payload["servicetax"],payload["invoicenumber"],
                     payload["entityid"],payload["officeid"],givenowtime(),payload['user_id'],datetime.date.today(),False
                 ])
+                logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"Inserted Invoice":id})
@@ -4000,12 +4107,13 @@ async def edit_vendor_invoice(payload: dict, conn: psycopg2.extensions.connectio
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE order_vendorestimate SET estimatedate=%s,amount=%s,estimatedesc=%s,orderid=%s,vendorid=%s,invoicedate=%s,invoiceamount=%s,notes=%s,vat1=%s,vat2=%s,servicetax=%s,invoicenumber=%s,entityid=%s,officeid=%s,dated=%s,createdby=%s,createdon=%s,isdeleted=%s WHERE id=%s'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload["estimatedate"],payload["amount"],payload["estimatedesc"],payload["orderid"],
                     payload["vendorid"],payload["invoicedate"],payload["invoiceamount"],payload["notes"],
                     payload["vat1"],payload["vat2"],payload["servicetax"],payload["invoicenumber"],
                     payload["entityid"],payload["officeid"],givenowtime(),payload['user_id'],datetime.date.today(),False,payload["id"]
                 ])
+                logging.info(msg)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"Edited Invoice":payload['id']})
         else:
@@ -4022,7 +4130,8 @@ async def delete_vendor_invoice(payload: dict,conn:psycopg2.extensions.connectio
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM order_vendorestimate WHERE id=%s'
-                cursor.execute(query,[payload['id']])
+                msg = logMessage(cursor,query,[payload['id']])
+                logging.info(msg)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
         else:
@@ -4039,7 +4148,8 @@ async def get_vendor_category_admin(payload:dict,conn:psycopg2.extensions.connec
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'SELECT id,name FROM vendor_category' 
-                cursor.execute(query) 
+                msg = logMessage(cursor,query) 
+                logging.info(msg)
                 data = cursor.fetchall()
 
                 colnames = [desc[0] for desc in cursor.description]
@@ -4075,12 +4185,13 @@ async def add_vendor_payment(payload: dict, conn: psycopg2.extensions.connection
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO order_payment (paymentby,amount,paymentdate,orderid,vendorid,mode,description,tds,servicetaxamount,entityid,officeid,dated,createdby,isdeleted,createdon) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload["paymentby"],payload["amount"],payload["paymentdate"],payload["orderid"],
                     payload["vendorid"],payload["mode"],payload["description"],payload["tds"],
                     payload["servicetaxamount"],payload["entityid"],payload["officeid"],givenowtime(),payload['user_id'],
                     False,datetime.date.today()
                 ])
+                logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Payment":id})
@@ -4098,12 +4209,13 @@ async def edit_vendor_payment(payload: dict, conn: psycopg2.extensions.connectio
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE order_payment SET paymentby=%s,amount=%s,paymentdate=%s,orderid=%s,vendorid=%s,mode=%s,description=%s,tds=%s,servicetaxamount=%s,entityid=%s,officeid=%s,dated=%s,createdby=%s,isdeleted=%s,createdon=%s WHERE id=%s'
-                cursor.execute(query,[
+                msg = logMessage(cursor,query,[
                     payload["paymentby"],payload["amount"],payload["paymentdate"],payload["orderid"],
                     payload["vendorid"],payload["mode"],payload["description"],payload["tds"],
                     payload["servicetaxamount"],payload["entityid"],payload["officeid"],givenowtime(),payload['user_id'],
                     False,datetime.date.today(),payload['id']
                 ])
+                logging.info(msg)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Payment":payload['id']})
         else:
@@ -4120,7 +4232,8 @@ async def delete_vendor_payment(payload: dict,conn: psycopg2.extensions.connecti
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = 'DELETE FROM order_payment WHERE id=%s'
-                cursor.execute(query,[payload['id']])
+                msg = logMessage(cursor,query,[payload['id']])
+                logging.info(msg)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Payment":payload['id']})
         else:
