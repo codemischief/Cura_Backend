@@ -6,7 +6,7 @@ formatters:
     format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
   access:
     # "()": uvicorn.logging.AccessFormatter
-    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format: '%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s'
 handlers:
   default:
     formatter: default
@@ -30,6 +30,5 @@ loggers:
 root:
   level: DEBUG
   handlers:
-    - default
+    - access
   propagate: no
-

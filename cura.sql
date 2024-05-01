@@ -966,11 +966,14 @@ SELECT DISTINCT
     a.addressline1,
     a.addressline2,
     a.suburb,
+    a.city as cityid,
     b.city AS city,
     a.state,
+    a.country as countryid,
     c.name AS country,
     a.type,
     a.details,
+    a.category AS categoryid,
     e.name AS category, -- Using table e for vendor_Category
     a.phone1,
     a.email,
@@ -998,7 +1001,7 @@ FROM vendor a
 LEFT JOIN cities b ON a.city = b.id
 LEFT JOIN country c ON a.country = c.id
 LEFT JOIN tallyledger d ON a.tallyledgerid = d.id
-LEFT JOIN vendor_Category e ON a.category = e.id; -- Joining with vendor_Category table using alias e
+LEFT JOIN vendor_category e ON a.category = e.id; -- Joining with vendor_Category table using alias e
 
 CREATE SEQUENCE IF NOT EXISTS vendor_id_seq OWNED BY vendor.id;
 SELECT setval('vendor_id_seq', COALESCE(max(id), 0) + 1, false) FROM vendor;
@@ -1070,7 +1073,11 @@ SELECT DISTINCT
     a.amount,
     a.paymentdate,
     a.orderid,
+    c.clientid,
+    concat_ws(' ',f.firstname,f.lastname) as clientname,
     c.briefdescription,
+    c.clientpropertyid,
+    j.propertydescription,
     a.vendorid,
     d.vendorname,
     a.mode,
@@ -1080,7 +1087,7 @@ SELECT DISTINCT
     a.servicetaxamount,
     a.dated,
     a.createdby,
-    concat_ws(' ',f.firstname,f.lastname) as createdbyname,
+    concat_ws(' ',i.firstname,i.lastname) as createdbyname,
     a.isdeleted,
     a.createdon,
     a.entityid,
@@ -1102,8 +1109,13 @@ LEFT JOIN
 LEFT JOIN
     entity g ON a.entityid = g.id
 LEFT JOIN
-    office h ON a.officeid = h.id;
+    office h ON a.officeid = h.id
+LEFT JOIN
+    client i ON c.clientid = i.id
+LEFT JOIN
+    client_property j ON c.clientpropertyid = j.id;
 
 CREATE SEQUENCE IF NOT EXISTS order_payment_id_seq OWNED BY order_payment.id;
 SELECT setval('order_payment_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_payment;
 ALTER TABLE order_payment ALTER COLUMN id SET DEFAULT nextval('order_payment_id_seq');
+
