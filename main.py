@@ -332,7 +332,7 @@ def filterAndPaginate_v2(db_config,
         elif where_clauses and whereinquery:
             query += " AND " + " AND ".join(where_clauses)
         if sort_column:
-            query += f" ORDER BY {sort_column[0]} {sort_order}"
+            query += f" ORDER BY {sort_column[0]} {sort_order if sort_order == 'asc' else 'desc  NULLS LAST'}"
         # Handle pagination
         counts_query = query
         if page_number !=0 and page_size !=0 and search_key is None:
@@ -4242,4 +4242,40 @@ async def delete_vendor_payment(payload: dict,conn: psycopg2.extensions.connecti
         logging.info(traceback.print_exc())
         return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
 
+@app.post('/forgotPasswordEmail')
+async def forgot_password_email(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = 'SELECT email1 FROM usertable where username = %s'
+            msg = logMessage(cursor,query,[payload['username']])
+            logging.info(msg)
+            email = cursor.fetchone()
+
+            #SEND EMAIL HERE
+            logging.info(email)
+            if email is None:
+                return giveFailure("No user",None,None)
+            else:
+                return giveSuccess(None,None,{"Email ID":email[0]})
+
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',None,None)
+
+@app.post("/resetPassword")
+async def reset_password(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            #hashing to be done here, using bcrypt for now.
+            newp = bcrypt.hashpw(bytes(payload['password'],'ascii'),bcrypt.gensalt()).decode('utf-8')
+            logging.info(newp)
+            #update part
+            query = 'UPDATE usertable SET password = %s WHERE username = %s'
+            # msg = logMessage(cursor,query,[newp,payload['username']])
+            #logging.info(msg)
+            logging.info(cursor.mogrify(query,[newp,payload['username']]))
+            return giveSuccess(None,None,{"Change PW for":payload['username']})
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',None,None)
 logger.info("program_started")

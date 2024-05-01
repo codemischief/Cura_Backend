@@ -2535,3 +2535,301 @@ TypeError: giveFailure() missing 2 required positional arguments: 'uid' and 'rid
 2024-04-30 20:05:20,321 - uvicorn.error - INFO - Started server process [49975]
 2024-04-30 20:05:20,322 - uvicorn.error - INFO - Waiting for application startup.
 2024-04-30 20:05:20,322 - uvicorn.error - INFO - Application startup complete.
+2024-04-30 21:19:47,041 - uvicorn.error - INFO - Shutting down
+2024-04-30 21:19:47,143 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-04-30 21:19:47,144 - uvicorn.error - INFO - Application shutdown complete.
+2024-04-30 21:19:47,144 - uvicorn.error - INFO - Finished server process [49975]
+2024-04-30 21:19:47,203 - uvicorn.error - INFO - Stopping reloader process [20485]
+2024-05-01 09:29:21,392 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-05-01 09:29:21,393 - uvicorn.error - ERROR - [Errno 98] Address already in use
+2024-05-01 09:29:40,336 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-05-01 09:29:40,336 - uvicorn.error - ERROR - [Errno 98] Address already in use
+2024-05-01 09:30:35,981 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-05-01 09:30:35,982 - uvicorn.error - INFO - Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2024-05-01 09:30:35,983 - uvicorn.error - INFO - Started reloader process [117266] using statreload
+2024-05-01 09:30:36,179 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:30:37,124 - main - <module> - INFO - program_started
+2024-05-01 09:30:37,125 - uvicorn.error - INFO - Started server process [117269]
+2024-05-01 09:30:37,125 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:30:37,126 - uvicorn.error - INFO - Application startup complete.
+2024-05-01 09:30:38,225 - uvicorn.access - send - INFO - 127.0.0.1:52024 - "GET /docs HTTP/1.1" 200
+2024-05-01 09:30:38,460 - uvicorn.access - send - INFO - 127.0.0.1:52024 - "GET /openapi.json HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 4250, in forgot_password_email
+    msg = logMessage(cursor,query,payload['username'])
+  File "/mnt/e/cura/cura_backend/./main.py", line 15, in logMessage
+    cursor.execute(query,arr)
+TypeError: not all arguments converted during string formatting
+2024-05-01 09:31:04,794 - root - forgot_password_email - INFO - None
+2024-05-01 09:31:04,795 - uvicorn.access - send - INFO - 127.0.0.1:53904 - "POST /forgotPasswordEmail HTTP/1.1" 500
+2024-05-01 09:31:04,796 - uvicorn.error - ERROR - Exception in ASGI application
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 4250, in forgot_password_email
+    msg = logMessage(cursor,query,payload['username'])
+  File "/mnt/e/cura/cura_backend/./main.py", line 15, in logMessage
+    cursor.execute(query,arr)
+TypeError: not all arguments converted during string formatting
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/uvicorn/protocols/http/h11_impl.py", line 373, in run_asgi
+    result = await app(self.scope, self.receive, self.send)
+  File "/usr/lib/python3/dist-packages/uvicorn/middleware/proxy_headers.py", line 75, in __call__
+    return await self.app(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/cors.py", line 148, in simple_response
+    await self.app(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 776, in app
+    await route.handle(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/rudra/.local/lib/python3.10/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+  File "/home/rudra/.local/lib/python3.10/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+  File "/mnt/e/cura/cura_backend/./main.py", line 4262, in forgot_password_email
+    return giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+KeyError: 'user_id'
+2024-05-01 09:31:19,695 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:31:19,704 - uvicorn.error - INFO - Shutting down
+2024-05-01 09:31:19,806 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 09:31:19,807 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 09:31:19,807 - uvicorn.error - INFO - Finished server process [117269]
+2024-05-01 09:31:20,019 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:31:20,937 - main - <module> - INFO - program_started
+2024-05-01 09:31:20,938 - uvicorn.error - INFO - Started server process [117452]
+2024-05-01 09:31:20,938 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:31:20,939 - uvicorn.error - INFO - Application startup complete.
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 4250, in forgot_password_email
+    msg = logMessage(cursor,query,payload['username'])
+  File "/mnt/e/cura/cura_backend/./main.py", line 15, in logMessage
+    cursor.execute(query,arr)
+TypeError: not all arguments converted during string formatting
+2024-05-01 09:31:22,816 - root - forgot_password_email - INFO - None
+2024-05-01 09:31:22,818 - uvicorn.access - send - INFO - 127.0.0.1:42248 - "POST /forgotPasswordEmail HTTP/1.1" 200
+2024-05-01 09:31:42,699 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:31:42,714 - uvicorn.error - INFO - Shutting down
+2024-05-01 09:31:42,815 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 09:31:42,816 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 09:31:42,816 - uvicorn.error - INFO - Finished server process [117452]
+2024-05-01 09:31:43,058 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:31:43,889 - main - <module> - INFO - program_started
+2024-05-01 09:31:43,890 - uvicorn.error - INFO - Started server process [117549]
+2024-05-01 09:31:43,890 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:31:43,890 - uvicorn.error - INFO - Application startup complete.
+2024-05-01 09:31:45,802 - root - forgot_password_email - INFO - QUERY IS : <SELECT email1 FROM usertable where username = 'ruderaw'>
+2024-05-01 09:31:45,804 - uvicorn.access - send - INFO - 127.0.0.1:51412 - "POST /forgotPasswordEmail HTTP/1.1" 200
+2024-05-01 09:31:53,550 - root - forgot_password_email - INFO - QUERY IS : <SELECT email1 FROM usertable where username = 'aryan'>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 4258, in forgot_password_email
+    return giveSuccess(None,None,{"Email ID":email[0]})
+TypeError: 'NoneType' object is not subscriptable
+2024-05-01 09:31:53,563 - root - forgot_password_email - INFO - None
+2024-05-01 09:31:53,564 - uvicorn.access - send - INFO - 127.0.0.1:51428 - "POST /forgotPasswordEmail HTTP/1.1" 200
+2024-05-01 09:32:50,029 - root - forgot_password_email - INFO - QUERY IS : <SELECT email1 FROM usertable where username = 'aryan_ashish'>
+2024-05-01 09:32:50,031 - uvicorn.access - send - INFO - 127.0.0.1:41774 - "POST /forgotPasswordEmail HTTP/1.1" 200
+2024-05-01 09:32:55,431 - root - forgot_password_email - INFO - QUERY IS : <SELECT email1 FROM usertable where username = ''>
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 4258, in forgot_password_email
+    return giveSuccess(None,None,{"Email ID":email[0]})
+TypeError: 'NoneType' object is not subscriptable
+2024-05-01 09:32:55,433 - root - forgot_password_email - INFO - None
+2024-05-01 09:32:55,434 - uvicorn.access - send - INFO - 127.0.0.1:41784 - "POST /forgotPasswordEmail HTTP/1.1" 200
+2024-05-01 09:33:13,282 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:33:13,335 - uvicorn.error - INFO - Shutting down
+2024-05-01 09:33:13,435 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 09:33:13,436 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 09:33:13,437 - uvicorn.error - INFO - Finished server process [117549]
+2024-05-01 09:33:13,669 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:33:14,401 - main - <module> - INFO - program_started
+2024-05-01 09:33:14,402 - uvicorn.error - INFO - Started server process [117964]
+2024-05-01 09:33:14,402 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:33:14,403 - uvicorn.error - INFO - Application startup complete.
+2024-05-01 09:33:15,141 - root - forgot_password_email - INFO - QUERY IS : <SELECT email1 FROM usertable where username = ''>
+2024-05-01 09:33:15,141 - root - forgot_password_email - INFO - None
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 4259, in forgot_password_email
+    return giveSuccess(None,None,{"Email ID":email[0]})
+TypeError: 'NoneType' object is not subscriptable
+2024-05-01 09:33:15,158 - root - forgot_password_email - INFO - None
+2024-05-01 09:33:15,159 - uvicorn.access - send - INFO - 127.0.0.1:40662 - "POST /forgotPasswordEmail HTTP/1.1" 200
+2024-05-01 09:33:27,866 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:33:27,902 - uvicorn.error - INFO - Shutting down
+2024-05-01 09:33:28,003 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 09:33:28,003 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 09:33:28,004 - uvicorn.error - INFO - Finished server process [117964]
+2024-05-01 09:33:28,302 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:33:29,183 - main - <module> - INFO - program_started
+2024-05-01 09:33:29,184 - uvicorn.error - INFO - Started server process [118028]
+2024-05-01 09:33:29,184 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:33:29,185 - uvicorn.error - INFO - Application startup complete.
+2024-05-01 09:33:30,130 - root - forgot_password_email - INFO - QUERY IS : <SELECT email1 FROM usertable where username = ''>
+2024-05-01 09:33:30,131 - root - forgot_password_email - INFO - None
+2024-05-01 09:33:30,132 - uvicorn.access - send - INFO - 127.0.0.1:44072 - "POST /forgotPasswordEmail HTTP/1.1" 200
+2024-05-01 09:34:36,080 - root - forgot_password_email - INFO - QUERY IS : <SELECT email1 FROM usertable where username = 'ruderaw'>
+2024-05-01 09:34:36,081 - root - forgot_password_email - INFO - ('rudraemail1@email.com',)
+2024-05-01 09:34:36,082 - uvicorn.access - send - INFO - 127.0.0.1:35576 - "POST /forgotPasswordEmail HTTP/1.1" 200
+2024-05-01 09:34:53,320 - root - forgot_password_email - INFO - QUERY IS : <SELECT email1 FROM usertable where username = ''>
+2024-05-01 09:34:53,321 - root - forgot_password_email - INFO - None
+2024-05-01 09:34:53,322 - uvicorn.access - send - INFO - 127.0.0.1:37904 - "POST /forgotPasswordEmail HTTP/1.1" 200
+2024-05-01 09:40:08,756 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:40:08,816 - uvicorn.error - INFO - Shutting down
+2024-05-01 09:40:08,917 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 09:40:08,918 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 09:40:08,918 - uvicorn.error - INFO - Finished server process [118028]
+2024-05-01 09:40:09,131 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+Process SpawnProcess-6:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3/dist-packages/uvicorn/subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 68, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 76, in serve
+    config.load()
+  File "/usr/lib/python3/dist-packages/uvicorn/config.py", line 448, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/lib/python3/dist-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1017, in get_code
+  File "<frozen importlib._bootstrap_external>", line 947, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/mnt/e/cura/cura_backend/./main.py", line 4278
+    logger.info("program_started")
+SyntaxError: expected 'except' or 'finally' block
+2024-05-01 09:41:09,514 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:41:09,674 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:41:10,520 - main - <module> - INFO - program_started
+2024-05-01 09:41:10,521 - uvicorn.error - INFO - Started server process [119894]
+2024-05-01 09:41:10,522 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:41:10,523 - uvicorn.error - INFO - Application startup complete.
+2024-05-01 09:41:10,525 - uvicorn.access - send - INFO - 127.0.0.1:46698 - "GET /docs HTTP/1.1" 200
+2024-05-01 09:41:10,787 - uvicorn.access - send - INFO - 127.0.0.1:46698 - "GET /openapi.json HTTP/1.1" 200
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 4270, in reset_password
+    newp = bcrypt.hashpw(payload['passoword'])
+KeyError: 'passoword'
+2024-05-01 09:42:46,593 - root - reset_password - INFO - None
+2024-05-01 09:42:46,594 - uvicorn.access - send - INFO - 127.0.0.1:43020 - "POST /resetPassword HTTP/1.1" 200
+2024-05-01 09:42:57,343 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:42:57,392 - uvicorn.error - INFO - Shutting down
+2024-05-01 09:42:57,493 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 09:42:57,494 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 09:42:57,494 - uvicorn.error - INFO - Finished server process [119894]
+2024-05-01 09:42:57,751 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:42:58,596 - main - <module> - INFO - program_started
+2024-05-01 09:42:58,597 - uvicorn.error - INFO - Started server process [120334]
+2024-05-01 09:42:58,598 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:42:58,599 - uvicorn.error - INFO - Application startup complete.
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 4270, in reset_password
+    newp = bcrypt.hashpw(payload['password'])
+TypeError: hashpw() missing 1 required positional argument: 'salt'
+2024-05-01 09:43:00,313 - root - reset_password - INFO - None
+2024-05-01 09:43:00,314 - uvicorn.access - send - INFO - 127.0.0.1:55502 - "POST /resetPassword HTTP/1.1" 200
+2024-05-01 09:43:25,530 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:43:25,601 - uvicorn.error - INFO - Shutting down
+2024-05-01 09:43:25,702 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 09:43:25,703 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 09:43:25,704 - uvicorn.error - INFO - Finished server process [120334]
+2024-05-01 09:43:25,913 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:43:26,753 - main - <module> - INFO - program_started
+2024-05-01 09:43:26,754 - uvicorn.error - INFO - Started server process [120450]
+2024-05-01 09:43:26,754 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:43:26,755 - uvicorn.error - INFO - Application startup complete.
+Traceback (most recent call last):
+  File "/mnt/e/cura/cura_backend/./main.py", line 4270, in reset_password
+    newp = bcrypt.hashpw(payload['password'],bcrypt.gensalt())
+TypeError: argument 'password': 'str' object cannot be converted to 'PyBytes'
+2024-05-01 09:43:29,022 - root - reset_password - INFO - None
+2024-05-01 09:43:29,023 - uvicorn.access - send - INFO - 127.0.0.1:57572 - "POST /resetPassword HTTP/1.1" 200
+2024-05-01 09:43:43,184 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:43:43,213 - uvicorn.error - INFO - Shutting down
+2024-05-01 09:43:43,314 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 09:43:43,315 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 09:43:43,315 - uvicorn.error - INFO - Finished server process [120450]
+2024-05-01 09:43:43,539 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:43:44,409 - main - <module> - INFO - program_started
+2024-05-01 09:43:44,410 - uvicorn.error - INFO - Started server process [120527]
+2024-05-01 09:43:44,411 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:43:44,412 - uvicorn.error - INFO - Application startup complete.
+2024-05-01 09:43:46,707 - root - reset_password - INFO - b'$2b$12$JRf8dr5B2ZNYlIUN1lq3z.MHfRwm9ScOYpxHvbOkxlzhq7i.VlvtG'
+2024-05-01 09:43:46,708 - root - reset_password - INFO - b"UPDATE usertable SET password = '\\x243262243132244a52663864723542325a4e596c49554e316c71337a2e4d486652776d3953634f5970784876624f6b786c7a687137692e566c767447'::bytea WHERE username = 'ruderaw'"
+2024-05-01 09:43:46,709 - uvicorn.access - send - INFO - 127.0.0.1:44104 - "POST /resetPassword HTTP/1.1" 200
+2024-05-01 09:45:56,727 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:45:56,750 - uvicorn.error - INFO - Shutting down
+2024-05-01 09:45:56,851 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 09:45:56,851 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 09:45:56,852 - uvicorn.error - INFO - Finished server process [120527]
+2024-05-01 09:45:57,055 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:45:57,916 - main - <module> - INFO - program_started
+2024-05-01 09:45:57,917 - uvicorn.error - INFO - Started server process [121072]
+2024-05-01 09:45:57,917 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:45:57,919 - uvicorn.error - INFO - Application startup complete.
+2024-05-01 09:46:03,582 - root - reset_password - INFO - b'$2b$12$DEWmTusrhsiDSlkZBXx2Mu0NZVtJZorkJgzI1budwGsXSwUanrs7.'
+2024-05-01 09:46:03,582 - root - reset_password - INFO - b"UPDATE usertable SET password = '\\x243262243132244445576d5475737268736944536c6b5a425878324d75304e5a56744a5a6f726b4a677a493162756477477358537755616e7273372e'::bytea WHERE username = 'ruderaw'"
+2024-05-01 09:46:03,584 - uvicorn.access - send - INFO - 127.0.0.1:55292 - "POST /resetPassword HTTP/1.1" 200
+2024-05-01 09:47:33,280 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 09:47:33,283 - uvicorn.error - INFO - Shutting down
+2024-05-01 09:47:33,384 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 09:47:33,385 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 09:47:33,385 - uvicorn.error - INFO - Finished server process [121072]
+2024-05-01 09:47:33,667 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 09:47:34,510 - main - <module> - INFO - program_started
+2024-05-01 09:47:34,511 - uvicorn.error - INFO - Started server process [121465]
+2024-05-01 09:47:34,512 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 09:47:34,513 - uvicorn.error - INFO - Application startup complete.
+2024-05-01 09:47:37,669 - root - reset_password - INFO - $2b$12$ntgbYR9NNw052U1VmJ1hKuhy7bh7bonERiZvciafKnMrYO7yZswFe
+2024-05-01 09:47:37,670 - root - reset_password - INFO - b"UPDATE usertable SET password = '$2b$12$ntgbYR9NNw052U1VmJ1hKuhy7bh7bonERiZvciafKnMrYO7yZswFe' WHERE username = 'ruderaw'"
+2024-05-01 09:47:37,671 - uvicorn.access - send - INFO - 127.0.0.1:44042 - "POST /resetPassword HTTP/1.1" 200
+2024-05-01 16:09:52,768 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-01 16:09:52,852 - uvicorn.error - INFO - Shutting down
+2024-05-01 16:09:52,957 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-01 16:09:52,962 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-01 16:09:52,963 - uvicorn.error - INFO - Finished server process [121465]
+2024-05-01 16:09:53,308 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-01 16:09:53,988 - main - <module> - INFO - program_started
+2024-05-01 16:09:53,988 - uvicorn.error - INFO - Started server process [188063]
+2024-05-01 16:09:53,989 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-01 16:09:53,989 - uvicorn.error - INFO - Application startup complete.

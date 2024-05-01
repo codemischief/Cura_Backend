@@ -1118,3 +1118,4 @@ LEFT JOIN
 CREATE SEQUENCE IF NOT EXISTS order_payment_id_seq OWNED BY order_payment.id;
 SELECT setval('order_payment_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_payment;
 ALTER TABLE order_payment ALTER COLUMN id SET DEFAULT nextval('order_payment_id_seq');
+
