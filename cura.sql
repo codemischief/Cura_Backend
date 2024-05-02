@@ -30,12 +30,12 @@ SELECT DISTINCT
     a.deduction
 
 FROM ref_contractual_payments a
-inner JOIN usertable b ON a.paymentto = b.id
-inner JOIN usertable c ON a.paymentby = c.id
-inner JOIN mode_of_payment d ON a.paymentmode = d.id
-inner JOIN payment_for e ON a.paymentfor = e.id
-inner JOIN z_paymentrequeststatus f ON a.paymentstatus = f.id
-inner JOIN entity g ON a.entityid = g.id;
+LEFT JOIN usertable b ON a.paymentto = b.id
+LEFT JOIN usertable c ON a.paymentby = c.id
+LEFT JOIN mode_of_payment d ON a.paymentmode = d.id
+LEFT JOIN payment_for e ON a.paymentfor = e.id
+LEFT JOIN z_paymentrequeststatus f ON a.paymentstatus = f.id
+LEFT JOIN entity g ON a.entityid = g.id;
 
 --FROM ref_contractual_payments a,
 --    usertable b,
@@ -1118,4 +1118,8 @@ LEFT JOIN
 CREATE SEQUENCE IF NOT EXISTS order_payment_id_seq OWNED BY order_payment.id;
 SELECT setval('order_payment_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_payment;
 ALTER TABLE order_payment ALTER COLUMN id SET DEFAULT nextval('order_payment_id_seq');
+
+delete from order_status where id=7;
+update order_status set name='Closed (Work Done & Collection Completed)' where id=5;
+update order_status set name='Work Done - Pending Collection' where id=8;
 
