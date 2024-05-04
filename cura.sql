@@ -1123,3 +1123,8 @@ delete from order_status where id=7;
 update order_status set name='Closed (Work Done & Collection Completed)' where id=5;
 update order_status set name='Work Done - Pending Collection' where id=8;
 
+CREATE SEQUENCE IF NOT EXISTS clientleavelicensetenant_id_seq OWNED BY clientleavelicensetenant.id;
+SELECT setval('clientleavelicensetenant_id_seq', COALESCE(max(id), 0) + 1, false) FROM clientleavelicensetenant;
+ALTER TABLE clientleavelicensetenant ALTER COLUMN id SET DEFAULT nextval('clientleavelicensetenant_id_seq');
+
+alter table client_property_leave_license_details alter column vacatingdate

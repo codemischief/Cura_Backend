@@ -3,6 +3,7 @@ import bcrypt
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 import psycopg2.errorcodes
+import uuid
 from pydantic import BaseModel
 import logging
 import traceback
@@ -1417,7 +1418,7 @@ async def get_lob(payload: dict, conn: psycopg2.extensions.connection = Depends(
         fname = 'get_lob',
         payload=payload,
         isPaginationRequired=True,
-        whereinquery=True,
+        whereinquery=False,
         formatData=True,
         isdeleted=False
     )
@@ -1823,14 +1824,20 @@ async def get_users_admin(payload: dict, conn : psycopg2.extensions.connection =
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
-            res = usernames(conn[0])
-            arr = []
-            for i in res:
-                arr.append({'id':i,'name':res[i]})
+            with conn[0].cursor() as cursor:
+                query = "SELECT firstname,lastname,id,username from usertable order by username"
+                msg = logMessage(cursor,query)
+                logging.info(msg)
+                arr = []
+                data = cursor.fetchall()
+                for fname,lname,id,uname in data:
+                    arr.append({'id':id,'name':fname+' '+lname,"username":uname})
             return giveSuccess(payload['user_id'],role_access_status,arr,total_count=len(arr))
         else:
+           
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
+        logging.info(traceback.print_exc())
         return giveFailure("Invalid Credentials",0,0)
 
 @app.post('/getRolesAdmin')
@@ -2432,11 +2439,11 @@ async def add_client_property(payload: dict, conn: psycopg2.extensions.connectio
                 conn[0].commit()
                 for client_property_photos in client_property_photos_list:
                     query = "INSERT INTO client_property_photos (clientpropertyid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)"
-                    logMessage (query,(prop_id,client_property_photos["photolink"],client_property_photos["description"],client_property_photos["phototakenwhen"],givenowtime(),payload['user_id'],False))
+                    logMessage (cursor,query,(prop_id,client_property_photos["photolink"],client_property_photos["description"],client_property_photos["phototakenwhen"],givenowtime(),payload['user_id'],False))
                 query = "INSERT INTO client_property_poa (clientpropertyid,poalegalname,poapanno,poaaddressline1,poaaddressline2,poasuburb,poacity,poastate,poacountry,poazip,poaoccupation,poabirthyear,poaphoto,poaemployername,poarelation,poarelationwith,poaeffectivedate,poaenddate,poafor,scancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                logMessage (query,(prop_id,client_property_poa["poalegalname"],client_property_poa["poapanno"],client_property_poa["poaaddressline1"],client_property_poa["poaaddressline2"],client_property_poa["poasuburb"],client_property_poa["poacity"],client_property_poa["poastate"],client_property_poa["poacountry"],client_property_poa["poazip"],client_property_poa["poaoccupation"],client_property_poa["poabirthyear"],client_property_poa["poaphoto"],client_property_poa["poaemployername"],client_property_poa["poarelation"],client_property_poa["poarelationwith"],client_property_poa["poaeffectivedate"],client_property_poa["poaenddate"],client_property_poa["poafor"],client_property_poa["scancopy"],givenowtime(),payload['user_id'],False))
+                logMessage (cursor,query,(prop_id,client_property_poa["poalegalname"],client_property_poa["poapanno"],client_property_poa["poaaddressline1"],client_property_poa["poaaddressline2"],client_property_poa["poasuburb"],client_property_poa["poacity"],client_property_poa["poastate"],client_property_poa["poacountry"],client_property_poa["poazip"],client_property_poa["poaoccupation"],client_property_poa["poabirthyear"],client_property_poa["poaphoto"],client_property_poa["poaemployername"],client_property_poa["poarelation"],client_property_poa["poarelationwith"],client_property_poa["poaeffectivedate"],client_property_poa["poaenddate"],client_property_poa["poafor"],client_property_poa["scancopy"],givenowtime(),payload['user_id'],False))
                 query = "INSERT INTO client_property_owner (propertyid,owner1name,owner1panno,owner1aadhaarno,owner1pancollected,owner1aadhaarcollected,owner2name,owner2panno,owner2aadhaarno,owner2pancollected,owner2aadhaarcollected,owner3name,owner3panno,owner3aadhaarno,owner3pancollected,owner3aadhaarcollected,comments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                logMessage (query,(prop_id,client_property_owner["owner1name"],client_property_owner["owner1panno"],client_property_owner["owner1aadhaarno"],client_property_owner["owner1pancollected"],client_property_owner["owner1aadhaarcollected"],client_property_owner["owner2name"],client_property_owner["owner2panno"],client_property_owner["owner2aadhaarno"],client_property_owner["owner2pancollected"],client_property_owner["owner2aadhaarcollected"],client_property_owner["owner3name"],client_property_owner["owner3panno"],client_property_owner["owner3aadhaarno"],client_property_owner["owner3pancollected"],client_property_owner["owner3aadhaarcollected"],client_property_owner["comments"],givenowtime(),payload['user_id'],False))
+                logMessage (cursor,query,(prop_id,client_property_owner["owner1name"],client_property_owner["owner1panno"],client_property_owner["owner1aadhaarno"],client_property_owner["owner1pancollected"],client_property_owner["owner1aadhaarcollected"],client_property_owner["owner2name"],client_property_owner["owner2panno"],client_property_owner["owner2aadhaarno"],client_property_owner["owner2pancollected"],client_property_owner["owner2aadhaarcollected"],client_property_owner["owner3name"],client_property_owner["owner3panno"],client_property_owner["owner3aadhaarno"],client_property_owner["owner3pancollected"],client_property_owner["owner3aadhaarcollected"],client_property_owner["comments"],givenowtime(),payload['user_id'],False))
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"inserted_property":prop_id})
     except Exception as e:
@@ -2832,7 +2839,7 @@ async def get_client_receipt(payload: dict,conn : psycopg2.extensions.connection
         fname='get_client_receipt',
         payload=payload,
         isPaginationRequired=True,
-        whereinquery=False,
+        whereinquery=True,
         formatData=True,
         isdeleted=True
     )
@@ -2939,7 +2946,7 @@ async def get_client_pma_agreement(payload: dict, conn: psycopg2.extensions.conn
         fname='get_client_pma_agreement',
         payload=payload,
         isPaginationRequired=True,
-        whereinquery=False,
+        whereinquery=True,
         formatData=True,
         isdeleted=True
     )
@@ -3023,7 +3030,7 @@ async def get_ll_agreement(payload: dict, conn:psycopg2.extensions.connection = 
         fname = 'get_ll_agreement',
         payload=payload,
         isPaginationRequired=True,
-        whereinquery=False,
+        whereinquery=True,
         formatData=True,
         isdeleted=True
     )
@@ -4201,4 +4208,206 @@ async def reset_password(payload: dict,conn: psycopg2.extensions.connection = De
     except Exception as e:
         logging.info(traceback.print_exc())
         return giveFailure('Invalid Credentials',None,None)
+        
+@app.post('/editBuilderContact')
+async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'add_new_builder_contact: received payload <{payload}>')
+    try:
+        if 'builderid' not in payload:
+            return {
+                "result": "error",
+                "message": "Missing 'builderid' in payload",
+                "user_id": payload.get('user_id', None),
+                "data": {}
+            }
+        
+        role_access_status = check_role_access(conn, payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = '''
+                    INSERT INTO builder_contacts (
+                        builderid=%s, contactname=%s, email1=%s, jobtitle=%s,
+                        businessphone=%s, homephone=%s, mobilephone=%s, addressline1=%s,
+                        addressline2=%s, suburb=%s, city=%s, state=%s, country=%s,
+                        zip=%s, notes=%s, dated=%s, createdby=%s, isdeleted=%s WHERE id=%s
+                '''
+                msg = logMessage(cursor,query, (
+                    payload['builderid'],
+                    payload['contactname'],
+                    payload['email1'],
+                    payload['jobtitle'],
+                    payload['businessphone'],
+                    payload['homephone'],
+                    payload.get('mobilephone', None),
+                    payload['addressline1'],
+                    payload['addressline2'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['zip'],
+                    payload['notes'],
+                    givenowtime(),
+                    payload['user_id'],
+                    False,
+                    payload['id']
+                ))
+                logging.info(msg)
+                # Commit changes to the database
+                conn[0].commit()
+            data= {
+                    "entered": payload['contactname']
+                } 
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.format_exc())
+        return giveFailure(str(e),payload['user_id'],0)
+
+@app.post('/deleteBuilderContact')
+async def delete_builder_contact(payload: dict,conn :psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status==1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE builder_contact SET isdeleted = true'
+                msg = logMessage(cursor,query,[payload['id']])
+                logging.info(msg)
+                conn[0].commit()
+            return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        return giveFailure("Invalid Credentials",0,0)
+
+@app.post('/addLLTenant')
+async def add_ll_tenant(payload :dict,conn :psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                for tenant in payload['tenants']:
+                    query = 'INSERT INTO clientleavelicensetenant (leavelicenseid,tenantid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s)'
+                    msg = logMessage(cursor,query,[
+                            payload['leavelicenseid'],
+                            tenant['tenantid'],
+                            givenowtime(),
+                            payload['user_id'],
+                            False
+                        ]
+                    )
+                    logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"added ids are":[dct['tenantid'] for dct in payload['tenants']]})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)  
+
+@app.post('/getLLTenant')
+async def get_ll_tenant(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT * FROM clientleavelicensetenant WHERE leavelicenseid = %s'
+                msg = logMessage(cursor,query,[payload['leavelicenseid']])
+                logging.info(msg)
+                _data = cursor.fetchall()
+                colnames = [desc[0] for desc in cursor.description]
+                arr = []
+                for data in _data:
+                    arr.append({colname:val for colname,val in zip(colnames,data)})
+            return giveSuccess(payload['user_id'],role_access_status,arr)
+
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+
+@app.post("/getPMABilling")
+async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    tbl=False
+    try:
+        role_access_status = check_role_access(conn,payload)
+        pid = uuid.uuid4()
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                tbl = f'get_pma_billing_view_{pid.hex}'
+                query =  f'''CREATE VIEW {tbl} AS
+                                SELECT DISTINCT
+                                    a.id,
+                                    b.clientid,
+                                    d.id AS leavelicenseid,
+                                    CONCAT_WS(' ', c.firstname, c.lastname) AS clientname,
+                                    d.orderid,
+                                    e.briefdescription,
+                                    EXTRACT(DAY FROM d.startdate) AS start_day,
+                                    d.vacatingdate,
+                                    d.rentamount,
+                                    a.rented,
+                                    a.rentedtax,
+                                    a.fixed,
+                                    a.fixedtax,
+                                    CASE 
+                                        WHEN a.rented IS NULL THEN NULL 
+                                        ELSE (d.rentamount * COALESCE(a.rented, 0)/100 * (31-EXTRACT(DAY FROM d.startdate))/30) 
+                                    END AS rentedamt,
+                                    a.fixed AS fixedamt,
+                                    st.rate,
+                                    CASE 
+                                        WHEN a.rented IS NULL THEN NULL 
+                                        ELSE ((d.rentamount * COALESCE(a.rented, 0) / 100) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) 
+                                    END AS rentedtaxamt,
+                                    (a.fixed * st.rate / 100) AS fixedtaxamt,
+                                    ((d.rentamount * COALESCE(a.rented, 0) / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) + COALESCE((d.rentamount * COALESCE(a.rented, 0) / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30, 0) + COALESCE(a.fixed,0) + (COALESCE(a.fixed,0) * st.rate / 100)) AS totalamt
+                                FROM 
+                                    client_property_caretaking_agreement a
+                                LEFT JOIN
+                                    client_property b ON a.clientpropertyid = b.id
+                                LEFT JOIN
+                                    client c ON b.clientid = c.id
+                                LEFT JOIN
+                                    client_property_leave_license_details d ON a.clientpropertyid = d.clientpropertyid AND d.active = true
+                                LEFT JOIN
+                                    orders e ON d.orderid=e.id
+                                LEFT JOIN
+                                    servicetax st ON '2024-01-01 00:00:00' >= st.fromdate AND '2024-01-01 00:00:00' <= st.todate
+                                WHERE
+                                    (d.clientpropertyid, d.startdate) IN (
+                                        SELECT 
+                                            clientpropertyid,
+                                            MAX(startdate) AS max_startdate
+                                        FROM 
+                                            client_property_leave_license_details
+                                        GROUP BY 
+                                            clientpropertyid
+                                    )
+                                AND
+                                    a.active = true
+                                AND 
+                                    a.isdeleted=false;
+
+
+'''
+                cursor.execute(query)
+                logging.info(cursor.statusmessage)
+                conn[0].commit()
+                data = await runInTryCatch(conn,fname='pma_billing',payload=payload,query=f'select * from {tbl}',isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False)
+                return data
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+    finally:
+        if tbl:
+            cursor = conn[0].cursor()
+            cursor.execute(f'drop view {tbl}')
+            conn[0].commit()
+    
+
 logger.info("program_started")
