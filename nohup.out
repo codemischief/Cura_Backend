@@ -10640,3 +10640,6 @@ Traceback (most recent call last):
 fastapi.exceptions.HTTPException: 400: Please provide either 'user_id' or 'username' in the payload
 2024-05-04 16:50:47,248 - root - get_pma_billing - INFO - None
 2024-05-04 16:50:47,249 - uvicorn.access - send - INFO - 127.0.0.1:58022 - "POST /getPMABilling HTTP/1.1" 200
+2024-05-04 17:54:55,769 - uvicorn.access - send - INFO - 127.0.0.1:42710 - "GET /openapi.json HTTP/1.1" 200
+2024-05-04 18:43:55,684 - uvicorn.access - send - INFO - 127.0.0.1:37840 - "GET /docs HTTP/1.1" 200
+2024-05-04 18:43:55,811 - uvicorn.access - send - INFO - 127.0.0.1:37840 - "GET /openapi.json HTTP/1.1" 200

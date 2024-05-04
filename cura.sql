@@ -1127,4 +1127,3 @@ CREATE SEQUENCE IF NOT EXISTS clientleavelicensetenant_id_seq OWNED BY clientlea
 SELECT setval('clientleavelicensetenant_id_seq', COALESCE(max(id), 0) + 1, false) FROM clientleavelicensetenant;
 ALTER TABLE clientleavelicensetenant ALTER COLUMN id SET DEFAULT nextval('clientleavelicensetenant_id_seq');
 
-alter table client_property_leave_license_details alter column vacatingdate
