@@ -397,7 +397,7 @@ SELECT
     a.firstname,
     a.middlename,
     a.lastname,
-    concat_ws(' ',a.firstname,a.middlename,a.lastname) as clientname,
+    concat_ws(' ',a.firstname, NULLIF(a.middlename, ''),a.lastname) as clientname,
     a.salutation,
     a.clienttype,
     b.name as clienttypename,
@@ -433,14 +433,15 @@ SELECT
     a.tenantofproperty,
     concat_ws('-',e.propertydescription,e.suburb) as tenantofpropertyname
 FROM
-    client a,
-    client_type b,
-    country c,
-    client d,
-    client_property e
-WHERE
-    a.clienttype = b.id and a.country = c.id
-    and a.tenantof = d.id and a.tenantofproperty = e.id;
+    client a
+LEFT JOIN
+    client_type b ON a.clienttype = b.id
+LEFT JOIN
+    country c ON a.country = c.id
+LEFT JOIN
+    client d ON a.tenantof = d.id
+LEFT JOIN
+    client_property e ON a.tenantofproperty = e.id;
 
 
 CREATE OR REPLACE FUNCTION delete_from_get_client_info_view() RETURNS TRIGGER AS $$
@@ -461,7 +462,7 @@ EXECUTE FUNCTION delete_from_get_client_info_view();
 CREATE VIEW get_client_property_view AS
 SELECT DISTINCT
     a.id,
-    CONCAT(b.firstname,' ',b.middlename,' ',b.lastname) as client,
+    CONCAT(b.firstname,' ',NULLIF(b.middlename, ''),' ',b.lastname) as client,
     a.clientid,
     c.projectname as project,
     a.projectid,
@@ -534,7 +535,7 @@ CREATE VIEW get_orders_view AS
 SELECT DISTINCT
     a.id,
     a.clientid,
-    CONCAT(g.firstname,' ',g.lastname) as clientname,
+    CONCAT(g.firstname,' ',NULLIF(g.middlename, ''),' ',g.lastname) as clientname,
     a.orderdate,
     a.earlieststartdate,
     a.expectedcompletiondate,
@@ -697,7 +698,7 @@ SELECT DISTINCT
     a.paymentmode,
     g.name as paymentmodename,
     a.clientid,
-    concat_ws(' ',e.firstname,e.middlename,e.lastname) as clientname,
+    concat_ws(' ',e.firstname,NULLIF(e.middlename, ''),e.lastname) as clientname,
     a.receiptdesc,
     a.dated,
     a.createdby,
@@ -879,7 +880,7 @@ CREATE VIEW get_orders_invoice_view AS
 SELECT DISTINCT
     a.id,
     a.clientid,
-    concat_ws(' ',b.firstname,b.middlename,b.lastname) as clientname,
+    concat_ws(' ',b.firstname,NULLIF(b.middlename, ''),b.lastname) as clientname,
     a.orderid,
     d.briefdescription as ordername,
     a.estimatedate,
@@ -894,6 +895,7 @@ SELECT DISTINCT
     c.name as entityname,
     a.dated,
     a.createdby,
+    a.isdeleted,
     concat_ws(' ',e.firstname,e.lastname) as createdbyname
 FROM
     order_invoice a
@@ -920,7 +922,7 @@ LEFT JOIN
     c.name as paymentmodename,
     a.orderid,
     i.clientid,
-    concat_ws(' ',j.firstname,j.middlename,j.lastname) as clientname,
+    concat_ws(' ',j.firstname,NULLIF(j.middlename, ''),j.lastname) as clientname,
     i.clientpropertyid,
     concat_ws(' ',k.suburb,k.propertydescription) as clientproperty,
     d.briefdescription,
@@ -1023,7 +1025,7 @@ SELECT DISTINCT
     a.orderid,
     b.briefdescription,
     b.clientid,
-    concat_ws(' ',f.firstname,f.lastname) as clientname,
+    concat_ws(' ',f.firstname,NULLIF(f.middlename, ''),f.lastname) as clientname,
     a.vendorid,
     c.vendorname,
     a.invoicedate,
@@ -1074,7 +1076,7 @@ SELECT DISTINCT
     a.paymentdate,
     a.orderid,
     c.clientid,
-    concat_ws(' ',f.firstname,f.lastname) as clientname,
+    concat_ws(' ',i.firstname,NULLIF(i.middlename, ''),i.lastname) as clientname,
     c.briefdescription,
     c.clientpropertyid,
     j.propertydescription,
@@ -1087,7 +1089,7 @@ SELECT DISTINCT
     a.servicetaxamount,
     a.dated,
     a.createdby,
-    concat_ws(' ',i.firstname,i.lastname) as createdbyname,
+    concat_ws(' ',f.firstname,f.lastname) as createdbyname,
     a.isdeleted,
     a.createdon,
     a.entityid,
