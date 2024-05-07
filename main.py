@@ -12,6 +12,21 @@ import datetime
 # from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
 
+month_map = {
+    1:"Jan",
+    2:"Feb",
+    3:"Mar",
+    4:"Apr",
+    5:"May",
+    6:"Jun",
+    7:"Jul",
+    8:"Aug",
+    9:"Sep",
+    10:"Oct",
+    11:"Nov",
+    12:"Dec"
+}
+
 def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: list = None):
     cursor.execute(query,arr)
     if arr is not None:
@@ -809,7 +824,7 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
             with conn[0].cursor() as cursor:
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True)
+                                        search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,whereinquery=True)
 
                 colnames = data['colnames']
                 total_count = data['total_count']
@@ -4344,7 +4359,7 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
                                     d.id AS leavelicenseid,
                                     CONCAT_WS(' ', c.firstname, c.lastname) AS clientname,
                                     d.orderid,
-                                    e.briefdescription,
+                                    CONCAT(' ',e.briefdescription,' {month_map[payload["month"]]}-{payload["year"]} Charges') as briefdescription,
                                     EXTRACT(DAY FROM d.startdate) AS start_day,
                                     d.vacatingdate,
                                     d.rentamount,
@@ -4366,7 +4381,7 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
                                     (a.fixed * st.rate / 100) AS fixedtaxamt,
                                     COALESCE((d.rentamount * COALESCE(a.rented, 0)/100 * (31-EXTRACT(DAY FROM d.startdate))/30),0) + COALESCE(a.fixed,0) as totalbaseamt,
                                     COALESCE((a.fixed * st.rate / 100),0) + COALESCE((d.rentamount * COALESCE(a.rented, 0) / 100) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30,0) AS totaltaxamt,
-                                    ((d.rentamount * COALESCE(a.rented, 0) / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) + COALESCE((d.rentamount * COALESCE(a.rented, 0) / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30, 0) + COALESCE(a.fixed,0) + (COALESCE(a.fixed,0) * st.rate / 100)) AS totalamt
+                                    ((d.rentamount * COALESCE(a.rented, 0) / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) + COALESCE((d.rentamount * COALESCE(a.rented, 0) / 100) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30, 0) + COALESCE(a.fixed,0) + (COALESCE(a.fixed,0) * st.rate / 100)) AS totalamt
                                 FROM 
                                     client_property_caretaking_agreement a
                                 LEFT JOIN
@@ -4376,9 +4391,9 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
                                 LEFT JOIN
                                     client_property_leave_license_details d ON a.clientpropertyid = d.clientpropertyid AND d.active = true
                                 LEFT JOIN
-                                    orders e ON d.orderid=e.id
+                                    orders e ON a.orderid=e.id
                                 LEFT JOIN
-                                    servicetax st ON '2024-01-01 00:00:00' >= st.fromdate AND '2024-01-01 00:00:00' <= st.todate
+                                    servicetax st ON '{payload['year']}-{payload['month']}-01' >= st.fromdate AND '{payload['year']}-{payload['month']}-01' <= st.todate
                                 WHERE
                                     (d.clientpropertyid, d.startdate) IN (
                                         SELECT 
@@ -4392,14 +4407,20 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
                                 AND
                                     a.active = true
                                 AND 
-                                    a.isdeleted=false;
+                                    a.isdeleted=false
+                                AND
+                                    e.service = 62;
 
 
 '''
                 cursor.execute(query)
                 logging.info(cursor.statusmessage)
                 conn[0].commit()
-                data = await runInTryCatch(conn,fname='pma_billing',payload=payload,query=f'select * from {tbl}',isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False)
+                payload['rows'] = ['*']
+                payload['table_name'] = tbl
+                data = await runInTryCatch(conn,fname='pma_billing',payload=payload,isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False)
+                for row in data['data']:
+                    row['invoicedate'] = f"01-{month_map[payload['month']]}-{payload['year']}"
                 if not payload['insertIntoDB']:
                     return data
                 else:

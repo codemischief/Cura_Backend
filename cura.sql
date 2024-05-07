@@ -6,6 +6,29 @@ CREATE INDEX ON z_paymentrequeststatus(id);
 --CREATE INDEX ON paymentrequeststatus(id);
 CREATE INDEX ON entity(id);
 
+-- Create the table
+CREATE TABLE z_paymentrequeststatus (
+    id INT,
+    status TEXT
+);
+
+-- Create the table
+CREATE TABLE order_status (
+    id INT,
+    name TEXT
+);
+
+-- Insert data into the table
+INSERT INTO order_status (id, name) VALUES
+(1, 'On hold'),
+(2, 'Estimate Given'),
+(4, 'Cancelled'),
+(6, 'Billed'),
+(9, 'In progress'),
+(5, 'Closed (Work Done & Collection Completed)'),
+(8, 'Work Done - Pending Collection');
+
+
 CREATE VIEW get_payments_view AS
 SELECT DISTINCT
     a.id,
