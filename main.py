@@ -12,6 +12,21 @@ import datetime
 # from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
 
+month_map = {
+    1:"Jan",
+    2:"Feb",
+    3:"Mar",
+    4:"Apr",
+    5:"May",
+    6:"Jun",
+    7:"Jul",
+    8:"Aug",
+    9:"Sep",
+    10:"Oct",
+    11:"Nov",
+    12:"Dec"
+}
+
 def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: list = None):
     cursor.execute(query,arr)
     if arr is not None:
@@ -809,7 +824,7 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
             with conn[0].cursor() as cursor:
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True)
+                                        search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,whereinquery=True)
 
                 colnames = data['colnames']
                 total_count = data['total_count']
@@ -1398,8 +1413,12 @@ async def delete_employee(payload: dict, conn : psycopg2.extensions.connection =
                 msg = logMessage(cursor,query,(payload['id'],))
                 logging.info(msg)
                 conn[0].commit()
-                if cursor.statusmessage == "DELETE 0":
-                    return giveFailure("No record exists",payload['user_id'],role_access_status)        
+                query = f'SELECT isdeleted FROM employee WHERE id = {payload["id"]}'
+                cursor.execute(query)
+                if cursor.fetchone() is None:
+                    return giveFailure("No record exists",payload['user_id'],role_access_status)
+                elif cursor.fetchone()[0]: 
+                    return giveFailure("No record exists",payload['user_id'],role_access_status)
             data = {
                 "deleted_user":payload['id']
             }
@@ -1738,7 +1757,7 @@ async def get_client_admin_paginated(payload: dict, conn: psycopg2.extensions.co
     return await runInTryCatch(
         conn=conn,
         fname='getClientAdminPaginated',
-        query="select distinct id, concat_ws(' ',firstname,lastname) as client_name from get_client_info_view",
+        query="select distinct id, concat_ws(' ',firstname,lastname) as client_name from get_client_info_view ORDER BY firstname",
         payload=payload,
         isPaginationRequired=True,
         whereinquery=False,
@@ -2408,18 +2427,7 @@ async def add_project(payload: dict, conn: psycopg2.extensions.connection = Depe
         # else:
         #     return giveFailure("Already Exists",payload['user_id'],role_access_status)
     except Exception as e:
-        try:
-            query = 'delete from client where id=%s'
-            con = psycopg2.connect(DATABASE_URL)
-            with con.cursor() as cursor:
-                msg = logMessage(cursor,query,(id,))
-                logging.info(msg)
-            print(traceback.print_exc())
-            return giveFailure("Invalid Credentials",payload['user_id'],0)
-        except Exception as e:
-            print(traceback.print_exc())
-            return giveFailure("Could not delete data",payload['user_id'],0)
-
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 @app.post('/addClientProperty')
 async def add_client_property(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f"add_client_property:received payload <{payload}>")
@@ -3110,7 +3118,7 @@ async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.con
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "SELECT DISTINCT a.id,concat_ws('-',a.project,b.propertydescription,a.suburb) as propertyname from get_client_property_view a LEFT JOIN client_property b ON a.projectid=b.id WHERE a.clientid=%s"
+                query = "SELECT DISTINCT a.id,concat_ws('-',a.project,b.propertydescription,a.suburb) as propertyname from get_client_property_view a LEFT JOIN client_property b ON a.projectid=b.id WHERE a.clientid=%s ORDER BY a.project"
                 msg = logMessage(cursor,query,(payload['client_id'],))
                 logging.info(msg)
                 data = cursor.fetchall()
@@ -3133,7 +3141,7 @@ async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.con
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "SELECT DISTINCT a.id,concat_ws('-',concat_ws(' ',b.firstname,b.lastname),briefdescription) as ordername from orders a LEFT JOIN usertable b ON a.owner=b.id WHERE clientid = %s"
+                query = "SELECT DISTINCT a.id,concat_ws('-',concat_ws(' ',b.firstname,b.lastname),briefdescription) as ordername from orders a LEFT JOIN usertable b ON a.owner=b.id WHERE clientid = %s order by b.firstname"
                 msg = logMessage(cursor,query,(payload['client_id'],))
                 logging.info(msg)
                 data = cursor.fetchall()
@@ -3409,7 +3417,7 @@ async def get_orders(payload: dict, conn: psycopg2.extensions.connection = Depen
         fname = 'get_orders_view',
         payload=payload,
         isPaginationRequired=True,
-        whereinquery=False,
+        whereinquery=True,
         formatData=True,
         isdeleted=True
     )
@@ -4076,7 +4084,7 @@ async def get_vendor_category_admin(payload:dict,conn:psycopg2.extensions.connec
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT id,name FROM vendor_category' 
+                query = 'SELECT id,name FROM vendor_category ORDER BY name' 
                 msg = logMessage(cursor,query) 
                 logging.info(msg)
                 data = cursor.fetchall()
@@ -4344,7 +4352,7 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
                                     d.id AS leavelicenseid,
                                     CONCAT_WS(' ', c.firstname, c.lastname) AS clientname,
                                     d.orderid,
-                                    e.briefdescription,
+                                    CONCAT(' ',e.briefdescription,' {month_map[payload["month"]]}-{payload["year"]} Charges') as briefdescription,
                                     EXTRACT(DAY FROM d.startdate) AS start_day,
                                     d.vacatingdate,
                                     d.rentamount,
@@ -4366,7 +4374,7 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
                                     (a.fixed * st.rate / 100) AS fixedtaxamt,
                                     COALESCE((d.rentamount * COALESCE(a.rented, 0)/100 * (31-EXTRACT(DAY FROM d.startdate))/30),0) + COALESCE(a.fixed,0) as totalbaseamt,
                                     COALESCE((a.fixed * st.rate / 100),0) + COALESCE((d.rentamount * COALESCE(a.rented, 0) / 100) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30,0) AS totaltaxamt,
-                                    ((d.rentamount * COALESCE(a.rented, 0) / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) + COALESCE((d.rentamount * COALESCE(a.rented, 0) / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30, 0) + COALESCE(a.fixed,0) + (COALESCE(a.fixed,0) * st.rate / 100)) AS totalamt
+                                    ((d.rentamount * COALESCE(a.rented, 0) / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) + COALESCE((d.rentamount * COALESCE(a.rented, 0) / 100) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30, 0) + COALESCE(a.fixed,0) + (COALESCE(a.fixed,0) * st.rate / 100)) AS totalamt
                                 FROM 
                                     client_property_caretaking_agreement a
                                 LEFT JOIN
@@ -4376,9 +4384,9 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
                                 LEFT JOIN
                                     client_property_leave_license_details d ON a.clientpropertyid = d.clientpropertyid AND d.active = true
                                 LEFT JOIN
-                                    orders e ON d.orderid=e.id
+                                    orders e ON a.orderid=e.id
                                 LEFT JOIN
-                                    servicetax st ON '2024-01-01 00:00:00' >= st.fromdate AND '2024-01-01 00:00:00' <= st.todate
+                                    servicetax st ON '{payload['year']}-{payload['month']}-01' >= st.fromdate AND '{payload['year']}-{payload['month']}-01' <= st.todate
                                 WHERE
                                     (d.clientpropertyid, d.startdate) IN (
                                         SELECT 
@@ -4392,14 +4400,20 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
                                 AND
                                     a.active = true
                                 AND 
-                                    a.isdeleted=false;
+                                    a.isdeleted=false
+                                AND
+                                    e.service = 62;
 
 
 '''
                 cursor.execute(query)
                 logging.info(cursor.statusmessage)
                 conn[0].commit()
-                data = await runInTryCatch(conn,fname='pma_billing',payload=payload,query=f'select * from {tbl}',isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False)
+                payload['rows'] = ['*']
+                payload['table_name'] = tbl
+                data = await runInTryCatch(conn,fname='pma_billing',payload=payload,isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False)
+                for row in data['data']:
+                    row['invoicedate'] = f"01-{month_map[payload['month']]}-{payload['year']}"
                 if not payload['insertIntoDB']:
                     return data
                 else:
