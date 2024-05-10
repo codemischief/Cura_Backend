@@ -170,15 +170,15 @@ SELECT
     b.city as city,
     b.state as state,
     c.name as name,
-    c.name as country
+    c.name as country,
     c.id as countryid
 FROM 
-    locality a,
-    cities b,
-    country c
-WHERE
-    a.cityid = b.id AND
-    b.countryid = c.id;
+    locality a
+LEFT JOIN
+    cities b ON a.cityid = b.id
+LEFT JOIN
+    country c ON b.countryid = c.id;
+    
 
 
 
@@ -454,14 +454,16 @@ SELECT
     a.tenantofproperty,
     concat_ws('-',e.propertydescription,e.suburb) as tenantofpropertyname
 FROM
-    client a,
-    client_type b,
-    country c,
-    client d,
-    client_property e
-WHERE
-    a.clienttype = b.id and a.country = c.id
-    and a.tenantof = d.id and a.tenantofproperty = e.id;
+    client a
+LEFT JOIN 
+    client_type b ON a.clienttype = b.id
+LEFT JOIN 
+    country c ON a.country = c.id
+LEFT JOIN 
+    client d ON a.tenantof = d.id
+LEFT JOIN
+    client_property e ON a.tenantofproperty = e.id;
+
 
 
 CREATE OR REPLACE FUNCTION delete_from_get_client_info_view() RETURNS TRIGGER AS $$
@@ -563,6 +565,7 @@ SELECT DISTINCT
     a.actualcompletiondate,
     a.owner,
     CONCAT(b.firstname,' ',b.lastname) as ownername,
+     a.id,concat_ws('-',concat_ws(' ',b.firstname,b.lastname),briefdescription
     a.comments,
     a.status,
     h.name as orderstatus,
@@ -696,14 +699,6 @@ CREATE SEQUENCE IF NOT EXISTS client_property_owner_id_seq OWNED BY client_prope
 SELECT setval('client_property_owner_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_owner;
 ALTER TABLE client_property_owner ALTER COLUMN id SET DEFAULT nextval('client_property_owner_id_seq');
 
-SELECT * FROM client_property WHERE id=18194;
-SELECT * FROM client_property_photos WHERE clientpropertyid=18194;
-SELECT * FROM client_property_poa WHERE clientpropertyid=18194;
-SELECT * FROM client_property_owner WHERE propertyid=18194;
-
-INSERT INTO your_table (column1, column2, ...)
-VALUES (value1, value2, ...)
-RETURNING *;
 
 alter table client_property alter column initialpossessiondate date;
 
