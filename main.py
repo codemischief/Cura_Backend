@@ -36,7 +36,7 @@ def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: l
 
 # PostgreSQL database UR
 #todo : need to source user, password and ip port from variables
-DATABASE_URL = "postgresql://postgres:cura123@20.197.13.140:5432/cura_testing"
+DATABASE_URL = "postgresql://postgres:cura123@20.197.13.140:5432/cura_db"
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
