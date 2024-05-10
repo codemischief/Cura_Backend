@@ -36,7 +36,7 @@ def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: l
 
 # PostgreSQL database UR
 #todo : need to source user, password and ip port from variables
-DATABASE_URL = "postgresql://postgres:cura123@20.197.13.140:5432/cura_db"
+DATABASE_URL = "postgresql://postgres:cura123@20.197.13.140:5432/cura_testing"
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -866,7 +866,7 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
                 # Update builder information in the database
                 query_update = """
                     UPDATE builder 
-                    SET buildername = %s, phone1 = %s, phone2 = %s, email1 = %s, 
+                    SET buildername = %s, phone1 = %s, phone2 = %s, email1 = %s, email2 = %s,
                     addressline1 = %s, addressline2 = %s, suburb = %s, city = %s, 
                     state = %s, country = %s, zip = %s, website = %s, comments = %s, 
                     dated = %s, createdby = %s, isdeleted = %s
@@ -877,6 +877,7 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
                     payload['phone_1'],
                     payload['phone_2'],
                     payload['email1'],
+                    payload['email2'],
                     payload['addressline1'],
                     payload['addressline2'],
                     payload['suburb'],
@@ -886,9 +887,9 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
                     payload['zip'],
                     payload['website'],
                     payload['comments'],
-                    payload['dated'],
-                    payload['created_by'],
-                    payload['isdeleted'],
+                    givenowtime(),
+                    payload['user_id'],
+                    False,
                     payload['builder_id']
                 ))
                 logging.info(msg)
@@ -903,8 +904,11 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
         else:
             return giveFailure("Invalid credentials",payload['user_id'],role_access_status)
     except KeyError as ke:
+        logging.info(traceback.print_exc)
         return giveFailure(f"key {ke} not found",payload['user_id'],0)
     except Exception as e:
+        logging.info(traceback.print_exc)
+
         return giveFailure(str(e),payload['user_id'],0)
 
 @app.post('/deleteBuilder')
@@ -1010,7 +1014,7 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
         country = get_countries_from_id(conn)
         if role_access_status==1:
             table_name = 'get_cities_view'
-            data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
+            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
             total_count = data['total_count']
             colnames = payload['rows']
             logging.info(colnames)
@@ -1042,7 +1046,7 @@ async def get_projects(payload: dict, conn: psycopg2.extensions.connection = Dep
         fname='getProjects',
         payload=payload,
         isPaginationRequired=True,
-        whereinquery=False,
+        whereinquery=True,
         formatData=True,
         isdeleted=True
     )
@@ -1255,7 +1259,7 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
                 query = ('UPDATE bankst SET modeofpayment=%s,'
                          'date=%s,amount=%s,particulars=%s,'
                          'crdr=%s,vendorid=%s,createdby=%s WHERE id=%s')
-                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['createdby'],payload['id']))
+                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['user_id'],payload['id']))
                 logging.info(msg)
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
@@ -1333,9 +1337,9 @@ async def add_employee(payload: dict, conn: psycopg2.extensions.connection = Dep
                                         payload['state'],
                                         payload['country'],
                                         payload['zip'],
-                                        payload['dated'],
-                                        payload['createdby'],
-                                        payload['isdeleted'],
+                                        givenowtime(),
+                                        payload['user_id'],
+                                        False,
                                         payload['entityid'],
                                         payload['lobid'],
                                         payload['lastdateofworking'],     
@@ -1620,8 +1624,8 @@ async def add_payment(payload: dict,conn: psycopg2.extensions.connection = Depen
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                query = 'INSERT INTO ref_contractual_payments (paymentto,paymentby,amount,paidon,paymentmode,description,paymentfor,dated,createdby,entityid,tds,professiontax,month) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'                
-                msg = logMessage(cursor,query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['description'],payload['paymentfor'],payload['dated'],payload['createdby'],payload['entityid'],payload['tds'],payload['professiontax'],payload['month']))
+                query = 'INSERT INTO ref_contractual_payments (paymentto,paymentby,amount,paidon,paymentmode,description,paymentfor,dated,isdeleted,createdby,entityid,tds,professiontax,month) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'                
+                msg = logMessage(cursor,query,(payload['paymentto'],payload['paymentby'],payload['amount'],payload['paidon'],payload['paymentmode'],payload['description'],payload['paymentfor'],givenowtime(),False,payload['user_id'],payload['entityid'],payload['tds'],payload['professiontax'],payload['month']))
                 logging.info(msg)
                 id = cursor.fetchone()
                 conn[0].commit()
@@ -1705,7 +1709,9 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
     logging.info(f'{fname}:RT: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1:
+        if role_access_status != 1:
+            return giveFailure("Access Denied", payload['user_id'], role_access_status)
+        else:
             with conn[0].cursor() as cursor:
                 res = []
                 data = []
@@ -1746,8 +1752,7 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                     return giveSuccess(payload['user_id'], role_access_status, res,total_count)
                 else:
                     return giveSuccess(payload['user_id'],role_access_status,data,total_count)
-        else:
-            giveFailure("Access Denied", payload['user_id'], role_access_status)
+        
     except Exception as e:
             logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
             giveFailure('Invalid Credentials', payload['user_id'], 0)
@@ -1757,7 +1762,7 @@ async def get_client_admin_paginated(payload: dict, conn: psycopg2.extensions.co
     return await runInTryCatch(
         conn=conn,
         fname='getClientAdminPaginated',
-        query="select distinct id, concat_ws(' ',firstname,lastname) as client_name from get_client_info_view ORDER BY firstname",
+        query="select distinct id, clientname from get_client_info_view ORDER BY clientname",
         payload=payload,
         isPaginationRequired=True,
         whereinquery=False,
@@ -1844,7 +1849,7 @@ async def get_users_admin(payload: dict, conn : psycopg2.extensions.connection =
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = "SELECT firstname,lastname,id,username from usertable order by username"
+                query = "SELECT firstname,lastname,id,username from usertable order by firstname"
                 msg = logMessage(cursor,query)
                 logging.info(msg)
                 arr = []
@@ -2048,10 +2053,9 @@ async def get_item_by_id(payload: dict, conn: psycopg2.extensions.connection = D
                 data = cursor.fetchone()
                 
                 colnames = [desc[0] for desc in cursor.description]
+                logging.info([colnames,data])
+                res = {colname:value for colname,value in zip(colnames,data)}
                 
-                res = {}
-                for i,e in enumerate(data):
-                    res[colnames[i]] = e
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3118,7 +3122,7 @@ async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.con
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "SELECT DISTINCT a.id,concat_ws('-',a.project,b.propertydescription,a.suburb) as propertyname from get_client_property_view a LEFT JOIN client_property b ON a.projectid=b.id WHERE a.clientid=%s ORDER BY a.project"
+                query = "SELECT DISTINCT id,property as propertyname from get_client_property_view WHERE clientid=%s ORDER BY property"
                 msg = logMessage(cursor,query,(payload['client_id'],))
                 logging.info(msg)
                 data = cursor.fetchall()
@@ -3135,13 +3139,14 @@ async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.con
         return giveFailure("Invalid Credentials",0,0)
     
 @app.post('/getOrdersByClientId')
-async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def get_order_by_client_id(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f"get_client_property_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "SELECT DISTINCT a.id,concat_ws('-',concat_ws(' ',b.firstname,b.lastname),briefdescription) as ordername from orders a LEFT JOIN usertable b ON a.owner=b.id WHERE clientid = %s order by b.firstname"
+                query = '''SELECT DISTINCT id,briefdescription
+                            as ordername from orders WHERE clientid = %s order by briefdescription'''
                 msg = logMessage(cursor,query,(payload['client_id'],))
                 logging.info(msg)
                 data = cursor.fetchall()
@@ -3189,7 +3194,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                     project_amenities = {col:None for col in colnames}
 
                 #================Project_Bank_details=============
-                query = 'SELECT * FROM project_bank_details where projectid=%s'
+                query = 'SELECT * FROM project_bank_details where projectid=%s order by id'
                 logMessage(cursor,query,(payload['id'],))
                 _data = cursor.fetchall()
                 colnames = [desc[0] for desc in cursor.description]
@@ -3200,7 +3205,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                     project_bank_details = [{col:None for col in colnames}]
                 
                 #==============Project_Contacts===================
-                query = 'SELECT * FROM project_contacts where projectid=%s'
+                query = 'SELECT * FROM project_contacts where projectid=%s order by id'
                 logMessage(cursor,query,(payload['id'],))
                 _data = cursor.fetchall()
                 colnames = [desc[0] for desc in cursor.description]
@@ -3211,7 +3216,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                     project_contacts = [{col:None for col in colnames}]
 
                 #=============Project_Photos======================
-                query = 'SELECT * FROM project_photos where projectid=%s'
+                query = 'SELECT * FROM project_photos where projectid=%s order by id'
                 logMessage(cursor,query,(payload['id'],))
                 _data = cursor.fetchall()
                 colnames = [desc[0] for desc in cursor.description]
@@ -3594,7 +3599,7 @@ async def get_client_property_admin(payload: dict, conn : psycopg2.extensions.co
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "SELECT id,concat_ws(' ',project,description) as property FROM get_client_property_view order by project"
+                query = "SELECT id, property FROM get_client_property_view order by property"
                 msg = logMessage(cursor,query)
                 logging.info(msg)
                 data = cursor.fetchall()
@@ -3928,7 +3933,7 @@ async def get_vendors(payload : dict, conn : psycopg2.extensions.connection = De
         fname = 'get_orders',
         payload=payload,
         isPaginationRequired=True,
-        whereinquery=False,
+        whereinquery=True,
         formatData=True,
         isdeleted=True
     )
@@ -4007,7 +4012,7 @@ async def get_vendor_invoice(payload: dict, conn: psycopg2.extensions.connection
         fname = 'get_vendor_invoice',
         payload=payload,
         isPaginationRequired=True,
-        whereinquery=False,
+        whereinquery=True,
         formatData=True,
         isdeleted=True
     )
@@ -4084,7 +4089,7 @@ async def get_vendor_category_admin(payload:dict,conn:psycopg2.extensions.connec
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT id,name FROM vendor_category ORDER BY name' 
+                query = 'SELECT DISTINCT id,name FROM vendor_category ORDER BY name' 
                 msg = logMessage(cursor,query) 
                 logging.info(msg)
                 data = cursor.fetchall()
@@ -4110,7 +4115,7 @@ async def get_vendor_payment(payload: dict, conn: psycopg2.extensions.connection
         fname = 'get_vendor_payment',
         payload=payload,
         isPaginationRequired=True,
-        whereinquery=False,
+        whereinquery=True,
         formatData=True,
         isdeleted=True
     )
