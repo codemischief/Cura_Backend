@@ -214,11 +214,9 @@ SELECT
     a.createdby,
     a.isdeleted
 FROM 
-    research_prospect a,
-    cities b,
-    country c
-WHERE
-    a.country = c.id;
+    research_prospect a
+LEFT JOIN
+    country c ON a.country = c.id;
 
 
 CREATE OR REPLACE FUNCTION delete_from_get_research_prospect_view() RETURNS TRIGGER AS $$
@@ -513,6 +511,7 @@ SELECT DISTINCT
     a.propertytaxnumber,
     CONCAT(h.firstname,' ',h.lastname) as clientservicemanager,
     CONCAT(i.firstname,' ',i.lastname) as propertymanager,
+    concat_ws(' ',c.projectname,a.propertydescription) as property,
     a.comments,
     a.propertyownedbyclientonly,
     a.textforposting,
@@ -602,7 +601,9 @@ LEFT JOIN
 LEFT JOIN
     client_property i ON a.clientpropertyid = i.id;
 
-
+CREATE SEQUENCE IF NOT EXISTS payments_id_seq OWNED BY ref_contractual_payments.id;
+SELECT setval('payments_id_seq', COALESCE(max(id), 0) + 1, false) FROM ref_contractual_payments;
+ALTER TABLE ref_contractual_payments ALTER COLUMN id SET DEFAULT nextval('payments_id_seq');
 
 CREATE SEQUENCE IF NOT EXISTS orders_id_seq OWNED BY orders.id;
 SELECT setval('orders_id_seq', COALESCE(max(id), 0) + 1, false) FROM orders;
@@ -622,6 +623,10 @@ ALTER TABLE builder ALTER COLUMN id SET DEFAULT nextval('builder_id_seq');
 CREATE SEQUENCE IF NOT EXISTS client_id_seq OWNED BY client.id;
 SELECT setval('client_id_seq', COALESCE(max(id), 0) + 1, false) FROM client;
 ALTER TABLE client ALTER COLUMN id SET DEFAULT nextval('client_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS country_id_seq OWNED BY country.id;
+SELECT setval('country_id_seq', COALESCE(max(id), 0) + 1, false) FROM country;
+ALTER TABLE country ALTER COLUMN id SET DEFAULT nextval('country_id_seq');
 
 -- For client_access table
 CREATE SEQUENCE IF NOT EXISTS client_access_id_seq OWNED BY client_access.id;

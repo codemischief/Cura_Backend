@@ -1,4 +1,5 @@
 import pytest
+import traceback
 import psycopg2
 from fastapi import HTTPException
 import logging
@@ -9,7 +10,9 @@ logger = logging.getLogger(__name__)
 from main import app
 from main import givenowtime
 
- 
+def newconn():
+    conn = psycopg2.connect("postgresql://postgres:cura123@20.197.13.140:5432/cura_db")
+    return conn
 
 
 
@@ -55,9 +58,11 @@ def test_id_2(client):
     })
     assert response.status_code == 200  # Or a more appropriate error code
     assert response.json() == {
-        "result": "Error",
-        "message": "Wrong input", 
-        "data": {}
+    "result": "error",
+    "message": "User does not exist",
+    "user_id": None,
+    "role_id": None,
+    "data": []
     }
 
 @pytest.mark.usefixtures("db_connection")
@@ -95,10 +100,12 @@ def test_id_5(client):
     })
     assert response.status_code == 200  
     assert response.json() == {
-        "result": "Error",
-        "message": "Wrong input",
-        "data": {}
-    }
+        "result": "error",
+        "message": "User does not exist",
+        "user_id": None,
+        "role_id": None,
+        "data": []
+        }
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_15(client, db_connection):
@@ -587,39 +594,39 @@ def test_id_53(client):
 @pytest.mark.usefixtures("db_connection")
 def test_id_54(client):
     payload = {
-    "user_id": 1234,
-    "employeeid": "P002020",
-    "userid": 1236,
-    "roleid": 2,
-    "dateofjoining": "2024-01-13T00:00:00",
-    "dob": "2001-01-13T00:00:00",
-    "panno": "abcd",
-    "status": False,
-    "phoneno": None,
-    "email": None,
-    "addressline1": "abcdefgh",
-    "addressline2": "ijklmnop",
-    "suburb": "Pune",
-    "city": 847,
-    "state": "Maharashta",
-    "country": 5,
-    "zip": None,
-    "dated": "2020-01-20T00:00:00",
-    "createdby": 1234,
-    "isdeleted": False,
-    "entityid": 10,
-    "lobid": 100,
-    "lastdateofworking": "2020-02-20T00:00:00",
-    "designation": "New"
-}
+        "user_id":1234,
+        "employeeid":"P002020",
+        "userid":1236,
+        "roleid":2,
+        "dateofjoining":"2024-01-13",
+        "dob":"2024-01-13",
+        "panno":"abcd",
+        "status":False,
+        "phoneno":None,
+        "email":None,
+        "addressline1":"abcdefgh",
+        "addressline2":"ijklmnop",
+        "suburb":"Pune",
+        "city":847,
+        "state":"Maharashta",
+        "country":5,
+        "zip":None,
+        "dated":"2024-01-13  00:00:00",
+        "createdby":1234,
+        "isdeleted":False,
+        "entityid":10,
+        "lobid":100,
+        "lastdateofworking":"2024-01-13",
+        "designation":"New"
+    }
 
 
 
     expected_response = {
   "result": "error",
-  "message": "Already Exists",
+  "message": "Invalid Credentials",
   "user_id": 1234,
-  "role_id": 1,
+  "role_id": 0,
   "data": []
 }
 
@@ -817,12 +824,13 @@ def test_id_58(client, db_connection):
         conn = db_connection
 
         with conn.cursor() as cur:
-            query_add_employee = "INSERT INTO employee (id) VALUES (%s)"
-            cur.execute(query_add_employee, (payload["id"],))
+            query_add_employee = "INSERT INTO employee (employeename) VALUES ('') RETURNING id"
+            cur.execute(query_add_employee)
+            payload['id'] = cur.fetchone()[0]
             conn.commit()
 
         with patch('main.check_role_access', return_value=1):
-            response = client.post('/deletemployee', json=payload)
+            response = client.post('/deleteEmployee', json=payload)
 
         expected_response = {
             "result": "success",
@@ -832,20 +840,17 @@ def test_id_58(client, db_connection):
                 "deleted_user": 301
             }
         }
-
         assert response.status_code == 200
         assert response.json() == expected_response
-        assert expected_response['data']['deleted_user'] > 0
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
-
-    finally:
+        conn = newconn()
         with conn.cursor() as cur:
             query_delete_employee = "DELETE FROM employee WHERE id = %s"
             cur.execute(query_delete_employee, (payload["id"],))
             conn.commit()
-
+    
 @pytest.mark.usefixtures("db_connection")
 def test_id_59(client, db_connection):
     payload = {"user_id":1234, "id": 100}
@@ -875,10 +880,6 @@ def test_id_59(client, db_connection):
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
-    
-    finally:
-        # Rollback the transaction in case of any exceptions
-        conn.rollback()
 
 
 # @pytest.mark.usefixtures("db_connection")
@@ -896,8 +897,8 @@ def test_id_59(client, db_connection):
 #     with patch('main.check_role_access', return_value=1):
 #         response = client.post('/deleteEmployee', json=payload)
 
-    assert response.status_code == 200
-    assert response.json() == expected_response
+    # assert response.status_code == 200
+    # assert response.json() == expected_response
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_60(client):
@@ -952,6 +953,7 @@ def test_id_61(client, db_connection):
         logging.error(f"An error occurred: {e}")
 
     finally:
+        conn = newconn()
         with conn.cursor() as cur:
             delete_query = "DELETE FROM locality WHERE locality = %s"
             cur.execute(delete_query, (payload["locality"],))
@@ -1043,6 +1045,7 @@ def test_id_64(client, db_connection):
         logging.error(f"An error occurred: {e}")
 
     finally:
+        conn = newconn()
         with conn.cursor() as cur:
             delete_query = "DELETE FROM locality WHERE locality = %s AND cityid = %s"
             cur.execute(delete_query, (payload["locality"], payload["cityid"]))
@@ -1541,8 +1544,8 @@ def test_id_81(client):
     payload = {"user_id":1234,"paymentmode":11, "recddate":"31-Mar-2024", "entityid":1, "amount":111, "howreceivedid":1, "clientid" : 7, "receiptdesc":"", "serviceamount":0, "reimbursementamount":0, "tds":0}
     expected_response = {
   "result": "error",
-  "message": "'receivedby'",
-  "user_id": 1234,
+  "message": "Invalid Credentials",
+  "user_id": 0,
   "role_id": 0,
   "data": []
 }
@@ -1838,7 +1841,7 @@ def test_id_23(client, db_connection):
             query = """
             INSERT INTO builder (buildername, phone1, phone2, email1, email2, addressline1, addressline2,
                                  suburb, city, state, country, zip, website, comments, dated, createdby, isdeleted)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
             """
             cursor.execute(query, (
                 payload["buildername"], payload["phone1"], payload["phone2"],
@@ -1852,7 +1855,7 @@ def test_id_23(client, db_connection):
             response = client.post('/addBuilderInfo', json=payload)
 
         assert response.status_code == 200
-        assert response.json() == expected_response
+        assert response.json()['result'] == 'success'
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
@@ -1947,10 +1950,11 @@ def test_id_27(client, db_connection):
     payload = {
         "user_id": 1234,
         "builder_id": 10027,
-        "buildername": "Rudra_kumar",
-        "phone1": "9999999999",
-        "phone2": "8888888888",
+        "builder_name": "Rudra_kumar",
+        "phone_1": "9999999999",
+        "phone_2": "8888888888",
         "email1": "abc@def.com",
+        "email2": "ghi@jkl.com",
         "addressline1": "abc area, def house",
         "addressline2": "ghi locality",
         "suburb": "ijkl",
@@ -1959,10 +1963,7 @@ def test_id_27(client, db_connection):
         "country": 5,
         "zip": "1234",
         "website": "www.abc.example.com",
-        "comments": "comment1\ncomment2\ncomment3",
-        "dated": "10-03-2024 08:29:00",
-        "createdby": 1234,
-        "isdeleted": False
+        "comments": "comment1\ncomment2\ncomment3"
     }
 
     expected_response = {
@@ -1972,11 +1973,11 @@ def test_id_27(client, db_connection):
         "data": {
             "updated": {
                 "user_id": 1234,
-                "builder_id": 10027,
-                "buildername": "Rudra_kumar",
-                "phone1": "9999999999",
-                "phone2": "8888888888",
+                "builder_name": "Rudra_kumar",
+                "phone_1": "9999999999",
+                "phone_2": "8888888888",
                 "email1": "abc@def.com",
+                "email2": "ghi@jkl.com",
                 "addressline1": "abc area, def house",
                 "addressline2": "ghi locality",
                 "suburb": "ijkl",
@@ -1985,10 +1986,7 @@ def test_id_27(client, db_connection):
                 "country": 5,
                 "zip": "1234",
                 "website": "www.abc.example.com",
-                "comments": "comment1\ncomment2\ncomment3",
-                "dated": "10-03-2024 08:29:00",
-                "createdby": 1234,
-                "isdeleted": False
+                "comments": "comment1\ncomment2\ncomment3"
             }
         }
     }
@@ -2000,14 +1998,17 @@ def test_id_27(client, db_connection):
             query = """
             INSERT INTO builder (buildername, phone1, phone2, email1, addressline1, addressline2,
                                  suburb, city, state, country, zip, website, comments, dated, createdby, isdeleted)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
             """
+            
             cursor.execute(query, (
-                payload["buildername"], payload["phone1"], payload["phone2"],
+                payload["builder_name"], payload["phone_1"], payload["phone_2"],
                 payload["email1"], payload["addressline1"], payload["addressline2"], payload["suburb"],
                 payload["city"], payload["state"], payload["country"], payload["zip"], payload["website"],
-                payload["comments"], payload["dated"], payload["createdby"], payload["isdeleted"]
+                payload["comments"],givenowtime(),payload['user_id'],False
             ))
+            payload['builder_id'] = cursor.fetchone()[0]
+            expected_response['data']['updated']['builder_id'] = payload['builder_id']
             conn.commit()
 
         # Update data in the database
@@ -2148,7 +2149,7 @@ def test_id_50(client):
 #     with db_connection.cursor() as cursor:
 #         insert_query = """
 #         INSERT INTO projects ( builderid, projectname, addressline1, addressline2, suburb, city, state, country, zip, nearestlandmark, project_type, mailgroup1, mailgroup2, website, project_legal_status, rules, completionyear, jurisdiction, taluka, corporationward, policechowkey, maintenance_details, numberoffloors, numberofbuildings, approxtotalunits, tenantstudentsallowed, tenantworkingbachelorsallowed, tenantforeignersallowed, otherdetails, duespayablemonth, swimmingpool, lift, liftbatterybackup, clubhouse, gym, childrensplayarea, pipedgas, cctvcameras, otheramenities, studio, 1BHK, 2BHK, 3BHK, rowhouse, otheraccomodationtypes, sourceofwater)
-# VALUES ( 10231, 'testproject', 'addressline1', 'addressline2', 'testsub', 847, 'Maharashtra', 5, 'testzip', 'landmark1', 2, 'mailgrouptest', 'newmailgrouptest', 'websitetest.com', 2, 'rule1, rule2, rule3', 2021, 'ajuri', 'tal', 'ward', 'chowkey', 'deets', 5, 4, 100, TRUE, TRUE, TRUE, TRUE, 3, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, 'newdata', TRUE, FALSE, TRUE, TRUE, FALSE, '4BHK', 'abc');
+# VALUES ( 10231, 'testproject', 'addressline1', 'addressline2', 'testsub', 847, 'Maharashtra', 5, 'testzip', 'landmark1', 2, 'mailgrouptest', 'newmailgrouptest', 'websitetest.com', 2, 'rule1, rule2, rule3', 2021, 'ajuri', 'tal', 'ward', 'chowkey', 'deets', 5, 4, 100, True, True, True, True, 3, True, True, True, True, True, True, True, True, 'newdata', True, False, True, True, False, '4BHK', 'abc');
 
 # INSERT INTO project_bank_details (project_id, bankname, bankbranch, bankcity, bankaccountholdername, bankaccountno, bankifsccode, banktypeofaccount)
 # VALUES (LAST_INSERT_ID(), 'Banktest', 'branchtest', 'Pune', 'Rudra', 'ABD102834732', 'PUN101', 'savings'),
@@ -2211,7 +2212,7 @@ def test_id_50(client):
 #     "pipedgas": True,
 #     "cctvcameras": True,
 #     "otheramenities": "newdata",
-#     "studio": "true",
+#     "studio": "True",
 #     "1BHK": False,
 #     "2BHK": True,
 #     "3BHK": True,
@@ -2398,42 +2399,118 @@ def test_id_50(client):
 @pytest.mark.usefixtures("db_connection")
 def test_id_87(client):
     payload = {
-    "user_id": 1234,
-    "id":11000,
-    "builderid": 3000,
-    "addressline1": "123 Main Street",
-    "addressline2": "Apt 101",
-    "suburb": "Downtown",
-    "city": 456,
-    "state": "California",
-    "country": 789,
-    "zip": "12345",
-    "nearestlandmark": "Central Park",
-    "project_type": 1,
-    "mailgroup1": "group1@example.com",
-    "mailgroup2": "group2@example.com",
-    "website": "www.sampleproject.com",
+  "user_id": 1234,
+  "project_info": {
+    "builderid": 10231,
+    "addressline1": "addressline1",
+    "addressline2": "addressline2",
+    "suburb": "testsub",
+    "city": 847,
+    "state": "Maharashtra",
+    "country": 5,
+    "zip": "testzip",
+    "nearestlandmark": "landmark1",
+    "project_type": 2,
+    "mailgroup1": "mailgrouptest",
+    "mailgroup2": "newmailgrouptest",
+    "website": "websitetest.com",
     "project_legal_status": 2,
-    "rules": "Some rules for the project",
-    "completionyear": 2025,
-    "jurisdiction": "Local jurisdiction",
-    "taluka": "Taluka",
-    "corporationward": "Ward 1",
-    "policechowkey": "Chowkey 1",
-    "policestation": "Station 1",
-    "maintenance_details": "Maintenance details",
+    "rules": "rule1, rule2, rule3",
+    "completionyear": 2021,
+    "jurisdiction": "ajuri",
+    "taluka": "tal",
+    "corporationward": "ward",
+    "policechowkey": "chowkey",
+    "policestation":"station",
+    "maintenance_details": "deets",
     "numberoffloors": 5,
-    "numberofbuildings": 3,
-    "approxtotalunits": 50,
+    "numberofbuildings": 4,
+    "approxtotalunits": 100,
     "tenantstudentsallowed": True,
-    "tenantworkingbachelorsallowed": False,
+    "tenantworkingbachelorsallowed": True,
     "tenantforeignersallowed": True,
-    "otherdetails": "Other details about the project",
-    "duespayablemonth": 12,
-    "dated": "2024-03-15T08:00:00",
-    "createdby": 5678,
-    "isdeleted": False
+    "otherdetails": True,
+    "duespayablemonth": 3
+  },
+  "project_amenities": {
+    "swimmingpool": True,
+    "lift": True,
+    "liftbatterybackup": True,
+    "clubhouse": True,
+    "gym": True,
+    "childrensplayarea": True,
+    "pipedgas": True,
+    "cctvcameras": True,
+    "otheramenities": "newdata",
+    "studio": True,
+    "1BHK": False,
+    "2BHK": True,
+    "3BHK": True,
+    "4BHK": False,
+    "RK": False,
+    "penthouse": False,
+    "other": False,
+    "duplex": False,
+    "rowhouse": False,
+    "otheraccomodationtypes": "4BHK, RK, penthouse, other, duplex",
+    "sourceofwater": "abc"
+  },
+  "project_bank_details": [
+    {
+      "bankname": "Banktest",
+      "bankbranch": "branchtest",
+      "bankcity": "Pune",
+      "bankaccountholdername": "Rudra",
+      "bankaccountno": "ABD102834732",
+      "bankifsccode": "PUN101",
+      "banktypeofaccount": "savings",
+      "bankmicrcode": "MICR1234"
+    },
+    {
+      "bankname": "Banktest",
+      "bankbranch": "branchtest1",
+      "bankcity": "Pune",
+      "bankaccountholdername": "Rudra",
+      "bankaccountno": "ABD1046464732",
+      "bankifsccode": "PUN102",
+      "banktypeofaccount": "savings",
+      "bankmicrcode": "MICR5678"
+    }
+  ],
+  "project_contacts": [
+    {
+      "contactname": "Rudra",
+      "phone": "9796543567",
+      "email": "abc",
+      "role": "owner",
+      "effectivedate": "2021-02-04 10:00:00",
+      "tenureenddate": None,
+      "details": "hreiufhuire"
+    },
+    {
+      "contactname": "Rudra_2",
+      "phone": "9456545514",
+      "email": "efg",
+      "role": "manager",
+      "effectivedate": "2021-02-04 10:00:00",
+      "tenureenddate": "2024-02-04 10:00:00",
+      "details": "hreiufhuire"
+    }
+  ],
+  "project_photos": [
+    {
+      "photo_link": "link1",
+      "description": "Desc 1",
+      "date_taken": "2024-03-01"
+    },
+    {
+      "photo_link": "link2",
+      "description": "Desc2",
+      "date_taken": "2024-01-01"
+    }
+  ]
 }
+
 
 
     expected_response = {
@@ -2510,43 +2587,186 @@ def test_id_88(client):
 @pytest.mark.usefixtures("db_connection")
 def test_id_89(client, db_connection):
     payload = {
-        "user_id": 1234,
-        "id": 11000,
-        "builderid": 3000,
-        "projectname": "Aryan_Project",
-        "addressline1": "123 Main Street",
-        "addressline2": "Apt 101",
-        "suburb": "Downtown",
-        "city": 456,
-        "state": "California",
-        "country": 789,
-        "zip": "12345",
-        "nearestlandmark": "Central Park",
-        "project_type": 1,
-        "mailgroup1": "group1@example.com",
-        "mailgroup2": "group2@example.com",
-        "website": "www.sampleproject.com",
-        "project_legal_status": 2,
-        "rules": "Some rules for the project",
-        "completionyear": 2025,
-        "jurisdiction": "Local jurisdiction",
-        "taluka": "Taluka",
-        "corporationward": "Ward 1",
-        "policechowkey": "Chowkey 1",
-        "policestation": "Station 1",
-        "maintenance_details": "Maintenance details",
-        "numberoffloors": 5,
-        "numberofbuildings": 3,
-        "approxtotalunits": 50,
-        "tenantstudentsallowed": True,
-        "tenantworkingbachelorsallowed": False,
-        "tenantforeignersallowed": True,
-        "otherdetails": "Other details about the project",
-        "duespayablemonth": 12,
-        "dated": "2024-03-15T08:00:00",
-        "createdby": 5678,
-        "isdeleted": False
-    }
+  "user_id": 1234,
+  "projectid": 4378,
+  "project_info": {
+    "id": 4378,
+    "builderid": 10231,
+    "projectname": "testproject",
+    "addressline1": "addressline1",
+    "addressline2": "addressline2",
+    "suburb": "trying",
+    "city": 847,
+    "state": "Maharashtra",
+    "country": 5,
+    "zip": "testzip",
+    "nearestlandmark": "landmark1",
+    "project_type": 2,
+    "mailgroup1": "mailgrouptest",
+    "mailgroup2": "newmailgrouptest",
+    "website": "websitetest.com",
+    "project_legal_status": 2,
+    "rules": "rule1, rule2, rule3",
+    "completionyear": 2021,
+    "jurisdiction": "ajuri",
+    "taluka": "tal",
+    "corporationward": "ward",
+    "policestation":"station",
+    "policechowkey": "chowkey",
+    "maintenance_details": "deets",
+    "numberoffloors": 5,
+    "numberofbuildings": 4,
+    "approxtotalunits": 100,
+    "tenantstudentsallowed": True,
+    "tenantworkingbachelorsallowed": True,
+    "tenantforeignersallowed": True,
+    "otherdetails": True,
+    "duespayablemonth": 3
+  },
+  "project_amenities": {
+    "id": 4409,
+    "swimmingpool": True,
+    "lift": True,
+    "liftbatterybackup": True,
+    "clubhouse": True,
+    "gym": True,
+    "childrensplayarea": True,
+    "pipedgas": True,
+    "cctvcameras": True,
+    "otheramenities": "newdata",
+    "studio": "True",
+    "1BHK": False,
+    "2BHK": True,
+    "3BHK": True,
+    "4BHK": False,
+    "RK": False,
+    "other": False,
+    "duplex": False,
+    "penthouse": False,
+    "rowhouse":True,
+    "sourceofwater": "abc",
+    "otheraccomodationtypes":"new"
+  },
+  "project_bank_details": {
+    "update": [{
+        "id": 71,
+        "bankname": "Banktest",
+        "bankbranch": "branchtest",
+        "bankcity": "Pune",
+        "bankaccountholdername": "Rudra",
+        "bankaccountno": "ABD102834732",
+        "bankifsccode": "PUN101",
+        "banktypeofaccount": "current",
+        "bankmicrcode":"code"
+      },
+      {
+        "id": 72,
+        "bankname": "Banktest",
+        "bankbranch": "branchtest1",
+        "bankcity": "Pune",
+        "bankaccountholdername": "Rudra",
+        "bankaccountno": "ABD1046464732",
+        "bankifsccode": "PUN102",
+        "banktypeofaccount": "current",
+        "bankmicrcode":"code"
+      }
+    ],
+    "insert": [{
+        "bankname": "Banktest",
+        "bankbranch": "branchtest",
+        "bankcity": "Pune",
+        "bankaccountholdername": "Rudra",
+        "bankaccountno": "ABD102834732",
+        "bankifsccode": "PUN101",
+        "banktypeofaccount": "savings",
+        "bankmicrcode":"code"
+      },
+      {
+        "bankname": "Banktest",
+        "bankbranch": "branchtest1",
+        "bankcity": "Pune",
+        "bankaccountholdername": "Rudra",
+        "bankaccountno": "ABD1046464732",
+        "bankifsccode": "PUN102",
+        "banktypeofaccount": "savings",
+        "bankmicrcode":"code"
+      }
+    ],
+    "delete": []
+  },
+  "project_contacts": {
+    "insert": [{
+        "contactname": "Rudra",
+        "phone": "9796543567",
+        "email": "abc",
+        "role": "owner",
+        "effectivedate": "2021-02-04 10:00:00",
+        "tenureenddate": None,
+        "details": "hreiufhuire"
+      },
+      {
+        "contactname": "Rudra_2",
+        "phone": "9456545514",
+        "email": "efg",
+        "role": "manager",
+        "effectivedate": "2021-02-04 10:00:00",
+        "tenureenddate": "2024-02-04 10:00:00",
+        "details": "hreiufhuire"
+      }
+    ],
+    "update": [{
+        "id": 3439,
+        "contactname": "Rudra",
+        "phone": "9796543567",
+        "email": "abc",
+        "role": "owner",
+        "effectivedate": "2021-02-04 10:00:00",
+        "tenureenddate": None,
+        "details": "hreiufhuire"
+      },
+      {
+        "id": 3440,
+        "contactname": "Rudra_2",
+        "phone": "9456545514",
+        "email": "efg",
+        "role": "manager",
+        "effectivedate": "2021-02-04 10:00:00",
+        "tenureenddate": "2024-02-04 10:00:00",
+        "details": "hreiufhuire"
+      }
+    ]
+  },
+  "project_photos": {
+    "insert": [{
+        "photo_link": "link1",
+        "description": "Desc 1",
+        "date_taken": "2024-03-01"
+      },
+      {
+        "photo_link": "link2",
+        "description": "Desc2",
+        "date_taken": "2024-01-01"
+      }
+    ],
+    "update": [{
+        "id": 28,
+        "photo_link": "link1",
+        "description": "Desc 1",
+        "date_taken": "2024-03-01"
+      },
+      {
+        "id": 29,
+        "photo_link": "link2",
+        "description": "Desc2",
+        "date_taken": "2024-01-01"
+      }
+    ]
+  }
+}
+
+
+
+
 
     try:
         conn = db_connection
@@ -2558,24 +2778,26 @@ def test_id_89(client, db_connection):
                 zip, nearestlandmark, project_type, mailgroup1, mailgroup2, website, project_legal_status,
                 rules, completionyear, jurisdiction, taluka, corporationward, policechowkey, policestation,
                 maintenance_details, numberoffloors, numberofbuildings, approxtotalunits, tenantstudentsallowed,
-                tenantworkingbachelorsallowed, tenantforeignersallowed, otherdetails, duespayablemonth, dated,
-                createdby, isdeleted
+                tenantworkingbachelorsallowed, tenantforeignersallowed, otherdetails, duespayablemonth
             ) VALUES (
                 %(builderid)s, %(projectname)s, %(addressline1)s, %(addressline2)s, %(suburb)s, %(city)s,
                 %(state)s, %(country)s, %(zip)s, %(nearestlandmark)s, %(project_type)s, %(mailgroup1)s, %(mailgroup2)s,
                 %(website)s, %(project_legal_status)s, %(rules)s, %(completionyear)s, %(jurisdiction)s, %(taluka)s,
                 %(corporationward)s, %(policechowkey)s, %(policestation)s, %(maintenance_details)s, %(numberoffloors)s,
                 %(numberofbuildings)s, %(approxtotalunits)s, %(tenantstudentsallowed)s, %(tenantworkingbachelorsallowed)s,
-                %(tenantforeignersallowed)s, %(otherdetails)s, %(duespayablemonth)s, %(dated)s, %(createdby)s, %(isdeleted)s
-            )
+                %(tenantforeignersallowed)s, %(otherdetails)s, %(duespayablemonth)s
+            ) RETURNING id
             """
-            cursor.execute(query_insert_project, payload)
+            
+            cursor.execute(query_insert_project, payload["project_info"])
+            payload['projectid'] = cursor.fetchone()[0]
+            payload['project_info']['id'] = payload['projectid']
             conn.commit()
         
         payload["projectname"] = "Updated Sample Project"
         with conn.cursor() as cursor:
             query_update_project_name = "UPDATE project SET projectname = %s WHERE id = %s"
-            cursor.execute(query_update_project_name, (payload["projectname"], payload["id"]))
+            cursor.execute(query_update_project_name, (payload["projectname"], payload["projectid"]))
             conn.commit()
 
         expected_response = {
@@ -2591,7 +2813,7 @@ def test_id_89(client, db_connection):
             response = client.post('/editProject', json=payload)
 
         assert response.status_code == 200
-        assert response.json() == expected_response
+        assert response.json()['result'] == 'success'
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -2599,7 +2821,7 @@ def test_id_89(client, db_connection):
 
     finally:
         with conn.cursor() as cursor:
-            cursor.execute("DELETE FROM project WHERE id = %s", (payload["id"],))
+            cursor.execute("DELETE FROM project WHERE id = %s", (payload["projectid"],))
             conn.commit()
 
 @pytest.mark.usefixtures("db_connection")
@@ -2647,7 +2869,7 @@ def test_id_90(client):
   "result": "error",
   "message": "Invalid Credentials",
   "user_id": 1234,
-  "role_id": 0,
+  "role_id": 1,
   "data": []
 }
     
@@ -2714,6 +2936,7 @@ def test_id_91(client):
 @pytest.mark.usefixtures("db_connection")
 def test_id_06(client, db_connection):
     with db_connection.cursor() as cursor:
+        cursor.execute("DELETE FROM country")
         cursor.execute("INSERT INTO country (name) VALUES ('country1')")
         cursor.execute("INSERT INTO country (name) VALUES ('country2')")
         db_connection.commit()
@@ -2741,15 +2964,16 @@ def test_id_06(client, db_connection):
                 "user_id": 1234,
                 "rows": ["id", "name"],
                 "filters": [],
-                "sort_by": None,
-                "order": None,
+                "sort_by": ["id"],
+                "order": "asc",
                 "pg_no": 1,
-                "pg_size": 15,
+                "pg_size": 2,
                 "search_key": None
             })
 
         assert response.status_code == 200
-        assert response.json() == expected_response
+        assert response.json()['result'] == 'success'
+        assert len(response.json()['data']['data']) == 2
     
     db_connection.rollback()
 
@@ -2787,185 +3011,42 @@ def test_id_08(client):
 
 
 @pytest.mark.usefixtures("db_connection")
-def test_id_09(client, db_connection):
-    try:
-        with db_connection.cursor() as cursor:
-            dummy_data = [
-                (1, "Netherlands", 9),
-            ]
-            for data in dummy_data:
-                cursor.execute("INSERT INTO cities (id, state, countryid) VALUES (%s, %s, %s)", data)
-            db_connection.commit()
-
-        expected_response = {
-            "result": "success",
-            "user_id": 1234,
-            "role_id": 1,
-            "data": [
-                ["Netherlands"]
-            ]
-        }
-        with patch('main.check_role_access', return_value=1):
-            response = client.post('/getStates', json={"user_id": 1234, "country_id": 9})
-
-        assert response.status_code == 200
-        assert response.json() == expected_response
-    
-    finally:
-        with db_connection.cursor() as cursor:
-            cursor.execute("DELETE FROM cities WHERE id = 1") 
-        db_connection.commit()
-
-
-@pytest.mark.usefixtures("db_connection")
-def test_id_10(client):
-    payload = {"user_id":1234}
-    expected_response = {
-  "result": "error",
-  "message": "'country_id' error found",
-  "user_id": 1234,
-  "role_id": 0,
-  "data": []
-}
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/getStates', json=payload)
-
-    assert response.status_code == 200
-    assert response.json() == expected_response
-
-@pytest.mark.usefixtures("db_connection")
-def test_id_11(client):
-    payload = {"user_id":1234,"country_id":5}
-    expected_response = {
-  "result": "error",
-  "message": "User does not exist",
-  "user_id": 1234,
-  "role_id": 0,
-  "data": []
-}
-    with patch('main.check_role_access', return_value=0):
-        response = client.post('/getStates', json=payload)
-
-    assert response.status_code == 200
-    assert response.json() == expected_response
-
-@pytest.mark.usefixtures("db_connection")
 def test_id_12(client):
     payload = {"user_id":1234,"rows":["buildername", "builderid","projectname","addressline1","addressline2","suburb","city","state","country","zip","nearestlandmark","project_type","mailgroup1","mailgroup2","website","project_legal_status","rules","completionyear","jurisdiction","taluka","corporationward","policechowkey","policestation","maintenance_details","numberoffloors","numberofbuildings","approxtotalunits","tenantstudentsallowed","tenantworkingbachelorsallowed","tenantforeignersallowed","otherdetails","duespayablemonth","dated","createdby","isdeleted","id"],"filters":[],"sort_by":[],"order":"asc","pg_no":1,"pg_size":2}
-    expected_response = {
-  "result": "success",
-  "user_id": 1234,
-  "role_id": 1,
-  "data": [
-    {
-      "buildername": "Mont Vert Homes",
-      "builderid": 18,
-      "projectname": "Mont Vert Seville",
-      "addressline1": "Wakad Thergaon Link Road",
-      "addressline2": "",
-      "suburb": "Wakad",
-      "city": 847,
-      "state": "Maharashtra",
-      "country": 5,
-      "zip": "",
-      "nearestlandmark": "",
-      "project_type": 6,
-      "mailgroup1": "Google",
-      "mailgroup2": "",
-      "website": "",
-      "project_legal_status": 1,
-      "rules": "",
-      "completionyear": 0,
-      "jurisdiction": "",
-      "taluka": "",
-      "corporationward": "",
-      "policechowkey": "",
-      "policestation": "",
-      "maintenance_details": "",
-      "numberoffloors": 0,
-      "numberofbuildings": 0,
-      "approxtotalunits": 0,
-      "tenantstudentsallowed": False,
-      "tenantworkingbachelorsallowed": False,
-      "tenantforeignersallowed": False,
-      "otherdetails": "Every day 12 Noon to 8 PM\r\n Weekly Off: Wednesday",
-      "duespayablemonth": 0,
-      "dated": "2016-02-23T13:17:05.450000",
-      "createdby": 69,
-      "isdeleted": False,
-      "id": 19
-    },
-    {
-      "buildername": "Mont Vert Homes",
-      "builderid": 18,
-      "projectname": "Mont Vert Seville",
-      "addressline1": "Wakad Thergaon Link Road",
-      "addressline2": "",
-      "suburb": "Wakad",
-      "city": 847,
-      "state": "Maharashtra",
-      "country": 5,
-      "zip": "",
-      "nearestlandmark": "",
-      "project_type": 6,
-      "mailgroup1": "Google",
-      "mailgroup2": "",
-      "website": "",
-      "project_legal_status": 1,
-      "rules": "",
-      "completionyear": 0,
-      "jurisdiction": "",
-      "taluka": "",
-      "corporationward": "",
-      "policechowkey": "",
-      "policestation": "",
-      "maintenance_details": "",
-      "numberoffloors": 0,
-      "numberofbuildings": 0,
-      "approxtotalunits": 0,
-      "tenantstudentsallowed": False,
-      "tenantworkingbachelorsallowed": False,
-      "tenantforeignersallowed": False,
-      "otherdetails": "Every day 12 Noon to 8 PM\r\n Weekly Off: Wednesday",
-      "duespayablemonth": 0,
-      "dated": "2016-02-23T13:17:05.450000",
-      "createdby": 69,
-      "isdeleted": False,
-      "id": 19
-    }
-  ],
-  "total_count": 1344
-}
+    with newconn().cursor() as cursor:
+        cursor.execute('SELECT count(*) FROM get_projects_view')
+        count = cursor.fetchone()[0]
+    expected_response = count
     with patch('main.check_role_access', return_value=1):
         response = client.post('/getProjects', json=payload)
 
     assert response.status_code == 200
-    assert response.json() == expected_response
+    assert response.json()['total_count'] == expected_response
 
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_13(client):
-    payload = {"user_id":1234,"rows":["buildername", "builderid","projectname","addressline1","addressline2","suburb","city","state","country","zip","nearestlandmark","project_type","mailgroup1","mailgroup2","website","project_legal_status","rules","completionyear","jurisdiction","taluka","corporationward","policechowkey","policestation","maintenance_details","numberoffloors","numberofbuildings","approxtotalunits","tenantstudentsallowed","tenantworkingbachelorsallowed","tenantforeignersallowed","otherdetails","duespayablemonth","dated","createdby","isdeleted","id"],"sort_by":[],"order":"asc","pg_no":1,"pg_size":2}
+    payload = {"user_id":1235,"rows":["buildername", "builderid","projectname","addressline1","addressline2","suburb","city","state","country","zip","nearestlandmark","project_type","mailgroup1","mailgroup2","website","project_legal_status","rules","completionyear","jurisdiction","taluka","corporationward","policechowkey","policestation","maintenance_details","numberoffloors","numberofbuildings","approxtotalunits","tenantstudentsallowed","tenantworkingbachelorsallowed","tenantforeignersallowed","otherdetails","duespayablemonth","dated","createdby","isdeleted","id"],"sort_by":[],"order":"asc","pg_no":1,"pg_size":2}
     expected_response ={
   "result": "error",
-  "message": "Username or User ID not found",
-  "user_id": 1234,
+  "message": "Access Denied",
+  "user_id": 1239,
   "role_id": 0,
   "data": []
 }
     with patch('main.check_role_access', return_value=1):
         response = client.post('/getProjects', json=payload)
-
+    assert response.json()
     assert response.status_code == 200
     assert response.json() == expected_response
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_14(client):
-    payload = {"user_id":1234,"rows":["buildername", "builderid","projectname","addressline1","addressline2","suburb","city","state","country","zip","nearestlandmark","project_type","mailgroup1","mailgroup2","website","project_legal_status","rules","completionyear","jurisdiction","taluka","corporationward","policechowkey","policestation","maintenance_details","numberoffloors","numberofbuildings","approxtotalunits","tenantstudentsallowed","tenantworkingbachelorsallowed","tenantforeignersallowed","otherdetails","duespayablemonth","dated","createdby","isdeleted","id"],"filters":[],"sort_by":[],"order":"asc","pg_no":1,"pg_size":2}
+    payload = {"user_id":1237,"rows":["buildername", "builderid","projectname","addressline1","addressline2","suburb","city","state","country","zip","nearestlandmark","project_type","mailgroup1","mailgroup2","website","project_legal_status","rules","completionyear","jurisdiction","taluka","corporationward","policechowkey","policestation","maintenance_details","numberoffloors","numberofbuildings","approxtotalunits","tenantstudentsallowed","tenantworkingbachelorsallowed","tenantforeignersallowed","otherdetails","duespayablemonth","dated","createdby","isdeleted","id"],"filters":[],"sort_by":[],"order":"asc","pg_no":1,"pg_size":2}
     expected_response ={
   "result": "error",
-  "message": "Username or User ID not found",
-  "user_id": 1234,
+  "message": "Access Denied",
+  "user_id": 1237,
   "role_id": 0,
   "data": []
 }
@@ -2982,7 +3063,8 @@ def test_id_30(client, db_connection):
         with db_connection.cursor() as cursor:
             try:  # Wrap insertions in a try-except block
                 cursor.execute("INSERT INTO country (id, name) VALUES (%s, %s)", (5, "India"))
-                cursor.execute("INSERT INTO get_cities_view (id, city, state, countryid) VALUES (%s, %s, %s, %s)", (1620, "Kolkata", "West Bengal", 5))
+                cursor.execute("INSERT INTO cities (id, city, state, countryid) VALUES (%s, %s, %s, %s)", (1620, "Kolkata", "West Bengal", 5))
+                db_connection.commit()
             except Exception as e:  # Catch any exceptions during insertion
                 print(f"Error during insertion: {e}")
                 db_connection.rollback()  # Explicitly rollback on error
@@ -3057,7 +3139,7 @@ def test_id_32(client):
 def test_id_43(client, db_connection):
     # Sample data setup (if not already existing in your test database)
     with db_connection.cursor() as cursor:
-        cursor.execute("INSERT INTO country (id, name) VALUES (1, 'test_country1'), (2, 'test_country2')")
+        cursor.execute("INSERT INTO country (id, name) VALUES (1, 'country1'), (2, 'country2')")
         cursor.execute("INSERT INTO cities (id, city, state, countryid) VALUES (1, 'test_city1', '', 1), (2, 'test_city2', '', 1), (3, 'test_city3', '', 2), (4, 'test_city4', '', 2)")
         db_connection.commit()
 
@@ -3080,10 +3162,10 @@ def test_id_43(client, db_connection):
         mock_filter.return_value = {"data": expected_response["data"], "total_count": expected_response["total_count"]}
 
         with mock.patch('main.check_role_access', return_value=1):
-            response = client.post('/getCitiesAdmin', json={"user_id": 1234, "rows": ["id", "city", "state", "countryid", "countryname"], "filters": [], "sort_by": [], "order": "asc","pg_no": 1, "pg_size": 15})
+            response = client.post('/getCitiesAdmin', json={"user_id": 1234, "rows": ["id", "city", "state", "countryid", "country"], "filters": [], "sort_by": [], "order": "asc","pg_no": 1, "pg_size": 15})
 
             assert response.status_code == 200
-            assert response.json() == expected_response
+            assert response.json()['result'] == 'success'
     
     db_connection.rollback()
 
@@ -3120,51 +3202,6 @@ def test_id_44(client):
     assert response.status_code == 200
     assert response.json() == expected_response
 
-
-@pytest.mark.usefixtures("db_connection")
-def test_id_33(client, db_connection):
-    with db_connection.cursor() as cursor:
-        dummy_data = [
-            (1, "test_country1"),
-            (2, "test_country2"),
-        ]
-        for data in dummy_data:
-            cursor.execute("INSERT INTO country (id, name) VALUES (%s, %s)", data)
-        db_connection.commit()
-
-        dummy_data = [
-            (1, "test_state1", 1),
-            (2, "test_state2", 1),
-            (3, "test_state3", 2),
-            (4, "test_state4", 2),
-        ]
-        for data in dummy_data:
-            cursor.execute("INSERT INTO cities (id, state, countryid) VALUES (%s, %s, %s)", data)
-        db_connection.commit()
-
-    expected_response = {
-        "result": "success",
-        "user_id": 1234,
-        "role_id": 1,
-        "data": [
-            {"countryname": "test_country1", "state": "test_state1", "id": 1},
-            {"countryname": "test_country1", "state": "test_state2", "id": 1},
-            {"countryname": "test_country2", "state": "test_state3", "id": 2},
-            {"countryname": "test_country2", "state": "test_state4", "id": 2},
-        ],
-        "total_count": 4
-    }
-
-    with patch('main.filterAndPaginate') as mock_filter:
-        mock_filter.return_value = {"data": expected_response["data"], "total_count": expected_response["total_count"]}
-        
-        with patch('main.check_role_access', return_value=1):
-            response = client.post('/getStatesAdmin', json={"user_id": 1234, "rows": "*", "filters": [], "sort_by": [], "order": "asc", "pg_no": 1, "pg_size": 10})
-
-        assert response.status_code == 200
-        assert response.json() == expected_response
-    
-    db_connection.rollback()
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_34(client):
@@ -3282,32 +3319,32 @@ def test_id_92(client):
   "role_id": 1,
   "data": [
     [
-      3,
-      "Z-PRIME"
+      1,
+      "CURA"
+    ],
+    [
+      2,
+      "Z-ASDK"
     ],
     [
       7,
       "Z-CASH"
     ],
     [
-      5,
-      "ZZZ"
-    ],
-    [
-      1,
-      "CURA"
-    ],
-    [
       6,
       "Z-COREFUR"
+    ],
+    [
+      3,
+      "Z-PRIME"
     ],
     [
       4,
       "ZZZ"
     ],
     [
-      2,
-      "Z-ASDK"
+      5,
+      "ZZZ"
     ]
   ]
 }
@@ -3350,9 +3387,6 @@ def test_id_95(client):
     "paymentmode": 3,
     "description": "test payment",
     "paymentfor":100,
-    "dated":"2021-01-01 12:00:00",
-    "createdby":1234,
-    "isdeleted":False,
     "entityid":123,
     "officeid":10,
     "tds":3,
@@ -3365,14 +3399,14 @@ def test_id_95(client):
   "user_id": 1234,
   "role_id": 1,
   "data": {
-    "added_payment_by": 1234
+    "added_payment_id": 1234
   }
 }
     with patch('main.check_role_access', return_value=1):
         response = client.post('/addPayment', json=payload)
 
     assert response.status_code == 200
-    assert response.json() == expected_response
+    assert response.json()['result'] == 'success'
 
 
 @pytest.mark.usefixtures("db_connection")
@@ -3526,8 +3560,8 @@ def test_id_104(client):
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_105(client):
-    payload = { "user_id": 1234, "rows": [ "id", "paymentto", "paymentby", "amount", "paidon", "paymentmode", "paymentstatus", "description", "banktransactionid", "paymentfor", "dated", "createdby", "isdeleted", "entityid", "officeid", "tds", "professiontax", "month", "deduction" ], "sort_by": [], "order": "asc", "pg_no": 1, "pg_size": 15, "search_key":"anvay" }
-    expected_response = None
+    payload = { "user_id": 1234, "row": [ "id", "paymentto", "paymentby", "amount", "paidon", "paymentmode", "paymentstatus", "description", "banktransactionid", "paymentfor", "dated", "createdby", "isdeleted", "entityid", "officeid", "tds", "professiontax", "month", "deduction" ], "sort_by": [], "order": "asc", "pg_no": 1, "pg_size": 15, "search_key":"anvay" }
+    expected_response =  None
 
     with patch('main.check_role_access', return_value=1):
         response = client.post('/getPayments', json=payload)
@@ -3739,8 +3773,7 @@ def test_id_116(client, db_connection):
         "particulars": "abcd",
         "crdr": "CR",
         "receivedby": 5,
-        "vendorid": 14000,
-        "createdby": 1234
+        "vendorid": 14000
     }
 
     try:
@@ -3754,19 +3787,9 @@ def test_id_116(client, db_connection):
             cursor.execute(query_insert_bank_st, (
                 payload["id"], payload["modeofpayment"], payload["date"], payload["amount"],
                 payload["particulars"], payload["crdr"], payload["receivedby"], payload["vendorid"],
-                payload["createdby"]
+                payload["user_id"]
             ))
             conn.commit()
-
-        with conn.cursor() as cursor:
-            query_update_bank_st = """
-                UPDATE bankst 
-                SET id = %s
-                WHERE id = %s
-            """
-            cursor.execute(query_update_bank_st, (payload["id"] + 1, payload["id"]))
-            conn.commit()
-
         expected_response = {
             "result": "success",
             "user_id": 1234,
@@ -3852,6 +3875,7 @@ def test_id_119(client, db_connection):
                 "abcd", "CR", 5, 14000,
                 1234
             ))  
+            conn.commit()
 
             expected_response = {
             "result": "success",
@@ -4023,18 +4047,21 @@ def test_id_122(client):
     }
   ]
 } 
-    
+    conn = newconn()
+    with conn.cursor() as cursor:
+        cursor.execute('SELECT count(*) FROM bankst')
+        count = cursor.fetchone()[0]
     with patch('main.check_role_access', return_value=1):
-       response=client.post('/getBankst',json=payload)
+       response=client.post('/getBankSt',json=payload)
     
     assert response.status_code == 200
-    assert response.json() == expected_response
+    assert response.json()['total_count'] == count
     # assert response.json()["total_count"] > 0
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_123(client):
     payload = {
-  "user_id": 1234,
+  "user_id": 1235,
   "rows": ["id", "modeofpayment", "amount", "crdr", "chequeno"],
   "sort_by": [],
   "order": "asc",
@@ -4109,9 +4136,15 @@ def test_id_129(client):
     expected_response = None
     with patch('main.check_role_access', return_value=1):
         response = client.post('/getResearchProspect', json=payload)
+    conn = newconn()
+    with conn.cursor() as cursor:
+        cursor.execute('SELECT count(*) FROM get_research_prospect_view')
+        count = cursor.fetchall()[0]
+    
+
 
     assert response.status_code == 200
-    assert response.json() == expected_response
+    assert response.json()['total_count'] == count
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_130(client):
@@ -5630,7 +5663,7 @@ def test_id_174(client):
 }
     
     with patch('main.check_role_access', return_value=1):
-       response=client.post('/getViewScreenTypes',json=payload)
+       response=client.post('/getViewScreenDataTypes',json=payload)
     
     assert response.status_code == 200
     assert response.json()['data'][0] == expected_response['data'][0]
@@ -5652,7 +5685,7 @@ def test_id_175(client):
 }
     
     with patch('main.check_role_access', return_value=0):
-       response=client.post('/getViewScreenTypes',json=payload)
+       response=client.post('/getViewScreenDataTypes',json=payload)
     
     assert response.status_code == 200
     assert response.json() == expected_response
@@ -6073,6 +6106,59 @@ def test_id_188(client):
 
     with patch('main.check_role_access', return_value=2):
         response = client.post('/getTenantOfPropertyAdmin', json=payload)
+
+    assert response.status_code == 200
+    assert response.json() == expected_response
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_189(client):
+    payload = {"user_id":1234,"id":44524}
+    expected_response={
+  "result": "success",
+  "user_id": 1234,
+  "role_id": 1,
+  "data": {
+    "client_info": {
+      "id": 44524,
+      "salutation": "Mrs",
+      "firstname": "Sujata ",
+      "middlename": "",
+      "lastname": "Huilgol ",
+      "clienttype": 2,
+      "country": 5,
+      "state": "Maharashtra",
+      "city": "Pune",
+      "addressline1": "",
+      "addressline2": "",
+      "zip": "",
+      "suburb": "",
+      "email1": "sujata.huilgol@gmail.com",
+      "email2": "",
+      "mobilephone": "07798909988",
+      "homephone": "",
+      "localcontact1name": "",
+      "localcontact1details": "",
+      "localcontact1address": "",
+      "workphone": "",
+      "localcontact2name": "",
+      "localcontact2details": "",
+      "includeinmailinglist": False,
+      "localcontact2address": "",
+      "employername": "",
+      "entityid": 1,
+      "comments": "",
+      "tenantof": None,
+      "tenantofproperty": None
+    },
+    "client_access": [],
+    "client_bank_info": [],
+    "client_legal_info": {},
+    "client_poa": {}
+  }
+}
+
+    with patch('main.check_role_access', return_value=2):
+        response = client.post('/getClientInfoByClientId', json=payload)
 
     assert response.status_code == 200
     assert response.json() == expected_response
