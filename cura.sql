@@ -1149,3 +1149,212 @@ CREATE SEQUENCE IF NOT EXISTS clientleavelicensetenant_id_seq OWNED BY clientlea
 SELECT setval('clientleavelicensetenant_id_seq', COALESCE(max(id), 0) + 1, false) FROM clientleavelicensetenant;
 ALTER TABLE clientleavelicensetenant ALTER COLUMN id SET DEFAULT nextval('clientleavelicensetenant_id_seq');
 
+CREATE VIEW ordersview AS
+SELECT DISTINCT
+    orders.briefdescription, 
+    earlieststartdate, 
+    orders.expectedcompletiondate, 
+    orders.actualcompletiondate, 
+    orders.owner, 
+    orders.comments, 
+    orders.status, 
+    orders.additionalcomments, 
+    orders.service AS serviceid, 
+    orders.clientpropertyid, 
+    orders.vendorid, 
+    orders.assignedtooffice AS assignedtoofficeid, 
+    orders.billable, 
+    orders.dated, 
+    orders.createdby AS createdbyid, 
+    orders.isdeleted, 
+    order_status.name AS orderstatus, 
+    services.service, 
+    office.name AS assignedtooffice, 
+    vendor.vendorname, 
+    ut1.firstname || ' ' || ut1.lastname AS createdby, 
+    orders.id, 
+    CASE 
+        WHEN DATE_PART('day', CURRENT_DATE - orders.statusupdatedtimestamp) >  999 THEN - 1 
+        ELSE DATE_PART('day', CURRENT_DATE - orders.statusupdatedtimestamp)
+    END AS ageing, 
+    ut2.firstname || ' ' || ut2.lastname AS ownername, 
+    orders.orderdate, 
+    get_client_property_view.description AS propertydescription, 
+    get_client_property_view.propertytype AS propertytypeid, 
+    get_client_property_view.status AS propertystatusid, 
+    get_client_property_view.propertystatus, 
+    get_client_property_view.propertytype, 
+    get_client_property_view.suburb, 
+    get_client_info_view.clientname, 
+    get_client_info_view.clienttypename, 
+    orders.clientid, 
+    get_client_property_view.propertymanager, 
+    get_client_property_view.clientservicemanager, 
+    orders.default_task_owner, 
+    lob.name AS lobname, 
+    services.servicetype, 
+    orders.glcode, 
+    orders.entityid, 
+    entity.name AS entityname, 
+    tallyledger.tallyledger, 
+    orders.tallyledgerid, 
+    orders.statusupdatedtimestamp, 
+    get_client_info_view.homephone, 
+    get_client_info_view.workphone, 
+    get_client_info_view.mobilephone, 
+    get_client_info_view.email1, 
+    get_client_info_view.email2
+FROM
+    orders 
+INNER JOIN
+    order_status ON orders.status = order_status.id
+INNER JOIN
+    services ON orders.service = services.id
+LEFT OUTER JOIN
+    vendor ON orders.vendorid = vendor.id
+INNER JOIN
+    office ON orders.assignedtooffice = office.id
+INNER JOIN
+    usertable ut1 ON orders.createdby = ut1.id
+INNER JOIN
+    usertable ut2 ON orders.owner = ut2.id
+INNER JOIN
+    get_client_property_view ON orders.clientpropertyid = get_client_property_view.id
+INNER JOIN
+    get_client_info_view ON orders.clientid = get_client_info_view.id
+INNER JOIN
+    lob ON services.lob = lob.id
+LEFT OUTER JOIN
+    tallyledger ON orders.tallyledgerid = tallyledger.id
+LEFT OUTER JOIN
+    entity ON orders.entityid = entity.id
+WHERE
+    orders.isdeleted = FALSE;
+
+CREATE VIEW PropertiesView AS
+SELECT DISTINCT ON (cp.id) cp.clientid, 
+                    cp.projectid, 
+                    cp.propertydescription, 
+                    cp.propertytype,
+                    cp.layoutdetails, 
+                    cp.numberofparkings, 
+                    cp.internalfurnitureandfittings, 
+                    cp.leveloffurnishing,
+                    cp.status, 
+                    cp.initialpossessiondate, 
+                    cp.poagiven, 
+                    cp.poaid,
+                    cp.electricityconsumernumber, 
+                    cp.electricitybillingunit, 
+                    cp.otherelectricitydetails,
+                    cp.gasconnectiondetails, 
+                    cp.propertytaxnumber, 
+                    cp.clientservicemanager, 
+                    cp.propertymanager,
+                    cp.comments, 
+                    cp.propertyownedbyclientonly, 
+                    cp.textforposting, 
+                    cp.dated,
+                    cp.createdby AS createdbyid, 
+                    ps.name AS property_status, 
+                    pt.name AS property_type,
+                    usr.firstname || ' ' || usr.lastname AS createdby, 
+                    lof.name AS level_of_furnishing,
+                    c.firstname || ' ' || c.lastname AS clientname, 
+                    cp.id, 
+                    cp.suburb, 
+                    cp.city, 
+                    cp.state,
+                    co.name AS country, 
+                    cp.id AS propertyid, 
+                    pr.projectname,
+                    cp.electricitybillingduedate
+FROM client_property cp
+INNER JOIN property_type pt ON cp.propertytype = pt.id
+INNER JOIN property_status ps ON cp.status = ps.id
+INNER JOIN usertable usr ON cp.createdby = usr.id
+INNER JOIN level_of_furnishing lof ON cp.leveloffurnishing = lof.id
+INNER JOIN client c ON cp.clientid = c.id
+INNER JOIN project pr ON cp.projectid = pr.id
+LEFT OUTER JOIN country co ON cp.country = co.id
+WHERE cp.isdeleted = FALSE
+ORDER BY cp.id, clientname;
+
+
+CREATE VIEW orderpaymentview AS
+SELECT DISTINCT
+       op.id,
+       op.paymentby AS paymentbyid,
+       op.amount,
+       op.paymentdate,
+       op.orderid,
+       op.vendorid,
+       op.mode,
+       op.description,
+       op.servicetaxamount,
+       op.dated,
+       op.createdby AS createdbyid,
+       op.isdeleted,
+       mop.name AS mode_of_payment,
+       u1.firstname || ' ' || u1.lastname AS createdby,
+       ut.firstname || ' ' || ut.lastname AS paymentby,
+       ov.clientname,
+       ov.briefdescription AS orderdescription,
+       op.tds,
+       pv.propertydescription,
+       v.vendorname,
+       ov.lobname,
+       ov.servicetype,
+       ov.serviceid,
+       EXTRACT(MONTH FROM op.paymentdate) AS monthyear,
+       EXTRACT(MONTH FROM op.paymentdate) AS fy,
+       op.entityid,
+       e.name AS entityname,
+       op.officeid,
+       o.name AS officename,
+       ov.clientid,
+       ov.service,
+       ov.tallyledger
+FROM order_payment op
+LEFT OUTER JOIN usertable u ON op.paymentby = u.id
+LEFT OUTER JOIN office o ON o.id = op.officeid
+LEFT OUTER JOIN mode_of_payment mop ON op.mode = mop.id
+INNER JOIN usertable AS u1 ON op.createdby = u1.id
+INNER JOIN usertable AS ut ON op.paymentby = ut.id
+INNER JOIN ordersview ov ON op.orderid = ov.id
+LEFT OUTER JOIN propertiesview pv ON ov.clientpropertyid = pv.propertyid AND ov.clientid = pv.clientid
+INNER JOIN vendor v ON op.vendorid = v.id
+LEFT OUTER JOIN entity e ON op.entityid = e.id;
+
+CREATE OR REPLACE FUNCTION getfinancialyear(_date DATE)
+RETURNS TEXT AS 
+$$
+DECLARE
+    input_year INT;
+    start_year TEXT;
+BEGIN
+    input_year := EXTRACT(YEAR FROM _date);
+
+    -- Determine the start year of the financial year based on the month of the input date
+    IF EXTRACT(MONTH FROM input_date) > 3 THEN
+        start_year := input_year::TEXT;
+    ELSE
+        start_year := (input_year - 1)::TEXT;
+    END IF;
+
+    RETURN start_year || '-' || RIGHT((start_year + 1)::TEXT, 2);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION getMonthYear(_Date TIMESTAMP) 
+RETURNS TEXT AS 
+$$
+DECLARE
+    _RetVal TEXT;
+BEGIN
+    _RetVal := TO_CHAR(_Date, 'Mon') || '-' || TO_CHAR(_Date, 'YYYY');
+    RETURN _RetVal;
+END;
+$$
+LANGUAGE PLPGSQL;
