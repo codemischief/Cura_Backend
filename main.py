@@ -2941,6 +2941,9 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted_Receipt":data})
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
     except Exception as e:
         logging.info(traceback.print_exc())
         return giveFailure("Invalid Credentials",0,0)
@@ -2979,6 +2982,9 @@ async def edit_client_receipt(payload: dict, conn : psycopg2.extensions.connecti
                     return giveFailure("No Record Available",payload['user_id'],role_access_status)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
     except Exception as e:
         logging.info(traceback.print_exc())
         return giveFailure("Invalid Credentials",0,0)
@@ -3000,6 +3006,9 @@ async def delete_client_receipt(payload: dict, conn: psycopg2.extensions.connect
                     return giveFailure("No Record Available",payload['user_id'],role_access_status)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
     except Exception as e:
         logging.info(traceback.print_exc())
         return giveFailure("Invalid Credentials",0,0)
@@ -4504,5 +4513,180 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
             cursor = conn[0].cursor()
             cursor.execute(f'drop view {tbl}')
             conn[0].commit()
+
+@app.post("/getOrderPending")
+async def get_order_pending(payload: dict, conn :psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status:
+            with conn[0].cursor() as cursor:
+                logMessage(cursor,f"SELECT sum(a.invoiceamount)-sum(b.amount) FROM order_invoice a LEFT JOIN order_receipt b ON a.orderid = b.orderid WHERE a.orderid = {payload['orderid']}")
+                pending = cursor.fetchone()[0]
+                logMessage(cursor,f"SELECT orderstatus,orderdate FROM get_orders_view WHERE id={payload['orderid']}")
+                orderstatus,orderdate = cursor.fetchone()
+            data = {
+                "pending":0 if pending is None else pending,
+                "orderstatus":orderstatus,
+                "orderdate":orderdate
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Key error{ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+    
+@app.post("/getUserInfo")
+async def get_user(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'get_users_view'
+    return await runInTryCatch(
+        conn = conn,
+        fname="add_user",
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+
+@app.post("/addUser")
+async def add_user(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                payload['password'] = bcrypt.hashpw(payload['password'].encode("utf-8"),bcrypt.gensalt(12)).decode("utf-8")
+                query = "INSERT INTO usertable (username,roleid,password,officeid,lobid,usercode,firstname,lastname,status,effectivedate,homephone,workphone,email1,email2,addressline1,addressline2,suburb,city,state,country,zip,dated,createdby,isdeleted,entityid) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
+                msg = logMessage(cursor,query,(payload['username'],payload['roleid'],payload['password'],payload['officeid'],payload['lobid'],payload['usercode'],payload['firstname'],payload['lastname'],payload['status'],payload['effectivedate'],payload['homephone'],payload['workphone'],payload['email1'],payload['email2'],payload['addressline1'],payload['addressline2'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['zip'],givenowtime(),payload['user_id'],False,payload['entityid']))
+                logging.info(msg)
+                id = cursor.fetchone()[0]
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted User ID":id})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"{ke} is missing",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+
+@app.post("/editUser")
+async def edit_user(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "UPDATE usertable SET username=%s,roleid=%s,officeid=%s,lobid=%s,usercode=%s,firstname=%s,lastname=%s,status=%s,effectivedate=%s,homephone=%s,workphone=%s,email1=%s,email2=%s,addressline1=%s,addressline2=%s,suburb=%s,city=%s,state=%s,country=%s,zip=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s WHERE id=%s"
+                msg = logMessage(cursor,query,(payload['username'],payload['roleid'],payload['officeid'],payload['lobid'],payload['usercode'],payload['firstname'],payload['lastname'],payload['status'],payload['effectivedate'],payload['homephone'],payload['workphone'],payload['email1'],payload['email2'],payload['addressline1'],payload['addressline2'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['zip'],givenowtime(),payload['user_id'],False,payload['entityid'],payload['id']))
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited User ID":payload['id']})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"{ke} is missing",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+    
+@app.post("/deleteUser")
+async def delete_user(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = f"UPDATE usertable SET isdeleted=true WHERE id={payload['id']}"
+                cursor.execute(query)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Deleted User ID":payload['id']})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"{ke} is missing",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
+
+@app.post("/getServices")
+async def get_services(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'get_services_view'
+    return await runInTryCatch(
+        conn = conn,
+        fname="get_services",
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/addService')
+async def add_services(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """INSERT INTO services (lob,service,active,dated,createdby,isdeleted,servicetype,category2,tallyledgerid)
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                msg = logMessage(cursor,query,(payload['lob'],payload['service'],payload['active'],givenowtime(),payload['user_id'],False,payload['servicetype'],payload['category2'],payload['tallyledgerid']))
+                logging.info(msg)
+                id = cursor.fetchone()[0]
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted Service ID":id})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+    
+@app.post('/editService')
+async def edit_services(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """UPDATE services SET lob=%s,service=%s,active=%s,dated=%s,createdby=%s,isdeleted=%s,servicetype=%s,category2=%s,tallyledgerid=%s WHERE id=%s"""
+                msg = logMessage(cursor,query,(payload['lob'],payload['service'],payload['active'],givenowtime(),payload['user_id'],False,payload['servicetype'],payload['category2'],payload['tallyledgerid'],payload['id']))
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited Service ID":payload['id']})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+    
+    
+@app.post('/deleteService')
+async def delete_services(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """DELETE FROM services WHERE id=%s"""
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Deleted Service ID":payload['id']})
+        else:
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
 
 logger.info("program_started")
