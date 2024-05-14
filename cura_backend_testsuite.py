@@ -7096,3 +7096,145 @@ def test_id_207(client):
     assert response.json()['message'] == "Access Denied"
     assert response.json()['role_id'] == 0
 
+@pytest.mark.usefixtures("db_connection")
+def test_id_208(client):
+    payload = {"user_id":1234,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = 'SELECT COUNT(*) FROM get_client_receipt_view WHERE isdeleted=false'
+        cursor.execute(query)
+        count = cursor.fetchone()[0]
+    
+    response = client.post('/getClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['total_count'] == count
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_209(client):
+    payload = {"user_id":1234,"filters":[],"sort_by":[],"order":"asc"}
+
+    expected_response = None
+    response = client.post('/getClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json() == expected_response
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_210(client):
+    payload = {"user_id":1235,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+    
+    response = client.post('/getClientReceipt',json=payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 2
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_211(client):
+    payload = {"user_id":1237,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+
+    response = client.post('/getClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_212(client):
+    payload = {
+    "user_id":1234,
+    "receivedby":"1234",
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/addClientReceipt',json=payload)
+
+    id = response.json()['data']['Inserted_Receipt']
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = f"DELETE FROM client_receipt WHERE id={id}"
+        cursor.execute(query)
+        conn.commit()
+
+    assert response.status_code == 200
+    assert response.json()['data'] != [] 
+
+ 
+@pytest.mark.usefixtures("db_connection")
+def test_id_213(client):
+    payload = {
+    "user_id":1234,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/addClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Missing key 'receivedby'"
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_214(client):
+    payload = {
+    "user_id":1235,
+    "receivedby":1234,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/addClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 2
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_215(client):
+    payload = {
+    "user_id":1237,
+    "receivedby":1234,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/addClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 0
