@@ -1153,6 +1153,402 @@ CREATE SEQUENCE IF NOT EXISTS clientleavelicensetenant_id_seq OWNED BY clientlea
 SELECT setval('clientleavelicensetenant_id_seq', COALESCE(max(id), 0) + 1, false) FROM clientleavelicensetenant;
 ALTER TABLE clientleavelicensetenant ALTER COLUMN id SET DEFAULT nextval('clientleavelicensetenant_id_seq');
 
+
+
+CREATE or REPLACE VIEW userview AS
+SELECT
+    u.ID AS UserId,
+    u.UserName,
+    u.RoleId,
+    u.Password,
+    u.OfficeId,
+    u.LOBId,
+    u.UserCode,
+    u.FirstName,
+    u.LastName,
+    u.Status,
+    CASE
+        WHEN u.Status = 'true' THEN 'Active'
+        ELSE 'Inactive'
+    END AS UserStatus,
+    u.FirstName || ' ' || u.LastName AS FullName,
+    u.EMail2,
+    u.EMail1,
+    u.AddressLine1,
+    u.AddressLine2,
+    u.Suburb,
+    u.State,
+    u.Zip,
+    u.Dated,
+    u.CreatedBy AS CreatedById,
+    u.IsDeleted,
+    created_user.FirstName || ' ' || created_user.LastName AS CreatedBy,
+    u.EffectiveDate,
+    u.Homephone,
+    u.Workphone,
+    u.City,
+    u.Country,
+    r.role_name AS RoleName,
+    u.EntityId
+FROM
+    usertable u
+    INNER JOIN usertable created_user ON u.CreatedBy = created_user.ID
+    LEFT JOIN Roles r ON u.RoleId = r.ID
+WHERE
+    u.IsDeleted = 'false' or u.isdeleted=null;
+
+
+
+
+
+
+CREATE or replace VIEW clientview AS
+SELECT
+    Client.ID,
+    Client.FirstName,
+    Client.MiddleName,
+    Client.LastName,
+    Client.FirstName || ' ' || Client.LastName AS FullName,
+    Client.Salutation,
+    Client.ClientType,
+    Client.AddressLine1,
+    Client.AddressLine2,
+    Client.Suburb,
+    Client.City,
+    Client.State,
+    Client.Country,
+    Client.Zip,
+    Client.HomePhone,
+    Client.WorkPhone,
+    Client.MobilePhone,
+    Client.EMail1,
+    Client.EMail2,
+    Client.EmployerName,
+    Client.Comments,
+    Client.Photo,
+    Client.OnlineACCreated,
+    Client.LocalContact1Name,
+    Client.LocalContact1Address,
+    Client.LocalContact1Details,
+    Client.LocalContact2Name,
+    Client.LocalContact2Address,
+    Client.LocalContact2Details,
+    Client.Dated,
+    Client.CreatedBy AS CreatedById,
+    Client.IsDeleted,
+    usertable.UserName,
+    usertable.FirstName || ' ' || usertable.LastName AS CreatedBy,
+    Client_Type.Name AS ClientTypeName,
+    Country.Name AS CountryName,
+    Client.IncludeInMailingList,
+    Client.EntityId,
+    Tenant.FirstName || ' ' || Tenant.LastName AS Tenantof,
+    Client.Tenantof AS TenantofId
+FROM
+    Client
+    INNER JOIN usertable ON Client.CreatedBy = usertable.ID
+    INNER JOIN Client_Type ON Client.ClientType = Client_Type.ID
+    INNER JOIN Country ON Client.Country = Country.ID
+    LEFT OUTER JOIN Client AS Tenant ON Client.Tenantof = Tenant.ID
+WHERE
+    Client.IsDeleted = 'false'  or client.isdeleted=null;
+
+
+
+
+CREATE or replace VIEW propertiesview AS
+SELECT
+    Client_Property.ClientID,
+    Client_Property.ProjectID,
+    Client_Property.PropertyDescription,
+    Client_Property.PropertyType,
+    Client_Property.LayoutDetails,
+    Client_Property.NumberOfParkings,
+    Client_Property.InternalFurnitureAndFittings,
+    Client_Property.LevelOfFurnishing,
+    Client_Property.Status,
+    Client_Property.InitialPossessionDate,
+    Client_Property.POAGiven,
+    Client_Property.POAID,
+    Client_Property.ElectricityConsumerNumber,
+    Client_Property.ElectricityBillingUnit,
+    Client_Property.OtherElectricityDetails,
+    Client_Property.GasConnectionDetails,
+    Client_Property.PropertyTaxNumber,
+    Client_Property.ClientServiceManager,
+    Client_Property.PropertyManager,
+    Client_Property.Comments,
+    Client_Property.PropertyOwnedByClientOnly,
+    Client_Property.TextForPosting,
+    Client_Property.Dated,
+    Client_Property.CreatedBy AS CreatedById,
+    Property_Status.Name AS Property_Status,
+    Property_Type.Name AS Property_Type,
+    usertable.FirstName || ' ' || usertable.LastName AS CreatedBy,
+    Level_Of_furnishing.Name AS Level_Of_furnishing,
+    Client.FirstName || ' ' || Client.LastName AS ClientName,
+    Client_Property.ID,
+    Client_Property.Suburb,
+    Client_Property.City,
+    Client_Property.State,
+    Client_Property.Country AS CountryId,
+    Country.Name AS Country,
+    Client_Property.ID AS PropertyID,
+    Project.ProjectName,
+    Client_Property.ElectricityBillingDueDate
+FROM
+    Client_Property
+    INNER JOIN Property_Type ON Client_Property.PropertyType = Property_Type.ID
+    INNER JOIN Property_Status ON Client_Property.Status = Property_Status.ID
+    INNER JOIN usertable ON Client_Property.CreatedBy = usertable.ID
+    INNER JOIN Level_Of_furnishing ON Client_Property.LevelOfFurnishing = Level_Of_furnishing.ID
+    INNER JOIN Client ON Client_Property.ClientID = Client.ID
+    INNER JOIN Project ON Client_Property.ProjectID = Project.ID
+    LEFT OUTER JOIN Country ON Client_Property.Country = Country.ID
+WHERE
+    Client_Property.IsDeleted = 'false' or client_property.isdeleted=null
+ORDER BY
+    Client.FirstName || ' ' || Client.LastName;
+
+
+
+
+CREATE or replace VIEW ordersview AS
+SELECT
+    orders.BriefDescription,
+    orders.EarliestStartDate,
+    orders.ExpectedCompletionDate,
+    orders.ActualCompletionDate AS ActualCompletionDate,
+    orders.Owner,
+    orders.Comments,
+    orders.Status,
+    orders.additionalcomments,
+    orders.Service AS ServiceId,
+    orders.ClientPropertyID,
+    orders.VendorID,
+    orders.AssignedToOffice AS AssignedToOfficeId,
+    orders.Billable,
+    orders.Dated,
+    orders.CreatedBy AS CreatedById,
+    orders.IsDeleted,
+    Order_Status.Name AS OrderStatus,
+    Services.Service,
+    Office.Name AS AssignedToOffice,
+    Vendor.VendorName,
+    usertable.FirstName || ' ' || usertable.LastName AS CreatedBy,
+    orders.ID,
+    CASE
+        WHEN EXTRACT(DAY FROM AGE(Orders.StatusUpdatedTimeStamp, CURRENT_DATE)) > 999 THEN -1
+        ELSE EXTRACT(DAY FROM AGE(Orders.StatusUpdatedTimeStamp, CURRENT_DATE))
+    END AS Ageing,
+    userview.FullName AS OwnerName,
+    orders.OrderDate,
+    propertiesview.PropertyDescription,
+    propertiesview.PropertyType AS PropertyTypeId,
+    propertiesview.Status AS PropertyStatusId,
+    propertiesview.Property_Status,
+    propertiesview.Property_Type,
+    propertiesview.Suburb,
+    clientview.FullName AS ClientName,
+    clientview.ClientTypeName,
+    orders.ClientID,
+    propertiesview.PropertyManager,
+    propertiesview.ClientServiceManager,
+    orders.Default_Task_Owner,
+    LOB.Name AS LOBName,
+    Services.ServiceType,
+    orders.GLCode,
+    orders.EntityId,
+    Entity.Name AS EntityName,
+    TallyLedger.TallyLedger,
+    orders.TallyLedgerId,
+    orders.StatusUpdatedTimeStamp,
+    clientview.HomePhone,
+    clientview.WorkPhone,
+    clientview.MobilePhone,
+    clientview.EMail1,
+    clientview.EMail2
+FROM
+    usertable
+    INNER JOIN orders ON usertable.ID = orders.CreatedBy
+    INNER JOIN Order_Status ON Order_Status.ID = orders.Status
+    INNER JOIN Services ON orders.Service = Services.ID
+    INNER JOIN Office ON orders.AssignedToOffice = Office.ID
+    LEFT OUTER JOIN Vendor ON orders.VendorID = Vendor.ID
+    INNER JOIN userview ON orders.Owner = userview.UserId
+    INNER JOIN clientview ON orders.ClientID = clientview.ID
+    INNER JOIN LOB ON Services.LOB = LOB.ID
+    LEFT OUTER JOIN TallyLedger ON orders.TallyLedgerId = TallyLedger.ID
+    LEFT OUTER JOIN Entity ON orders.EntityId = Entity.ID
+    LEFT OUTER JOIN propertiesview ON orders.ClientPropertyID = propertiesview.ID
+WHERE
+    Orders.IsDeleted = 'false' or orders.isdeleted = null;
+
+
+
+
+
+CREATE OR REPLACE FUNCTION getFinancialYear(date_input TIMESTAMP)
+RETURNS VARCHAR(7) AS $$
+DECLARE
+    ret_val VARCHAR(7);
+    month_val INTEGER;
+    year_val INTEGER;
+BEGIN
+    month_val := EXTRACT(MONTH FROM date_input);
+    year_val := EXTRACT(YEAR FROM date_input);
+
+    -- Assuming that the financial year starts from April
+    IF month_val > 3 THEN
+        ret_val := year_val || '-' || LPAD((year_val + 1)::TEXT, 2, '0');
+    ELSE
+        ret_val := (year_val - 1) || '-' || LPAD(year_val::TEXT, 2, '0');
+    END IF;
+
+    RETURN ret_val;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+CREATE OR REPLACE FUNCTION getMonthYear(date_input TIMESTAMP)
+RETURNS VARCHAR(8) AS $$
+DECLARE
+    ret_val VARCHAR(8);
+BEGIN
+    ret_val := TO_CHAR(date_input, 'Mon-YYYY');
+    RETURN ret_val;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+CREATE OR REPLACE VIEW orderpaymentview AS
+SELECT
+  Order_Payment.ID,
+  Order_Payment.PaymentBy AS PaymentById,
+  Order_Payment.Amount,
+  Order_Payment.PaymentDate,
+  Order_Payment.OrderID,
+  Order_Payment.VendorID,
+  Order_Payment.Mode,
+  Order_Payment.Description,
+  Order_Payment.ServiceTaxAmount,
+  Order_Payment.Dated,
+  Order_Payment.CreatedBy AS CreatedById,
+  Order_Payment.IsDeleted,
+  Mode_Of_payment.Name AS Mode_Of_payment,
+  User_1.FirstName || ' ' || User_1.LastName AS CreatedBy,
+  usertable.FirstName || ' ' || usertable.LastName AS PaymentBy,
+  ordersview.ClientName,
+  ordersview.BriefDescription AS OrderDescription,
+  Order_Payment.TDS,
+  propertiesview.PropertyDescription,
+  Vendor.VendorName,
+  ordersview.LOBName,
+  ordersview.ServiceType,
+  ordersview.ServiceId,
+  getMonthYear(Order_Payment.PaymentDate) AS MonthYear,
+  getFinancialYear(Order_Payment.PaymentDate) AS FY,
+  Order_Payment.EntityId,
+  Entity.Name AS EntityName,
+  Order_Payment.OfficeId,
+  Office.Name AS OfficeName,
+  ordersview.ClientID,
+  ordersview.Service,
+  ordersview.TallyLedger
+FROM
+  Order_Payment
+  LEFT OUTER JOIN usertable ON Order_Payment.PaymentBy = usertable.ID
+  LEFT OUTER JOIN Office ON Office.ID = Order_Payment.OfficeId
+  LEFT OUTER JOIN Mode_Of_payment ON Order_Payment.Mode = Mode_Of_payment.ID
+  INNER JOIN usertable AS User_1 ON Order_Payment.CreatedBy = User_1.ID
+  INNER JOIN ordersview ON Order_Payment.OrderID = ordersview.ID
+  LEFT OUTER JOIN propertiesview ON ordersview.ClientPropertyID = propertiesview.PropertyID
+    AND ordersview.ClientID = propertiesview.ClientID
+  INNER JOIN Vendor ON Order_Payment.VendorID = Vendor.ID
+  LEFT OUTER JOIN Entity ON Order_Payment.EntityId = Entity.ID;
+
+-- order payment list view
+
+
+-- order receipt view
+
+
+CREATE SEQUENCE payment_source_id_seq;
+
+CREATE TABLE payment_source (
+    id bigint NOT NULL DEFAULT nextval('payment_source_id_seq'::regclass),
+    name text NOT NULL,
+    CONSTRAINT idx_93250_pk_payment_source PRIMARY KEY (id)
+);
+
+ALTER SEQUENCE payment_source_id_seq OWNED BY payment_source.id;
+
+INSERT INTO payment_source (id, name) VALUES
+(1, 'Client'),
+(2, 'Builder'),
+(3, 'Society'),
+(4, 'Tenant'),
+(5, 'Broker'),
+(6, 'Internal cash transfer'),
+(7, 'Director'),
+(8, 'Buyer');
+
+
+
+CREATE VIEW orderreceiptview AS
+SELECT
+  Mode_Of_payment.Name AS "PaymentMode",
+  usertable.FirstName || ' ' || usertable.LastName AS "ReceivedBy",
+  User_1.FirstName || ' ' || User_1.LastName AS "Createdby",
+  OrdersView.ClientName,
+  OrdersView.BriefDescription AS "OrderDescription",
+  Order_Receipt.ID,
+  Order_Receipt.ReceivedBy AS "ReceivedById",
+  Order_Receipt.Amount,
+  Order_Receipt.RecdDate,
+  Order_Receipt.PaymentMode AS "PaymentModeId",
+  Order_Receipt.OrderID,
+  Order_Receipt.ReceiptDesc,
+  Order_Receipt.OfficeId,
+  Office.Name AS "OfficeName",
+  Order_Receipt.PaymentSource AS "PaymentSourceId",
+  Order_Receipt.Dated,
+  Order_Receipt.Createdby AS "CreatedbyId",
+  Order_Receipt.IsDeleted,
+  Payment_Source.Name AS "PaymentSource",
+  Order_Receipt.TDS,
+  PropertiesView.PropertyDescription,
+  getMonthYear(Order_Receipt.RecdDate) AS "MonthYear",
+  getFinancialYear(Order_Receipt.RecdDate) AS "FY",
+  OrdersView.Service,
+  OrdersView.LOBName,
+  OrdersView.ServiceType,
+  OrdersView.TallyLedger,
+  OrdersView.TallyLedgerId,
+  OrdersView.ServiceId,
+  Order_Receipt.EntityId,
+  Entity.Name AS "EntityName",
+  OrdersView.ClientTypeName,
+  OrdersView.ClientID
+FROM
+  Order_Receipt
+  LEFT JOIN usertable ON Order_Receipt.ReceivedBy = usertable.ID
+  LEFT JOIN Mode_Of_payment ON Order_Receipt.PaymentMode = Mode_Of_payment.ID
+  INNER JOIN usertable AS User_1 ON Order_Receipt.Createdby = User_1.ID
+  INNER JOIN OrdersView ON Order_Receipt.OrderID = OrdersView.ID
+  LEFT JOIN Entity ON Order_Receipt.EntityId = Entity.ID
+  LEFT JOIN PropertiesView ON OrdersView.ClientPropertyID = PropertiesView.ID
+  LEFT JOIN Payment_Source ON Order_Receipt.PaymentSource = Payment_Source.ID
+  LEFT JOIN Office ON Order_Receipt.OfficeId = Office.ID
+WHERE
+  Order_Receipt.IsDeleted = false;
+
+-- order receipt view
+=======
 CREATE VIEW ordersview AS
 SELECT DISTINCT
     orders.briefdescription, 
@@ -1444,3 +1840,6 @@ LEFT JOIN
     usertable c ON a.createdby = c.id
 LEFT JOIN
     tallyledger d ON a.tallyledgerid = d.id;
+ 
+
+
