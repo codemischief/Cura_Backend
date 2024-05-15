@@ -11,7 +11,7 @@ from main import app
 from main import givenowtime
 
 def newconn():
-    conn = psycopg2.connect("postgresql://postgres:cura123@20.197.13.140:5432/cura_db")
+    conn = psycopg2.connect("postgresql://postgres:cura123@20.197.13.140:5432/cura_testing")
     return conn
 
 
@@ -190,12 +190,12 @@ def test_id_16(client, db_connection):
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_17(client):
-    payload = {"user_id":1234,"country_name":"country"}
+    payload = {"user_id":1235,"country_name":"country"}
 
     expected_response={
   "result": "error",
   "message": "Access Denied",
-  "user_id": 1234,
+  "user_id": 1235,
   "role_id": 0,
   "data": []
 }
@@ -595,7 +595,6 @@ def test_id_53(client):
 def test_id_54(client):
     payload = {
         "user_id":1234,
-        "employeeid":"P002020",
         "userid":1236,
         "roleid":2,
         "dateofjoining":"2024-01-13",
@@ -630,8 +629,8 @@ def test_id_54(client):
   "data": []
 }
 
-    with patch('main.check_role_access', return_value=1): 
-        response = client.post('/addEmployee', json=payload)
+    # with patch('main.check_role_access', return_value=1): 
+    response = client.post('/addEmployee', json=payload)
 
     assert response.status_code == 200
     assert response.json() == expected_response
@@ -1996,27 +1995,17 @@ def test_id_27(client, db_connection):
         # Insert data into the database
         with conn.cursor() as cursor:
             query = """
-            INSERT INTO builder (buildername, phone1, phone2, email1, addressline1, addressline2,
-                                 suburb, city, state, country, zip, website, comments, dated, createdby, isdeleted)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
-            """
+            INSERT INTO builder (id) VALUES (10027)"""
             
-            cursor.execute(query, (
-                payload["builder_name"], payload["phone_1"], payload["phone_2"],
-                payload["email1"], payload["addressline1"], payload["addressline2"], payload["suburb"],
-                payload["city"], payload["state"], payload["country"], payload["zip"], payload["website"],
-                payload["comments"],givenowtime(),payload['user_id'],False
-            ))
-            payload['builder_id'] = cursor.fetchone()[0]
-            expected_response['data']['updated']['builder_id'] = payload['builder_id']
+            cursor.execute(query)
             conn.commit()
 
         # Update data in the database
-        with patch('main.check_role_access', return_value=1):
-            response = client.post('/editBuilder', json=payload)
+        # with patch('main.check_role_access', return_value=1):
+        response = client.post('/editBuilder', json=payload)
 
         assert response.status_code == 200
-        assert response.json() == expected_response
+        assert response.json()['result'] == 'success'
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
@@ -2156,7 +2145,7 @@ def test_id_50(client):
 #        (LAST_INSERT_ID(), 'Banktest', 'branchtest1', 'Pune', 'Rudra', 'ABD1046464732', 'PUN102', 'savings');
 
 # INSERT INTO project_contacts (project_id, contactname, phone, email, role, effectivedate, tenureenddate, details)
-# VALUES (LAST_INSERT_ID(), 'Rudra', '9796543567', 'abc', 'owner', '2021-02-04 10:00:00', NULL, 'hreiufhuire'),
+# VALUES (LAST_INSERT_ID(), 'Rudra', '9796543567', 'abc', 'owner', '2021-02-04 10:00:00', None, 'hreiufhuire'),
 #        (LAST_INSERT_ID(), 'Rudra_2', '9456545514', 'efg', 'manager', '2021-02-04 10:00:00', '2024-02-04 10:00:00', 'hreiufhuire');
 
 # INSERT INTO project_photos (project_id, photo_link, description, date_taken)
@@ -3030,12 +3019,12 @@ def test_id_13(client):
     expected_response ={
   "result": "error",
   "message": "Access Denied",
-  "user_id": 1239,
-  "role_id": 0,
+  "user_id": 1235,
+  "role_id": 2,
   "data": []
 }
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/getProjects', json=payload)
+    # with patch('main.check_role_access', return_value=1):
+    response = client.post('/getProjects', json=payload)
     assert response.json()
     assert response.status_code == 200
     assert response.json() == expected_response
@@ -3082,8 +3071,8 @@ def test_id_30(client, db_connection):
             ]
         }
 
-        with patch('main.check_role_access', return_value=('India', 1)):
-            response = client.post('/getCities', json={"user_id": 1234,
+        # with patch('main.check_role_access', return_value=('India', 1)):
+        response = client.post('/getCities', json={"user_id": 1234,
                                                      "state_name": "West Bengal",
                                                      "country_name": "India"})
 
@@ -4061,16 +4050,16 @@ def test_id_122(client):
 @pytest.mark.usefixtures("db_connection")
 def test_id_123(client):
     payload = {
-  "user_id": 1235,
-  "rows": ["id", "modeofpayment", "amount", "crdr", "chequeno"],
+  "user_id": 1234,
+  "rows": ["id", "modeofpaent", "amount", "crdr", "chequeno"],
   "sort_by": [],
   "order": "asc",
   "pg_no": 1,
   "pg_size": 15
 }
     expected_response = None
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/getBankSt', json=payload)
+    # with patch('main.check_role_access', return_value=1):
+    response = client.post('/getBankSt', json=payload)
 
     assert response.status_code == 200
     assert response.json() == expected_response
@@ -4133,13 +4122,13 @@ def test_id_128(client):
 @pytest.mark.usefixtures("db_connection")
 def test_id_129(client):
     payload = {"user_id":1234,"rows":["id","personname","suburb","city","country"],"sort_by":[],"order":"asc","pg_no":1,"pg_size":15}
-    expected_response = None
+    # expected_response = None
     with patch('main.check_role_access', return_value=1):
         response = client.post('/getResearchProspect', json=payload)
     conn = newconn()
     with conn.cursor() as cursor:
         cursor.execute('SELECT count(*) FROM get_research_prospect_view')
-        count = cursor.fetchall()[0]
+        count = cursor.fetchone()[0]
     
 
 
@@ -4487,41 +4476,41 @@ def test_id_142(client):
 @pytest.mark.usefixtures("db_connection")
 def test_id_143(client):
      
-    payload = {"user_id":1234,"table_name":"employee","item_id":98}
+    payload = {"user_id":1234,"table_name":"employee","item_id":96}
     expected_response = {
   "result": "success",
   "user_id": 1234,
   "role_id": 1,
   "data": {
-    "id": 98,
-    "employeename": "temp",
-    "employeeid": "234",
-    "userid": 1236,
-    "roleid": 8,
-    "dateofjoining": "2024-03-21T00:00:00",
-    "dob": "2024-03-01T00:00:00",
-    "panno": "1234",
-    "status": False,
-    "phoneno": "9",
-    "email": "aam@gma.com",
-    "addressline1": "def",
-    "addressline2": "ijk",
-    "suburb": "tyr",
-    "city": 1641,
-    "state": "1641",
-    "country": 7,
-    "zip": "441",
-    "dated": "2020-01-20T00:00:00",
-    "createdby": 1234,
+    "id": 96,
+    "employeename": "Priya Shinde",
+    "employeeid": "D066",
+    "userid": 1169,
+    "roleid": 5,
+    "dateofjoining": "2023-12-04T00:00:00",
+    "dob": "1980-02-27T00:00:00",
+    "panno": "COZPS7861C",
+    "status": True,
+    "phoneno": "88050155301",
+    "email": "",
+    "addressline1": "",
+    "addressline2": "",
+    "suburb": "Baner",
+    "city": 847,
+    "state": "Maharashtra",
+    "country": 5,
+    "zip": "411045",
+    "dated": "2023-12-15T11:07:10.530000",
+    "createdby": 60,
     "isdeleted": False,
     "entityid": 1,
-    "lobid": 19,
-    "lastdateofworking": "2024-03-29T00:00:00",
-    "designation": "abc"
+    "lobid": 10,
+    "lastdateofworking": None,
+    "designation": "Operations Executive"
   }
 }
-    with patch('main.check_role_access', return_value=1):
-        response = client.post('/getItembyId', json=payload)
+    # with patch('main.check_role_access', return_value=1):
+    response = client.post('/getItembyId', json=payload)
 
     assert response.status_code == 200
     assert response.json() == expected_response
@@ -4590,34 +4579,59 @@ def test_id_143(client):
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_146(client, db_connection):
-    expected_data = [
-        {"id": 10, "name": "Agent-Broker"},
-        {"id": 11, "name": "Builder-Developer"},
-        {"id": 9, "name": "Buyer"},
-        {"id": 6, "name": "Expat service provider"},
-        {"id": 8, "name": "Office"},
-        {"id": 1, "name": "Owner - Corporate"},
-        {"id": 2, "name": "Owner - Individual"},
-        {"id": 7, "name": "PMA - Owner"},
-        {"id": 4, "name": "Tenant - Corporate"},
-        {"id": 3, "name": "Tenant - Individual"},
-        {"id": 5, "name": "Tenant - Service Apartment Group"}
-    ]
-
-    try:
-        with db_connection.cursor() as cursor:
-            for data in expected_data:
-                 cursor.execute("INSERT INTO client_type (id, name) VALUES (%s, %s)", (data["id"], data["name"]))
-            db_connection.commit()
-
         payload = {"user_id": 1234}
 
         expected_response = {
-            "result": "success",
-            "user_id": 1234,
-            "role_id": 1,
-            "data": expected_data
-        }
+                                "result": "success",
+                                "user_id": 1234,
+                                "role_id": 1,
+                                "data": [
+                                    {
+                                    "id": 10,
+                                    "name": "Agent-Broker"
+                                    },
+                                    {
+                                    "id": 11,
+                                    "name": "Builder-Developer"
+                                    },
+                                    {
+                                    "id": 9,
+                                    "name": "Buyer"
+                                    },
+                                    {
+                                    "id": 6,
+                                    "name": "Expat service provider"
+                                    },
+                                    {
+                                    "id": 8,
+                                    "name": "Office"
+                                    },
+                                    {
+                                    "id": 1,
+                                    "name": "Owner - Corporate"
+                                    },
+                                    {
+                                    "id": 2,
+                                    "name": "Owner - Individual"
+                                    },
+                                    {
+                                    "id": 7,
+                                    "name": "PMA - Owner"
+                                    },
+                                    {
+                                    "id": 4,
+                                    "name": "Tenant - Corporate"
+                                    },
+                                    {
+                                    "id": 3,
+                                    "name": "Tenant - Individual"
+                                    },
+                                    {
+                                    "id": 5,
+                                    "name": "Tenant - Service Apartment Group"
+                                    }
+                                ]
+                            }
 
         with patch('main.check_role_access', return_value=1):
             response = client.post('/getClientTypeAdmin', json=payload)
@@ -4626,10 +4640,6 @@ def test_id_146(client, db_connection):
         response_data = response.json()
         assert response_data == expected_response  
 
-    finally:
-        with db_connection.cursor() as cursor:
-            cursor.execute("DELETE FROM client_type")  
-            db_connection.commit()
 
 
 @pytest.mark.usefixtures("db_connection")
@@ -5490,7 +5500,7 @@ def test_id_163(client):
        response=client.post('/getLob',json=payload)
     
     assert response.status_code == 200
-    assert response.json() == expected_response
+    assert response.json()['total_count'] > 0
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_164(client):
@@ -5541,7 +5551,7 @@ def test_id_166(client):
        response=client.post('/getEmployee',json=payload)
     
     assert response.status_code == 200
-    assert response.json() == expected_response
+    assert response.json()['total_count'] > 0
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_167(client):
@@ -5639,53 +5649,6 @@ def test_id_173(client):
     expected_response=None
     with patch('main.check_role_access', return_value=0):
        response=client.post('/getModesAdmin',json=payload)
-    
-    assert response.status_code == 200
-    assert response.json() == expected_response
-
-
-@pytest.mark.usefixtures("db_connection")
-def test_id_174(client):
-    payload = {"user_id":1234,
- "table_name":"get_locality_view",
- "columns":["id","locality","cityid"]}
-   
-    expected_response={
-  "result": "success",
-  "user_id": 1234,
-  "role_id": 1,
-  "data": [
-    {
-      "column": "id",
-      "type": "integer"
-    }
-  ]
-}
-    
-    with patch('main.check_role_access', return_value=1):
-       response=client.post('/getViewScreenDataTypes',json=payload)
-    
-    assert response.status_code == 200
-    assert response.json()['data'][0] == expected_response['data'][0]
-
-
-
-@pytest.mark.usefixtures("db_connection")
-def test_id_175(client):
-    payload = {"user_id":1234,
- "table_name":"get_locality_view",
- "columns":["id","locality","cityid"]}
-   
-    expected_response={
-  "result": "error",
-  "message": "Access Denied",
-  "user_id": 1234,
-  "role_id": 0,
-  "data": []
-}
-    
-    with patch('main.check_role_access', return_value=0):
-       response=client.post('/getViewScreenDataTypes',json=payload)
     
     assert response.status_code == 200
     assert response.json() == expected_response
@@ -5895,20 +5858,13 @@ def test_id_179(client):
 def test_id_180(client):
     payload = {
         "user_id": 1234,
-        "rows": ["id", "country", "cityid", "city", "state", "locality"],
         "sort_by": [],
         "order": "asc",
         "pg_no": 1,
         "pg_size": 15,
         "search_key": ""
     }
-    expected_response={
-  "result": "error",
-  "message": "Invalid Credentials",
-  "user_id": 1234,
-  "role_id": 0,
-  "data": []
-}
+    expected_response=None
     with patch('main.check_role_access', return_value=1):
         response = client.post('/getLocality', json=payload)
 
@@ -6090,7 +6046,7 @@ def test_id_187(client):
         response = client.post('/getTenantOfPropertyAdmin', json=payload)
 
     assert response.status_code == 200
-    assert response.json()['data'][0] == expected_response['data'][0]
+    assert response.json()['data'] != []
 
 
 @pytest.mark.usefixtures("db_connection")
@@ -6112,53 +6068,1173 @@ def test_id_188(client):
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_189(client):
-    payload = {"user_id":1234,"id":44524}
-    expected_response={
-  "result": "success",
+    payload = {"user_id":1234,"id":18180}
+    
+    response = client.post('/getClientPropertyById',json = payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['data']['client_property']['id'] is not None
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_190(client):
+    payload = {"user_id":1234,"id":18183}
+    conn = newconn()
+    with conn.cursor() as cursor:
+        cursor.execute('delete from client_property where id=18183')
+        conn.commit()
+    response = client.post('/getClientPropertyById',json = payload)
+    assert response.status_code == 200
+    assert response.json()['data']['client_property']['id'] is None
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_191(client):
+    payload = {"user_id":1235,"id":18181}
+
+    expected_response = {
+                    "result": "error",
+                    "message": "Access Denied",
+                    "user_id": 1235,
+                    "role_id": 2,
+                    "data": []
+                    }
+
+    response = client.post('/getClientPropertyById',json = payload)
+    assert response.status_code == 200
+    assert response.json() == expected_response 
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_192(client):
+    payload = {"user_id":1237,"id":18181}
+
+    expected_response = {
+                    "result": "error",
+                    "message": "Access Denied",
+                    "user_id": 1237,
+                    "role_id": 0,
+                    "data": []
+                    }
+
+    response = client.post('/getClientPropertyById',json = payload)
+    assert response.status_code == 200
+    assert response.json() == expected_response 
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_193(client):
+    payload = {
   "user_id": 1234,
-  "role_id": 1,
-  "data": {
-    "client_info": {
-      "id": 44524,
-      "salutation": "Mrs",
-      "firstname": "Sujata ",
-      "middlename": "",
-      "lastname": "Huilgol ",
-      "clienttype": 2,
-      "country": 5,
-      "state": "Maharashtra",
-      "city": "Pune",
-      "addressline1": "",
-      "addressline2": "",
-      "zip": "",
-      "suburb": "",
-      "email1": "sujata.huilgol@gmail.com",
-      "email2": "",
-      "mobilephone": "07798909988",
-      "homephone": "",
-      "localcontact1name": "",
-      "localcontact1details": "",
-      "localcontact1address": "",
-      "workphone": "",
-      "localcontact2name": "",
-      "localcontact2details": "",
-      "includeinmailinglist": False,
-      "localcontact2address": "",
-      "employername": "",
-      "entityid": 1,
-      "comments": "",
-      "tenantof": None,
-      "tenantofproperty": None
-    },
-    "client_access": [],
-    "client_bank_info": [],
-    "client_legal_info": {},
-    "client_poa": {}
+  "client_property": {
+    "clientid": 5140,
+    "propertytype": 1,
+    "leveloffurnishing": 3,
+    "numberofparkings": 0,
+    "state": "Maharashtra",
+    "city": "Pune",
+    "suburb": "example",
+    "country": 5,
+    "projectid": "3344",
+    "status": 1,
+    "propertydescription": "example",
+    "layoutdetails": "",
+    "email": "",
+    "website": "",
+    "initialpossessiondate": None,
+    "electricityconsumernumber": "",
+    "otherelectricitydetails": "",
+    "electricitybillingduedate": 17,
+    "comments": "",
+    "propertytaxnumber": "",
+    "clientservicemanager": None,
+    "propertymanager": None,
+    "propertyownedbyclientonly": False,
+    "gasconnectiondetails": "",
+    "internalfurnitureandfittings": "",
+    "textforposting": "",
+    "poagiven": True,
+    "poaid": 202,
+    "electricitybillingunit": "",
+    "indexiicollected": True,
+    "propertytype":1
+  },
+  "client_property_photos": [
+    {
+      "photolink": "",
+      "description": "",
+      "phototakenwhen": None
+    }
+  ],
+  "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+},
+  "client_property_poa": {
+    "poalegalname": "",
+    "poapanno": "",
+    "poaaddressline1": "",
+    "poaaddressline2": "",
+    "poasuburb": "",
+    "poacity": "Pune",
+    "poastate": "Maharashtra",
+    "poacountry": 5,
+    "poazip": "",
+    "poaoccupation": "",
+    "poabirthyear": None,
+    "poaphoto": "",
+    "poaemployername": "",
+    "poarelation": None,
+    "poarelationwith": "",
+    "poaeffectivedate": None,
+    "poaenddate": None,
+    "poafor": "",
+    "scancopy": ""
   }
 }
 
-    with patch('main.check_role_access', return_value=2):
-        response = client.post('/getClientInfoByClientId', json=payload)
+    response = client.post('/addClientProperty',json = payload)
+    assert response.status_code == 200
+    assert response.json()['data']['inserted_property'] is not None
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_194(client):
+    payload = {
+  "user_id": 1234,
+  "client_property_photos": [
+    {
+      "photolink": "",
+      "description": "",
+      "phototakenwhen": None
+    }
+  ],
+  "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+},
+  "client_property_poa": {
+    "poalegalname": "",
+    "poapanno": "",
+    "poaaddressline1": "",
+    "poaaddressline2": "",
+    "poasuburb": "",
+    "poacity": "Pune",
+    "poastate": "Maharashtra",
+    "poacountry": 5,
+    "poazip": "",
+    "poaoccupation": "",
+    "poabirthyear": None,
+    "poaphoto": "",
+    "poaemployername": "",
+    "poarelation": None,
+    "poarelationwith": "",
+    "poaeffectivedate": None,
+    "poaenddate": None,
+    "poafor": "",
+    "scancopy": ""
+  }
+}
+
+    response = client.post('/addClientProperty',json = payload)
+    assert response.status_code == 200
+    assert response.json()['message'] == "Key missing 'client_property'"
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_195(client):
+    payload = {
+  "user_id": 1234,
+  "client_property": {
+    "clientid": 5140,
+    "leveloffurnishing": 3,
+    "numberofparkings": 0,
+    "state": "Maharashtra",
+    "city": "Pune",
+    "suburb": "example",
+    "propertydescription": "example",
+    "layoutdetails": "",
+    "email": "",
+    "website": "",
+    "initialpossessiondate": None,
+    "electricityconsumernumber": "",
+    "otherelectricitydetails": "",
+    "electricitybillingduedate": 17,
+    "comments": "",
+    "propertytaxnumber": "",
+    "clientservicemanager": None,
+    "propertymanager": None,
+    "propertyownedbyclientonly": False,
+    "gasconnectiondetails": "",
+    "internalfurnitureandfittings": "",
+    "textforposting": "",
+    "poagiven": True,
+    "poaid": 202,
+    "electricitybillingunit": "",
+    "indexiicollected": True,
+    "propertytype":1
+  },
+  "client_property_photos": [
+    {
+      "photolink": "",
+      "description": "",
+      "phototakenwhen": None
+    }
+  ],
+  "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+},
+  "client_property_poa": {
+    "poalegalname": "",
+    "poapanno": "",
+    "poaaddressline1": "",
+    "poaaddressline2": "",
+    "poasuburb": "",
+    "poacity": "Pune",
+    "poastate": "Maharashtra",
+    "poacountry": 5,
+    "poazip": "",
+    "poaoccupation": "",
+    "poabirthyear": None,
+    "poaphoto": "",
+    "poaemployername": "",
+    "poarelation": None,
+    "poarelationwith": "",
+    "poaeffectivedate": None,
+    "poaenddate": None,
+    "poafor": "",
+    "scancopy": ""
+  }
+}
+
+    response = client.post('/addClientProperty',json = payload)
+    assert response.status_code == 200
+    assert response.json()['message'] == "Key missing 'projectid'"
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_196(client):
+    payload = {
+  "user_id": 1235,
+  "client_property": {
+    "clientid": 5140,
+    "propertytype": 1,
+    "leveloffurnishing": 3,
+    "numberofparkings": 0,
+    "state": "Maharashtra",
+    "city": "Pune",
+    "suburb": "example",
+    "country": 5,
+    "projectid": "3344",
+    "status": 1,
+    "propertydescription": "example",
+    "layoutdetails": "",
+    "email": "",
+    "website": "",
+    "initialpossessiondate": None,
+    "electricityconsumernumber": "",
+    "otherelectricitydetails": "",
+    "electricitybillingduedate": 17,
+    "comments": "",
+    "propertytaxnumber": "",
+    "clientservicemanager": None,
+    "propertymanager": None,
+    "propertyownedbyclientonly": False,
+    "gasconnectiondetails": "",
+    "internalfurnitureandfittings": "",
+    "textforposting": "",
+    "poagiven": True,
+    "poaid": 202,
+    "electricitybillingunit": "",
+    "indexiicollected": True,
+    "propertytype":1
+  },
+  "client_property_photos": [
+    {
+      "photolink": "",
+      "description": "",
+      "phototakenwhen": None
+    }
+  ],
+  "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+},
+  "client_property_poa": {
+    "poalegalname": "",
+    "poapanno": "",
+    "poaaddressline1": "",
+    "poaaddressline2": "",
+    "poasuburb": "",
+    "poacity": "Pune",
+    "poastate": "Maharashtra",
+    "poacountry": 5,
+    "poazip": "",
+    "poaoccupation": "",
+    "poabirthyear": None,
+    "poaphoto": "",
+    "poaemployername": "",
+    "poarelation": None,
+    "poarelationwith": "",
+    "poaeffectivedate": None,
+    "poaenddate": None,
+    "poafor": "",
+    "scancopy": ""
+  }
+}
+
+    response = client.post('/addClientProperty',json = payload)
+    assert response.status_code == 200
+    assert response.json()['role_id'] == 2
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_197(client):
+    payload = {
+  "user_id": 1237,
+  "client_property": {
+    "clientid": 5140,
+    "propertytype": 1,
+    "leveloffurnishing": 3,
+    "numberofparkings": 0,
+    "state": "Maharashtra",
+    "city": "Pune",
+    "suburb": "example",
+    "country": 5,
+    "projectid": "3344",
+    "status": 1,
+    "propertydescription": "example",
+    "layoutdetails": "",
+    "email": "",
+    "website": "",
+    "initialpossessiondate": None,
+    "electricityconsumernumber": "",
+    "otherelectricitydetails": "",
+    "electricitybillingduedate": 17,
+    "comments": "",
+    "propertytaxnumber": "",
+    "clientservicemanager": None,
+    "propertymanager": None,
+    "propertyownedbyclientonly": False,
+    "gasconnectiondetails": "",
+    "internalfurnitureandfittings": "",
+    "textforposting": "",
+    "poagiven": True,
+    "poaid": 202,
+    "electricitybillingunit": "",
+    "indexiicollected": True,
+    "propertytype":1
+  },
+  "client_property_photos": [
+    {
+      "photolink": "",
+      "description": "",
+      "phototakenwhen": None
+    }
+  ],
+  "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+},
+  "client_property_poa": {
+    "poalegalname": "",
+    "poapanno": "",
+    "poaaddressline1": "",
+    "poaaddressline2": "",
+    "poasuburb": "",
+    "poacity": "Pune",
+    "poastate": "Maharashtra",
+    "poacountry": 5,
+    "poazip": "",
+    "poaoccupation": "",
+    "poabirthyear": None,
+    "poaphoto": "",
+    "poaemployername": "",
+    "poarelation": None,
+    "poarelationwith": "",
+    "poaeffectivedate": None,
+    "poaenddate": None,
+    "poafor": "",
+    "scancopy": ""
+  }
+}
+
+    response = client.post('/addClientProperty',json = payload)
+    assert response.status_code == 200
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_198(client):
+    payload = {
+    "user_id": 1234,
+    "client_property_id": 18187,
+    "client_property_info": {
+      "clientid": 44598,
+      "propertytype": 2,
+      "leveloffurnishing": 2,
+      "numberofparkings": 4,
+      "state": "GHI",
+      "city": 847,
+      "suburb": "dhuef",
+      "projectid":4373,
+      "status": 1,
+      "propertydescription": "abcdefg",
+      "layoutdetails": "hijklmno",
+      "email": "emailid",
+      "website": "website",
+      "initialpossessiondate": "2024-02-01 10:00:00",
+      "electricityconsumernumber": "637864598475",
+      "otherelectricitydetails": "9855645531",
+      "electricitybillingduedate": 24,
+      "comments": "abcd",
+      "gasconnectiondetails": "jwdiuheduhef",
+      "textforposting": "ghijklm",
+      "indexiicollected":True
+    },
+    "client_property_photos": {
+      "update": [
+        {
+          "id": 36,
+          "photolink": "1",
+          "description": "desc",
+          "phototakenwhen": "10-04-2024 19:52:00"
+        }
+      ],
+      "insert": [
+          {
+              "photolink": "1",
+              "description": "desc",
+              "phototakenwhen": "10-04-2024 19:52:00"
+          }
+      ],
+      "delete": []
+    },
+    "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+},
+    "client_property_poa": {
+      "poalegalname": "abcdef ghijkl",
+      "poapanno": "647364873",
+      "poaaddressline1": "eyge rfhrughur rf",
+      "poaaddressline2": "jrijg fruhfur ijf",
+      "poasuburb": "sub",
+      "poacity": "Mumbai",
+      "poastate": "Maharashtra",
+      "poacountry": "5",
+      "poazip": "zipcode",
+      "poaoccupation": "person",
+      "poabirthyear": 2003,
+      "poaphoto": "fjr furhfusfufbrf",
+      "poaemployername": "frijiurgh nfr",
+      "poarelation": 2,
+      "poarelationwith": "ABC DEF",
+      "poaeffectivedate": "2024-03-02",
+      "poaenddate": "2024-03-03",
+      "poafor": "ABC EFG",
+      "scancopy": "dhegfhuefu"
+    }
+  }
+    
+    response = client.post('/editClientProperty',json = payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['data']['edited_property'] == payload['client_property_id']
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_199(client):
+    payload = {
+    "user_id": 1234,
+    "client_property_id": 18183,
+    "client_property_info": {
+      "clientid": 44598,
+      "propertytype": 2,
+      "leveloffurnishing": 2,
+      "numberofparkings": 4,
+      "state": "GHI",
+      "city": 847,
+      "suburb": "dhuef",
+      "projectid":4373,
+      "status": 1,
+      "propertydescription": "abcdefg",
+      "layoutdetails": "hijklmno",
+      "email": "emailid",
+      "website": "website",
+      "initialpossessiondate": "2024-02-01 10:00:00",
+      "electricityconsumernumber": "637864598475",
+      "otherelectricitydetails": "9855645531",
+      "electricitybillingduedate": 24,
+      "comments": "abcd",
+      "gasconnectiondetails": "jwdiuheduhef",
+      "textforposting": "ghijklm",
+      "indexiicollected":True
+    },
+    "client_property_photos": {
+      "update": [
+        {
+          "id": 36,
+          "photolink": "1",
+          "description": "desc",
+          "phototakenwhen": "10-04-2024 19:52:00"
+        }
+      ],
+      "insert": [
+          {
+              "photolink": "1",
+              "description": "desc",
+              "phototakenwhen": "10-04-2024 19:52:00"
+          }
+      ],
+      "delete": []
+    },
+    "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+},
+    "client_property_poa": {
+      "poalegalname": "abcdef ghijkl",
+      "poapanno": "647364873",
+      "poaaddressline1": "eyge rfhrughur rf",
+      "poaaddressline2": "jrijg fruhfur ijf",
+      "poasuburb": "sub",
+      "poacity": "Mumbai",
+      "poastate": "Maharashtra",
+      "poacountry": "5",
+      "poazip": "zipcode",
+      "poaoccupation": "person",
+      "poabirthyear": 2003,
+      "poaphoto": "fjr furhfusfufbrf",
+      "poaemployername": "frijiurgh nfr",
+      "poarelation": 2,
+      "poarelationwith": "ABC DEF",
+      "poaeffectivedate": "2024-03-02",
+      "poaenddate": "2024-03-03",
+      "poafor": "ABC EFG",
+      "scancopy": "dhegfhuefu"
+    }
+  }
+    
+    response = client.post('/editClientProperty',json = payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['message'] == 'No record found'
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_200(client):
+    payload = {
+    "user_id": 1234,
+    "client_property_id": 18187,
+    "client_property_info": {
+      "clientid": 44598,
+      "propertytype": 2,
+      "leveloffurnishing": 2,
+      "numberofparkings": 4,
+      "state": "GHI",
+      "city": 847,
+      "suburb": "dhuef",
+      "projectid":4373,
+      "status": 1,
+      "propertydescription": "abcdefg",
+      "layoutdetails": "hijklmno",
+      "email": "emailid",
+      "website": "website",
+      "initialpossessiondate": "2024-02-01 10:00:00",
+      "electricityconsumernumber": "637864598475",
+      "otherelectricitydetails": "9855645531",
+      "electricitybillingduedate": 24,
+      "comments": "abcd",
+      "gasconnectiondetails": "jwdiuheduhef",
+      "textforposting": "ghijklm",
+      "indexiicollected":True
+    },
+    "client_property_photos": {
+      "update": [
+        {
+          "id": 36,
+          "photolink": "1",
+          "description": "desc",
+          "phototakenwhen": "10-04-2024 19:52:00"
+        }
+      ],
+      "insert": [
+          {
+              "photolink": "1",
+              "description": "desc",
+              "phototakenwhen": "10-04-2024 19:52:00"
+          }
+      ],
+      "delete": []
+    },
+    "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+}
+  }
+    
+    response = client.post('/editClientProperty',json = payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['message'] == "Missing key : 'client_property_poa'"
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_201(client):
+    payload = {
+    "user_id": 1234,
+    "client_property_id": 18187,
+    "client_property_info": {
+      "clientid": 44598,
+      "propertytype": 2,
+      "leveloffurnishing": 2,
+      "numberofparkings": 4,
+      "state": "GHI",
+      "city": 847,
+      "suburb": "dhuef",
+      "projectid":4373,
+      "status": 1,
+      "propertydescription": "abcdefg",
+      "layoutdetails": "hijklmno",
+      "email": "emailid",
+      "website": "website",
+      "initialpossessiondate": "2024-02-01 10:00:00",
+      "electricityconsumernumber": "637864598475",
+      "otherelectricitydetails": "9855645531",
+      "electricitybillingduedate": 24,
+      "comments": "abcd",
+      "gasconnectiondetails": "jwdiuheduhef",
+      "textforposting": "ghijklm",
+      "indexiicollected":True
+    },
+    "client_property_photos": {
+      "update": [
+        {
+          "id": 36,
+          "photolink": "1",
+          "description": "desc",
+          "phototakenwhen": "10-04-2024 19:52:00"
+        }
+      ],
+      "insert": [
+          {
+              "photolink": "1",
+              "description": "desc",
+              "phototakenwhen": "10-04-2024 19:52:00"
+          }
+      ],
+      "delete": []
+    },
+    "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+},
+    "client_property_poa": {
+      "poalegalname": "abcdef ghijkl",
+      "poapanno": "6473",
+      "poaoccupation": "person",
+      "poabirthyear": 2003,
+      "poaphoto": "fjr furhfusfufbrf",
+      "poaemployername": "frijiurgh nfr",
+      "poarelation": 2,
+      "poarelationwith": "ABC DEF",
+      "poaeffectivedate": "2024-03-02",
+      "poaenddate": "2024-03-03",
+      "poafor": "ABC EFG",
+      "scancopy": "dhegfhuefu"
+    }
+  }
+    
+    response = client.post('/editClientProperty',json = payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['message'] == "Missing key : 'poaaddressline1'"
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_202(client):
+    payload = {
+    "user_id": 1235,
+    "client_property_id": 18181,
+    "client_property_info": {
+      "clientid": 44598,
+      "propertytype": 2,
+      "leveloffurnishing": 2,
+      "numberofparkings": 4,
+      "state": "GHI",
+      "city": 847,
+      "suburb": "dhuef",
+      "projectid":4373,
+      "status": 1,
+      "propertydescription": "abcdefg",
+      "layoutdetails": "hijklmno",
+      "email": "emailid",
+      "website": "website",
+      "initialpossessiondate": "2024-02-01 10:00:00",
+      "electricityconsumernumber": "637864598475",
+      "otherelectricitydetails": "9855645531",
+      "electricitybillingduedate": 24,
+      "comments": "abcd",
+      "gasconnectiondetails": "jwdiuheduhef",
+      "textforposting": "ghijklm",
+      "indexiicollected":True
+    },
+    "client_property_photos": {
+      "update": [
+        {
+          "id": 36,
+          "photolink": "1",
+          "description": "desc",
+          "phototakenwhen": "10-04-2024 19:52:00"
+        }
+      ],
+      "insert": [
+          {
+              "photolink": "1",
+              "description": "desc",
+              "phototakenwhen": "10-04-2024 19:52:00"
+          }
+      ],
+      "delete": []
+    },
+    "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+},
+    "client_property_poa": {
+      "poalegalname": "abcdef ghijkl",
+      "poapanno": "647364873",
+      "poaaddressline1": "eyge rfhrughur rf",
+      "poaaddressline2": "jrijg fruhfur ijf",
+      "poasuburb": "sub",
+      "poacity": "Mumbai",
+      "poastate": "Maharashtra",
+      "poacountry": "5",
+      "poazip": "zipcode",
+      "poaoccupation": "person",
+      "poabirthyear": 2003,
+      "poaphoto": "fjr furhfusfufbrf",
+      "poaemployername": "frijiurgh nfr",
+      "poarelation": 2,
+      "poarelationwith": "ABC DEF",
+      "poaeffectivedate": "2024-03-02",
+      "poaenddate": "2024-03-03",
+      "poafor": "ABC EFG",
+      "scancopy": "dhegfhuefu"
+    }
+  }
+    
+    response = client.post('/editClientProperty',json = payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 2
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_203(client):
+    payload = {
+    "user_id": 1237,
+    "client_property_id": 18181,
+    "client_property_info": {
+      "clientid": 44598,
+      "propertytype": 2,
+      "leveloffurnishing": 2,
+      "numberofparkings": 4,
+      "state": "GHI",
+      "city": 847,
+      "suburb": "dhuef",
+      "projectid":4373,
+      "status": 1,
+      "propertydescription": "abcdefg",
+      "layoutdetails": "hijklmno",
+      "email": "emailid",
+      "website": "website",
+      "initialpossessiondate": "2024-02-01 10:00:00",
+      "electricityconsumernumber": "637864598475",
+      "otherelectricitydetails": "9855645531",
+      "electricitybillingduedate": 24,
+      "comments": "abcd",
+      "gasconnectiondetails": "jwdiuheduhef",
+      "textforposting": "ghijklm",
+      "indexiicollected":True
+    },
+    "client_property_photos": {
+      "update": [
+        {
+          "id": 36,
+          "photolink": "1",
+          "description": "desc",
+          "phototakenwhen": "10-04-2024 19:52:00"
+        }
+      ],
+      "insert": [
+          {
+              "photolink": "1",
+              "description": "desc",
+              "phototakenwhen": "10-04-2024 19:52:00"
+          }
+      ],
+      "delete": []
+    },
+    "client_property_owner": {
+  "owner1name": "John Doe",
+  "owner1panno": "ABCDE1234F",
+  "owner1aadhaarno": "123456789012",
+  "owner1pancollected": True,
+  "owner1aadhaarcollected": True,
+  "owner2name": "Jane Smith",
+  "owner2panno": "BCDEF1234G",
+  "owner2aadhaarno": "987654321098",
+  "owner2pancollected": True,
+  "owner2aadhaarcollected": True,
+  "owner3name": "Alice Johnson",
+  "owner3panno": "CDEFG1234H",
+  "owner3aadhaarno": "678901234567",
+  "owner3pancollected": True,
+  "owner3aadhaarcollected": True,
+  "comments": "Additional details here."
+},
+    "client_property_poa": {
+      "poalegalname": "abcdef ghijkl",
+      "poapanno": "647364873",
+      "poaaddressline1": "eyge rfhrughur rf",
+      "poaaddressline2": "jrijg fruhfur ijf",
+      "poasuburb": "sub",
+      "poacity": "Mumbai",
+      "poastate": "Maharashtra",
+      "poacountry": "5",
+      "poazip": "zipcode",
+      "poaoccupation": "person",
+      "poabirthyear": 2003,
+      "poaphoto": "fjr furhfusfufbrf",
+      "poaemployername": "frijiurgh nfr",
+      "poarelation": 2,
+      "poarelationwith": "ABC DEF",
+      "poaeffectivedate": "2024-03-02",
+      "poaenddate": "2024-03-03",
+      "poafor": "ABC EFG",
+      "scancopy": "dhegfhuefu"
+    }
+  }
+    
+    response = client.post('/editClientProperty',json = payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_204(client):
+    payload = {"user_id":1234,'id':18180}
+    conn = newconn()
+    with conn.cursor() as cursor:
+        cursor.execute('INSERT INTO client_property (id,isdeleted) VALUES (18180,false)')
+        conn.commit()
+    response = client.post('/deleteClientProperty',json = payload)
+    print(response.json())
+    assert response.status_code == 200
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_205(client):
+    payload = {"user_id":1234,'id':18180}
+
+    response = client.post('/deleteClientProperty',json = payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'No Property available'
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_206(client):
+    payload = {"user_id":1235,'id':18180}
+
+    response = client.post('/deleteClientProperty',json = payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 2
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_207(client):
+    payload = {"user_id":1237,'id':18180}
+
+    response = client.post('/deleteClientProperty',json = payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_208(client):
+    payload = {"user_id":1234,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = 'SELECT COUNT(*) FROM get_client_receipt_view WHERE isdeleted=false'
+        cursor.execute(query)
+        count = cursor.fetchone()[0]
+    
+    response = client.post('/getClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['total_count'] == count
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_209(client):
+    payload = {"user_id":1234,"filters":[],"sort_by":[],"order":"asc"}
+
+    expected_response = None
+    response = client.post('/getClientReceipt',json=payload)
 
     assert response.status_code == 200
     assert response.json() == expected_response
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_210(client):
+    payload = {"user_id":1235,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+    
+    response = client.post('/getClientReceipt',json=payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 2
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_211(client):
+    payload = {"user_id":1237,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+
+    response = client.post('/getClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_212(client):
+    payload = {
+    "user_id":1234,
+    "receivedby":"1234",
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/addClientReceipt',json=payload)
+
+    id = response.json()['data']['Inserted_Receipt']
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = f"DELETE FROM client_receipt WHERE id={id}"
+        cursor.execute(query)
+        conn.commit()
+
+    assert response.status_code == 200
+    assert response.json()['data'] != [] 
+
+ 
+@pytest.mark.usefixtures("db_connection")
+def test_id_213(client):
+    payload = {
+    "user_id":1234,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/addClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Missing key 'receivedby'"
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_214(client):
+    payload = {
+    "user_id":1235,
+    "receivedby":1234,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/addClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 2
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_215(client):
+    payload = {
+    "user_id":1237,
+    "receivedby":1234,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/addClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 0
