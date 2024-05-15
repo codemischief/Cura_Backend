@@ -1,4 +1,6 @@
 
+
+# %%
 import os
 import time
 import ui_config
@@ -14,7 +16,21 @@ from selenium.webdriver.support.ui import Select
 import random
 import string
 
-def test_login_success():
+
+# %%
+def login_and_navigate(username, password, comkey):
+    driver = webdriver.Chrome()
+    driver.get(drivers_config["login_url"])
+    driver.find_element(By.NAME, "username").send_keys(username)
+    driver.find_element(By.NAME, "password").send_keys(password)
+    driver.find_element(By.NAME, "comkey").send_keys(comkey)
+    login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
+    assert not login_button.get_attribute("disabled"), "Login button should be enabled"
+    login_button.click()
+    return driver
+
+# %%
+def test_login_success(driver):
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
 
@@ -36,6 +52,8 @@ def test_login_success():
     driver.close()
 
 test_login_success()
+
+# %%
 
 def test_login_failure_username():
     
@@ -61,6 +79,9 @@ def test_login_failure_username():
 
 test_login_failure_username() 
 
+
+# %%
+
 def test_login_failure_password():
 
     driver = webdriver.Chrome()
@@ -84,6 +105,9 @@ def test_login_failure_password():
     driver.close()
 
 test_login_failure_password() 
+
+
+# %%
 
 def test_login_failure_companyskey():
 
@@ -109,6 +133,8 @@ def test_login_failure_companyskey():
 
 test_login_failure_companyskey() 
 
+
+# %%
 def test_login_failure_all():
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
@@ -129,26 +155,12 @@ def test_login_failure_all():
         print(f"Error finding success element: {e}")
 
     driver.close()
-
-test_login_failure_all() 
-
-
-def test_Dashboard_Admin():
-    driver = webdriver.Chrome()
     
-    # driver.get(drivers_config["Dashboard_url"])
+test_login_failure_all()
 
-    try:
-        driver.get(drivers_config["login_url"])
 
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        # driver.get(drivers_config["Dashboard_url"])
+# %%
+def test_Dashboard_Admin(driver):
         admin_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
         )
@@ -161,28 +173,10 @@ def test_Dashboard_Admin():
         assert admin_header.text == "Personnel", "Admin header text is incorrect"
         time.sleep(2)
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Dashboard_Admin()
 
 
-def test_Dashboard_Manager():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        time.sleep(2)
+# %%
+def test_Dashboard_Manager(driver):
         Manager_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) > div:nth-child(2)"))
         )
@@ -195,27 +189,9 @@ def test_Dashboard_Manager():
         assert manager_header.text == "Builder", "Manager header text is incorrect"
         time.sleep(2)
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
 
-test_Dashboard_Manager()
-
-
-def test_Dashboard_Report():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
+# %%
+def test_Dashboard_Report(driver):
         Report_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) > div:nth-child(3)"))
         )
@@ -227,55 +203,16 @@ def test_Dashboard_Report():
         )
         assert report_header.text == "Contact", "Report header text is incorrect"
         time.sleep(2)
-        
-        os.makedirs("D:\\Screenshots", exist_ok=True)
-        driver.save_screenshot("D:\\Screenshots\\test_Dashboard_Report.png")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Dashboard_Report()
 
 
 # %%
-def test_Dashboard_Research():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
+def test_Dashboard_Research(driver):
         driver.find_element(By.XPATH,"//p[normalize-space()='Research']").click()
-        
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Dashboard_Research()
+        time.sleep(2)
 
 
 # %%
-def test_Dashboard_Logout():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
+def test_Dashboard_Logout(driver):
         Logout_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "a[href='/']"))
         )
@@ -287,859 +224,26 @@ def test_Dashboard_Logout():
         )
         assert Logout_header.text == "Login Panel", "Logout header text is incorrect"
         
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Dashboard_Logout()
 
 
 # %%
-def test_Admin_Personnal_employee():
-    driver = webdriver.Chrome()
-
+def Dashboard_Webpage():
     try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        time.sleep(2)
-        employee_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not employee_button.get_attribute("disabled"), "Admin button should be enabled"
-        employee_button.click()
-
-        employee_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert employee_header.text == "Personnel", "Admin header text is incorrect"
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//a[normalize-space()='Employees']").click()
-        time.sleep(2)
-
-        os.makedirs("D:\\Screenshots", exist_ok=True)
-        driver.save_screenshot("D:\\Screenshots\\test_Admin_employee.png")
+        driver=login_and_navigate("ruderaw", "abcdefg", "9632")
+        test_Dashboard_Admin(driver)
+        test_Dashboard_Manager(driver)
+        test_Dashboard_Report(driver)
+        test_Dashboard_Research(driver)
+        test_Dashboard_Logout(driver)
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
         driver.quit()
 
-test_Admin_Personnal_employee()
-
-
+Dashboard_Webpage()
 
 # %%
-def test_Admin_Personnal_users():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        user_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not user_button.get_attribute("disabled"), "Admin button should be enabled"
-        user_button.click()
-
-        user_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert user_header.text == "Personnel", "Admin header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Users']").click()
-        
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Admin_Personnal_users()
-
-# %%
-
-def test_Admin_Personnal_Contractual_Payment():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        Contractual_Payment_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not Contractual_Payment_button.get_attribute("disabled"), "Admin button should be enabled"
-        Contractual_Payment_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Personnel", "Admin header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Contractual Payment']").click()
-        
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Admin_Personnal_Contractual_Payment()
-
-# %%
-def test_Admin_Offerings_LOB():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        Contractual_Payment_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not Contractual_Payment_button.get_attribute("disabled"), "Admin button should be enabled"
-        Contractual_Payment_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Personnel", "Admin header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='LOB (Line of business)']").click()
-        
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Admin_Offerings_LOB()
-
-# %%
-def test_Admin_Offerings_Services():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        Contractual_Payment_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not Contractual_Payment_button.get_attribute("disabled"), "Admin button should be enabled"
-        Contractual_Payment_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Personnel", "Admin header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Services']").click()
-    
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Admin_Offerings_Services()
-
-# %%
-def test_Admin_Locations_Country():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        Contractual_Payment_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not Contractual_Payment_button.get_attribute("disabled"), "Admin button should be enabled"
-        Contractual_Payment_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Personnel", "Admin header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Country']").click()
-        
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Admin_Locations_Country()
-
-# %%
-def test_Admin_Locations_State():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        Contractual_Payment_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not Contractual_Payment_button.get_attribute("disabled"), "Admin button should be enabled"
-        Contractual_Payment_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Personnel", "Admin header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='State']").click()
-    
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Admin_Locations_State()
-
-# %%
-def test_Admin_Locations_City():
-    driver = webdriver.Chrome()
-   
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        Contractual_Payment_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not Contractual_Payment_button.get_attribute("disabled"), "Admin button should be enabled"
-        Contractual_Payment_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Personnel", "Admin header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='City']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Admin_Locations_City()
-
-# %%
-def test_Admin_Locations_Locality():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        Contractual_Payment_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not Contractual_Payment_button.get_attribute("disabled"), "Admin button should be enabled"
-        Contractual_Payment_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Personnel", "Admin header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Locality']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Admin_Locations_Locality()
-
-# %%
-def test_Manage_Builder_ManageBuilder():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Builder']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Builder_ManageBuilder()
-
-# %%
-def test_Manage_Builder_ManageProject():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Project']").click()
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Builder_ManageProject()
-
-# %%
-def test_Manage_Client_Manageclient():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Client']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Client_Manageclient()
-
-# %%
-def test_Manage_Client_Manageclientproperty():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Client Property']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Client_Manageclientproperty()
-
-# %%
-def test_Manage_Client_Manageclientinvoice():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Client Invoice']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Client_Manageclientinvoice()
-
-# %%
-def test_Manage_Client_Manageclientreceipt():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Client Receipt']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Client_Manageclientreceipt()
-
-# %%
-def test_Manage_Order_Manageorder():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Order']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Order_Manageorder()
-
-# %%
-def test_Manage_Order_Manageorderreceipt():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Order Receipt']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Order_Manageorderreceipt()
-
-# %%
-def test_Manage_Vendor_Managevendor():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Vendor']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Vendor_Managevendor()
-
-# %%
-def test_Manage_Vendor_Managevendorinvoice():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Vendor Invoice']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Vendor_Managevendorinvoice()
-
-# %%
-def test_Manage_Vendor_Managevendorpayment():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Vendor Payment']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Vendor_Managevendorpayment()
-
-# %%
-def test_Manage_Service_PMAagreement():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='PMA Agreement']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Service_PMAagreement()
-
-# %%
-def test_Manage_Service_LandLagreement():
-    driver = webdriver.Chrome()
-   
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        time.sleep(2)
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//a[normalize-space()='L&L Agreement']").click()
-        time.sleep(6)
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Service_LandLagreement()
-
-# %%
-def test_Manage_Service_PMAbilling():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        time.sleep(2)
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Builder", "Manage header text is incorrect"
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//p[normalize-space()='PMA Billing']").click()
-        time.sleep(6)
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Manage_Service_PMAbilling()
-
-# %%
-def test_Research_Prospect():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(4) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Research button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Prospect", "Research header text is incorrect"
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Prospect']").click()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Research_Prospect()
-
-# %%
-def test_Research_Manageowners():
-    driver = webdriver.Chrome()
-
-    try:
-        driver.get(drivers_config["login_url"])
-
-        driver.find_element(By.NAME, "username").send_keys("ruderaw")
-        driver.find_element(By.NAME, "password").send_keys("abcdefg")
-        driver.find_element(By.NAME, "comkey").send_keys("9632")
-
-        login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
-        assert not login_button.get_attribute("disabled"), "Login button should be enabled"
-        login_button.click()
-        manage_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(4) button:nth-child(1) p:nth-child(1)"))
-        )
-        assert not manage_button.get_attribute("disabled"), "Research button should be enabled"
-        manage_button.click()
-
-        Contractual_Payment_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1) > h1:nth-child(1)"))
-        )
-        assert Contractual_Payment_header.text == "Prospect", "Research header text is incorrect"
-        driver.find_element(By.XPATH,"//a[normalize-space()='Manage Owners']").click()
-
-
-       
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
-test_Research_Manageowners()
-
-# %%
-def login_and_navigate(username, password, comkey):
+def login_and_navigate_employee(username, password, comkey):
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
     driver.find_element(By.NAME, "username").send_keys(username)
@@ -1218,13 +322,12 @@ def add_new_employee(driver,employee_name, pan_no, username, doj, designation, e
 
 
 # %%
-def test_Add_New_Employee_button():
+def test_Add_New_Employee_button(driver):
         driver.find_element(By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4").click()
         time.sleep(2)
 
 # %%
 def test_Edit_Employee_Success(driver):
-
     try:
         addEmployee_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > button:nth-child(1)"))
@@ -1309,67 +412,6 @@ def test_Edit_Employee_Success(driver):
     finally:
         driver.quit()
         
-
-
-# %%
-# def Delete_employee(driver,employee_name, pan_no, username, doj, designation, email, dob, last_dow, role, ph_no, country, state, city, suburb, entity):
-#     driver.find_element(By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4").click()
-#     time.sleep(2)
-#     driver.find_element(By.XPATH,"//input[@name='employeeName']").send_keys(employee_name)
-#     driver.find_element(By.XPATH,"//input[@name='panNo']").send_keys(pan_no)
-#     element=driver.find_element(By.XPATH,"//select[@name='userName']")
-#     drp=Select(element)
-#     drp.select_by_visible_text(username)
-#     driver.find_element(By.XPATH,"//input[@name='doj']").send_keys(doj)
-#     driver.find_element(By.XPATH,"//input[@name='designation']").send_keys(designation)
-#     driver.find_element(By.XPATH,"//input[@name='email']").send_keys(email)
-#     employee_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
-#     driver.find_element(By.XPATH,"//input[@name='employeeId']").send_keys(employee_id)
-#     element1=driver.find_element(By.XPATH,"//select[@name='lob']")
-#     drp1=Select(element1)
-#     drp1.select_by_visible_text('Reimbursements')
-#     driver.find_element(By.XPATH,"//input[@name='dob']").send_keys(dob)
-#     driver.find_element(By.XPATH,"//input[@name='lastDOW']").send_keys(last_dow)
-#     element2=driver.find_element(By.XPATH,"//select[@name='role']")
-#     drp2=Select(element2)
-#     drp2.select_by_visible_text(role)
-#     driver.find_element(By.XPATH,"//input[@name='phNo']").send_keys(ph_no)
-#     time.sleep(2)
-#     element3=driver.find_element(By.XPATH,"//select[@name='country']")
-#     drp3=Select(element3)
-#     drp3.select_by_visible_text(country)
-#     time.sleep(2)
-#     element4=driver.find_element(By.XPATH,"//select[contains(@name,'state')]")
-#     drp4=Select(element4)
-#     drp4.select_by_visible_text(state)
-#     time.sleep(2)
-#     element5=driver.find_element(By.XPATH,"//select[@name='city']")
-#     drp5=Select(element5)
-#     drp5.select_by_visible_text(city)
-#     time.sleep(2)
-#     driver.find_element(By.XPATH,"//input[@name='suburb']").send_keys(suburb)
-#     time.sleep(2)
-#     element6=driver.find_element(By.XPATH,"//select[@name='entity']")
-#     drp6=Select(element6)
-#     drp6.select_by_visible_text(entity)
-#     driver.find_element(By.XPATH, "//button[normalize-space()='Add']").click()
-#     time.sleep(2)
-#     driver.find_element(By.XPATH,"//button[normalize-space()='Save']").click()
-#     time.sleep(4)
-#     driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("aryan ashish")
-#     time.sleep(2)
-#     driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-#     time.sleep(2)
-#     driver.find_element(By.XPATH,"//img[@alt='trash']").click()
-#     time.sleep(2)
-#     driver.find_element(By.XPATH,"//body/div[@role='presentation']/div/div/div/button[1]").click()
-#     time.sleep(2)
-    
-   
-
-
-# # Delete_employee(driver, "aryan ashish", "ijklmn", "Admin User", "06-05-2024", "intern", "ashish.com", "06-05-2003", "31-05-2024", "Admin", "11100000", "UAE", "UAE", "Dubai", "q", "Z-CASH")
-
 
 
 # %%
@@ -1607,19 +649,17 @@ def test_Filter_Employee_Name_ascending_Success(driver):
 # %%
 def test_Filter_Employee_Name_descending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[2]/div[1]/p[1]/button[1]/span[1]").click()
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[2]/div[1]/p[1]/button[1]/span[1]").click()
-        time.sleep(2)
-
-
-# %%
-def test_Filter_Employee_ID_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body//div[@id='root']//div//div//div//div//div[3]//div[1]//p[1]//button[1]//span[1]").click()
         time.sleep(2)
 
 
 # %%
 def test_Filter_Employee_ID_descending_Success(driver):
         driver.find_element(By.XPATH,"//body//div[@id='root']//div//div//div//div//div[3]//div[1]//p[1]//button[1]//span[1]").click()
+        time.sleep(2)
+
+
+# %%
+def test_Filter_Employee_ID_ascending_Success(driver):
         driver.find_element(By.XPATH,"//body//div[@id='root']//div//div//div//div//div[3]//div[1]//p[1]//button[1]//span[1]").click()
         time.sleep(2)
 
@@ -2268,7 +1308,7 @@ def test_employee_return_arrow(driver):
 # %%
 def Employee_Webpage():
     try:
-        driver = login_and_navigate("ruderaw", "abcdefg", "9632")
+        driver = login_and_navigate_employee("ruderaw", "abcdefg", "9632")
         test_Filter_Employee_Name_ascending_Success(driver)
         test_Filter_Employee_Name_descending_Success(driver)
         test_Filter_Employee_ID_ascending_Success(driver)
@@ -2830,9 +1870,57 @@ def City_DownloadasExcel(driver):
     time.sleep(2)
 
 # %%
+def City_Country_ascending(driver):
+    driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+
+# %%
+def City_Country_descending(driver):
+    driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+
+# %%
+def City_State_descending(driver):
+    driver.find_element(By.XPATH,"//div//div//div//div//div//div[3]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+
+# %%
+def City_State_ascending(driver):
+    driver.find_element(By.XPATH,"//div//div//div//div//div//div[3]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+
+# %%
+def City_Cityname_ascending(driver):
+    driver.find_element(By.XPATH,"//div[4]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+
+# %%
+def City_Cityname_descending(driver):
+    driver.find_element(By.XPATH,"//div[4]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+
+# %%
+def City_ID_descending(driver):
+    driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+
+# %%
+def City_ID_ascending(driver):
+    driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+
+# %%
 def City_webpage():
     try:
        driver=login_and_navigate_city("ruderaw", "abcdefg", "9632")
+       City_Country_ascending(driver)
+       City_Country_descending(driver)
+       City_State_ascending(driver)
+       City_State_descending(driver)
+       City_Cityname_ascending(driver)
+       City_Cityname_descending(driver)
+       City_ID_ascending(driver)
+       City_ID_descending(driver)
        filter_city_country_Contains_Success(driver)
        filter_city_country_DoesNotContains_Success(driver)
        filter_city_country_StartsWith_Success(driver)
@@ -3600,9 +2688,37 @@ def test_Country_return_Success(driver):
 
 
 # %%
+def test_Country_Countryname_ascending(driver):
+        driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+        time.sleep(2)
+
+
+# %%
+def test_Country_Countryname_descending(driver):
+        driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+        time.sleep(2)
+
+
+# %%
+def test_Country_ID_descending(driver):
+        driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+        time.sleep(2)
+
+
+# %%
+def test_Country_ID_ascending(driver):
+        driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+        time.sleep(2)
+
+
+# %%
 def Country_Webpage():
     try:
         driver = login_and_navigate_Country("ruderaw", "abcdefg", "9632")
+        test_Country_Countryname_ascending(driver)
+        test_Country_Countryname_descending(driver)
+        test_Country_ID_ascending(driver)
+        test_Country_ID_descending(driver)
         test_Filter_Country_StartsWith_Success(driver)
         test_Filter_Country_Contains_Success(driver)
         test_Filter_Country_DoesNotContains_Success(driver)
@@ -3842,7 +2958,7 @@ def test_filter_Locality_StateName_StartsWith(driver,send_letter):
         time.sleep(2)
 
 # %%
-def test_Filter_Locality_State_name_StartsWith_Success(drive):
+def test_Filter_Locality_State_name_StartsWith_Success(driver):
         driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
         test_filter_Locality_StateName_StartsWith(driver,"m")
         time.sleep(2)     
@@ -4244,13 +3360,13 @@ def test_Filter_Locality_Pagination_50_Success(driver):
 
 
 # %%
-def test_Filter_Locality_Refresh_Success(drive):
+def test_Filter_Locality_Refresh_Success(driver):
         driver.find_element(By.XPATH,"//p[normalize-space()='Refresh']").click()
         time.sleep(2)
 
 
 # %%
-def test_Locality_Download_Success(drive):
+def test_Locality_Download_Success(driver):
         driver.find_element(By.XPATH,"//p[normalize-space()='Download']").click()
         time.sleep(2)
         driver.find_element(By.XPATH,"//p[normalize-space()='Download as Excel']").click()
@@ -4258,16 +3374,85 @@ def test_Locality_Download_Success(drive):
 
 
 # %%
-def test_Locality_Return_Success(drive):
+def test_Locality_Return_Success(driver):
         driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1) > img:nth-child(1)").click()
         time.sleep(2)
         
 
 
 # %%
+def test_Locality_Country_ascending(driver):
+    driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+
+# %%
+def test_Locality_Country_descending(driver):
+    driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+    
+
+# %%
+def test_Locality_State_descending(driver):
+    driver.find_element(By.XPATH,"//div//div//div//div//div//div[3]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+    
+
+# %%
+def test_Locality_State_ascending(driver):
+    driver.find_element(By.XPATH,"//div//div//div//div//div//div[3]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+    
+
+# %%
+def test_Locality_City_ascending(driver):
+    driver.find_element(By.XPATH,"//div[4]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+    
+
+# %%
+def test_Locality_City_descending(driver):
+    driver.find_element(By.XPATH,"//div[4]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+    
+
+# %%
+def test_Locality_Localityname_descending(driver):
+    driver.find_element(By.XPATH,"//div[5]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+    
+
+# %%
+def test_Locality_Localityname_ascending(driver):
+    driver.find_element(By.XPATH,"//div[5]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+    
+
+# %%
+def test_Locality_ID_ascending(driver):
+    driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+    
+
+# %%
+def test_Locality_ID_descending(driver):
+    driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+    
+
+# %%
 def Locality_Webpage():
     try:
         driver=login_and_navigate_Locality("ruderaw", "abcdefg", "9632")
+        test_Locality_Country_ascending(driver)
+        test_Locality_Country_descending(driver)
+        test_Locality_State_ascending(driver)
+        test_Locality_State_descending(driver)
+        test_Locality_City_ascending(driver)
+        test_Locality_City_descending(driver)
+        test_Locality_Localityname_ascending(driver)
+        test_Locality_Localityname_descending(driver)
+        test_Locality_ID_ascending(driver)
+        test_Locality_ID_descending(driver)
         test_Filter_Locality_Country_name_StartsWith_Success(driver)
         test_Filter_Locality_Country_name_Contains_Success(driver)
         test_Filter_Locality_Country_name_DoesNotContains_Success(driver)
@@ -4276,7 +3461,7 @@ def Locality_Webpage():
         test_Filter_Locality_Country_name_isNotNull_Success(driver)
         test_Filter_Locality_Country_name_isNull_Success(driver)
         test_Filter_Locality_Country_name_NoFilter_Success(driver)
-        test_Filter_Locality_State_name_StartsWith_Success(drive)
+        test_Filter_Locality_State_name_StartsWith_Success(driver)
         test_Filter_Locality_State_name_Contains_Success(driver)
         test_Filter_Locality_State_name_DoesNotContains_Success(driver)
         test_Filter_Locality_State_name_EndsWith_Success(driver)
@@ -4314,9 +3499,9 @@ def Locality_Webpage():
         test_Filter_Locality_Pagination_50_Success(driver)
         test_Add_New_Locality_Success(driver)
         test_Edit_Locality_Success(driver)
-        test_Locality_Return_Success(drive)
-        test_Filter_Locality_Refresh_Success(drive)
-        test_Locality_Download_Success(drive)
+        test_Filter_Locality_Refresh_Success(driver)
+        test_Locality_Download_Success(driver)
+        test_Locality_Return_Success(driver)
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
