@@ -13,6 +13,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import TimeoutException
 import random
 import string
 
@@ -263,9 +264,9 @@ def login_and_navigate_employee(username, password, comkey):
 
 # %%
 def add_new_employee(driver,employee_name, pan_no, username, doj, designation, email, dob, last_dow, role, ph_no, country, state, city, suburb, entity):
+    wait=WebDriverWait(driver,10)
     driver.find_element(By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4").click()
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//input[@name='employeeName']").send_keys(employee_name)
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//input[@name='employeeName']"))).send_keys(employee_name)
     driver.find_element(By.XPATH,"//input[@name='panNo']").send_keys(pan_no)
     element=driver.find_element(By.XPATH,"//select[@name='userName']")
     drp=Select(element)
@@ -284,35 +285,28 @@ def add_new_employee(driver,employee_name, pan_no, username, doj, designation, e
     drp2=Select(element2)
     drp2.select_by_visible_text(role)
     driver.find_element(By.XPATH,"//input[@name='phNo']").send_keys(ph_no)
-    time.sleep(2)
-    element3=driver.find_element(By.XPATH,"//select[@name='country']")
+    element3=wait.until(EC.element_to_be_clickable((By.XPATH,"//select[@name='country']")))
     drp3=Select(element3)
     drp3.select_by_visible_text(country)
     time.sleep(2)
-    element4=driver.find_element(By.XPATH,"//select[contains(@name,'state')]")
+    element4=wait.until(EC.element_to_be_clickable((By.XPATH,"//select[@name='state']")))
     drp4=Select(element4)
     drp4.select_by_visible_text(state)
     time.sleep(2)
-    element5=driver.find_element(By.XPATH,"//select[@name='city']")
+    element5=wait.until(EC.element_to_be_clickable((By.XPATH,"//select[@name='city']")))
     drp5=Select(element5)
     drp5.select_by_visible_text(city)
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//input[@name='suburb']").send_keys(suburb)
-    time.sleep(2)
-    element6=driver.find_element(By.XPATH,"//select[@name='entity']")
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//input[@name='suburb']"))).send_keys(suburb)
+    element6=wait.until(EC.element_to_be_clickable((By.XPATH,"//select[@name='entity']")))
     drp6=Select(element6)
     drp6.select_by_visible_text(entity)
     driver.find_element(By.XPATH, "//button[normalize-space()='Add']").click()
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//button[normalize-space()='Save']").click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Save']"))).click()
     time.sleep(4)
     driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("aryan ashish")
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//img[@alt='trash']").click()
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//body/div[@role='presentation']/div/div/div/button[1]").click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='trash']"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[@role='presentation']/div/div/div/button[1]"))).click()
     time.sleep(2)
     
    
@@ -322,13 +316,8 @@ def add_new_employee(driver,employee_name, pan_no, username, doj, designation, e
 
 
 # %%
-def test_Add_New_Employee_button(driver):
-        driver.find_element(By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4").click()
-        time.sleep(2)
-
-# %%
 def test_Edit_Employee_Success(driver):
-    try:
+        wait=WebDriverWait(driver,10)
         addEmployee_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > button:nth-child(1)"))
         )
@@ -359,27 +348,23 @@ def test_Edit_Employee_Success(driver):
         drp2=Select(element2)
         drp2.select_by_visible_text('Admin')
         driver.find_element(By.XPATH,"//input[@name='phNo']").send_keys("11100000")
-        time.sleep(2)
-        element3=driver.find_element(By.XPATH,"//select[@name='country']")
+        element3=wait.until(EC.element_to_be_clickable((By.XPATH,"//select[@name='country']")))
         drp3=Select(element3)
         drp3.select_by_visible_text('UAE')
         time.sleep(2)
-        element4=driver.find_element(By.XPATH,"//select[contains(@name,'state')]")
+        element4=wait.until(EC.element_to_be_clickable((By.XPATH,"//select[@name='state']")))
         drp4=Select(element4)
         drp4.select_by_visible_text('UAE')
         time.sleep(2)
-        element5=driver.find_element(By.XPATH,"//select[@name='city']")
+        element5=wait.until(EC.element_to_be_clickable((By.XPATH,"//select[@name='city']")))
         drp5=Select(element5)
         drp5.select_by_visible_text('Dubai')
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//input[@name='suburb']").send_keys("q")
-        time.sleep(2)
-        element6=driver.find_element(By.XPATH,"//select[@name='entity']")
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//input[@name='suburb']"))).send_keys('q')
+        element6=wait.until(EC.element_to_be_clickable((By.XPATH,"//select[@name='entity']")))
         drp6=Select(element6)
         drp6.select_by_visible_text('Z-CASH')
         driver.find_element(By.XPATH, "//button[normalize-space()='Add']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Save']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Save']"))).click()
         time.sleep(4)
         # driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("aryan ashish")
         # time.sleep(2)
@@ -398,245 +383,300 @@ def test_Edit_Employee_Success(driver):
         driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("ashish aryan")
         time.sleep(2)
         driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//div//div//div//div[1]//div[2]//div[2]//button[2]//img[1]"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
         time.sleep(2)
-        driver.find_element(By.XPATH,"//div//div//div//div[1]//div[2]//div[2]//button[2]//img[1]").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Delete']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/input[1]").clear()
-        driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-        time.sleep(2)
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
         
 
 
 # %%
-def filter_employee_name_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
+def filter_Common(driver, filter_xpath, text_css_selector, button_css_selector, starts_with_letter):
+    wait=WebDriverWait(driver,10)
+    driver.find_element(By.CSS_SELECTOR, text_css_selector).clear()
+    driver.find_element(By.CSS_SELECTOR, text_css_selector).send_keys(starts_with_letter)
+    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,button_css_selector))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,filter_xpath))).click()
+    time.sleep(1)
+   
 
-
+# %%
+def filter_pagination_Common(driver, select_xpath, items_per_page):
+    wait = WebDriverWait(driver, 10)
+    select_element = driver.find_element(By.XPATH, select_xpath)
+    dropdown = Select(select_element)
+    dropdown.select_by_visible_text(items_per_page)
+    time.sleep(2) 
 
 # %%
 def test_Filter_Employee_Name_StartsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_name_starts_with(driver, "a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()   
-        time.sleep(2)
-        
-
-
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 # %%
 def test_Filter_Employee_Name_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_name_starts_with(driver, "a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 
 # %%
 def test_Filter_Employee_Name_DoesNotContains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_name_starts_with(driver, "a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
+
 
 
 
 # %%
 def test_Filter_Employee_Name_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_name_starts_with(driver, "a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 
 # %%
 def test_Filter_Employee_Name_EqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_name_starts_with(driver, "a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 # %%
 def test_Filter_Employee_Name_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_name_starts_with(driver, "a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 # %%
 def test_Filter_Employee_Name_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_name_starts_with(driver, "a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 # %%
 def test_Filter_Employee_Name_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_name_starts_with(driver, "a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/div[1]/input[1]").clear()
-        time.sleep(2)
-
-
-# %%
-def filter_employee_ID_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR, "div:nth-child(3) div:nth-child(1) input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 # %%
 def test_Filter_Employee_ID_StartsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        filter_employee_ID_starts_with(driver,"a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 
 # %%
 def test_Filter_Employee_ID_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        filter_employee_ID_starts_with(driver,"a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 # %%
 def test_Filter_Employee_ID_DoesNotContains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        filter_employee_ID_starts_with(driver,"a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 
 # %%
 def test_Filter_Employee_ID_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        filter_employee_ID_starts_with(driver,"a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 # %%
 def test_Filter_Employee_ID_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        filter_employee_ID_starts_with(driver,"a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
+
 
 
 # %%
 def test_Filter_Employee_ID_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        filter_employee_ID_starts_with(driver,"a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 # %%
 def test_Filter_Employee_ID_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        filter_employee_ID_starts_with(driver,"a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 # %%
 def test_Filter_Employee_ID_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        filter_employee_ID_starts_with(driver,"a")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        time.sleep(2)
-
-
-# %%
-def filter_employee_PhoneID_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
 
 
 # %%
 def test_Filter_Employee_PhoneID_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_PhoneID_starts_with(driver,"9")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "9"
+    )
 
 
 # %%
 def test_Filter_Employee_PhoneID_DoesNotContains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_PhoneID_starts_with(driver,"9")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "9"
+    )
 
 
 
 # %%
 def test_Filter_Employee_PhoneID_StartsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_PhoneID_starts_with(driver,"9")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "9"
+    )
 
 
 # %%
 def test_Filter_Employee_PhoneID_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_PhoneID_starts_with(driver,"9")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "9"
+    )
 
 
 # %%
 def test_Filter_Employee_PhoneID_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_PhoneID_starts_with(driver,"9")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "9"
+    )
+
 
 
 # %%
 def test_Filter_Employee_PhoneID_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_PhoneID_starts_with(driver,"9")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "9"
+    )
 
 # %%
 def test_Filter_Employee_PhoneID_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_PhoneID_starts_with(driver,"9")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "9"
+    )
 
 
 # %%
 def test_Filter_Employee_PhoneID_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_PhoneID_starts_with(driver,"9")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "9"
+    )
+
 
 
 # %%
@@ -666,222 +706,282 @@ def test_Filter_Employee_ID_ascending_Success(driver):
 
 
 # %%
-def filter_employee_emailID_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-
-
-# %%
 def test_Filter_Employee_EmailID_StartsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_emailID_starts_with(driver, "customer@gmail.com")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "customer@gmail.com"
+    )
 
 
 
 # %%
 def test_Filter_Employee_EmailID_DoesNotContains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_emailID_starts_with(driver, "customer@gmail.com")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "customer@gmail.com"
+    )
 
 
 
 # %%
 def test_Filter_Employee_EmailID_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_emailID_starts_with(driver, "customer@gmail.com")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "customer@gmail.com"
+    )
 
 
 # %%
 def test_Filter_Employee_EmailID_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_emailID_starts_with(driver, "customer@gmail.com")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "customer@gmail.com"
+    )
 
 
 # %%
 def test_Filter_Employee_EmailID_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_emailID_starts_with(driver, "customer@gmail.com")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "customer@gmail.com"
+    )
 
 
 # %%
 def test_Filter_Employee_EmailID_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_emailID_starts_with(driver, "customer@gmail.com")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "customer@gmail.com"
+    )
 
 
 # %%
 def test_Filter_Employee_EmailID_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_emailID_starts_with(driver, "customer@gmail.com")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "customer@gmail.com"
+    )
 
 
 
 # %%
 def test_Filter_Employee_EmailID_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_emailID_starts_with(driver, "customer@gmail.com")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        time.sleep(2)
-
-
-# %%
-def filter_employee_Roles_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR, "div:nth-child(6) div:nth-child(1) input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "customer@gmail.com"
+    )
 
 
 # %%
 def test_Filter_Employee_Roles_StartsWith_Success(driver):
-        filter_employee_Roles_starts_with(driver, "analyst")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "analyst"
+    )
 
 
 # %%
 def test_Filter_Employee_Roles_EndsWith_Success(driver):
-        filter_employee_Roles_starts_with(driver, "analyst")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "analyst"
+    )
 
 
 # %%
 def test_Filter_Employee_Roles_EqualsTo_Success(driver):
-        filter_employee_Roles_starts_with(driver, "analyst")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "analyst"
+    )
 
 
 # %%
 def test_Filter_Employee_Roles_isNull_Success(driver):
-        filter_employee_Roles_starts_with(driver, "analyst")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "analyst"
+    )
 
 
 # %%
 def test_Filter_Employee_Roles_isNotNull_Success(driver):
-        filter_employee_Roles_starts_with(driver, "analyst")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "analyst"
+    )
 
 
 
 # %%
 def test_Filter_Employee_Roles_NoFilter_Success(driver):
-        filter_employee_Roles_starts_with(driver, "analyst")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "analyst"
+    )
+
 
 
 # %%
 def test_Filter_Employee_Roles_Contains_Success(driver):
-        filter_employee_Roles_starts_with(driver, "analyst")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "analyst"
+    )
+
 
 
 # %%
 def test_Filter_Employee_Roles_DoesNotContains_Success(driver):
-        filter_employee_Roles_starts_with(driver, "analyst")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "analyst"
+    )
 
-
-
-# %%
-def filter_employee_Panno_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(7) div:nth-child(1) input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
 
 
 # %%
 def test_Filter_Employee_Panno_StartsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(7) div:nth-child(1) input:nth-child(1)").clear()
-        filter_employee_Panno_starts_with(driver, "abcd")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "abcd"
+    )
+
 
 
 # %%
 def test_Filter_Employee_Panno_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_Panno_starts_with(driver, "abcd")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "abcd"
+    )
 
 
 # %%
 def test_Filter_Employee_Panno_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_Panno_starts_with(driver, "abcd")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "abcd"
+    )
 
 
 # %%
 def test_Filter_Employee_Panno_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_Panno_starts_with(driver, "abcd")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "abcd"
+    )
 
 
 # %%
 def test_Filter_Employee_Panno_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_Panno_starts_with(driver, "abcd")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "abcd"
+    )
 
 
 # %%
 def test_Filter_Employee_Panno_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_Panno_starts_with(driver, "abcd")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "abcd"
+    )
+
 
 
 # %%
 def test_Filter_Employee_Panno_DoesNotContains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_Panno_starts_with(driver, "abcd")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "abcd"
+    )
 
 
 # %%
 def test_Filter_Employee_Panno_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_Panno_starts_with(driver, "abcd")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "abcd"
+    )
 
 # %%
 def filter_employee_doj_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR,"input[value='false']").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        wait=WebDriverWait(driver,10)
+        wait.until(EC.visibility_of_element_located((By.XPATH,"//input[@value='false']"))).send_keys(starts_with_letter)
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)"))).click()
         time.sleep(2)
 
 
@@ -890,298 +990,334 @@ def test_Filter_Employee_doj_EqualsTo_Success(driver):
         filter_employee_doj_starts_with(driver, "13-01-2024")
         driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
         time.sleep(2)
+        
 
 # %%
 def test_Filter_Employee_doj_NotEqualTo_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='NotEqualTo']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='NotEqualTo']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_doj_GreaterThan_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThan']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThan']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_doj_LessThan_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThan']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThan']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_doj_GreaterThanOrEqualTo_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_doj_LessThanOrEqualTo_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_doj_isNull_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNull']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_doj_isNotNull_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNotNull']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_doj_NoFilter_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='No Filter']"))).click()
         time.sleep(2)
 
 # %%
 def filter_employee_low_starts_with(driver, starts_with_letter):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR,"div:nth-child(9) div:nth-child(1) input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)"))).click()
         time.sleep(2)
 
 
 # %%
 def test_Filter_Employee_low_EqualsTo_Success(driver):
+        wait=WebDriverWait(driver,10)
         filter_employee_low_starts_with(driver, "20-02-2020")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//h1[normalize-space()='EqualTo']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_low_NotEqualTo_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='NotEqualTo']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='NotEqualTo']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_low_GreaterThan_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThan']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThan']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_low_LessThan_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThan']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThan']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_low_GreaterThanOrEqualTo_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_low_LessThanOrEqualTo_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_low_isNull_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNull']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_low_isNotNull_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNotNull']"))).click()
         time.sleep(2)
 
 # %%
 def test_Filter_Employee_low_NoFilter_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='No Filter']"))).click()
         time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        time.sleep(2)
-
-# %%
-def filter_employee_status_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-
 
 # %%
 def test_Filter_Employee_status_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_status_starts_with(driver, "active")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "active"
+    )
 
 # %%
 def test_Filter_Employee_status_NotEqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_status_starts_with(driver, "active")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='NotEqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='NotEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "active"
+    )
 
 # %%
 def test_Filter_Employee_status_GreaterThan_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_status_starts_with(driver, "active")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThan']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "active"
+    )
 
 # %%
 def test_Filter_Employee_status_LessThan_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_status_starts_with(driver, "active")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThan']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "active"
+    )
 
 # %%
 def test_Filter_Employee_status_GreaterThanOrEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_status_starts_with(driver, "active")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "active"
+    )
 
 # %%
 def test_Filter_Employee_status_LessThanOrEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_status_starts_with(driver, "active")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "active"
+    )
 
 # %%
 def test_Filter_Employee_status_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_status_starts_with(driver, "active")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "active"
+    )
 
 # %%
 def test_Filter_Employee_status_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_status_starts_with(driver, "active")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "active"
+    )
+        
 
 # %%
 def test_Filter_Employee_status_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_status_starts_with(driver, "active")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        time.sleep(2)
-
-# %%
-def filter_employee_employee_id_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "active"
+    )
 
 # %%
 def test_Filter_Employee_employee_id_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_employee_id_starts_with(driver, "43")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "43"
+    )
 
 # %%
 def test_Filter_Employee_employee_id_NotEqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_employee_id_starts_with(driver, "43")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='NotEqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='NotEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "43"
+    )
 
 # %%
 def test_Filter_Employee_employee_id_LessThan_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_employee_id_starts_with(driver, "43")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThan']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "43"
+    )
 
 # %%
 def test_Filter_Employee_employee_id_GreaterThan_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_employee_id_starts_with(driver, "43")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThan']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "43"
+    )
 
 # %%
 def test_Filter_Employee_employee_id_GreaterThanOrEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_employee_id_starts_with(driver, "43")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "43"
+    )
 
 # %%
 def test_Filter_Employee_employee_id_LessThanOrEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_employee_id_starts_with(driver, "43")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "43"
+    )
 
 # %%
 def test_Filter_Employee_employee_id_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_employee_id_starts_with(driver, "43")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "43"
+    )
 
 # %%
 def test_Filter_Employee_employee_id_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_employee_id_starts_with(driver, "43")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "43"
+    )
+        
 
 # %%
 def test_Filter_Employee_employee_id_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-        filter_employee_employee_id_starts_with(driver, "43")
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "43"
+    )
 
 # %%
 def test_Filter_Employee_Pagination15_NoFilter_Success(driver):
-    a=driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//select")
-    drp1=Select(a)
-    drp1.select_by_visible_text('15')
-    driver.find_element(By.XPATH,"//button[@aria-label='Go to page 2']").click()
-    time.sleep(2)
+    select_xpath = "//div[@id='root']//div//div//div//div//div//select"
+    next_page="//button[@aria-label='Go to page 2']"
+    filter_pagination_Common(driver, select_xpath, '15', next_page)
 
 # %%
 def test_Filter_Employee_Pagination25_NoFilter_Success(driver):
-    a=driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//select")
-    drp1=Select(a)
-    drp1.select_by_visible_text('25')
-    driver.find_element(By.XPATH,"//button[@aria-label='Go to page 2']").click()
-    time.sleep(2)
+    select_xpath = "//div[@id='root']//div//div//div//div//div//select"
+    next_page="//button[@aria-label='Go to page 2']"
+    filter_pagination_Common(driver, select_xpath, '25' ,next_page)
 
 # %%
 def test_Filter_Employee_Pagination50_NoFilter_Success(driver):
-    a=driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//select")
-    drp1=Select(a)
-    drp1.select_by_visible_text('50')
-    driver.find_element(By.XPATH,"//button[@aria-label='Go to page 2']").click()
-    time.sleep(2)
+    select_xpath = "//div[@id='root']//div//div//div//div//div//select"
+    next_page="//button[@aria-label='Go to page 2']"
+    filter_pagination_Common(driver, select_xpath, '50', next_page)
 
 # %%
 def test_Filter_Employee_phone_ascending_Success(driver):
@@ -1192,19 +1328,17 @@ def test_Filter_Employee_phone_ascending_Success(driver):
 # %%
 def test_Filter_Employee_phone_descending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[4]/div[1]/p[1]/button[1]/span[1]").click()
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[4]/div[1]/p[1]/button[1]/span[1]").click()
-        time.sleep(4)
-
-
-# %%
-def test_Filter_Employee_email_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[5]/div[1]/p[1]/button[1]/span[1]").click()
         time.sleep(2)
 
 
 # %%
 def test_Filter_Employee_email_descending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[5]/div[1]/p[1]/button[1]/span[1]").click()
+        time.sleep(2)
+
+
+# %%
+def test_Filter_Employee_email_ascending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[5]/div[1]/p[1]/button[1]/span[1]").click()
         time.sleep(2)
 
@@ -1218,19 +1352,17 @@ def test_Filter_Employee_role_ascending_Success(driver):
 # %%
 def test_Filter_Employee_role_descending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[6]/div[1]/p[1]/button[1]/span[1]").click()
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[6]/div[1]/p[1]/button[1]/span[1]").click()
-        time.sleep(4)
-
-
-# %%
-def test_Filter_Employee_panno_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[7]/div[1]/p[1]/button[1]/span[1]").click()
         time.sleep(2)
 
 
 # %%
 def test_Filter_Employee_panno_descending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[7]/div[1]/p[1]/button[1]/span[1]").click()
+        time.sleep(2)
+
+
+# %%
+def test_Filter_Employee_panno_ascending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[7]/div[1]/p[1]/button[1]/span[1]").click()
         time.sleep(2)
 
@@ -1244,19 +1376,17 @@ def test_Filter_Employee_doj_ascending_Success(driver):
 # %%
 def test_Filter_Employee_doj_descending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[8]/div[1]/p[1]/button[1]/span[1]").click()
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[8]/div[1]/p[1]/button[1]/span[1]").click()
-        time.sleep(2)
-
-
-# %%
-def test_Filter_Employee_low_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[9]/div[1]/p[1]/button[1]/span[1]").click()
         time.sleep(2)
 
 
 # %%
 def test_Filter_Employee_low_descending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[9]/div[1]/p[1]/button[1]/span[1]").click()
+        time.sleep(2)
+
+
+# %%
+def test_Filter_Employee_low_ascending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[9]/div[1]/p[1]/button[1]/span[1]").click()
         time.sleep(2)
 
@@ -1269,18 +1399,16 @@ def test_Filter_Employee_status_ascending_Success(driver):
 # %%
 def test_Filter_Employee_status_descending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[10]/div[1]/p[1]/button[1]/span[1]").click()
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[10]/div[1]/p[1]/button[1]/span[1]").click()
         time.sleep(2)
-
-# %%
-def test_Filter_Employee_employeeid_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[2]/div[1]/div[1]/p[1]/button[1]/span[1]").click()
-        time.sleep(2)
-
 
 # %%
 def test_Filter_Employee_employeeid_descending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[2]/div[1]/div[1]/p[1]/button[1]/span[1]").click()
+        time.sleep(2)
+
+
+# %%
+def test_Filter_Employee_employeeid_ascending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[2]/div[1]/div[1]/p[1]/button[1]/span[1]").click()
         time.sleep(2)
 
@@ -1294,7 +1422,7 @@ def test_Filter_Employee_Refresh_Success(driver):
 # %%
 def test_employee_return_arrow(driver):
         return_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//img[contains(@src,'/src/assets/back.png')]"))
+            EC.element_to_be_clickable((By.XPATH, "//img[@src='/src/assets/back.png']"))
         )
         assert not return_button.get_attribute("disabled"), "Return button should be enabled"
         return_button.click()
@@ -1307,125 +1435,120 @@ def test_employee_return_arrow(driver):
 
 # %%
 def Employee_Webpage():
-    try:
         driver = login_and_navigate_employee("ruderaw", "abcdefg", "9632")
-        test_Filter_Employee_Name_ascending_Success(driver)
-        test_Filter_Employee_Name_descending_Success(driver)
-        test_Filter_Employee_ID_ascending_Success(driver)
-        test_Filter_Employee_ID_descending_Success(driver)
-        test_Filter_Employee_phone_ascending_Success(driver)
-        test_Filter_Employee_phone_descending_Success(driver)
-        test_Filter_Employee_email_ascending_Success(driver)
-        test_Filter_Employee_email_descending_Success(driver)
-        test_Filter_Employee_role_ascending_Success(driver)
-        test_Filter_Employee_role_descending_Success(driver)
-        test_Filter_Employee_panno_ascending_Success(driver)
-        test_Filter_Employee_panno_descending_Success(driver)
-        test_Filter_Employee_low_ascending_Success(driver)
-        test_Filter_Employee_low_descending_Success(driver)
-        test_Filter_Employee_employeeid_ascending_Success(driver)
-        test_Filter_Employee_employeeid_descending_Success(driver)
-        test_Filter_Employee_Name_StartsWith_Success(driver)
-        test_Filter_Employee_Name_EndsWith_Success(driver)
-        test_Filter_Employee_Name_EqualTo_Success(driver)
-        test_Filter_Employee_Name_isNull_Success(driver)
-        test_Filter_Employee_Name_isNotNull_Success(driver)
-        test_Filter_Employee_Name_Contains_Success(driver)
-        test_Filter_Employee_Name_DoesNotContains_Success(driver)
-        test_Filter_Employee_Name_NoFilter_Success(driver)
-        test_Filter_Employee_ID_StartsWith_Success(driver)
-        test_Filter_Employee_ID_EndsWith_Success(driver)
-        test_Filter_Employee_ID_EqualsTo_Success(driver)
-        test_Filter_Employee_ID_isNull_Success(driver)
-        test_Filter_Employee_ID_isNotNull_Success(driver)
-        test_Filter_Employee_ID_Contains_Success(driver)
-        test_Filter_Employee_ID_DoesNotContains_Success(driver)
-        test_Filter_Employee_ID_NoFilter_Success(driver)
-        test_Filter_Employee_PhoneID_Contains_Success(driver)
-        test_Filter_Employee_PhoneID_DoesNotContains_Success(driver)
-        test_Filter_Employee_PhoneID_StartsWith_Success(driver)
-        test_Filter_Employee_PhoneID_EndsWith_Success(driver)
-        test_Filter_Employee_PhoneID_EqualsTo_Success(driver)
-        test_Filter_Employee_PhoneID_isNull_Success(driver)
-        test_Filter_Employee_PhoneID_isNotNull_Success(driver)
-        test_Filter_Employee_PhoneID_NoFilter_Success(driver)
-        test_Filter_Employee_EmailID_StartsWith_Success(driver)
-        test_Filter_Employee_EmailID_EndsWith_Success(driver)
-        test_Filter_Employee_EmailID_EqualsTo_Success(driver)
-        test_Filter_Employee_EmailID_isNull_Success(driver)
-        test_Filter_Employee_EmailID_isNotNull_Success(driver)
-        test_Filter_Employee_EmailID_Contains_Success(driver)
-        test_Filter_Employee_EmailID_DoesNotContains_Success(driver)
-        test_Filter_Employee_EmailID_NoFilter_Success(driver)
-        test_Filter_Employee_Roles_StartsWith_Success(driver)
-        test_Filter_Employee_Roles_EndsWith_Success(driver)
-        test_Filter_Employee_Roles_EqualsTo_Success(driver)
-        test_Filter_Employee_Roles_isNull_Success(driver)
-        test_Filter_Employee_Roles_isNotNull_Success(driver)
-        test_Filter_Employee_Roles_Contains_Success(driver)
-        test_Filter_Employee_Roles_DoesNotContains_Success(driver)
-        test_Filter_Employee_Roles_NoFilter_Success(driver)
-        test_Filter_Employee_Panno_StartsWith_Success(driver)
-        test_Filter_Employee_Panno_EndsWith_Success(driver)
-        test_Filter_Employee_Panno_EqualsTo_Success(driver)
-        test_Filter_Employee_Panno_isNull_Success(driver)
-        test_Filter_Employee_Panno_isNotNull_Success(driver)
-        test_Filter_Employee_Panno_Contains_Success(driver)
-        test_Filter_Employee_Panno_DoesNotContains_Success(driver)
-        test_Filter_Employee_Panno_NoFilter_Success(driver)
-        test_Filter_Employee_doj_EqualsTo_Success(driver)
-        test_Filter_Employee_doj_NotEqualTo_Success(driver)
-        test_Filter_Employee_doj_GreaterThan_Success(driver)
-        test_Filter_Employee_doj_LessThan_Success(driver)
-        test_Filter_Employee_doj_GreaterThanOrEqualTo_Success(driver)
-        test_Filter_Employee_doj_LessThanOrEqualTo_Success(driver)
-        test_Filter_Employee_doj_isNotNull_Success(driver)
-        test_Filter_Employee_doj_isNull_Success(driver)
-        test_Filter_Employee_doj_NoFilter_Success(driver)
-        test_Filter_Employee_low_EqualsTo_Success(driver)
-        test_Filter_Employee_low_NotEqualTo_Success(driver)
-        test_Filter_Employee_low_GreaterThan_Success(driver)
-        test_Filter_Employee_low_LessThan_Success(driver)
-        test_Filter_Employee_low_GreaterThanOrEqualTo_Success(driver)
-        test_Filter_Employee_low_LessThanOrEqualTo_Success(driver)
-        test_Filter_Employee_low_isNotNull_Success(driver)
-        test_Filter_Employee_low_isNull_Success(driver)
-        test_Filter_Employee_low_NoFilter_Success(driver)
-        test_Filter_Employee_status_EqualsTo_Success(driver)
-        test_Filter_Employee_status_NotEqualsTo_Success(driver)
-        test_Filter_Employee_status_GreaterThan_Success(driver)
-        test_Filter_Employee_status_LessThan_Success(driver)
-        test_Filter_Employee_status_GreaterThanOrEqualTo_Success(driver)
-        test_Filter_Employee_status_LessThanOrEqualTo_Success(driver)
-        test_Filter_Employee_status_isNotNull_Success(driver)
-        test_Filter_Employee_status_isNull_Success(driver)
-        test_Filter_Employee_status_NoFilter_Success(driver)
-        test_Filter_Employee_employee_id_EqualsTo_Success(driver)
-        test_Filter_Employee_employee_id_NotEqualsTo_Success(driver)
-        test_Filter_Employee_employee_id_GreaterThan_Success(driver)
-        test_Filter_Employee_employee_id_LessThan_Success(driver)
-        test_Filter_Employee_employee_id_GreaterThanOrEqualTo_Success(driver)
-        test_Filter_Employee_employee_id_LessThanOrEqualTo_Success(driver)
-        test_Filter_Employee_employee_id_isNotNull_Success(driver)
-        test_Filter_Employee_employee_id_isNull_Success(driver)
-        test_Filter_Employee_employee_id_NoFilter_Success(driver)
-        test_Filter_Employee_Pagination15_NoFilter_Success(driver)
-        test_Filter_Employee_Pagination25_NoFilter_Success(driver)
-        test_Filter_Employee_Pagination50_NoFilter_Success(driver)
-        add_new_employee(driver, "aryan ashish", "ijklmn", "Admin User", "06-05-2024", "intern", "ashish.com", "06-05-2003", "31-05-2024", "Admin", "11100000", "UAE", "UAE", "Dubai", "q", "Z-CASH")
+        test_functions = [
+        test_Filter_Employee_Name_ascending_Success(driver),
+        test_Filter_Employee_Name_descending_Success(driver),
+        test_Filter_Employee_ID_ascending_Success(driver),
+        test_Filter_Employee_ID_descending_Success(driver),
+        test_Filter_Employee_phone_ascending_Success(driver),
+        test_Filter_Employee_phone_descending_Success(driver),
+        test_Filter_Employee_email_ascending_Success(driver),
+        test_Filter_Employee_email_descending_Success(driver),
+        test_Filter_Employee_role_ascending_Success(driver),
+        test_Filter_Employee_role_descending_Success(driver),
+        test_Filter_Employee_panno_ascending_Success(driver),
+        test_Filter_Employee_panno_descending_Success(driver),
+        test_Filter_Employee_low_ascending_Success(driver),
+        test_Filter_Employee_low_descending_Success(driver),
+        test_Filter_Employee_employeeid_ascending_Success(driver),
+        test_Filter_Employee_employeeid_descending_Success(driver),
+        test_Filter_Employee_Name_StartsWith_Success(driver),
+        test_Filter_Employee_Name_EndsWith_Success(driver),
+        test_Filter_Employee_Name_EqualTo_Success(driver),
+        test_Filter_Employee_Name_isNull_Success(driver),
+        test_Filter_Employee_Name_isNotNull_Success(driver),
+        test_Filter_Employee_Name_Contains_Success(driver),
+        test_Filter_Employee_Name_DoesNotContains_Success(driver),
+        test_Filter_Employee_Name_NoFilter_Success(driver),
+        test_Filter_Employee_ID_StartsWith_Success(driver),
+        test_Filter_Employee_ID_EndsWith_Success(driver),
+        test_Filter_Employee_ID_EqualsTo_Success(driver),
+        test_Filter_Employee_ID_isNull_Success(driver),
+        test_Filter_Employee_ID_isNotNull_Success(driver),
+        test_Filter_Employee_ID_Contains_Success(driver),
+        test_Filter_Employee_ID_DoesNotContains_Success(driver),
+        test_Filter_Employee_ID_NoFilter_Success(driver),
+        test_Filter_Employee_PhoneID_Contains_Success(driver),
+        test_Filter_Employee_PhoneID_DoesNotContains_Success(driver),
+        test_Filter_Employee_PhoneID_StartsWith_Success(driver),
+        test_Filter_Employee_PhoneID_EndsWith_Success(driver),
+        test_Filter_Employee_PhoneID_EqualsTo_Success(driver),
+        test_Filter_Employee_PhoneID_isNull_Success(driver),
+        test_Filter_Employee_PhoneID_isNotNull_Success(driver),
+        test_Filter_Employee_PhoneID_NoFilter_Success(driver),
+        test_Filter_Employee_EmailID_StartsWith_Success(driver),
+        test_Filter_Employee_EmailID_EndsWith_Success(driver),
+        test_Filter_Employee_EmailID_EqualsTo_Success(driver),
+        test_Filter_Employee_EmailID_isNull_Success(driver),
+        test_Filter_Employee_EmailID_isNotNull_Success(driver),
+        test_Filter_Employee_EmailID_Contains_Success(driver),
+        test_Filter_Employee_EmailID_DoesNotContains_Success(driver),
+        test_Filter_Employee_EmailID_NoFilter_Success(driver),
+        test_Filter_Employee_Roles_StartsWith_Success(driver),
+        test_Filter_Employee_Roles_EndsWith_Success(driver),
+        test_Filter_Employee_Roles_EqualsTo_Success(driver),
+        test_Filter_Employee_Roles_isNull_Success(driver),
+        test_Filter_Employee_Roles_isNotNull_Success(driver),
+        test_Filter_Employee_Roles_Contains_Success(driver),
+        test_Filter_Employee_Roles_DoesNotContains_Success(driver),
+        test_Filter_Employee_Roles_NoFilter_Success(driver),
+        test_Filter_Employee_Panno_StartsWith_Success(driver),
+        test_Filter_Employee_Panno_EndsWith_Success(driver),
+        test_Filter_Employee_Panno_EqualsTo_Success(driver),
+        test_Filter_Employee_Panno_isNull_Success(driver),
+        test_Filter_Employee_Panno_isNotNull_Success(driver),
+        test_Filter_Employee_Panno_Contains_Success(driver),
+        test_Filter_Employee_Panno_DoesNotContains_Success(driver),
+        test_Filter_Employee_Panno_NoFilter_Success(driver),
+        test_Filter_Employee_doj_EqualsTo_Success(driver),
+        test_Filter_Employee_doj_NotEqualTo_Success(driver),
+        test_Filter_Employee_doj_GreaterThan_Success(driver),
+        test_Filter_Employee_doj_LessThan_Success(driver),
+        test_Filter_Employee_doj_GreaterThanOrEqualTo_Success(driver),
+        test_Filter_Employee_doj_LessThanOrEqualTo_Success(driver),
+        test_Filter_Employee_doj_isNotNull_Success(driver),
+        test_Filter_Employee_doj_isNull_Success(driver),
+        test_Filter_Employee_doj_NoFilter_Success(driver),
+        test_Filter_Employee_low_EqualsTo_Success(driver),
+        test_Filter_Employee_low_NotEqualTo_Success(driver),
+        test_Filter_Employee_low_GreaterThan_Success(driver),
+        test_Filter_Employee_low_LessThan_Success(driver),
+        test_Filter_Employee_low_GreaterThanOrEqualTo_Success(driver),
+        test_Filter_Employee_low_LessThanOrEqualTo_Success(driver),
+        test_Filter_Employee_low_isNotNull_Success(driver),
+        test_Filter_Employee_low_NoFilter_Success(driver),
+        test_Filter_Employee_low_isNull_Success(driver),
+        test_Filter_Employee_status_EqualsTo_Success(driver),
+        test_Filter_Employee_status_NotEqualsTo_Success(driver),
+        test_Filter_Employee_status_GreaterThan_Success(driver),
+        test_Filter_Employee_status_LessThan_Success(driver),
+        test_Filter_Employee_status_GreaterThanOrEqualTo_Success(driver),
+        test_Filter_Employee_status_LessThanOrEqualTo_Success(driver),
+        test_Filter_Employee_status_isNotNull_Success(driver),
+        test_Filter_Employee_status_isNull_Success(driver),
+        test_Filter_Employee_status_NoFilter_Success(driver),
+        test_Filter_Employee_employee_id_EqualsTo_Success(driver),
+        test_Filter_Employee_employee_id_NotEqualsTo_Success(driver),
+        test_Filter_Employee_employee_id_GreaterThan_Success(driver),
+        test_Filter_Employee_employee_id_LessThan_Success(driver),
+        test_Filter_Employee_employee_id_GreaterThanOrEqualTo_Success(driver),
+        test_Filter_Employee_employee_id_LessThanOrEqualTo_Success(driver),
+        test_Filter_Employee_employee_id_isNotNull_Success(driver),
+        test_Filter_Employee_employee_id_isNull_Success(driver),
+        test_Filter_Employee_employee_id_NoFilter_Success(driver),
+        test_Filter_Employee_Pagination15_NoFilter_Success(driver),
+        test_Filter_Employee_Pagination25_NoFilter_Success(driver),
+        test_Filter_Employee_Pagination50_NoFilter_Success(driver),
+        test_Filter_Employee_Refresh_Success(driver),
+        add_new_employee(driver, "aryan ashish", "ijklmn", "Admin User", "06-05-2024", "intern", "ashish.com", "06-05-2003", "31-05-2024", "Admin", "11100000", "UAE", "UAE", "Dubai", "q", "Z-CASH"),
         test_Edit_Employee_Success(driver)
-        test_Filter_Employee_Refresh_Success(driver)
-        test_employee_return_arrow(driver)
+    ]
+    
+        for func_test in test_functions:
+          func_test
         
-        time.sleep(2)
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
-
 Employee_Webpage()
-
 
 # %%
 def login_and_navigate_city(username, password, comkey):
@@ -2461,210 +2584,422 @@ def test_filter_LOB_Country_StartsWith(driver,send_letter):
 
 # %%
 def test_Filter_Country_StartsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[95%]  px-3 py-2')]")
+        element_found = False
+        for item in filtered_elements:
+            if item.text.lower().startswith("a"):
+                element_found = True
+                break
+
+        if element_found:
+            print("StartsWith filter in Country Name is working fine.")
+        else:
+            print("Error.")
+        
+        
         
 
 
 # %%
 def test_Filter_Country_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[95%]  px-3 py-2')]")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "India":
+                element_found = True
+                break
+
+        if element_found:
+            print("Contains filter in the Country Name is working fine.")
+        else:
+            print("Error.")
         time.sleep(2)
 
 
 # %%
 def test_Filter_Country_DoesNotContains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[95%]  px-3 py-2')]")
+        element_found = False
+        for item in filtered_elements:
+            if item.text != "India":
+                element_found = True
+                break
+
+        if element_found:
+            print("DoesNotContains Filter in Country Name is Working fine.")
+        else:
+            print("Error.")
         time.sleep(2)
 
 
 # %%
 def test_Filter_Country_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[95%]  px-3 py-2')]")
+        element_found = False
+        for item in filtered_elements:
+                if item.text.endswith("a"):
+                        element_found = True
+                        break
+
+        if element_found:
+           print("EndsWith filter is Country Name is working fine.")
+        else:
+           print("Error.")
+
 
 
 # %%
 def test_Filter_Country_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[95%]  px-3 py-2')]")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "India":
+                element_found = True
+                break
 
+        if element_found:
+            print("EqualsTo filter in the Country Name is working fine.")
+        else:
+            print("Error")
+
+        time.sleep(2)
 
 # %%
 def test_Filter_Country_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+        filtered_element = driver.find_element(By.XPATH,"//p[.='0 Items in 0 Pages']")
+        if(filtered_element.text.startswith('0')):
+             print("isNotNull filter in Country Name is working fine")
+        
         time.sleep(2)
 
 
 
 # %%
 def test_Filter_Country_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+        filtered_element = driver.find_element(By.XPATH,"//p[.='0 Items in 0 Pages']")
+        if(filtered_element.text.startswith('0')):
+             print("isNotNull filter in Country Name is working fine")
+        
         time.sleep(2)
 
 # %%
 def test_Filter_Country_Nofilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+        filtered_element = driver.find_element(By.XPATH, "//p[@class='mr-11 text-gray-700']")
+        if filtered_element.text.startswith('41'):
+            print("Nofilter in Country Name is working fine")
+        else:
+            print("Error")
 
-# %%
-def test_filter_Country_ID_StartsWith(driver,send_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").send_keys(send_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
 
 # %%
 def test_Filter_ID_Country_Equalto_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Country_ID_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "12":
+                element_found = True
+                break
+
+        if element_found:
+            print("EqualTo filter in ID is working fine")
+        else:
+            print("Error")
+
         time.sleep(2)
 
 
 # %%
 def test_Filter_ID_Country_NotEqualto_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Country_ID_StartsWith(driver,"12")
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='NotEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
+        element_found = False
+        for item in filtered_elements:
+            if item.text != "12":
+                element_found = True
+                break
+
+        if element_found:
+            print("NotEqualTo Filter in ID is working fine")
+        else:
+            print("Error")
+
         time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='NotEqualTo']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(3)
 
 
 # %%
 def test_Filter_ID_Country_GreaterThan_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Country_ID_StartsWith(driver,"12")
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
+        element_found = False
+        for item in filtered_elements:
+            if item.text > "12":
+                element_found = True
+                break
+
+        if element_found:
+            print("GreaterThan Filter in ID is working fine")
+        else:
+            print("Error")
+
         time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThan']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(3)
+
 
 
 
 # %%
 def test_Filter_ID_Country_LessThan_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Country_ID_StartsWith(driver,"12")
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
+        element_found = False
+        for item in filtered_elements:
+            if item.text < "12":
+                element_found = True
+                break
+
+        if element_found:
+            print("LessThan Filter in ID is working fine")
+        else:
+            print("Error")
+
         time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThan']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(3)
 
 
 # %%
 def test_Filter_ID_Country_LessThanOrEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Country_ID_StartsWith(driver,"12")
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
+        element_found = False
+        for item in filtered_elements:
+            if item.text <= "12":
+                element_found = True
+                break
+
+        if element_found:
+            print("LessThanOrEqualTo Filter in ID is working fine")
+        else:
+            print("Error")
+
         time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(3)
+
     
 
 
 # %%
 def test_Filter_ID_Country_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Country_ID_StartsWith(driver,"12")
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "12"
+    )
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        element_found = False
+        if filtered_element.text.startswith('0'):
+            element_found = True
+
+        if element_found:
+            print("isNull Filter in ID is working fine")
+        else:
+            print("Error")
+        
         time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(3)
+
 
 
 # %%
 def test_Filter_ID_Country_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Country_ID_StartsWith(driver,"12")
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "12"
+    )
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        element_found = False
+        if filtered_element.text.startswith('41'):
+            element_found = True
+
+        if element_found:
+            print("isNotNull Filter in ID is working fine")
+        else:
+            print("Error")
+        
         time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(3)
 
 
 
 # %%
 def test_Filter_ID_Country_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Country_ID_StartsWith(driver,"12")
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "12"
+    )
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        element_found = False
+        if filtered_element.text.startswith('41'):
+            element_found = True
+
+        if element_found:
+            print("NoFilter in ID is working fine")
+        else:
+            print("Error")
+
         time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(3)
 
 
 
 # %%
 def test_Filter_ID_Country_GreaterThanOrEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Country_ID_StartsWith(driver,"12")
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
+        element_found = False
+        for item in filtered_elements:
+            if item.text >= "12":
+                element_found = True
+                break
+
+        if element_found:
+            print("GreaterThanOrEqualTo Filter in ID is working fine")
+        else:
+            print("Error")
+
         time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Country']").click()
-        time.sleep(3)
 
 # %%
 def test_Filter_Country_Pagination_15_Success(driver):
-        ele=driver.find_element(By.XPATH,"//select[@name='currentPages']")
-        d=Select(ele)
-        d.select_by_visible_text('15')
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='2']").click()
-        time.sleep(2)
+    select_xpath = "//select[@name='currentPages']"
+    filter_pagination_Common(driver, select_xpath, '15')
+    Number_of_pages = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[5%] px-3 py-2')]")
+    count = 0
+    for pages in Number_of_pages:
+        count += 1
+
+    if count <= 15:  
+        print("Pagination for 15 Pages is Working fine")
 
 
 # %%
 def test_Filter_Country_Pagination_25_Success(driver):
-        ele=driver.find_element(By.XPATH,"//select[@name='currentPages']")
-        d=Select(ele)
-        d.select_by_visible_text('25')
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='2']").click()
-        time.sleep(2)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '25')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[5%] px-3 py-2')]")
+        count = 0
+        for pages in Number_of_pages:
+                count += 1
+
+        if count <= 25:  
+                print("Pagination for 25 Pages is Working fine")
 
 
 # %%
 def test_Filter_Country_Pagination_50_Success(driver):
-        ele=driver.find_element(By.XPATH,"//select[@name='currentPages']")
-        d=Select(ele)
-        d.select_by_visible_text('50')
-        time.sleep(2)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '50')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[5%] px-3 py-2')]")
+        count = 0
+        for pages in Number_of_pages:
+                count += 1
+
+        if count <= 50:  
+                print("Pagination for 50 Pages is Working fine")
 
 
 # %%
@@ -3509,5 +3844,744 @@ def Locality_Webpage():
 
 Locality_Webpage()
 
+
+# %%
+def login_and_navigate_Managebuilder(username, password, comkey):
+    driver = webdriver.Chrome()
+    driver.get(drivers_config["login_url"])
+    driver.find_element(By.NAME, "username").send_keys(username)
+    driver.find_element(By.NAME, "password").send_keys(password)
+    driver.find_element(By.NAME, "comkey").send_keys(comkey)
+    login_button = driver.find_element(By.CSS_SELECTOR, "button[class='bg-[#004DD7] w-[200px] h-[35px] text-white text-[18px] rounded-lg cursor-pointer']")
+    assert not login_button.get_attribute("disabled"), "Login button should be enabled"
+    login_button.click()
+    manage_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "body div div div div div div:nth-child(2) button:nth-child(1) p:nth-child(1)"))
+        )
+    assert not manage_button.get_attribute("disabled"), "Admin button should be enabled"
+    manage_button.click()
+    driver.find_element(By.XPATH,"//a[normalize-space()='Manage Builder']").click()
+    time.sleep(2)
+    return driver
+
+# %%
+def addBuilder(driver):
+    driver.find_element(By.XPATH,"//body//div//div//div//div//div//div//div//button//div").click()
+    driver.find_element(By.XPATH,"//body//div[@role='presentation']//div//div//div//div//div//div[1]//input[1]").send_keys("test_builder")
+    driver.find_element(By.XPATH,"//body//div[@role='presentation']//div//div//div//div//div//div[2]//input[1]").send_keys("123456789")
+    driver.find_element(By.XPATH,"//body//div[@role='presentation']//div//div//div//div//div[1]//div[6]//input[1]").send_keys("test_Pune")
+    time.sleep(2)
+    a=driver.find_element(By.XPATH,"//select[@name='country']")
+    drp=Select(a)
+    drp.select_by_visible_text('India')
+    time.sleep(2)
+    b=driver.find_element(By.XPATH,"//select[@name='state']")
+    drp1=Select(b)
+    drp1.select_by_visible_text('Maharashtra')
+    time.sleep(2)
+    c=driver.find_element(By.XPATH,"//body[1]/div[2]/div[3]/div[1]/form[1]/div[1]/div[1]/div[2]/div[3]/select[1]")
+    drp2=Select(c)
+    drp2.select_by_visible_text("Pune")
+    driver.find_element(By.XPATH,"//input[@name='suburb']").send_keys("a")
+    driver.find_element(By.XPATH,"//button[@type='submit']").click()
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/button[1]").click()
+    time.sleep(3)
+    driver.find_element(By.XPATH,"//input[@type='text']").send_keys("test_builder")
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//img[@alt='trash']").click()
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//div[contains(@role,'presentation')]//button[1]").click()
+    time.sleep(2)
+
+
+
+# %%
+def editBuilder(driver):
+    driver.find_element(By.XPATH,"//body//div//div//div//div//div//div//div//button//div").click()
+    driver.find_element(By.XPATH,"//body//div[@role='presentation']//div//div//div//div//div//div[1]//input[1]").send_keys("test_builder")
+    driver.find_element(By.XPATH,"//body//div[@role='presentation']//div//div//div//div//div//div[2]//input[1]").send_keys("123456789")
+    driver.find_element(By.XPATH,"//body//div[@role='presentation']//div//div//div//div//div[1]//div[6]//input[1]").send_keys("test_Pune")
+    time.sleep(2)
+    a=driver.find_element(By.XPATH,"//select[@name='country']")
+    drp=Select(a)
+    drp.select_by_visible_text('India')
+    time.sleep(2)
+    b=driver.find_element(By.XPATH,"//select[@name='state']")
+    drp1=Select(b)
+    drp1.select_by_visible_text('Maharashtra')
+    time.sleep(2)
+    c=driver.find_element(By.XPATH,"//body[1]/div[2]/div[3]/div[1]/form[1]/div[1]/div[1]/div[2]/div[3]/select[1]")
+    drp2=Select(c)
+    drp2.select_by_visible_text("Pune")
+    driver.find_element(By.XPATH,"//input[@name='suburb']").send_keys("a")
+    driver.find_element(By.XPATH,"//button[@type='submit']").click()
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/button[1]").click()
+    time.sleep(3)
+    # driver.find_element(By.XPATH,"//input[@type='text']").send_keys("test_builder")
+    # time.sleep(2)
+    driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//img[@alt='edit']").click()
+    driver.find_element(By.XPATH,"//body//div[@role='presentation']//div//div//div//div//div//div[1]//input[1]").clear()
+    driver.find_element(By.XPATH,"//body//div[@role='presentation']//div//div//div//div//div//div[1]//input[1]").send_keys("ashish")
+    driver.find_element(By.XPATH,"//button[@type='submit']").click()
+    time.sleep(4)
+    driver.find_element(By.XPATH,"//input[@type='text']").clear()
+    driver.find_element(By.XPATH,"//input[@type='text']").send_keys("ashish")
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//img[@alt='trash']").click()
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//div[contains(@role,'presentation')]//button[1]").click()
+    time.sleep(2)
+
+
+
+# %%
+def test_filter_Builder_Name_StartsWith(driver,send_letter):
+        driver.find_element(By.CSS_SELECTOR,"body div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)").send_keys(send_letter)
+        time.sleep(2)
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        time.sleep(2)
+
+# %%
+def test_Filter_Builder_name_Contains_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Name_StartsWith(driver,"a")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_name_DoesNotContains_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Name_StartsWith(driver,"a")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_name_StartsWith_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Name_StartsWith(driver,"a")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_name_EndsWith_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Name_StartsWith(driver,"a")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_name_EqualsTo_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Name_StartsWith(driver,"a")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_name_isNull_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Name_StartsWith(driver,"a")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_name_isNotNull_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Name_StartsWith(driver,"a")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_name_NoFilter_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Name_StartsWith(driver,"a")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_filter_Builder_Country_StartsWith(driver,send_letter):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").send_keys(send_letter)
+        time.sleep(2)
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        time.sleep(2)
+
+# %%
+def test_Filter_Builder_Country_Contains_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Country_StartsWith(driver,"Sri Lanka")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Country_DoesNotContains_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Country_StartsWith(driver,"Sri Lanka")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Country_StartsWith_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Country_StartsWith(driver,"Sri Lanka")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Country_EndsWith_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Country_StartsWith(driver,"Sri Lanka")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Country_EqualsTo_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Country_StartsWith(driver,"Sri Lanka")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Country_isNull_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Country_StartsWith(driver,"Sri Lanka")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Country_isNotNull_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Country_StartsWith(driver,"Sri Lanka")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Country_NoFilter_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Country_StartsWith(driver,"Sri Lanka")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_filter_Builder_City_StartsWith(driver,send_letter):
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").send_keys(send_letter)
+        time.sleep(2)
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        time.sleep(2)
+
+# %%
+def test_Filter_Builder_City_Contains_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
+        test_filter_Builder_City_StartsWith(driver,"Pune")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_City_DoesNotContains_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
+        test_filter_Builder_City_StartsWith(driver,"Pune")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_City_StartsWith_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
+        test_filter_Builder_City_StartsWith(driver,"Pune")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_City_EndsWith_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
+        test_filter_Builder_City_StartsWith(driver,"Pune")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_City_EqualTo_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
+        test_filter_Builder_City_StartsWith(driver,"Pune")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_City_isNull_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
+        test_filter_Builder_City_StartsWith(driver,"Pune")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_City_isNotNull_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
+        test_filter_Builder_City_StartsWith(driver,"Pune")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_City_NoFilter_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
+        test_filter_Builder_City_StartsWith(driver,"Pune")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_filter_Builder_Suburb_StartsWith(driver,send_letter):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(5) div:nth-child(1) input:nth-child(1)").send_keys(send_letter)
+        time.sleep(2)
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        time.sleep(2)
+
+# %%
+def test_Filter_Builder_Suburb_Contains_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(5) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Suburb_StartsWith(driver,"ijkl")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Suburb_DoesNotContains_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(5) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Suburb_StartsWith(driver,"ijkl")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Suburb_StartsWith_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(5) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Suburb_StartsWith(driver,"ijkl")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Suburb_EndsWith_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(5) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Suburb_StartsWith(driver,"ijkl")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Suburb_EqualsTo_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(5) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Suburb_StartsWith(driver,"ijkl")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Suburb_isNull_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(5) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Suburb_StartsWith(driver,"ijkl")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Suburb_isNotNull_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(5) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Suburb_StartsWith(driver,"ijkl")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_Suburb_NoFilter_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"div:nth-child(5) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_Suburb_StartsWith(driver,"ijkl")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_filter_Builder_ID_StartsWith(driver,send_letter):
+        driver.find_element(By.CSS_SELECTOR,"body div[id='root'] div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)").send_keys(send_letter)
+        time.sleep(2)
+        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        time.sleep(2)
+
+# %%
+def test_Filter_Builder_ID_EqualTo_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div[id='root'] div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_ID_StartsWith(driver,"11")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_ID_NotEqualTo_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div[id='root'] div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_ID_StartsWith(driver,"11")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='NotEqualTo']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_ID_GreaterThan_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div[id='root'] div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_ID_StartsWith(driver,"11")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThan']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_ID_LessThan_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div[id='root'] div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_ID_StartsWith(driver,"11")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThan']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_ID_GreaterThanOrEqualTo_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div[id='root'] div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_ID_StartsWith(driver,"11")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_ID_LessThanOrEqualTo_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div[id='root'] div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_ID_StartsWith(driver,"11")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_ID_isNull_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div[id='root'] div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_ID_StartsWith(driver,"11")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_ID_isNotNull_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div[id='root'] div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_ID_StartsWith(driver,"11")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def test_Filter_Builder_ID_NoFilter_Success(driver):
+        driver.find_element(By.CSS_SELECTOR,"body div[id='root'] div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)").clear()
+        test_filter_Builder_ID_StartsWith(driver,"11")
+        time.sleep(2)
+        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//div//h1").click()
+        time.sleep(2)
+        
+
+
+# %%
+def Builder_Name_ascending(driver):
+    driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+
+# %%
+def Builder_Name_descending(driver):
+    driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+
+# %%
+def Builder_Country_descending(driver):
+    driver.find_element(By.XPATH,"//body//div[@id='root']//div//div//div//div//div[3]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+
+# %%
+def Builder_Country_ascending(driver):
+    driver.find_element(By.XPATH,"//body//div[@id='root']//div//div//div//div//div[3]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+
+# %%
+def Builder_City_ascending(driver):
+    driver.find_element(By.XPATH,"//div[4]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+
+# %%
+def Builder_City_descending(driver):
+    driver.find_element(By.XPATH,"//div[4]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+
+# %%
+def Builder_Suburb_descending(driver):
+    driver.find_element(By.XPATH,"//div[5]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+
+# %%
+def Builder_Suburb_ascending(driver):
+    driver.find_element(By.XPATH,"//div[5]//p[1]//button[1]//span[1]").click()
+    time.sleep(2)
+
+# %%
+def Builder_ID_ascending(driver):
+    driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+
+# %%
+def Builder_ID_descending(driver):
+    driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    time.sleep(2)
+
+# %%
+def Builder_Pagination15_Success(driver):
+    a=driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//select")
+    drop=Select(a)
+    drop.select_by_visible_text("15")
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//button[@aria-label='Go to page 2']").click()
+    time.sleep(2)
+
+# %%
+def Builder_Pagination25_Success(driver):
+    a=driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//select")
+    drop=Select(a)
+    drop.select_by_visible_text("25")
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//button[@aria-label='Go to page 2']").click()
+    time.sleep(2)
+
+# %%
+def Builder_Pagination50_Success(driver):
+    a=driver.find_element(By.XPATH,"//div[@id='root']//div//div//div//div//div//select")
+    drop=Select(a)
+    drop.select_by_visible_text("50")
+    time.sleep(2)
+    driver.find_element(By.XPATH,"//button[@aria-label='Go to page 2']").click()
+    time.sleep(2)
+
+# %%
+def Builder_Refresh(driver):
+    driver.find_element(By.XPATH,"//p[normalize-space()='Refresh']").click()
+    time.sleep(2)
+
+# %%
+def Builder_Download(driver):
+    driver.find_element(By.XPATH,"//p[normalize-space()='Download']").click()
+    time.sleep(2)
+
+# %%
+def Builder_webpage():
+    try:
+        driver=login_and_navigate_Managebuilder("ruderaw", "abcdefg", "9632")
+        Builder_Name_ascending(driver)
+        Builder_Name_descending(driver)
+        Builder_Country_ascending(driver)
+        Builder_Country_descending(driver)
+        Builder_City_ascending(driver)
+        Builder_City_descending(driver)
+        Builder_Suburb_ascending(driver)
+        Builder_Suburb_descending(driver)
+        Builder_ID_ascending(driver)
+        Builder_ID_ascending(driver)
+        Builder_Pagination15_Success(driver)
+        Builder_Pagination25_Success(driver)
+        Builder_Pagination50_Success(driver)
+        test_Filter_Builder_name_Contains_Success(driver)
+        test_Filter_Builder_name_DoesNotContains_Success(driver)
+        test_Filter_Builder_name_StartsWith_Success(driver)
+        test_Filter_Builder_name_EndsWith_Success(driver)
+        test_Filter_Builder_name_EqualsTo_Success(driver)
+        test_Filter_Builder_name_isNull_Success(driver)
+        test_Filter_Builder_name_isNotNull_Success(driver)
+        test_Filter_Builder_name_NoFilter_Success(driver)
+        test_Filter_Builder_Country_Contains_Success(driver)
+        test_Filter_Builder_Country_DoesNotContains_Success(driver)
+        test_Filter_Builder_Country_StartsWith_Success(driver)
+        test_Filter_Builder_Country_EndsWith_Success(driver)
+        test_Filter_Builder_Country_EqualsTo_Success(driver)
+        test_Filter_Builder_Country_isNull_Success(driver)
+        test_Filter_Builder_Country_isNotNull_Success(driver)
+        test_Filter_Builder_Country_NoFilter_Success(driver)
+        test_Filter_Builder_City_Contains_Success(driver)
+        test_Filter_Builder_City_DoesNotContains_Success(driver)
+        test_Filter_Builder_City_StartsWith_Success(driver)
+        test_Filter_Builder_City_EndsWith_Success(driver)
+        test_Filter_Builder_City_EqualTo_Success(driver)
+        test_Filter_Builder_City_isNull_Success(driver)
+        test_Filter_Builder_City_isNotNull_Success(driver)
+        test_Filter_Builder_City_NoFilter_Success(driver)
+        test_Filter_Builder_Suburb_Contains_Success(driver)
+        test_Filter_Builder_Suburb_DoesNotContains_Success(driver)
+        test_Filter_Builder_Suburb_StartsWith_Success(driver)
+        test_Filter_Builder_Suburb_EndsWith_Success(driver)
+        test_Filter_Builder_Suburb_EqualsTo_Success(driver)
+        test_Filter_Builder_Suburb_isNull_Success(driver)
+        test_Filter_Builder_Suburb_isNotNull_Success(driver)
+        test_Filter_Builder_Suburb_NoFilter_Success(driver)
+        test_Filter_Builder_ID_EqualTo_Success(driver)
+        test_Filter_Builder_ID_NotEqualTo_Success(driver)
+        test_Filter_Builder_ID_GreaterThan_Success(driver)
+        test_Filter_Builder_ID_GreaterThanOrEqualTo_Success(driver)
+        test_Filter_Builder_ID_LessThan_Success(driver)
+        test_Filter_Builder_ID_LessThanOrEqualTo_Success(driver)
+        test_Filter_Builder_ID_isNull_Success(driver)
+        test_Filter_Builder_ID_isNotNull_Success(driver)
+        test_Filter_Builder_ID_NoFilter_Success(driver)
+        addBuilder(driver)
+        editBuilder(driver)
+        Builder_Refresh(driver)
+        Builder_Download(driver)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        driver.quit()
+    
+Builder_webpage()
 
 
