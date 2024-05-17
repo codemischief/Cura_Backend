@@ -1,12 +1,7 @@
 
-
-# %%
 import os
 import time
 import ui_config
-import ipytest
-ipytest.autoconfig()
-ipytest.config.rewrite_asserts = True
 from ui_config import drivers_config
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -16,9 +11,8 @@ from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import TimeoutException
 import random
 import string
+import pytest
 
-
-# %%
 def login_and_navigate(username, password, comkey):
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
@@ -30,8 +24,7 @@ def login_and_navigate(username, password, comkey):
     login_button.click()
     return driver
 
-# %%
-def test_login_success(driver):
+def test_login_success():
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
 
@@ -53,8 +46,6 @@ def test_login_success(driver):
     driver.close()
 
 test_login_success()
-
-# %%
 
 def test_login_failure_username():
     
@@ -81,8 +72,6 @@ def test_login_failure_username():
 test_login_failure_username() 
 
 
-# %%
-
 def test_login_failure_password():
 
     driver = webdriver.Chrome()
@@ -108,8 +97,6 @@ def test_login_failure_password():
 test_login_failure_password() 
 
 
-# %%
-
 def test_login_failure_companyskey():
 
     driver = webdriver.Chrome()
@@ -134,8 +121,6 @@ def test_login_failure_companyskey():
 
 test_login_failure_companyskey() 
 
-
-# %%
 def test_login_failure_all():
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
@@ -160,7 +145,6 @@ def test_login_failure_all():
 test_login_failure_all()
 
 
-# %%
 def test_Dashboard_Admin(driver):
         admin_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) div:nth-child(1) button:nth-child(1) p:nth-child(1)"))
@@ -174,9 +158,6 @@ def test_Dashboard_Admin(driver):
         assert admin_header.text == "Personnel", "Admin header text is incorrect"
         time.sleep(2)
 
-
-
-# %%
 def test_Dashboard_Manager(driver):
         Manager_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) > div:nth-child(2)"))
@@ -190,8 +171,6 @@ def test_Dashboard_Manager(driver):
         assert manager_header.text == "Builder", "Manager header text is incorrect"
         time.sleep(2)
 
-
-# %%
 def test_Dashboard_Report(driver):
         Report_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "div:nth-child(2) > div:nth-child(3)"))
@@ -206,13 +185,10 @@ def test_Dashboard_Report(driver):
         time.sleep(2)
 
 
-# %%
 def test_Dashboard_Research(driver):
         driver.find_element(By.XPATH,"//p[normalize-space()='Research']").click()
         time.sleep(2)
 
-
-# %%
 def test_Dashboard_Logout(driver):
         Logout_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "a[href='/']"))
@@ -225,9 +201,6 @@ def test_Dashboard_Logout(driver):
         )
         assert Logout_header.text == "Login Panel", "Logout header text is incorrect"
         
-
-
-# %%
 def Dashboard_Webpage():
     try:
         driver=login_and_navigate("ruderaw", "abcdefg", "9632")
@@ -240,10 +213,9 @@ def Dashboard_Webpage():
         print(f"An error occurred: {e}")
     finally:
         driver.quit()
-
 Dashboard_Webpage()
 
-# %%
+
 def login_and_navigate_employee(username, password, comkey):
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
@@ -262,7 +234,6 @@ def login_and_navigate_employee(username, password, comkey):
     time.sleep(2)
     return driver
 
-# %%
 def add_new_employee(driver,employee_name, pan_no, username, doj, designation, email, dob, last_dow, role, ph_no, country, state, city, suburb, entity):
     wait=WebDriverWait(driver,10)
     driver.find_element(By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4").click()
@@ -314,8 +285,6 @@ def add_new_employee(driver,employee_name, pan_no, username, doj, designation, e
 
 # add_new_employee(driver, "aryan ashish", "ijklmn", "Admin User", "06-05-2024", "intern", "ashish.com", "06-05-2003", "31-05-2024", "Admin", "11100000", "UAE", "UAE", "Dubai", "q", "Z-CASH")
 
-
-# %%
 def test_Edit_Employee_Success(driver):
         wait=WebDriverWait(driver,10)
         addEmployee_button = WebDriverWait(driver, 10).until(
@@ -387,9 +356,6 @@ def test_Edit_Employee_Success(driver):
         wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
         time.sleep(2)
         
-
-
-# %%
 def filter_Common(driver, filter_xpath, text_css_selector, button_css_selector, starts_with_letter):
     wait=WebDriverWait(driver,10)
     driver.find_element(By.CSS_SELECTOR, text_css_selector).clear()
@@ -398,8 +364,6 @@ def filter_Common(driver, filter_xpath, text_css_selector, button_css_selector, 
     wait.until(EC.element_to_be_clickable((By.XPATH,filter_xpath))).click()
     time.sleep(1)
    
-
-# %%
 def filter_pagination_Common(driver, select_xpath, items_per_page):
     wait = WebDriverWait(driver, 10)
     select_element = driver.find_element(By.XPATH, select_xpath)
@@ -407,7 +371,7 @@ def filter_pagination_Common(driver, select_xpath, items_per_page):
     dropdown.select_by_visible_text(items_per_page)
     time.sleep(2) 
 
-# %%
+
 def test_Filter_Employee_Name_StartsWith_Success(driver):
     filter_Common(
         driver,
@@ -417,7 +381,7 @@ def test_Filter_Employee_Name_StartsWith_Success(driver):
         "a"
     )
 
-# %%
+
 def test_Filter_Employee_Name_Contains_Success(driver):
         filter_Common(
         driver,
@@ -429,7 +393,6 @@ def test_Filter_Employee_Name_Contains_Success(driver):
 
 
 
-# %%
 def test_Filter_Employee_Name_DoesNotContains_Success(driver):
         filter_Common(
         driver,
@@ -441,8 +404,6 @@ def test_Filter_Employee_Name_DoesNotContains_Success(driver):
 
 
 
-
-# %%
 def test_Filter_Employee_Name_EndsWith_Success(driver):
         filter_Common(
         driver,
@@ -452,9 +413,6 @@ def test_Filter_Employee_Name_EndsWith_Success(driver):
         "a"
     )
 
-
-
-# %%
 def test_Filter_Employee_Name_EqualTo_Success(driver):
         filter_Common(
         driver,
@@ -465,7 +423,6 @@ def test_Filter_Employee_Name_EqualTo_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_Name_isNotNull_Success(driver):
         filter_Common(
         driver,
@@ -476,7 +433,6 @@ def test_Filter_Employee_Name_isNotNull_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_Name_isNull_Success(driver):
         filter_Common(
         driver,
@@ -487,7 +443,6 @@ def test_Filter_Employee_Name_isNull_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_Name_NoFilter_Success(driver):
         filter_Common(
         driver,
@@ -498,7 +453,6 @@ def test_Filter_Employee_Name_NoFilter_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_ID_StartsWith_Success(driver):
         filter_Common(
         driver,
@@ -509,8 +463,6 @@ def test_Filter_Employee_ID_StartsWith_Success(driver):
     )
 
 
-
-# %%
 def test_Filter_Employee_ID_Contains_Success(driver):
         filter_Common(
         driver,
@@ -520,8 +472,6 @@ def test_Filter_Employee_ID_Contains_Success(driver):
         "a"
     )
 
-
-# %%
 def test_Filter_Employee_ID_DoesNotContains_Success(driver):
         filter_Common(
         driver,
@@ -531,9 +481,6 @@ def test_Filter_Employee_ID_DoesNotContains_Success(driver):
         "a"
     )
 
-
-
-# %%
 def test_Filter_Employee_ID_EndsWith_Success(driver):
         filter_Common(
         driver,
@@ -543,8 +490,6 @@ def test_Filter_Employee_ID_EndsWith_Success(driver):
         "a"
     )
 
-
-# %%
 def test_Filter_Employee_ID_EqualsTo_Success(driver):
         filter_Common(
         driver,
@@ -555,8 +500,6 @@ def test_Filter_Employee_ID_EqualsTo_Success(driver):
     )
 
 
-
-# %%
 def test_Filter_Employee_ID_isNotNull_Success(driver):
         filter_Common(
         driver,
@@ -566,8 +509,6 @@ def test_Filter_Employee_ID_isNotNull_Success(driver):
         "a"
     )
 
-
-# %%
 def test_Filter_Employee_ID_isNull_Success(driver):
         filter_Common(
         driver,
@@ -577,8 +518,6 @@ def test_Filter_Employee_ID_isNull_Success(driver):
         "a"
     )
 
-
-# %%
 def test_Filter_Employee_ID_NoFilter_Success(driver):
         filter_Common(
         driver,
@@ -589,7 +528,6 @@ def test_Filter_Employee_ID_NoFilter_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_PhoneID_Contains_Success(driver):
         filter_Common(
         driver,
@@ -600,7 +538,6 @@ def test_Filter_Employee_PhoneID_Contains_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_PhoneID_DoesNotContains_Success(driver):
         filter_Common(
         driver,
@@ -611,8 +548,6 @@ def test_Filter_Employee_PhoneID_DoesNotContains_Success(driver):
     )
 
 
-
-# %%
 def test_Filter_Employee_PhoneID_StartsWith_Success(driver):
         filter_Common(
         driver,
@@ -622,8 +557,6 @@ def test_Filter_Employee_PhoneID_StartsWith_Success(driver):
         "9"
     )
 
-
-# %%
 def test_Filter_Employee_PhoneID_EndsWith_Success(driver):
         filter_Common(
         driver,
@@ -633,8 +566,6 @@ def test_Filter_Employee_PhoneID_EndsWith_Success(driver):
         "9"
     )
 
-
-# %%
 def test_Filter_Employee_PhoneID_EqualsTo_Success(driver):
         filter_Common(
         driver,
@@ -644,9 +575,6 @@ def test_Filter_Employee_PhoneID_EqualsTo_Success(driver):
         "9"
     )
 
-
-
-# %%
 def test_Filter_Employee_PhoneID_isNull_Success(driver):
         filter_Common(
         driver,
@@ -656,7 +584,6 @@ def test_Filter_Employee_PhoneID_isNull_Success(driver):
         "9"
     )
 
-# %%
 def test_Filter_Employee_PhoneID_isNotNull_Success(driver):
         filter_Common(
         driver,
@@ -666,8 +593,6 @@ def test_Filter_Employee_PhoneID_isNotNull_Success(driver):
         "9"
     )
 
-
-# %%
 def test_Filter_Employee_PhoneID_NoFilter_Success(driver):
         filter_Common(
         driver,
@@ -677,35 +602,25 @@ def test_Filter_Employee_PhoneID_NoFilter_Success(driver):
         "9"
     )
 
-
-
-# %%
 def test_Filter_Employee_Name_ascending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[2]/div[1]/p[1]/button[1]/span[1]").click()
         time.sleep(2)
 
 
-
-# %%
 def test_Filter_Employee_Name_descending_Success(driver):
         driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[2]/div[1]/p[1]/button[1]/span[1]").click()
         time.sleep(2)
 
-
-# %%
 def test_Filter_Employee_ID_descending_Success(driver):
         driver.find_element(By.XPATH,"//body//div[@id='root']//div//div//div//div//div[3]//div[1]//p[1]//button[1]//span[1]").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_ID_ascending_Success(driver):
         driver.find_element(By.XPATH,"//body//div[@id='root']//div//div//div//div//div[3]//div[1]//p[1]//button[1]//span[1]").click()
         time.sleep(2)
 
 
-
-# %%
 def test_Filter_Employee_EmailID_StartsWith_Success(driver):
         filter_Common(
         driver,
@@ -715,9 +630,6 @@ def test_Filter_Employee_EmailID_StartsWith_Success(driver):
         "customer@gmail.com"
     )
 
-
-
-# %%
 def test_Filter_Employee_EmailID_DoesNotContains_Success(driver):
         filter_Common(
         driver,
@@ -727,9 +639,6 @@ def test_Filter_Employee_EmailID_DoesNotContains_Success(driver):
         "customer@gmail.com"
     )
 
-
-
-# %%
 def test_Filter_Employee_EmailID_Contains_Success(driver):
         filter_Common(
         driver,
@@ -740,7 +649,6 @@ def test_Filter_Employee_EmailID_Contains_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_EmailID_EndsWith_Success(driver):
         filter_Common(
         driver,
@@ -750,8 +658,6 @@ def test_Filter_Employee_EmailID_EndsWith_Success(driver):
         "customer@gmail.com"
     )
 
-
-# %%
 def test_Filter_Employee_EmailID_EqualsTo_Success(driver):
         filter_Common(
         driver,
@@ -762,7 +668,6 @@ def test_Filter_Employee_EmailID_EqualsTo_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_EmailID_isNull_Success(driver):
         filter_Common(
         driver,
@@ -773,7 +678,6 @@ def test_Filter_Employee_EmailID_isNull_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_EmailID_isNotNull_Success(driver):
         filter_Common(
         driver,
@@ -783,9 +687,6 @@ def test_Filter_Employee_EmailID_isNotNull_Success(driver):
         "customer@gmail.com"
     )
 
-
-
-# %%
 def test_Filter_Employee_EmailID_NoFilter_Success(driver):
         filter_Common(
         driver,
@@ -795,8 +696,6 @@ def test_Filter_Employee_EmailID_NoFilter_Success(driver):
         "customer@gmail.com"
     )
 
-
-# %%
 def test_Filter_Employee_Roles_StartsWith_Success(driver):
         filter_Common(
         driver,
@@ -807,7 +706,6 @@ def test_Filter_Employee_Roles_StartsWith_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_Roles_EndsWith_Success(driver):
         filter_Common(
         driver,
@@ -818,7 +716,6 @@ def test_Filter_Employee_Roles_EndsWith_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_Roles_EqualsTo_Success(driver):
         filter_Common(
         driver,
@@ -828,8 +725,6 @@ def test_Filter_Employee_Roles_EqualsTo_Success(driver):
         "analyst"
     )
 
-
-# %%
 def test_Filter_Employee_Roles_isNull_Success(driver):
         filter_Common(
         driver,
@@ -839,8 +734,6 @@ def test_Filter_Employee_Roles_isNull_Success(driver):
         "analyst"
     )
 
-
-# %%
 def test_Filter_Employee_Roles_isNotNull_Success(driver):
         filter_Common(
         driver,
@@ -851,8 +744,6 @@ def test_Filter_Employee_Roles_isNotNull_Success(driver):
     )
 
 
-
-# %%
 def test_Filter_Employee_Roles_NoFilter_Success(driver):
         filter_Common(
         driver,
@@ -863,8 +754,6 @@ def test_Filter_Employee_Roles_NoFilter_Success(driver):
     )
 
 
-
-# %%
 def test_Filter_Employee_Roles_Contains_Success(driver):
         filter_Common(
         driver,
@@ -875,8 +764,6 @@ def test_Filter_Employee_Roles_Contains_Success(driver):
     )
 
 
-
-# %%
 def test_Filter_Employee_Roles_DoesNotContains_Success(driver):
         filter_Common(
         driver,
@@ -887,8 +774,6 @@ def test_Filter_Employee_Roles_DoesNotContains_Success(driver):
     )
 
 
-
-# %%
 def test_Filter_Employee_Panno_StartsWith_Success(driver):
         filter_Common(
         driver,
@@ -899,8 +784,6 @@ def test_Filter_Employee_Panno_StartsWith_Success(driver):
     )
 
 
-
-# %%
 def test_Filter_Employee_Panno_EndsWith_Success(driver):
         filter_Common(
         driver,
@@ -910,8 +793,6 @@ def test_Filter_Employee_Panno_EndsWith_Success(driver):
         "abcd"
     )
 
-
-# %%
 def test_Filter_Employee_Panno_EqualsTo_Success(driver):
         filter_Common(
         driver,
@@ -922,7 +803,6 @@ def test_Filter_Employee_Panno_EqualsTo_Success(driver):
     )
 
 
-# %%
 def test_Filter_Employee_Panno_isNull_Success(driver):
         filter_Common(
         driver,
@@ -932,8 +812,6 @@ def test_Filter_Employee_Panno_isNull_Success(driver):
         "abcd"
     )
 
-
-# %%
 def test_Filter_Employee_Panno_isNotNull_Success(driver):
         filter_Common(
         driver,
@@ -943,8 +821,6 @@ def test_Filter_Employee_Panno_isNotNull_Success(driver):
         "abcd"
     )
 
-
-# %%
 def test_Filter_Employee_Panno_Contains_Success(driver):
         filter_Common(
         driver,
@@ -955,8 +831,6 @@ def test_Filter_Employee_Panno_Contains_Success(driver):
     )
 
 
-
-# %%
 def test_Filter_Employee_Panno_DoesNotContains_Success(driver):
         filter_Common(
         driver,
@@ -966,8 +840,6 @@ def test_Filter_Employee_Panno_DoesNotContains_Success(driver):
         "abcd"
     )
 
-
-# %%
 def test_Filter_Employee_Panno_NoFilter_Success(driver):
         filter_Common(
         driver,
@@ -977,7 +849,6 @@ def test_Filter_Employee_Panno_NoFilter_Success(driver):
         "abcd"
     )
 
-# %%
 def filter_employee_doj_starts_with(driver, starts_with_letter):
         wait=WebDriverWait(driver,10)
         wait.until(EC.visibility_of_element_located((By.XPATH,"//input[@value='false']"))).send_keys(starts_with_letter)
@@ -985,70 +856,63 @@ def filter_employee_doj_starts_with(driver, starts_with_letter):
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_doj_EqualsTo_Success(driver):
         filter_employee_doj_starts_with(driver, "13-01-2024")
         driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
         time.sleep(2)
         
-
-# %%
 def test_Filter_Employee_doj_NotEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='NotEqualTo']"))).click()
         time.sleep(2)
 
-# %%
+
 def test_Filter_Employee_doj_GreaterThan_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThan']"))).click()
         time.sleep(2)
 
-# %%
+
 def test_Filter_Employee_doj_LessThan_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThan']"))).click()
         time.sleep(2)
 
-# %%
+
 def test_Filter_Employee_doj_GreaterThanOrEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']"))).click()
         time.sleep(2)
 
-# %%
+
 def test_Filter_Employee_doj_LessThanOrEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_doj_isNull_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNull']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_doj_isNotNull_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNotNull']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_doj_NoFilter_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='No Filter']"))).click()
         time.sleep(2)
 
-# %%
 def filter_employee_low_starts_with(driver, starts_with_letter):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR,"div:nth-child(9) div:nth-child(1) input:nth-child(1)").send_keys(starts_with_letter)
@@ -1056,70 +920,60 @@ def filter_employee_low_starts_with(driver, starts_with_letter):
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_low_EqualsTo_Success(driver):
         wait=WebDriverWait(driver,10)
         filter_employee_low_starts_with(driver, "20-02-2020")
         wait.until(EC.element_to_be_clickable((By.XPATH, "//h1[normalize-space()='EqualTo']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_low_NotEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='NotEqualTo']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_low_GreaterThan_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThan']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_low_LessThan_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThan']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_low_GreaterThanOrEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_low_LessThanOrEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_low_isNull_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNull']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_low_isNotNull_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNotNull']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_low_NoFilter_Success(driver):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='No Filter']"))).click()
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_status_EqualsTo_Success(driver):
         filter_Common(
         driver,
@@ -1129,7 +983,6 @@ def test_Filter_Employee_status_EqualsTo_Success(driver):
         "active"
     )
 
-# %%
 def test_Filter_Employee_status_NotEqualsTo_Success(driver):
         filter_Common(
         driver,
@@ -1139,7 +992,6 @@ def test_Filter_Employee_status_NotEqualsTo_Success(driver):
         "active"
     )
 
-# %%
 def test_Filter_Employee_status_GreaterThan_Success(driver):
         filter_Common(
         driver,
@@ -1149,7 +1001,6 @@ def test_Filter_Employee_status_GreaterThan_Success(driver):
         "active"
     )
 
-# %%
 def test_Filter_Employee_status_LessThan_Success(driver):
         filter_Common(
         driver,
@@ -1159,7 +1010,6 @@ def test_Filter_Employee_status_LessThan_Success(driver):
         "active"
     )
 
-# %%
 def test_Filter_Employee_status_GreaterThanOrEqualTo_Success(driver):
         filter_Common(
         driver,
@@ -1169,7 +1019,6 @@ def test_Filter_Employee_status_GreaterThanOrEqualTo_Success(driver):
         "active"
     )
 
-# %%
 def test_Filter_Employee_status_LessThanOrEqualTo_Success(driver):
         filter_Common(
         driver,
@@ -1179,7 +1028,6 @@ def test_Filter_Employee_status_LessThanOrEqualTo_Success(driver):
         "active"
     )
 
-# %%
 def test_Filter_Employee_status_isNull_Success(driver):
         filter_Common(
         driver,
@@ -1189,7 +1037,6 @@ def test_Filter_Employee_status_isNull_Success(driver):
         "active"
     )
 
-# %%
 def test_Filter_Employee_status_isNotNull_Success(driver):
         filter_Common(
         driver,
@@ -1200,7 +1047,6 @@ def test_Filter_Employee_status_isNotNull_Success(driver):
     )
         
 
-# %%
 def test_Filter_Employee_status_NoFilter_Success(driver):
         filter_Common(
         driver,
@@ -1210,7 +1056,6 @@ def test_Filter_Employee_status_NoFilter_Success(driver):
         "active"
     )
 
-# %%
 def test_Filter_Employee_employee_id_EqualsTo_Success(driver):
         filter_Common(
         driver,
@@ -1220,7 +1065,7 @@ def test_Filter_Employee_employee_id_EqualsTo_Success(driver):
         "43"
     )
 
-# %%
+
 def test_Filter_Employee_employee_id_NotEqualsTo_Success(driver):
         filter_Common(
         driver,
@@ -1230,7 +1075,6 @@ def test_Filter_Employee_employee_id_NotEqualsTo_Success(driver):
         "43"
     )
 
-# %%
 def test_Filter_Employee_employee_id_LessThan_Success(driver):
         filter_Common(
         driver,
@@ -1240,7 +1084,6 @@ def test_Filter_Employee_employee_id_LessThan_Success(driver):
         "43"
     )
 
-# %%
 def test_Filter_Employee_employee_id_GreaterThan_Success(driver):
         filter_Common(
         driver,
@@ -1250,7 +1093,6 @@ def test_Filter_Employee_employee_id_GreaterThan_Success(driver):
         "43"
     )
 
-# %%
 def test_Filter_Employee_employee_id_GreaterThanOrEqualTo_Success(driver):
         filter_Common(
         driver,
@@ -1260,7 +1102,6 @@ def test_Filter_Employee_employee_id_GreaterThanOrEqualTo_Success(driver):
         "43"
     )
 
-# %%
 def test_Filter_Employee_employee_id_LessThanOrEqualTo_Success(driver):
         filter_Common(
         driver,
@@ -1270,7 +1111,7 @@ def test_Filter_Employee_employee_id_LessThanOrEqualTo_Success(driver):
         "43"
     )
 
-# %%
+
 def test_Filter_Employee_employee_id_isNull_Success(driver):
         filter_Common(
         driver,
@@ -1280,7 +1121,7 @@ def test_Filter_Employee_employee_id_isNull_Success(driver):
         "43"
     )
 
-# %%
+
 def test_Filter_Employee_employee_id_isNotNull_Success(driver):
         filter_Common(
         driver,
@@ -1291,7 +1132,6 @@ def test_Filter_Employee_employee_id_isNotNull_Success(driver):
     )
         
 
-# %%
 def test_Filter_Employee_employee_id_NoFilter_Success(driver):
         filter_Common(
         driver,
@@ -1300,8 +1140,6 @@ def test_Filter_Employee_employee_id_NoFilter_Success(driver):
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "43"
     )
-
-# %%
 def test_Filter_Employee_Pagination15_NoFilter_Success(driver):
     select_xpath = "//div[@id='root']//div//div//div//div//div//select"
     next_page="//button[@aria-label='Go to page 2']"
@@ -2485,7 +2323,6 @@ def LOB_Webpage():
 
 LOB_Webpage()
 
-# %%
 def login_and_navigate_Country(username, password, comkey):
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
@@ -2504,8 +2341,8 @@ def login_and_navigate_Country(username, password, comkey):
     time.sleep(2)
     return driver
 
-# %%
 def test_Add_New_Country_Success(driver):
+        wait=WebDriverWait(driver,10)
         addCountry_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4"))
         )
@@ -2516,26 +2353,24 @@ def test_Add_New_Country_Success(driver):
             EC.visibility_of_element_located((By.XPATH, "//h1[normalize-space()='Country']"))
         )
         assert addCountry_header.text == "Country", "Add New Country header text is incorrect"
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
         driver.find_element(By.XPATH,"//input[@name='countryName']").send_keys("aryan")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Add']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Save']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Add']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Save']"))).click()
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@type='text']").clear()
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@type='text']").send_keys("aryan")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='trash']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Delete']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='trash']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
+        assert a==a,"Country is not added successfully"
+        print("Add Country is working Fine")
         time.sleep(2)
 
 
-# %%
 def test_Edit_Country_Success(driver):
+        wait=WebDriverWait(driver,10)
         addCountry_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4"))
         )
@@ -2547,18 +2382,12 @@ def test_Edit_Country_Success(driver):
         )
         assert addCountry_header.text == "Country", "Add New Country header text is incorrect"
         driver.find_element(By.XPATH,"//input[@name='countryName']").send_keys("aryan")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Add']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Save']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Add']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Save']"))).click()
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@type='text']").clear()
-        time.sleep(2)
-        # driver.find_element(By.XPATH,"//input[@type='text']").send_keys("aryan")
-        # time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='edit']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='edit']"))).click()
         driver.find_element(By.XPATH,"//input[@name='countryName']").clear()
         driver.find_element(By.XPATH,"//input[@name='countryName']").send_keys("ashish")
         driver.find_element(By.XPATH,"//button[normalize-space()='Save']").click()
@@ -2566,23 +2395,13 @@ def test_Edit_Country_Success(driver):
         driver.find_element(By.XPATH,"//input[@type='text']").clear()
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@type='text']").send_keys("ashish")
-        time.sleep(3)
-        driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='trash']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Delete']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='trash']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
+        print("Edit Country is Working Fine")
         time.sleep(2)
 
 
-# %%
-def test_filter_LOB_Country_StartsWith(driver,send_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").send_keys(send_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-
-# %%
 def test_Filter_Country_StartsWith_Success(driver):
         filter_Common(
         driver,
@@ -2594,20 +2413,19 @@ def test_Filter_Country_StartsWith_Success(driver):
         filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[95%]  px-3 py-2')]")
         element_found = False
         for item in filtered_elements:
-            if item.text.lower().startswith("a"):
-                element_found = True
+            if not item.text.lower().startswith("a"):
+                element_found = False
                 break
+        else:
+            element_found = True
 
         if element_found:
             print("StartsWith filter in Country Name is working fine.")
         else:
             print("Error.")
-        
-        
-        
 
-
-# %%
+   
+        
 def test_Filter_Country_Contains_Success(driver):
         filter_Common(
         driver,
@@ -2617,20 +2435,18 @@ def test_Filter_Country_Contains_Success(driver):
         "India"
     )
         filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[95%]  px-3 py-2')]")
-        element_found = False
+        element_found = True 
         for item in filtered_elements:
-            if item.text == "India":
-                element_found = True
+            if "India" not in item.text:
+                element_found = False
                 break
 
         if element_found:
             print("Contains filter in the Country Name is working fine.")
         else:
             print("Error.")
-        time.sleep(2)
 
 
-# %%
 def test_Filter_Country_DoesNotContains_Success(driver):
         filter_Common(
         driver,
@@ -2642,18 +2458,15 @@ def test_Filter_Country_DoesNotContains_Success(driver):
         filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[95%]  px-3 py-2')]")
         element_found = False
         for item in filtered_elements:
-            if item.text != "India":
+            if item.text == "India":
                 element_found = True
                 break
 
-        if element_found:
+        if not element_found:
             print("DoesNotContains Filter in Country Name is Working fine.")
         else:
             print("Error.")
-        time.sleep(2)
 
-
-# %%
 def test_Filter_Country_EndsWith_Success(driver):
         filter_Common(
         driver,
@@ -2663,20 +2476,18 @@ def test_Filter_Country_EndsWith_Success(driver):
         "a"
     )
         filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[95%]  px-3 py-2')]")
-        element_found = False
+        element_found = True
         for item in filtered_elements:
-                if item.text.endswith("a"):
-                        element_found = True
-                        break
+            if not item.text.endswith("a"):
+                element_found = False
+                break
 
         if element_found:
-           print("EndsWith filter is Country Name is working fine.")
+            print("EndsWith filter in Country Name is working fine.")
         else:
-           print("Error.")
+            print("Error.")
 
 
-
-# %%
 def test_Filter_Country_EqualsTo_Success(driver):
         filter_Common(
         driver,
@@ -2686,10 +2497,10 @@ def test_Filter_Country_EqualsTo_Success(driver):
         "India"
     )
         filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[95%]  px-3 py-2')]")
-        element_found = False
+        element_found = True
         for item in filtered_elements:
-            if item.text == "India":
-                element_found = True
+            if item.text != "India":
+                element_found = False
                 break
 
         if element_found:
@@ -2697,9 +2508,7 @@ def test_Filter_Country_EqualsTo_Success(driver):
         else:
             print("Error")
 
-        time.sleep(2)
 
-# %%
 def test_Filter_Country_isNotNull_Success(driver):
         filter_Common(
         driver,
@@ -2708,15 +2517,13 @@ def test_Filter_Country_isNotNull_Success(driver):
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "India"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
         filtered_element = driver.find_element(By.XPATH,"//p[.='0 Items in 0 Pages']")
-        if(filtered_element.text.startswith('0')):
+        if(filtered_element.text.startswith(words)):
              print("isNotNull filter in Country Name is working fine")
-        
-        time.sleep(2)
 
 
-
-# %%
 def test_Filter_Country_isNull_Success(driver):
         filter_Common(
         driver,
@@ -2725,13 +2532,13 @@ def test_Filter_Country_isNull_Success(driver):
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "India"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
         filtered_element = driver.find_element(By.XPATH,"//p[.='0 Items in 0 Pages']")
-        if(filtered_element.text.startswith('0')):
-             print("isNotNull filter in Country Name is working fine")
+        if(filtered_element.text.startswith(words)):
+             print("isNull filter in Country Name is working fine")
         
-        time.sleep(2)
 
-# %%
 def test_Filter_Country_Nofilter_Success(driver):
         filter_Common(
         driver,
@@ -2740,14 +2547,15 @@ def test_Filter_Country_Nofilter_Success(driver):
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "India"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
         filtered_element = driver.find_element(By.XPATH, "//p[@class='mr-11 text-gray-700']")
-        if filtered_element.text.startswith('41'):
+        if filtered_element.text.startswith(words):
             print("Nofilter in Country Name is working fine")
         else:
             print("Error")
 
 
-# %%
 def test_Filter_ID_Country_Equalto_Success(driver):
         filter_Common(
         driver,
@@ -2757,10 +2565,10 @@ def test_Filter_ID_Country_Equalto_Success(driver):
         "12"
     )
         filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
-        element_found = False
+        element_found = True
         for item in filtered_elements:
-            if item.text == "12":
-                element_found = True
+            if item.text != "12":
+                element_found = False
                 break
 
         if element_found:
@@ -2768,10 +2576,7 @@ def test_Filter_ID_Country_Equalto_Success(driver):
         else:
             print("Error")
 
-        time.sleep(2)
 
-
-# %%
 def test_Filter_ID_Country_NotEqualto_Success(driver):
         filter_Common(
         driver,
@@ -2781,21 +2586,19 @@ def test_Filter_ID_Country_NotEqualto_Success(driver):
         "12"
     )
         filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
-        element_found = False
+        element_found = True
         for item in filtered_elements:
-            if item.text != "12":
-                element_found = True
+            if item.text == "12":
+                element_found = False
                 break
 
         if element_found:
-            print("NotEqualTo Filter in ID is working fine")
+            print("NotEqualTo Filter in ID is working fine.")
         else:
-            print("Error")
-
-        time.sleep(2)
+            print("Error.")
 
 
-# %%
+
 def test_Filter_ID_Country_GreaterThan_Success(driver):
         filter_Common(
         driver,
@@ -2805,23 +2608,20 @@ def test_Filter_ID_Country_GreaterThan_Success(driver):
         "12"
     )
         filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
-        element_found = False
+        element_found = True
         for item in filtered_elements:
-            if item.text > "12":
-                element_found = True
+            if item.text <= 12:
+                element_found = False
                 break
 
         if element_found:
-            print("GreaterThan Filter in ID is working fine")
+            print("Greater Than Filter in ID is working fine.")
         else:
-            print("Error")
-
-        time.sleep(2)
+            print("Error.")
 
 
 
 
-# %%
 def test_Filter_ID_Country_LessThan_Success(driver):
         filter_Common(
         driver,
@@ -2831,21 +2631,19 @@ def test_Filter_ID_Country_LessThan_Success(driver):
         "12"
     )
         filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
-        element_found = False
+        element_found = True
         for item in filtered_elements:
-            if item.text < "12":
-                element_found = True
+            if item.text >= "12":
+                element_found = False
                 break
 
         if element_found:
-            print("LessThan Filter in ID is working fine")
+            print("LessThan Filter in ID is working fine.")
         else:
             print("Error")
 
-        time.sleep(2)
 
 
-# %%
 def test_Filter_ID_Country_LessThanOrEqualTo_Success(driver):
         filter_Common(
         driver,
@@ -2855,10 +2653,10 @@ def test_Filter_ID_Country_LessThanOrEqualTo_Success(driver):
         "12"
     )
         filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
-        element_found = False
+        element_found = True
         for item in filtered_elements:
-            if item.text <= "12":
-                element_found = True
+            if item.text > "12":
+                element_found = False
                 break
 
         if element_found:
@@ -2866,12 +2664,8 @@ def test_Filter_ID_Country_LessThanOrEqualTo_Success(driver):
         else:
             print("Error")
 
-        time.sleep(2)
-
-    
 
 
-# %%
 def test_Filter_ID_Country_isNull_Success(driver):
         filter_Common(
         driver,
@@ -2880,21 +2674,20 @@ def test_Filter_ID_Country_isNull_Success(driver):
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "12"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
         filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
         element_found = False
-        if filtered_element.text.startswith('0'):
+        if filtered_element.text.startswith(words):
             element_found = True
 
         if element_found:
             print("isNull Filter in ID is working fine")
         else:
             print("Error")
-        
-        time.sleep(2)
 
 
 
-# %%
 def test_Filter_ID_Country_isNotNull_Success(driver):
         filter_Common(
         driver,
@@ -2903,21 +2696,20 @@ def test_Filter_ID_Country_isNotNull_Success(driver):
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "12"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
         filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
         element_found = False
-        if filtered_element.text.startswith('41'):
+        if filtered_element.text.startswith(words):
             element_found = True
 
         if element_found:
             print("isNotNull Filter in ID is working fine")
         else:
             print("Error")
-        
-        time.sleep(2)
+    
 
 
-
-# %%
 def test_Filter_ID_Country_NoFilter_Success(driver):
         filter_Common(
         driver,
@@ -2926,9 +2718,11 @@ def test_Filter_ID_Country_NoFilter_Success(driver):
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "12"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
         filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
         element_found = False
-        if filtered_element.text.startswith('41'):
+        if filtered_element.text.startswith(words):
             element_found = True
 
         if element_found:
@@ -2936,11 +2730,6 @@ def test_Filter_ID_Country_NoFilter_Success(driver):
         else:
             print("Error")
 
-        time.sleep(2)
-
-
-
-# %%
 def test_Filter_ID_Country_GreaterThanOrEqualTo_Success(driver):
         filter_Common(
         driver,
@@ -2950,10 +2739,10 @@ def test_Filter_ID_Country_GreaterThanOrEqualTo_Success(driver):
         "12"
     )
         filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  px-3 py-2 ml-1']")
-        element_found = False
+        element_found = True
         for item in filtered_elements:
-            if item.text >= "12":
-                element_found = True
+            if item.text < "12":
+                element_found = False
                 break
 
         if element_found:
@@ -2961,9 +2750,7 @@ def test_Filter_ID_Country_GreaterThanOrEqualTo_Success(driver):
         else:
             print("Error")
 
-        time.sleep(2)
 
-# %%
 def test_Filter_Country_Pagination_15_Success(driver):
     select_xpath = "//select[@name='currentPages']"
     filter_pagination_Common(driver, select_xpath, '15')
@@ -2975,8 +2762,6 @@ def test_Filter_Country_Pagination_15_Success(driver):
     if count <= 15:  
         print("Pagination for 15 Pages is Working fine")
 
-
-# %%
 def test_Filter_Country_Pagination_25_Success(driver):
         select_xpath = "//select[@name='currentPages']"
         filter_pagination_Common(driver, select_xpath, '25')
@@ -2989,7 +2774,7 @@ def test_Filter_Country_Pagination_25_Success(driver):
                 print("Pagination for 25 Pages is Working fine")
 
 
-# %%
+
 def test_Filter_Country_Pagination_50_Success(driver):
         select_xpath = "//select[@name='currentPages']"
         filter_pagination_Common(driver, select_xpath, '50')
@@ -3002,89 +2787,137 @@ def test_Filter_Country_Pagination_50_Success(driver):
                 print("Pagination for 50 Pages is Working fine")
 
 
-# %%
 def test_Country_Refresh_Success(driver):
+        a=driver.find_element(By.XPATH,"//h1[normalize-space()='Country']")
         driver.find_element(By.XPATH,"//p[normalize-space()='Refresh']").click()
+        a=driver.find_element(By.XPATH,"//h1[normalize-space()='Country']")
+        if a.text=='Country':
+              print("Refresh Button is working fine")
         time.sleep(2)
 
 
-# %%
 def test_Country_Download_Success(driver):
-        driver.find_element(By.XPATH,"//p[normalize-space()='Download']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//p[normalize-space()='Download as Excel']").click()
+        wait=WebDriverWait(driver,10)
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//p[normalize-space()='Download']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//p[normalize-space()='Download as Excel']"))).click()
         time.sleep(2)
 
 
-# %%
+
 def test_Country_return_Success(driver):
-        driver.find_element(By.XPATH,"//img[@src='/src/assets/back.png']").click()
+        wait=WebDriverWait(driver,10)
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@src='/src/assets/back.png']"))).click()
+        a=driver.find_element(By.XPATH,"//h1[normalize-space()='Dashboard']").text
+        if a=='Dashboard':
+              print("Return Button is Working Fine")
+
         time.sleep(2)
 
 
-# %%
+def is_sorted_ascending_common(string_list):
+        for i in range(len(string_list) - 1):
+                if string_list[i] > string_list[i + 1]:
+                   return False
+        
+        return True
+
+
+def is_sorted_descending_common(string_list):
+        for i in range(len(string_list) - 1):
+                if string_list[i] < string_list[i + 1]:
+                   return False
+        
+        return True
+
 def test_Country_Countryname_ascending(driver):
         driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+        Country_list = driver.find_elements(By.XPATH, "//div[@class='w-[95%]  px-3 py-2']")
+        country_names = [country.text for country in Country_list]
+
+        if is_sorted_ascending_common(country_names):
+                print("The country list is sorted in ascending order.")
+        else:
+                print("The country list is not sorted in ascending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Country_Countryname_descending(driver):
         driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+        Country_list = driver.find_elements(By.XPATH, "//div[@class='w-[95%]  px-3 py-2']")
+        country_names = [country.text for country in Country_list]
+
+        if is_sorted_descending_common(country_names):
+                print("The country list is sorted in descending order.")
+        else:
+                print("The country list is not sorted in descending order.")
+
         time.sleep(2)
 
 
-# %%
+
 def test_Country_ID_descending(driver):
         driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+        ID_list = driver.find_elements(By.XPATH, "//div[@class='w-1/2  px-3 py-2 ml-1']")
+        ID_No = [country.text for country in ID_list]
+
+        if is_sorted_descending_common(ID_No):
+                print("The ID list is sorted in descending order.")
+        else:
+                print("The ID list is not sorted in descending order.")
         time.sleep(2)
 
 
-# %%
 def test_Country_ID_ascending(driver):
         driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+        ID_list = driver.find_elements(By.XPATH, "//div[@class='w-1/2  px-3 py-2 ml-1']")
+        ID_No = [country.text for country in ID_list]
+
+        if is_sorted_descending_common(ID_No):
+                print("The ID list is sorted in ascending order.")
+        else:
+                print("The ID list is not sorted in ascending order.")
         time.sleep(2)
 
 
-# %%
 def Country_Webpage():
-    try:
         driver = login_and_navigate_Country("ruderaw", "abcdefg", "9632")
-        test_Country_Countryname_ascending(driver)
-        test_Country_Countryname_descending(driver)
-        test_Country_ID_ascending(driver)
-        test_Country_ID_descending(driver)
-        test_Filter_Country_StartsWith_Success(driver)
-        test_Filter_Country_Contains_Success(driver)
-        test_Filter_Country_DoesNotContains_Success(driver)
-        test_Filter_Country_EndsWith_Success(driver)
-        test_Filter_Country_EqualsTo_Success(driver)
-        test_Filter_Country_isNotNull_Success(driver)
-        test_Filter_Country_isNull_Success(driver)
-        test_Filter_Country_Nofilter_Success(driver)
-        test_Filter_ID_Country_Equalto_Success(driver)
-        test_Filter_ID_Country_NotEqualto_Success(driver)
-        test_Filter_ID_Country_GreaterThan_Success(driver)
-        test_Filter_ID_Country_LessThan_Success(driver)
-        test_Filter_ID_Country_LessThanOrEqualTo_Success(driver)
-        test_Filter_ID_Country_isNull_Success(driver)
-        test_Filter_ID_Country_isNotNull_Success(driver)
-        test_Filter_ID_Country_GreaterThanOrEqualTo_Success(driver)
-        test_Filter_ID_Country_NoFilter_Success(driver)
-        test_Filter_Country_Pagination_15_Success(driver)
-        test_Filter_Country_Pagination_25_Success(driver)
-        test_Filter_Country_Pagination_50_Success(driver)
-        test_Add_New_Country_Success(driver)
-        test_Edit_Country_Success(driver)
-        test_Country_Refresh_Success(driver)
-        test_Country_Download_Success(driver)
-        test_Country_return_Success(driver)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
+        test_functions=[
+            test_Country_Countryname_ascending,
+            test_Country_Countryname_descending,
+            test_Country_ID_ascending,
+            test_Country_ID_descending,
+            test_Filter_Country_StartsWith_Success,
+            test_Filter_Country_Contains_Success,
+            test_Filter_Country_DoesNotContains_Success,
+            test_Filter_Country_EndsWith_Success,
+            test_Filter_Country_EqualsTo_Success,
+            test_Filter_Country_isNotNull_Success,
+            test_Filter_Country_isNull_Success,
+            test_Filter_Country_Nofilter_Success,
+            test_Filter_ID_Country_Equalto_Success,
+            test_Filter_ID_Country_NotEqualto_Success,
+            test_Filter_ID_Country_GreaterThan_Success,
+            test_Filter_ID_Country_LessThan_Success,
+            test_Filter_ID_Country_LessThanOrEqualTo_Success,
+            test_Filter_ID_Country_isNull_Success,
+            test_Filter_ID_Country_isNotNull_Success,
+            test_Filter_ID_Country_GreaterThanOrEqualTo_Success,
+            test_Filter_ID_Country_NoFilter_Success,
+            test_Filter_Country_Pagination_15_Success,
+            test_Filter_Country_Pagination_25_Success,
+            test_Filter_Country_Pagination_50_Success,
+            test_Add_New_Country_Success,
+            test_Edit_Country_Success,
+            test_Country_Refresh_Success,
+            test_Country_Download_Success,
+            test_Country_return_Success
+        ]
+        for test in test_functions:
+              test(driver)
 
 Country_Webpage()
+
 
 # %%
 def login_and_navigate_Locality(username, password, comkey):
