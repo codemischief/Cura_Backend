@@ -11,7 +11,7 @@ from main import app
 from main import givenowtime
 
 def newconn():
-    conn = psycopg2.connect("postgresql://postgres:cura123@20.197.13.140:5432/cura_testing")
+    conn = psycopg2.connect("postgresql://postgres:cura123@20.197.13.140:5432/cura_db")
     return conn
 
 
@@ -1553,7 +1553,7 @@ def test_id_81(client):
         response = client.post('/addClientReceipt', json=payload)
 
     assert response.status_code == 200
-    assert response.json() == expected_response
+    assert response.json()['message'] == "Missing key 'receivedby'"
 
 @pytest.mark.usefixtures("db_connection")
 def test_id_82(client):
@@ -4038,7 +4038,7 @@ def test_id_122(client):
 } 
     conn = newconn()
     with conn.cursor() as cursor:
-        cursor.execute('SELECT count(*) FROM bankst')
+        cursor.execute('SELECT count(*) FROM get_bankst_view')
         count = cursor.fetchone()[0]
     with patch('main.check_role_access', return_value=1):
        response=client.post('/getBankSt',json=payload)
@@ -7238,3 +7238,894 @@ def test_id_215(client):
     assert response.status_code == 200
     assert response.json()['message'] == "Access Denied"
     assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_216(client):
+    payload = {
+    "user_id":1234,
+    "id":49900,
+    "receivedby":1234,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    conn = newconn()
+    with conn.cursor() as cursor:
+        cursor.execute("INSERT INTO client_receipt (id) VALUES (49900)")
+        conn.commit()
+    response = client.post('/editClientReceipt',json=payload)
+    with conn.cursor() as cursor:
+        cursor.execute("DELETE FROM client_receipt WHERE id=49900")
+        conn.commit()
+    assert response.status_code == 200
+    assert response.json()['data'] != []
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_217(client):
+    payload = {
+    "user_id":1234,
+    "id":49900,
+    "receivedby":1234,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/editClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "No Record Available"
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_218(client):
+    payload = {
+    "user_id":1234,
+    "id":49900,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/editClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Missing key 'receivedby'"
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_219(client):
+    payload = {
+    "user_id":1235,
+    "id":49900,
+    "receivedby":1234,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/editClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 2
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_220(client):
+    payload = {
+    "user_id":1237,
+    "id":49900,
+    "receivedby":1234,
+    "amount":10000,
+    "tds":10,
+    "recddate":"2024-01-01",
+    "paymentmode":5,
+    "clientid":44533,
+    "receiptdesc":"DESC",
+    "serviceamount":200,
+    "reimbursementamount":100,
+    "entityid":1,
+    "howreceivedid":2,
+    "officeid":1
+}
+    response = client.post('/editClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_221(client):
+    payload = {
+        "user_id":1234,
+        "id":49900
+    }
+
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = 'INSERT INTO client_receipt (id) VALUES (49900)'
+        cursor.execute(query)
+        conn.commit()
+    response = client.post('/deleteClientReceipt',json=payload)
+    print(response.json())
+
+    assert response.status_code == 200
+    assert response.json()['result'] == 'success'
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_222(client):
+    payload = {
+        "user_id":1234,
+        "id":49900
+    }
+
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = 'DELETE FROM client_receipt WHERE id = 49900'
+        cursor.execute(query)
+        conn.commit()
+    response = client.post('/deleteClientReceipt',json=payload)
+    print(response.json())
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'No Record Available'
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_223(client):
+    payload = {
+        "user_id":1235,
+        "id":49900
+    }
+    
+    response = client.post('/deleteClientReceipt',json=payload)
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 2
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_224(client):
+    payload = {
+        "user_id":1237,
+        "id":49900
+    }
+
+    response = client.post('/deleteClientReceipt',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_225(client):
+    payload = {"user_id":1234,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = 'SELECT COUNT(*) FROM get_client_property_pma_view WHERE isdeleted=false'
+        cursor.execute(query)
+        count = cursor.fetchone()[0]
+    
+    response = client.post('/getClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['total_count'] == count
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_226(client):
+    payload = {"user_id":1234,"filters":[],"sort_by":[],"order":"asc"}
+
+    expected_response = None
+    response = client.post('/getClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json() == expected_response
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_227(client):
+    payload = {"user_id":1235,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+    
+    response = client.post('/getClientPMAAgreement',json=payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 2
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_228(client):
+    payload = {"user_id":1237,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+
+    response = client.post('/getClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_229(client):
+    payload = {
+  "user_id": 1234,
+  "clientpropertyid": 18196,
+  "startdate": "2024-04-15 10:00:00",
+  "enddate": "2024-04-15 10:00:00",
+  "actualenddate": "2024-04-15 10:00:00",
+  "active": True,
+  "scancopy": "fjioejf",
+  "reasonforearlyterminationifapplicable": None,
+  "description": "desc",
+  "rented": 10,
+  "fixed": None,
+  "rentedtax": True,
+  "fixedtax": False,
+  "orderid": 435229,
+  "poastartdate": "2024-04-15 10:00:00",
+  "poaenddate": "2024-04-15 10:00:00",
+  "poaholder": "Holder Name"
+}
+    response = client.post('/addClientPMAAgreement',json=payload)
+
+    id = response.json()['data']['Inserted_PMA']
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = f"DELETE FROM client_property_caretaking_agreement WHERE id={id}"
+        cursor.execute(query)
+        conn.commit()
+
+    assert response.status_code == 200
+    assert response.json()['data'] != [] 
+
+ 
+@pytest.mark.usefixtures("db_connection")
+def test_id_230(client):
+    payload = {
+  "user_id": 1234,
+  "startdate": "2024-04-15 10:00:00",
+  "enddate": "2024-04-15 10:00:00",
+  "actualenddate": "2024-04-15 10:00:00",
+  "active": True,
+  "scancopy": "fjioejf",
+  "reasonforearlyterminationifapplicable": None,
+  "description": "desc",
+  "rented": 10,
+  "fixed": None,
+  "rentedtax": True,
+  "fixedtax": False,
+  "orderid": 435229,
+  "poastartdate": "2024-04-15 10:00:00",
+  "poaenddate": "2024-04-15 10:00:00",
+  "poaholder": "Holder Name"
+}
+    response = client.post('/addClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Missing key 'clientpropertyid'"
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_231(client):
+    payload = {
+  "user_id": 1235,
+  "clientpropertyid": 18196,
+  "startdate": "2024-04-15 10:00:00",
+  "enddate": "2024-04-15 10:00:00",
+  "actualenddate": "2024-04-15 10:00:00",
+  "active": True,
+  "scancopy": "fjioejf",
+  "reasonforearlyterminationifapplicable": None,
+  "description": "desc",
+  "rented": 10,
+  "fixed": None,
+  "rentedtax": True,
+  "fixedtax": False,
+  "orderid": 435229,
+  "poastartdate": "2024-04-15 10:00:00",
+  "poaenddate": "2024-04-15 10:00:00",
+  "poaholder": "Holder Name"
+}
+    response = client.post('/addClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 2
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_232(client):
+    payload = {
+  "user_id": 1237,
+  "clientpropertyid": 18196,
+  "startdate": "2024-04-15 10:00:00",
+  "enddate": "2024-04-15 10:00:00",
+  "actualenddate": "2024-04-15 10:00:00",
+  "active": True,
+  "scancopy": "fjioejf",
+  "reasonforearlyterminationifapplicable": None,
+  "description": "desc",
+  "rented": 10,
+  "fixed": None,
+  "rentedtax": True,
+  "fixedtax": False,
+  "orderid": 435229,
+  "poastartdate": "2024-04-15 10:00:00",
+  "poaenddate": "2024-04-15 10:00:00",
+  "poaholder": "Holder Name"
+}
+    response = client.post('/addClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_233(client):
+    payload = {
+  "user_id": 1234,
+  "clientpropertyid": 18196,
+  "startdate": "2024-04-15 10:00:00",
+  "enddate": "2024-04-15 10:00:00",
+  "actualenddate": "2024-04-15 10:00:00",
+  "active": True,
+  "scancopy": "fjioejf",
+  "reasonforearlyterminationifapplicable": None,
+  "description": "desc",
+  "rented": 10,
+  "fixed": None,
+  "rentedtax": True,
+  "fixedtax": False,
+  "orderid": 435229,
+  "poastartdate": "2024-04-15 10:00:00",
+  "poaenddate": "2024-04-15 10:00:00",
+  "poaholder": "Holder Name",
+  "id": 4600
+}
+    conn = newconn()
+    with conn.cursor() as cursor:
+        cursor.execute("INSERT INTO client_property_caretaking_agreement (id) VALUES (4600)")
+        conn.commit()
+    response = client.post('/editClientPMAAgreement',json=payload)
+    with conn.cursor() as cursor:
+        cursor.execute("DELETE FROM client_property_caretaking_agreement WHERE id=4600")
+        conn.commit()
+    assert response.status_code == 200
+    assert response.json()['data'] != []
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_234(client):
+    payload = {
+  "user_id": 1234,
+  "clientpropertyid": 18196,
+  "startdate": "2024-04-15 10:00:00",
+  "enddate": "2024-04-15 10:00:00",
+  "actualenddate": "2024-04-15 10:00:00",
+  "active": True,
+  "scancopy": "fjioejf",
+  "reasonforearlyterminationifapplicable": None,
+  "description": "desc",
+  "rented": 10,
+  "fixed": None,
+  "rentedtax": True,
+  "fixedtax": False,
+  "orderid": 435229,
+  "poastartdate": "2024-04-15 10:00:00",
+  "poaenddate": "2024-04-15 10:00:00",
+  "poaholder": "Holder Name",
+  "id": 4600
+}
+    response = client.post('/editClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "No Record Available"
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_235(client):
+    payload = {
+  "user_id": 1234,
+  "startdate": "2024-04-15 10:00:00",
+  "enddate": "2024-04-15 10:00:00",
+  "actualenddate": "2024-04-15 10:00:00",
+  "active": True,
+  "scancopy": "fjioejf",
+  "reasonforearlyterminationifapplicable": None,
+  "description": "desc",
+  "rented": 10,
+  "fixed": None,
+  "rentedtax": True,
+  "fixedtax": False,
+  "orderid": 435229,
+  "poastartdate": "2024-04-15 10:00:00",
+  "poaenddate": "2024-04-15 10:00:00",
+  "poaholder": "Holder Name",
+  "id": 4600
+}
+    response = client.post('/editClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Missing key 'clientpropertyid'"
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_236(client):
+    payload = {
+  "user_id": 1235,
+  "clientpropertyid": 18196,
+  "startdate": "2024-04-15 10:00:00",
+  "enddate": "2024-04-15 10:00:00",
+  "actualenddate": "2024-04-15 10:00:00",
+  "active": True,
+  "scancopy": "fjioejf",
+  "reasonforearlyterminationifapplicable": None,
+  "description": "desc",
+  "rented": 10,
+  "fixed": None,
+  "rentedtax": True,
+  "fixedtax": False,
+  "orderid": 435229,
+  "poastartdate": "2024-04-15 10:00:00",
+  "poaenddate": "2024-04-15 10:00:00",
+  "poaholder": "Holder Name",
+  "id": 4600
+}
+    response = client.post('/editClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 2
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_237(client):
+    payload = {
+  "user_id": 1237,
+  "clientpropertyid": 18196,
+  "startdate": "2024-04-15 10:00:00",
+  "enddate": "2024-04-15 10:00:00",
+  "actualenddate": "2024-04-15 10:00:00",
+  "active": True,
+  "scancopy": "fjioejf",
+  "reasonforearlyterminationifapplicable": None,
+  "description": "desc",
+  "rented": 10,
+  "fixed": None,
+  "rentedtax": True,
+  "fixedtax": False,
+  "orderid": 435229,
+  "poastartdate": "2024-04-15 10:00:00",
+  "poaenddate": "2024-04-15 10:00:00",
+  "poaholder": "Holder Name",
+  "id": 4600
+}
+    response = client.post('/editClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_238(client):
+    payload = {
+        "user_id":1234,
+        "id":4600
+    }
+
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = 'INSERT INTO client_property_caretaking_agreement (id) VALUES (4600)'
+        cursor.execute(query)
+        conn.commit()
+    response = client.post('/deleteClientPMAAgreement',json=payload)
+    print(response.json())
+
+    assert response.status_code == 200
+    assert response.json()['result'] == 'success'
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_239(client):
+    payload = {
+        "user_id":1234,
+        "id":4600
+    }
+
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = 'DELETE FROM client_property_caretaking_agreement WHERE id = 4600'
+        cursor.execute(query)
+        conn.commit()
+    response = client.post('/deleteClientPMAAgreement',json=payload)
+    print(response.json())
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'No Record Available'
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_240(client):
+    payload = {
+        "user_id":1235,
+        "id":4600
+    }
+    
+    response = client.post('/deleteClientPMAAgreement',json=payload)
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 2
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_241(client):
+    payload = {
+        "user_id":1237,
+        "id":4600
+    }
+
+    response = client.post('/deleteClientPMAAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_242(client):
+    payload = {"user_id":1234,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = 'SELECT COUNT(*) FROM get_client_property_lla_view WHERE isdeleted=false'
+        cursor.execute(query)
+        count = cursor.fetchone()[0]
+    
+    response = client.post('/getClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['total_count'] == count
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_243(client):
+    payload = {"user_id":1234,"filters":[],"sort_by":[],"order":"asc"}
+
+    expected_response = None
+    response = client.post('/getClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json() == expected_response
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_244(client):
+    payload = {"user_id":1235,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+    
+    response = client.post('/getClientLLAgreement',json=payload)
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 2
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_245(client):
+    payload = {"user_id":1237,'rows':['*'],"filters":[],"sort_by":[],"order":"asc"}
+
+    response = client.post('/getClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_246(client):
+    payload = {
+    "user_id":1234,
+    "clientpropertyid":18195,
+    "orderid":444258,
+    "durationinmonth":12,
+    "depositamount":25000,
+    "startdate":"2024-02-01",
+    "actualenddate":"2024-01-01",
+    "rentamount":25000,
+    "registrationtype":"type",
+    "rentpaymentdate":10,
+    "noticeperiodindays":15,
+    "active":True,
+    "llscancopy":"link"
+
+}
+    response = client.post('/addClientLLAgreement',json=payload)
+
+    id = response.json()['data']['Inserted_L&L']
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = f"DELETE FROM client_property_leave_license_details WHERE id={id}"
+        cursor.execute(query)
+        conn.commit()
+
+    assert response.status_code == 200
+    assert response.json()['data'] != [] 
+
+ 
+@pytest.mark.usefixtures("db_connection")
+def test_id_247(client):
+    payload = {
+    "user_id":1234,
+    "orderid":444258,
+    "durationinmonth":12,
+    "depositamount":25000,
+    "startdate":"2024-02-01",
+    "actualenddate":"2024-01-01",
+    "rentamount":25000,
+    "registrationtype":"type",
+    "rentpaymentdate":10,
+    "noticeperiodindays":15,
+    "active":True,
+    "llscancopy":"link"
+
+}
+    response = client.post('/addClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Missing key 'clientpropertyid'"
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_248(client):
+    payload = {
+    "user_id":1235,
+    "clientpropertyid":18195,
+    "orderid":444258,
+    "durationinmonth":12,
+    "depositamount":25000,
+    "startdate":"2024-02-01",
+    "actualenddate":"2024-01-01",
+    "rentamount":25000,
+    "registrationtype":"type",
+    "rentpaymentdate":10,
+    "noticeperiodindays":15,
+    "active":True,
+    "llscancopy":"link"
+
+}
+    response = client.post('/addClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 2
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_249(client):
+    payload = {
+    "user_id":1237,
+    "clientpropertyid":18195,
+    "orderid":444258,
+    "durationinmonth":12,
+    "depositamount":25000,
+    "startdate":"2024-02-01",
+    "actualenddate":"2024-01-01",
+    "rentamount":25000,
+    "registrationtype":"type",
+    "rentpaymentdate":10,
+    "noticeperiodindays":15,
+    "active":True,
+    "llscancopy":"link"
+
+}
+    response = client.post('/addClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_250(client):
+    payload = {
+    "user_id":1234,
+    "id":13000,
+    "clientpropertyid":18195,
+    "orderid":444258,
+    "durationinmonth":12,
+    "depositamount":25000,
+    "startdate":"2024-02-01",
+    "actualenddate":"2024-01-01",
+    "rentamount":25000,
+    "registrationtype":"type",
+    "rentpaymentdate":10,
+    "noticeperiodindays":15,
+    "active":True,
+    "llscancopy":"link"
+
+}
+    conn = newconn()
+    with conn.cursor() as cursor:
+        cursor.execute("INSERT INTO client_property_leave_license_details (id) VALUES (13000)")
+        conn.commit()
+    response = client.post('/editClientLLAgreement',json=payload)
+    with conn.cursor() as cursor:
+        cursor.execute("DELETE FROM client_property_leave_license_details WHERE id=13000")
+        conn.commit()
+    assert response.status_code == 200
+    assert response.json()['data'] != []
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_251(client):
+    payload = {
+    "user_id":1234,
+    "id":13000,
+    "clientpropertyid":18195,
+    "orderid":444258,
+    "durationinmonth":12,
+    "depositamount":25000,
+    "startdate":"2024-02-01",
+    "actualenddate":"2024-01-01",
+    "rentamount":25000,
+    "registrationtype":"type",
+    "rentpaymentdate":10,
+    "noticeperiodindays":15,
+    "active":True,
+    "llscancopy":"link"
+
+}
+    response = client.post('/editClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "No Record Available"
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_252(client):
+    payload = {
+    "user_id":1234,
+    "id":13000,
+    "orderid":444258,
+    "durationinmonth":12,
+    "depositamount":25000,
+    "startdate":"2024-02-01",
+    "actualenddate":"2024-01-01",
+    "rentamount":25000,
+    "registrationtype":"type",
+    "rentpaymentdate":10,
+    "noticeperiodindays":15,
+    "active":True,
+    "llscancopy":"link"
+
+}
+    response = client.post('/editClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Missing key 'clientpropertyid'"
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_253(client):
+    payload = {
+    "user_id":1235,
+    "id":12960,
+    "clientpropertyid":18195,
+    "orderid":444258,
+    "durationinmonth":12,
+    "depositamount":25000,
+    "startdate":"2024-02-01",
+    "actualenddate":"2024-01-01",
+    "rentamount":25000,
+    "registrationtype":"type",
+    "rentpaymentdate":10,
+    "noticeperiodindays":15,
+    "active":True,
+    "llscancopy":"link"
+
+}
+    response = client.post('/editClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 2
+
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_254(client):
+    payload = {
+    "user_id":1237,
+    "id":12960,
+    "clientpropertyid":18195,
+    "orderid":444258,
+    "durationinmonth":12,
+    "depositamount":25000,
+    "startdate":"2024-02-01",
+    "actualenddate":"2024-01-01",
+    "rentamount":25000,
+    "registrationtype":"type",
+    "rentpaymentdate":10,
+    "noticeperiodindays":15,
+    "active":True,
+    "llscancopy":"link"
+
+}
+    response = client.post('/editClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == "Access Denied"
+    assert response.json()['role_id'] == 0
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_255(client):
+    payload = {
+        "user_id":1234,
+        "id":13000
+    }
+
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = 'INSERT INTO client_property_leave_license_details (id,isdeleted) VALUES (13000,false)'
+        cursor.execute(query)
+        conn.commit()
+        print(cursor.statusmessage)
+    response = client.post('/deleteClientLLAgreement',json=payload)
+    print(response.json())
+
+    assert response.status_code == 200
+    assert response.json()['result'] == 'success'
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_256(client):
+    payload = {
+        "user_id":1234,
+        "id":13000
+    }
+
+    conn = newconn()
+    with conn.cursor() as cursor:
+        query = 'DELETE FROM client_property_caretaking_agreement WHERE id = 13000'
+        cursor.execute(query)
+        conn.commit()
+    response = client.post('/deleteClientLLAgreement',json=payload)
+    print(response.json())
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'No Record Available'
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_257(client):
+    payload = {
+        "user_id":1235,
+        "id":13000
+    }
+    
+    response = client.post('/deleteClientLLAgreement',json=payload)
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 2
+
+@pytest.mark.usefixtures("db_connection")
+def test_id_258(client):
+    payload = {
+        "user_id":1237,
+        "id":13000
+    }
+
+    response = client.post('/deleteClientLLAgreement',json=payload)
+
+    assert response.status_code == 200
+    assert response.json()['message'] == 'Access Denied'
+    assert response.json()['role_id'] == 0
+
