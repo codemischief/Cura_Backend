@@ -1388,7 +1388,6 @@ def Employee_Webpage():
         
 Employee_Webpage()
 
-# %%
 def login_and_navigate_city(username, password, comkey):
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
@@ -1407,386 +1406,714 @@ def login_and_navigate_city(username, password, comkey):
     time.sleep(2)
     return driver
 
-# %%
-def filter_city_country_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-
-
-# %%
 def filter_city_country_Contains_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_country_starts_with(driver, "india")
-    driver.find_element(By.XPATH,"//button[2]//div[1]//h1[1]").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "i"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=1]")
+    element_found = True 
+    for item in filtered_elements[2:]:
+        if "i" not in item.text:
+            element_found = False
+            break
+
+    if element_found:
+        print("Contains filter in City with Country Name is working fine.")
+    else:
+        print("Error.")
 
     
-
-# %%
 def filter_city_country_DoesNotContains_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_country_starts_with(driver, "india")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=1]")
+    element_found = False
+    for item in filtered_elements[2:]:
+        if item.text == "India":
+            element_found = True
+            break
+
+    if not element_found:
+        print("DoesNotContains Filter in City with Country Name is Working fine.")
+    else:
+        print("Error.")
 
     
 
-# %%
+
 def filter_city_country_StartsWith_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_country_starts_with(driver, "india")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "i"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=1]")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if not item.text.lower().startswith("i"):
+            element_found = False
+            break
+
+    if element_found:
+        print("StartsWith filter in City with Country Name is working fine.")
+    else:
+        print("Error.")
 
     
 
-# %%
 def filter_city_country_EndsWith_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_country_starts_with(driver, "india")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=1]")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if not item.text.endswith("a"):
+            element_found = False
+            break
+
+    if element_found:
+        print("EndsWith filter in City with Country Name is working fine.")
+    else:
+        print("Error.")
+
 
     
-
-# %%
 def filter_city_country_EqualTo_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_country_starts_with(driver, "india")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=1]")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if item.text != "India":
+            element_found = False
+            break
+
+    if element_found:
+        print("EqualsTo filter in City with Country Name is working fine.")
+    else:
+        print("Error")
 
     
 
-# %%
 def filter_city_country_isNull_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_country_starts_with(driver, "india")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+    a=driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']")
+    if(filtered_element.text.startswith(words)):
+            print("isNull filter in City With Country Name is working fine")
 
     
 
-# %%
 def filter_city_country_isNotNull_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_country_starts_with(driver, "india")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+    a=driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']")
+    if(filtered_element.text.startswith(words)):
+            print("isNotNull filter in City With Country Name is working fine")
 
     
-
-# %%
 def filter_city_country_NoFilter_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_country_starts_with(driver, "india")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-    time.sleep(2)
-
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+    a=driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']")
+    if(filtered_element.text.startswith(words)):
+            print("NOfilter in City With Country Name is working fine")
     
 
-# %%
-def filter_city_state_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-
-
-# %%
 def filter_city_state_Contains_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_state_starts_with(driver, "Uttar Pradesh")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "u"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=2]")
+    element_found = True 
+    for item in filtered_elements[2:]:
+        if "u" not in item.text.lower():
+            element_found = False
+            break
+
+    if element_found:
+        print("Contains filter in City with State Name is working fine.")
+    else:
+        print("Error.")
 
     
-
-# %%
 def filter_city_state_DoesNotContains_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_state_starts_with(driver, "Uttar Pradesh")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Oman"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=2]")
+    element_found = False
+    for item in filtered_elements[2:]:
+        if item.text == "Oman":
+            element_found = True
+            break
+
+    if not element_found:
+        print("DoesNotContains Filter in City with State Name is Working fine.")
+    else:
+        print("Error.")
 
     
 
-# %%
 def filter_city_state_StartsWith_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_state_starts_with(driver, "Uttar Pradesh")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "m"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=2]")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if not item.text.lower().startswith("m"):
+            element_found = False
+            break
+
+    if element_found:
+        print("StartsWith filter in City with State Name is working fine.")
+    else:
+        print("Error.")
 
     
-
-# %%
 def filter_city_state_EndsWith_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_state_starts_with(driver, "Uttar Pradesh")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "m"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=2]")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if not item.text.endswith("m"):
+            element_found = False
+            break
+
+    if element_found:
+        print("EndsWith filter in City with State Name is working fine.")
+    else:
+        print("Error.")
 
     
-
-# %%
 def filter_city_state_EqualsTo_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_state_starts_with(driver, "Uttar Pradesh")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Oman"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=2]")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if item.text != "Oman":
+            element_found = False
+            break
+
+    if element_found:
+        print("EqualsTo filter in City with State Name is working fine.")
+    else:
+        print("Error")
 
     
-
-# %%
 def filter_city_state_isNull_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_state_starts_with(driver, "Uttar Pradesh")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Oman"
+    )
+    a=driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']")
+    if(filtered_element.text.startswith(words)):
+            print("isNull filter in City With State Name is working fine")
 
     
-
-# %%
 def filter_city_state_isNotNull_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_state_starts_with(driver, "Uttar Pradesh")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Oman"
+    )
+    a=driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']")
+    if(filtered_element.text.startswith(words)):
+            print("isNotNull filter in City With State Name is working fine")
 
     
-
-# %%
 def filter_city_state_NoFilter_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_state_starts_with(driver, "Uttar Pradesh")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Oman"
+    )
+    a=driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']")
+    if(filtered_element.text.startswith(words)):
+            print("No filter in City With State Name is working fine")
 
     
-
-# %%
-def filter_city_City_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-
-
-# %%
 def filter_city_City_Contains_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_City_starts_with(driver, "Pune")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "o"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[25%]  p-4']")
+    element_found = True 
+    for item in filtered_elements[2:]:
+        if "o" not in item.text.lower():
+            element_found = False
+            break
+
+    if element_found:
+        print("Contains filter in City with City Name is working fine.")
+    else:
+        print("Error.")
 
     
-
-# %%
 def filter_city_City_DoesNotContains_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_City_starts_with(driver, "Pune")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "o"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[25%]  p-4']")
+    element_found = False
+    for item in filtered_elements[2:]:
+        if item.text == "o":
+            element_found = True
+            break
+
+    if not element_found:
+        print("DoesNotContains Filter in City with City Name is Working fine.")
+    else:
+        print("Error.")
 
     
-
-# %%
 def filter_city_City_StartsWith_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_City_starts_with(driver, "Pune")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "m"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[25%]  p-4']")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if not item.text.lower().startswith("m"):
+            element_found = False
+            break
+
+    if element_found:
+        print("StartsWith filter in City with City Name is working fine.")
+    else:
+        print("Error.")
 
     
-
-# %%
 def filter_city_City_EndssWith_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_City_starts_with(driver, "Pune")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "m"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[25%]  p-4']")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if not item.text.endswith("m"):
+            element_found = False
+            break
+
+    if element_found:
+        print("EndsWith filter in City with City Name is working fine.")
+    else:
+        print("Error.")
 
     
 
-# %%
 def filter_city_City_EqualsTo_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_City_starts_with(driver, "Pune")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Pune"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[25%]  p-4']")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if item.text != "Pune":
+            element_found = False
+            break
+
+    if element_found:
+        print("EqualsTo filter in City with City Name is working fine.")
+    else:
+        print("Error")
 
     
-
-# %%
 def filter_city_City_isNull_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_City_starts_with(driver, "Pune")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Pune"
+    )
+    a=driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']")
+    if(filtered_element.text.startswith(words)):
+            print("isNull filter in City With State Name is working fine")
 
     
 
-# %%
 def filter_city_City_isNotNull_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_City_starts_with(driver, "Pune")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Pune"
+    )
+    a=driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']")
+    if(filtered_element.text.startswith(words)):
+            print("isNotNull filter in City With City Name is working fine")
+
 
     
-
-# %%
 def filter_city_City_NoFilter_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_City_starts_with(driver, "Pune")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Pune"
+    )
+    a=driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='196 Items in 14 Pages']")
+    if(filtered_element.text.startswith(words)):
+            print("No filter in City With City Name is working fine")
 
-    
-
-# %%
-def filter_city_ID_starts_with(driver, starts_with_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").send_keys(starts_with_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
 
 
-# %%
 def filter_city_ID_EqualsTo_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_ID_starts_with(driver, "1808")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "1808"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  p-4']")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if item.text != "1808":
+            element_found = False
+            break
 
+    if element_found:
+        print("EqualTo filter in City with ID is working fine")
+    else:
+        print("Error")
     
 
-# %%
 def filter_city_ID_NotEqualsTo_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_ID_starts_with(driver, "1808")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='NotEqualTo']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='NotEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "1808"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  p-4']")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if item.text == "1808":
+            element_found = False
+            break
+
+    if element_found:
+        print("NotEqualTo Filter in City with ID is working fine.")
+    else:
+        print("Error.")
 
     
-
-# %%
 def filter_city_ID_GreaterThan_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_ID_starts_with(driver, "1808")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThan']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "1808"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  p-4']")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if item.text <= '1808':
+            element_found = False
+            break
+
+    if element_found:
+        print("Greater Than Filter in City with ID is working fine.")
+    else:
+        print("Error.")
 
     
-
-# %%
 def filter_city_ID_LessThan_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_ID_starts_with(driver, "1808")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='LessThan']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "1808"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  p-4']")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if item.text >= "1808":
+            element_found = False
+            break
+
+    if element_found:
+        print("LessThan Filter in City with ID is working fine.")
+    else:
+        print("Error")
 
     
-
-# %%
 def filter_city_ID_GreaterThanOrEqual_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_ID_starts_with(driver, "1808")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "1808"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  p-4']")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if item.text < "1808":
+            element_found = False
+            break
+
+    if element_found:
+        print("GreaterThanOrEqualTo Filter in City with ID is working fine")
+    else:
+        print("Error")
 
     
 
-# %%
 def filter_city_ID_LessThanOrEqual_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_ID_starts_with(driver, "1808")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "1808"
+    )
+    filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2  p-4']")
+    element_found = True
+    for item in filtered_elements[2:]:
+        if item.text > "1808":
+            element_found = False
+            break
 
+    if element_found:
+        print("LessThanOrEqualTo Filter in City with ID is working fine")
+    else:
+        print("Error")
     
 
-# %%
+
 def filter_city_ID_isNull_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_ID_starts_with(driver, "1808")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "1808"
+    )
+    a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+    element_found = False
+    if filtered_element.text.startswith(words):
+        element_found = True
+
+    if element_found:
+        print("isNull Filter in ID is working fine")
+    else:
+        print("Error")
 
     
 
-# %%
 def filter_city_ID_isNotNull_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_ID_starts_with(driver, "1808")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "1808"
+    )
+    a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+    element_found = False
+    if filtered_element.text.startswith(words):
+        element_found = True
+
+    if element_found:
+        print("isNotNull Filter in ID is working fine")
+    else:
+        print("Error")
 
     
 
-# %%
 def filter_city_ID_NoFilter_Success(driver):
-    driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)").clear()
-    filter_city_ID_starts_with(driver, "1808")
-    driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
-    time.sleep(2)
+    filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "1808"
+    )
+    a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+    words = a[:2]
+    filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+    element_found = False
+    if filtered_element.text.startswith(words):
+        element_found = True
+
+    if element_found:
+        print("No Filter in ID is working fine")
+    else:
+        print("Error")
 
     
-
-# %%
 def test_Filter_City_Pagination15_Success(driver):
-    a=driver.find_element(By.XPATH,"//select[contains(@name,'currentPages')]")
-    drp1=Select(a)
-    drp1.select_by_visible_text('15')
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//button[@aria-label='Go to page 2']").click()
-    time.sleep(2)
+    select_xpath = "//select[@name='currentPages']"
+    filter_pagination_Common(driver, select_xpath, '15')
+    Number_of_pages = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[10%] p-4')]")
+    count = 0
+    for pages in Number_of_pages[2:]:
+        count += 1
 
-# %%
+    if count <= 15:  
+        print("Pagination for 15 Pages in City is Working fine")
+
+
 def test_Filter_City_Pagination25_Success(driver):
-    a=driver.find_element(By.XPATH,"//select[contains(@name,'currentPages')]")
-    drp1=Select(a)
-    drp1.select_by_visible_text('25')
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//button[@aria-label='Go to page 2']").click()
-    time.sleep(2)
+    select_xpath = "//select[@name='currentPages']"
+    filter_pagination_Common(driver, select_xpath, '25')
+    Number_of_pages = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[10%] p-4')]")
+    count = 0
+    for pages in Number_of_pages[2:]:
+        count += 1
 
-# %%
+    if count <= 25:  
+        print("Pagination for 25 Pages in City is Working fine")
+
 def test_Filter_City_Pagination50_Success(driver):
-    a=driver.find_element(By.XPATH,"//select[contains(@name,'currentPages')]")
-    drp1=Select(a)
-    drp1.select_by_visible_text('50')
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//button[@aria-label='Go to page 2']").click()
-    time.sleep(2)
+    select_xpath = "//select[@name='currentPages']"
+    filter_pagination_Common(driver, select_xpath, '50')
+    Number_of_pages = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[10%] p-4')]")
+    count = 0
+    for pages in Number_of_pages[2:]:
+        count += 1
 
-# %%
+    if count <= 50:  
+        print("Pagination for 50 Pages in City is Working fine")
+
 def add_City(driver):
-    driver.find_element(By.XPATH,"//body//div//div//div//div//div//div//div//button//div").click()
+    wait=WebDriverWait(driver,10)
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//body//div//div//div//div//div//div//div//button//div"))).click()
     time.sleep(2)
     a=driver.find_element(By.XPATH,"//select[@name='country']")
     drp1=Select(a)
     drp1.select_by_visible_text('India')
     driver.find_element(By.XPATH,"//input[@name='state']").send_keys("State01")
     driver.find_element(By.XPATH,"//input[@name='cityName']").send_keys("City01")
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/div/button[1]").click()
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/button[1]").click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/div/button[1]"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/button[1]"))).click()
     time.sleep(4)
     driver.find_element(By.XPATH,"//input[@type='text']").send_keys("India")
     driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//div//div//div//div[1]//div[2]//div[2]//button[2]//img[1]").click()
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//button[normalize-space()='Delete']").click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//div//div//div//div[1]//div[2]//div[2]//button[2]//img[1]"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
     time.sleep(2)
 
-# %%
 def edit_City(driver):
+    wait=WebDriverWait(driver,10)
     driver.find_element(By.XPATH,"//body//div//div//div//div//div//div//div//button//div").click()
     time.sleep(2)
     a=driver.find_element(By.XPATH,"//select[@name='country']")
@@ -1794,16 +2121,13 @@ def edit_City(driver):
     drp1.select_by_visible_text('India')
     driver.find_element(By.XPATH,"//input[@name='state']").send_keys("State01")
     driver.find_element(By.XPATH,"//input[@name='cityName']").send_keys("City01")
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/div/button[1]").click()
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/button[1]").click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/div/button[1]"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/button[1]"))).click()
     time.sleep(4)
     driver.find_element(By.XPATH,"//input[@type='text']").clear()
     driver.find_element(By.XPATH,"//input[@type='text']").send_keys("India")
     driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-    time.sleep(3)
-    driver.find_element(By.XPATH,"//img[@alt='edit']").click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='edit']"))).click()
     time.sleep(2)
     driver.find_element(By.XPATH,"//input[@name='cityName']").clear()
     time.sleep(2)
@@ -1813,120 +2137,182 @@ def edit_City(driver):
     driver.find_element(By.XPATH,"//input[@type='text']").clear()
     driver.find_element(By.XPATH,"//input[@type='text']").send_keys("City100")
     driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//div//div//div//div[1]//div[2]//div[2]//button[2]//img[1]").click()
-    time.sleep(2)
-    driver.find_element(By.XPATH,"//button[normalize-space()='Delete']").click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//div//div//div//div[1]//div[2]//div[2]//button[2]//img[1]"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
     time.sleep(2)
 
-# %%
 def City_Refresh(driver):
-    driver.find_element(By.XPATH,"//p[normalize-space()='Refresh']").click()
+    wait=WebDriverWait(driver,10)
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//p[normalize-space()='Refresh']"))).click()
     time.sleep(2)
 
-# %%
+
 def City_DownloadasExcel(driver):
-    driver.find_element(By.XPATH,"//p[normalize-space()='Download']").click()
-    driver.find_element(By.XPATH,"//p[normalize-space()='Download as Excel']").click()
+    wait=WebDriverWait(driver,10)
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//p[normalize-space()='Download']"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//p[normalize-space()='Download as Excel']"))).click()
     time.sleep(2)
 
-# %%
+
 def City_Country_ascending(driver):
     driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+    Country_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[20%]  p-4')][position()=1]")
+    country_names = [country.text for country in Country_list[2:]]
+
+    if is_sorted_ascending_common(country_names):
+            print("The country list is sorted in ascending order.")
+    else:
+            print("The country list is not sorted in ascending order.")
     time.sleep(2)
 
-# %%
+
 def City_Country_descending(driver):
     driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+    Country_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[20%]  p-4')][position()=1]")
+    country_names = [country.text for country in Country_list[2:]]
+
+    if is_sorted_descending_common(country_names):
+            print("The country list is sorted in descending order.")
+    else:
+            print("The country list is not sorted in descending order.")
+
     time.sleep(2)
 
-# %%
+
 def City_State_descending(driver):
     driver.find_element(By.XPATH,"//div//div//div//div//div//div[3]//p[1]//button[1]//span[1]").click()
+    State_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[20%]  p-4')][position()=2]")
+    State_names = [country.text for country in State_list[2:]]
+
+    if is_sorted_descending_common(State_names):
+            print("The state list is sorted in descending order.")
+    else:
+            print("The state list is not sorted in descending order.")
+
     time.sleep(2)
 
-# %%
+
 def City_State_ascending(driver):
     driver.find_element(By.XPATH,"//div//div//div//div//div//div[3]//p[1]//button[1]//span[1]").click()
+    State_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[20%]  p-4')][position()=2]")
+    State_names = [country.text for country in State_list[2:]]
+
+    if is_sorted_ascending_common(State_names):
+            print("The state list is sorted in ascending order.")
+    else:
+            print("The state list is not sorted in ascending order.")
+
     time.sleep(2)
 
-# %%
 def City_Cityname_ascending(driver):
     driver.find_element(By.XPATH,"//div[4]//p[1]//button[1]//span[1]").click()
+    City_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[25%]  p-4')]")
+    city_names = [country.text for country in City_list[2:]]
+
+    if is_sorted_ascending_common(city_names):
+            print("The city list is sorted in ascending order.")
+    else:
+            print("The city list is not sorted in ascending order.")
+
     time.sleep(2)
 
-# %%
 def City_Cityname_descending(driver):
     driver.find_element(By.XPATH,"//div[4]//p[1]//button[1]//span[1]").click()
+    City_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[25%]  p-4')]")
+    city_names = [country.text for country in City_list[2:]]
+
+    if is_sorted_descending_common(city_names):
+            print("The city list is sorted in descending order.")
+    else:
+            print("The city list is not sorted in descending order.")
+
     time.sleep(2)
 
-# %%
+
 def City_ID_descending(driver):
     driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    ID_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-1/2  p-4')]")
+    ID_names = [country.text for country in ID_list[2:]]
+
+    if is_sorted_descending_common(ID_names):
+            print("The city ID is sorted in descending order.")
+    else:
+            print("The city ID is not sorted in descending order.")
+
     time.sleep(2)
 
-# %%
+
 def City_ID_ascending(driver):
     driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    ID_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-1/2  p-4')]")
+    ID_names = [country.text for country in ID_list[2:]]
+
+    if is_sorted_descending_common(ID_names):
+            print("The city ID is sorted in ascending order.")
+    else:
+            print("The city ID is not sorted in ascending order.")
+
     time.sleep(2)
 
-# %%
 def City_webpage():
-    try:
        driver=login_and_navigate_city("ruderaw", "abcdefg", "9632")
-       City_Country_ascending(driver)
-       City_Country_descending(driver)
-       City_State_ascending(driver)
-       City_State_descending(driver)
-       City_Cityname_ascending(driver)
-       City_Cityname_descending(driver)
-       City_ID_ascending(driver)
-       City_ID_descending(driver)
-       filter_city_country_Contains_Success(driver)
-       filter_city_country_DoesNotContains_Success(driver)
-       filter_city_country_StartsWith_Success(driver)
-       filter_city_country_EndsWith_Success(driver)
-       filter_city_country_EqualTo_Success(driver)
-       filter_city_country_isNull_Success(driver)
-       filter_city_country_isNotNull_Success(driver)
-       filter_city_country_NoFilter_Success(driver)
-       filter_city_state_Contains_Success(driver)
-       filter_city_state_DoesNotContains_Success(driver)
-       filter_city_state_StartsWith_Success(driver)
-       filter_city_state_EndsWith_Success(driver)
-       filter_city_state_EqualsTo_Success(driver)
-       filter_city_state_isNull_Success(driver)
-       filter_city_state_isNotNull_Success(driver)
-       filter_city_state_NoFilter_Success(driver)
-       filter_city_City_Contains_Success(driver)
-       filter_city_City_DoesNotContains_Success(driver)
-       filter_city_City_StartsWith_Success(driver)
-       filter_city_City_EndssWith_Success(driver)
-       filter_city_City_EqualsTo_Success(driver)
-       filter_city_City_isNull_Success(driver)
-       filter_city_City_isNotNull_Success(driver)
-       filter_city_City_NoFilter_Success(driver)
-       filter_city_ID_EqualsTo_Success(driver)
-       filter_city_ID_NotEqualsTo_Success(driver)
-       filter_city_ID_GreaterThan_Success(driver)
-       filter_city_ID_LessThan_Success(driver)
-       filter_city_ID_GreaterThanOrEqual_Success(driver)
-       filter_city_ID_LessThanOrEqual_Success(driver)
-       filter_city_ID_isNull_Success(driver)
-       filter_city_ID_isNotNull_Success(driver)
-       filter_city_ID_NoFilter_Success(driver)
-       test_Filter_City_Pagination15_Success(driver)
-       test_Filter_City_Pagination25_Success(driver)
-       test_Filter_City_Pagination50_Success(driver)
-       add_City(driver)
-       edit_City(driver)
-       City_Refresh(driver)
-       City_DownloadasExcel(driver)
+      
+       test_functions=[
+            City_Country_ascending,
+            City_Country_descending,
+            City_State_ascending,
+            City_State_descending,
+            City_Cityname_ascending,
+            City_Cityname_descending,
+            City_ID_ascending,
+            City_ID_descending,
+            filter_city_country_Contains_Success,
+            filter_city_country_DoesNotContains_Success,
+            filter_city_country_StartsWith_Success,
+            filter_city_country_EndsWith_Success,
+            filter_city_country_EqualTo_Success,
+            filter_city_country_isNull_Success,
+            filter_city_country_isNotNull_Success,
+            filter_city_country_NoFilter_Success,
+            filter_city_state_Contains_Success,
+            filter_city_state_DoesNotContains_Success,
+            filter_city_state_StartsWith_Success,
+            filter_city_state_EndsWith_Success,
+            filter_city_state_EqualsTo_Success,
+            filter_city_state_isNull_Success,
+            filter_city_state_isNotNull_Success,
+            filter_city_state_NoFilter_Success,
+            filter_city_City_Contains_Success,
+            filter_city_City_DoesNotContains_Success,
+            filter_city_City_StartsWith_Success,
+            filter_city_City_EndssWith_Success,
+            filter_city_City_EqualsTo_Success,
+            filter_city_City_isNull_Success,
+            filter_city_City_isNotNull_Success,
+            filter_city_City_NoFilter_Success,
+            filter_city_ID_EqualsTo_Success,
+            filter_city_ID_NotEqualsTo_Success,
+            filter_city_ID_GreaterThan_Success,
+            filter_city_ID_LessThan_Success,
+            filter_city_ID_GreaterThanOrEqual_Success,
+            filter_city_ID_LessThanOrEqual_Success,
+            filter_city_ID_isNull_Success,
+            filter_city_ID_isNotNull_Success,
+            filter_city_ID_NoFilter_Success,
+            test_Filter_City_Pagination15_Success,
+            test_Filter_City_Pagination25_Success,
+            test_Filter_City_Pagination50_Success,
+            add_City,
+            edit_City,
+            City_Refresh,
+            City_DownloadasExcel
+            
+       ]
+       for test in test_functions:
+            test(driver)
+
        time.sleep(2)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
+
 
 
 City_webpage()
