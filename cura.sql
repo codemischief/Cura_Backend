@@ -1842,3 +1842,442 @@ LEFT JOIN
     tallyledger d ON a.tallyledgerid = d.id;
  
 
+CREATE VIEW get_employer_view AS
+SELECT DISTINCT
+    a.id,
+    a.employername,
+    a.industry,
+    a.addressline1,
+    a.addressline2,
+    a.suburb,
+    a.city,
+    a.state,
+    a.country as countryid,
+    b.name as countryname,
+    a.zip,
+    a.hc,
+    a.website,
+    a.onsiteopportunity,
+    a.contactname1,
+    a.contactname2,
+    a.contactphone1,
+    a.contactphone2,
+    a.contactmail1,
+    a.contactmail2,
+    a.hrcontactphone,
+    a.admincontactname,
+    a.admincontactmail,
+    a.admincontactphone,
+    a.dated,
+    a.createdby,
+    a.isdeleted
+FROM
+    research_employer a
+LEFT JOIN
+    country b ON a.country = b.id;
+
+CREATE SEQUENCE IF NOT EXISTS research_employer_id_seq OWNED BY research_employer.id;
+SELECT setval('research_employer_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_employer;
+ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_employer_id_seq');
+
+CREATE VIEW get_research_realestate_agents_view AS
+SELECT DISTINCT
+    a.id,
+    a.nameofagent,
+    a.agencyname,
+    a.emailid,
+    a.phoneno,
+    a.phoneno2,
+    a.address,
+    a.localitiesdealing,
+    a.nameofpartners,
+    a.registered,
+    a.isdeleted,
+    a.dated,
+    a.createdby
+FROM
+    realestateagents a;
+
+CREATE SEQUENCE IF NOT EXISTS realestateagents_id_seq OWNED BY realestateagents.id;
+SELECT setval('realestateagents_id_seq', COALESCE(max(id), 0) + 1, false) FROM realestateagents;
+ALTER TABLE realestateagents ALTER COLUMN id SET DEFAULT nextval('realestateagents_id_seq');
+
+CREATE VIEW get_bankst_view AS
+SELECT
+    a.id,
+    a.modeofpayment,
+    f.name as mode,
+    a.date,
+    a.amount,
+    a.particulars,
+    a.crdr,
+    a.chequeno,
+    a.availablebalance,
+    a.dateadded,
+    a.clientid,
+    a.orderid,
+    a.receivedby,
+    a.details,
+    a.vendorid,
+    a.createdby,
+    CONCAT_WS(' ', b.firstname, b.middlename, b.lastname) AS clientname,
+    c.briefdescription AS orderdescription,
+    d.vendorname,
+    CONCAT_WS(' ', e.firstname, e.lastname) AS createdbyname
+FROM
+    bankst a
+LEFT JOIN
+    client b ON a.clientid = b.id
+LEFT JOIN
+    orders c ON a.orderid = c.id
+LEFT JOIN
+    vendor d ON a.vendorid = d.id
+LEFT JOIN
+    usertable e ON a.createdby = e.id
+LEFT JOIN
+    mode_of_payment f ON a.modeofpayment = f.id;
+
+
+CREATE VIEW get_cocandbusinessgroup_view AS
+SELECT DISTINCT
+    a.id,
+    a.name,
+    a.suburb,
+    a.phoneno,
+    a.contactperson1,
+    a.emailid,
+    a.contactperson2,
+    a.email1,
+    a.email2,
+    a.contactname1,
+    a.contactname2,
+    a.createdby,
+    concat_ws(' ',b.firstname,b.lastname) AS createdbyname,
+    a.dated,
+    a.isdeleted,
+    a.city as cityid,
+    c.city,
+    a.state,
+    d.name as countryname,
+    a.country,
+    a.groupid,
+    e.name as groupname,
+    a.address,
+    a.excludefrommailinglist
+FROM
+    cocandbusinessgroup a
+LEFT JOIN
+    usertable b ON a.createdby = b.id
+LEFT JOIN
+    cities c ON a.city = c.id
+LEFT JOIN
+    country d ON a.country = d.id
+LEFT JOIN
+    z_cocbusinessgroup e ON a.groupid = e.id;
+
+CREATE SEQUENCE IF NOT EXISTS cocandbusinessgroup_id_seq OWNED BY cocandbusinessgroup.id;
+SELECT setval('cocandbusinessgroup_id_seq', COALESCE(max(id), 0) + 1, false) FROM cocandbusinessgroup;
+ALTER TABLE cocandbusinessgroup ALTER COLUMN id SET DEFAULT nextval('cocandbusinessgroup_id_seq');
+
+CREATE TABLE college (
+    id BIGINT,
+    name TEXT,
+    typeid INTEGER,
+    emailid TEXT,
+    phoneno TEXT,
+    dated TIMESTAMP,
+    createdby INTEGER NOT NULL,
+    isdeleted BOOLEAN,
+    suburb TEXT,
+    city INTEGER,
+    state TEXT,
+    country INTEGER,
+    website TEXT,
+    email1 TEXT,
+    email2 TEXT,
+    contactname1 TEXT,
+    contactname2 TEXT,
+    phoneno1 TEXT,
+    phoneno2 TEXT,
+    excludefrommailinglist BOOLEAN
+);
+
+CREATE TABLE collegetypes (
+    id bigint,
+    name text
+);
+
+CREATE TABLE serviceapartmentsandguesthouses (
+    id BIGINT PRIMARY KEY,
+    name TEXT,
+    emailid TEXT,
+    phoneno TEXT,
+    website TEXT,
+    contactperson1 TEXT,
+    contactperson2 TEXT,
+    email1 TEXT,
+    email2 TEXT,
+    contactname1 TEXT,
+    contactname2 TEXT,
+    createdby INTEGER,
+    dated TIMESTAMP WITH TIME ZONE,
+    isdeleted BOOLEAN,
+    suburb TEXT,
+    city INTEGER,
+    state TEXT,
+    country INTEGER,
+    apartments_guesthouse TEXT
+);
+
+CREATE TABLE banksandbranches (
+    id BIGINT,
+    name TEXT,
+    emailid TEXT,
+    phoneno TEXT,
+    website TEXT,
+    contact TEXT,
+    dated TIMESTAMP WITH TIME ZONE,
+    createdby INTEGER NOT NULL,
+    isdeleted BOOLEAN,
+    excludefrommailinglist BOOLEAN
+);
+
+CREATE TABLE mandalas (
+    id BIGINT PRIMARY KEY,
+    name TEXT,
+    typeid INTEGER,
+    emailid TEXT,
+    phoneno TEXT,
+    dated TIMESTAMP WITH TIME ZONE,
+    createdby INTEGER NOT NULL,
+    isdeleted BOOLEAN,
+    suburb TEXT,
+    city INTEGER,
+    state TEXT,
+    country INTEGER,
+    website TEXT,
+    email1 TEXT,
+    email2 TEXT,
+    contactname1 TEXT,
+    contactname2 TEXT,
+    phoneno1 TEXT,
+    phoneno2 TEXT,
+    excludefrommailinglist BOOLEAN
+);
+
+CREATE TABLE friends (
+    id BIGINT PRIMARY KEY,
+    name TEXT,
+    emailid TEXT,
+    phoneno TEXT,
+    contactname TEXT,
+    societyname TEXT,
+    employer TEXT,
+    dated TIMESTAMP WITH TIME ZONE,
+    createdby INTEGER NOT NULL,
+    isdeleted BOOLEAN,
+    suburb TEXT,
+    city INTEGER,
+    state TEXT,
+    country INTEGER,
+    notes TEXT,
+    excludefrommailinglist BOOLEAN
+);
+
+CREATE TABLE research_government_agencies (
+    id BIGINT,
+    agencyname TEXT,
+    addressline1 TEXT,
+    addressline2 TEXT,
+    suburb TEXT,
+    city TEXT,
+    state TEXT,
+    country INTEGER,
+    zip TEXT,
+    agencytype INTEGER,
+    details TEXT,
+    contactname TEXT,
+    contactmail TEXT,
+    contactphone TEXT,
+    dated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    createdby INTEGER NOT NULL,
+    isdeleted BOOLEAN NOT NULL,
+    maplink TEXT
+);
+
+CREATE VIEW get_professionals_view AS
+SELECT DISTINCT
+    a.id,
+    a.name,
+    a.typeid,
+    b.name as type,
+    a.emailid,
+    a.phoneno,
+    a.dated,
+    a.createdby,
+    concat_ws(' ',c.firstname,c.lastname) as createdbyname,
+    a.isdeleted,
+    a.suburb,
+    a.city as cityid,
+    d.city,
+    a.state,
+    a.country as countryid,
+    e.name as country,
+    a.website,
+    a.excludefrommailinglist,
+    a.phoneno1
+FROM
+    professionals a
+LEFT JOIN
+    professionaltypes b ON a.typeid = b.professionalid
+LEFT JOIN
+    usertable c ON a.createdby = c.id
+LEFT JOIN
+    cities d ON a.city = d.id
+LEFT JOIN
+    country e ON a.country = e.id;
+
+CREATE SEQUENCE IF NOT EXISTS professionals_id_seq OWNED BY professionals.id;
+SELECT setval('professionals_id_seq', COALESCE(max(id), 0) + 1, false) FROM professionals;
+ALTER TABLE professionals ALTER COLUMN id SET DEFAULT nextval('professionals_id_seq');
+
+CREATE OR REPLACE VIEW orderreceiptview AS
+SELECT
+  Mode_Of_payment.Name AS PaymentMode,
+  usertable.FirstName || ' ' || usertable.LastName AS ReceivedBy,
+  User_1.FirstName || ' ' || User_1.LastName AS Createdby,
+  OrdersView.ClientName,
+  OrdersView.BriefDescription AS OrderDescription,
+  Order_Receipt.ID,
+  Order_Receipt.ReceivedBy AS ReceivedById,
+  Order_Receipt.Amount,
+  Order_Receipt.RecdDate,
+  Order_Receipt.PaymentMode AS PaymentModeId,
+  Order_Receipt.OrderID,
+  Order_Receipt.ReceiptDesc,
+  Order_Receipt.OfficeId,
+  Office.Name AS OfficeName,
+  Order_Receipt.PaymentSource AS PaymentSourceId,
+  Order_Receipt.Dated,
+  Order_Receipt.Createdby AS CreatedbyId,
+  Order_Receipt.IsDeleted,
+  Payment_Source.Name AS PaymentSource,
+  Order_Receipt.TDS,
+  PropertiesView.PropertyDescription,
+  getMonthYear(Order_Receipt.RecdDate) AS MonthYear,
+  getFinancialYear(Order_Receipt.RecdDate) AS FY,
+  OrdersView.Service,
+  OrdersView.LOBName,
+  OrdersView.ServiceType,
+  OrdersView.TallyLedger,
+  OrdersView.TallyLedgerId,
+  OrdersView.ServiceId,
+  Order_Receipt.EntityId,
+  Entity.Name AS EntityName,
+  OrdersView.ClientTypeName,
+  OrdersView.ClientID,
+  'OR' AS type,
+  '' AS vendorname
+FROM
+  Order_Receipt
+  LEFT JOIN usertable ON Order_Receipt.ReceivedBy = usertable.ID
+  LEFT JOIN Mode_Of_payment ON Order_Receipt.PaymentMode = Mode_Of_payment.ID
+  INNER JOIN usertable AS User_1 ON Order_Receipt.Createdby = User_1.ID
+  INNER JOIN OrdersView ON Order_Receipt.OrderID = OrdersView.ID
+  LEFT JOIN Entity ON Order_Receipt.EntityId = Entity.ID
+  LEFT JOIN PropertiesView ON OrdersView.ClientPropertyID = PropertiesView.ID
+  LEFT JOIN Payment_Source ON Order_Receipt.PaymentSource = Payment_Source.ID
+  LEFT JOIN Office ON Order_Receipt.OfficeId = Office.ID
+WHERE
+  Order_Receipt.IsDeleted = false;
+
+CREATE VIEW get_research_govt_agencies_view AS
+SELECT
+    a.id,
+    a.agencyname,
+    a.addressline1,
+    a.addressline2,
+    a.suburb,
+    a.city,
+    a.state,
+    a.country as countryid,
+    b.name as country,
+    a.zip,
+    a.agencytype as agencytypeid,
+    c.name as agencytype,
+    a.details,
+    a.contactname,
+    a.contactmail,
+    a.contactphone,
+    a.dated,
+    a.createdby as createdbyid,
+    concat_ws(' ',d.firstname,d.lastname) as createdby,
+    a.isdeleted,
+    a.maplink
+FROM
+    research_government_agencies a
+LEFT JOIN
+    country b ON a.country = b.id
+LEFT JOIN
+    agencytype c ON a.agencytype = c.id
+LEFT JOIN
+    usertable d ON a.createdby = d.id;
+
+
+CREATE SEQUENCE IF NOT EXISTS research_government_agencies_id_seq OWNED BY research_government_agencies.id;
+SELECT setval('research_government_agencies_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_government_agencies;
+ALTER TABLE research_government_agencies ALTER COLUMN id SET DEFAULT nextval('research_government_agencies_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS friends_id_seq OWNED BY friends.id;
+SELECT setval('friends_id_seq', COALESCE(max(id), 0) + 1, false) FROM friends;
+ALTER TABLE friends ALTER COLUMN id SET DEFAULT nextval('friends_id_seq');
+
+CREATE VIEW get_research_friends_view AS
+SELECT
+    a.id,
+    a.name,
+    a.emailid,
+    a.phoneno,
+    a.contactname as friendof,
+    a.societyname,
+    a.employer,
+    a.dated,
+    a.isdeleted,
+    a.createdby,
+    a.suburb,
+    a.city as cityid,
+    b.city,
+    a.state,
+    a.country as countryid,
+    c.name as country,
+    a.notes,
+    a.excludefrommailinglist
+FROM
+    friends a
+LEFT JOIN
+    cities b ON a.city = b.id
+LEFT JOIN
+    country c ON a.country = c.id;
+
+CREATE TABLE mandaltypes(
+    mandalid int,
+    name text
+);
+
+CREATE VIEW lltenant_view AS
+SELECT DISTINCT
+    a.id,
+    a.leavelicenseid,
+    a.tenantid,
+    concat_ws(' ',b.firstname,b.middlename,b.lastname),
+    a.dated,
+    a.createdby,
+    a.isdeleted
+FROM
+    clientleavelicensetenant a
+LEFT JOIN
+    client b ON a.tenantid = b.id;
+
+CREATE SEQUENCE IF NOT EXISTS banksandbranches_id_seq OWNED BY banksandbranches.id;
+SELECT setval('banksandbranches_id_seq', COALESCE(max(id), 0) + 1, false) FROM banksandbranches;
+ALTER TABLE banksandbranches ALTER COLUMN id SET DEFAULT nextval('banksandbranches_id_seq');
