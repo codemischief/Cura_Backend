@@ -5596,3 +5596,199 @@ def download_file(payload: dict,conn: psycopg2.extensions.connection = Depends(g
 
 
 logger.info("program_started")
+
+
+@app.post('/getResearchMandals')
+async def get_research_mandals(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'get_research_mandalas_view'
+    return await runInTryCatch(
+        conn = conn,
+        payload=payload,
+        fname='get_research_mandals',
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+
+@app.post('/getReportOrderInvoice')
+async def get_report_order_invoice(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['filters'].append(['invoicedate','between',[payload['startdate'],payload['enddate']],'Date'])
+    payload['table_name'] = 'orderinvoicelistview'
+    return await runInTryCatch(
+        conn = conn,
+        payload=payload,
+        fname='get_report_order_invoice',
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+
+@app.post('/addResearchMandals')
+async def add_research_mandals(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """INSERT INTO banksandbranches (name,typeid,emailid,phoneno,
+                    suburb,city,state,country,website,email,email2,
+                     contactname1,contactname2,phoneno1,phoneno2,dated
+                    createdby,isdeleted,excludefrommailinglist) VALUES (%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                msg = logMessage(cursor,query,[
+                    payload['name'],
+                    payload['typeid'],
+                    payload['emailid'],
+                    payload['phoneno'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['website'],
+                    payload['email1'],
+                    payload['email2'],
+                    payload['contactname1'],
+                    payload['contactname2'],
+                    payload['phoneno1'],
+                    payload['phoneno2'],
+                    givenowtime(),
+                    payload['user_id'],
+                    False,
+                    payload['excludefrommailinglist']
+                ])
+                id = cursor.fetchone()[0]
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted Mandala":id})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+    
+@app.post('/editResearchMandals')
+async def edit_research_mandals(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """UPDATE mandalas SET name=%s,typeid=%s,emailid=%s,phoneno=%s,
+                    suburb=%s,city=%s,state=%s,country=%s,website=%s,email1=%s,email2=%s,
+                     contactname1=%s,contactname2=%s,phoneno1=%s,phoneno2=%s,dated=%s
+                    createdby=%s,isdeleted=%s,excludefrommailinglist=%s WHERE id=%s"""
+                msg = logMessage(cursor,query,[
+                    payload['name'],
+                    payload['typeid'],
+                    payload['emailid'],
+                    payload['phoneno'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['website'],
+                    payload['email1'],
+                    payload['email2'],
+                    payload['contactname1'],
+                    payload['contactname2'],
+                    payload['phoneno1'],
+                    payload['phoneno2'],
+                    givenowtime(),
+                    payload['user_id'],
+                    False,
+                    payload['excludefrommailinglist'],
+                    payload['id']
+                ])
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited Mandala":payload['id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+
+@app.post('/deleteResearchMandals')
+async def delete_research_mandals(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """UPDATE mandalas SET isdeleted=true WHERE id=%s AND isdeleted=false"""
+                msg = logMessage(cursor,query,[
+                    payload['id']
+                ])
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Deleted Mandala":payload['id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+
+@app.post('/getResearchArchitect')
+async def get_research_architect(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'architech'
+    return await runInTryCatch(
+        conn = conn,
+        payload=payload,
+        fname='get_research_architech',
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+
+@app.post("/addResearchArchitect")
+async def add_research_architech(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """INSERT INTO banksandbranches (name,emailid,phoneno,
+                    project,societyname,dated,createdby,isdeleted,suburb,city,
+                     state,country,excludefrommailinglist) VALUES (%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                msg = logMessage(cursor,query,[
+                    payload['name'],
+                    payload['emailid'],
+                    payload['phoneno'],
+                    payload['project'],
+                    payload['societyname'],
+                    givenowtime(),
+                    payload['user_id'],
+                    False,
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['excludefrommailinglist']
+                ])
+                id = cursor.fetchone()[0]
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted Mandala":id})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+
+        
+
+logger.info("program_started")
