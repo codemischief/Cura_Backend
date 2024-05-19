@@ -9,9 +9,17 @@ from pydantic import BaseModel
 import logging
 import traceback
 import datetime
+import os
+from fastapi.responses import FileResponse
+import pandas as pd
+import uuid
 
 # from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
+
+hostURL = 'http://20.197.13.140:8000'
+
+FILE_DIRECTORY = './downloads'
 
 month_map = {
     1:"Jan",
@@ -252,6 +260,7 @@ def filterAndPaginate(db_config,
                 rows = search_results
             logging.info(f'filterAndPaginate: Given search key <{search_key}> yeilds <{total_count}> entries and after filtered rows are <{len(rows)}>')
 
+
         return {'data':rows, 'total_count' : total_count, 'message':'success', 'colnames':colnames}
     except Exception as e:
         logging.exception(traceback.print_exc())
@@ -412,8 +421,21 @@ def filterAndPaginate_v2(db_config,
                 rows = search_results[start_index:end_index]
             else:
                 rows = search_results
+        resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames}
+        # generate downloadable file
+        if page_number == 0 and page_size == 0:
+            try:
+                df = pd.DataFrame(rows, columns=colnames)
+                _filename = f'{uuid.uuid4()}.xls'
+                fname = f'./downloads/{_filename}'
+                df.to_excel(fname, index=False, engine='openpyxl')
+                logging.info(f'generated excel file <{fname}>')
+                resp_payload['fileurl'] = f'{hostURL}/download/{_filename}'
+            except Exception as e:
+                msg = str(e).replace("\n","")
+                logging.exception(f'failed to generate excel file due to <{msg}>')
 
-        return {'data':rows, 'total_count' : total_count, 'message':'success', 'colnames':colnames}
+        return resp_payload
     except Exception as e:
         logging.exception(f' exception {traceback.print_exc()}')
         #print(traceback.print_exc())
@@ -545,8 +567,9 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
             "data":{}
             }
 
-def giveSuccess(uid,rid,data=[], total_count=None):
+def giveSuccess(uid,rid,data=[], total_count=None, fileurl = None):
     final_data =  {
+        "fileurl": fileurl,
         "result":"success",
         "user_id":uid,
         "role_id":rid,
@@ -1753,6 +1776,8 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                 res = []
                 data = []
                 colnames = []
+                total_count = 0
+                fileurl = None
                 if isPaginationRequired:
                     logging.info("Pagination")
                     data = filterAndPaginate_v2(DATABASE_URL,
@@ -1772,14 +1797,16 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                         return giveFailure(data['message'],payload['user_id'],role_access_status)
                     colnames = data['colnames']
                     total_count = data['total_count']
+                    fileurl = data['fileurl'] if 'fileurl' in data else None
                     data = data['data']
+                    print(f'fileurl is <{fileurl}>')
                 else:
                     msg = logMessage(cursor,query)
                     logging.info(msg)
                     res_ = cursor.fetchall()
                     colnames = [desc[0] for desc in cursor.description]
                     data = res_
-                    return giveSuccess(payload['user_id'], role_access_status, data,total_count)
+                    return giveSuccess(payload['user_id'], role_access_status, data, total_count)
 
                 if formatData:
                     logging.info(f"Formatting in progress for process {fname}")
@@ -1788,10 +1815,9 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                         for i,colname in enumerate(colnames):
                             row_dict[colname] = row[i]
                         res.append(row_dict)
-                    
-                    return giveSuccess(payload['user_id'], role_access_status, res,total_count)
+                    return giveSuccess(payload['user_id'], role_access_status, res,total_count, fileurl = fileurl)
                 else:
-                    return giveSuccess(payload['user_id'],role_access_status,data,total_count)
+                    return giveSuccess(payload['user_id'],role_access_status,data,total_count, fileurl = fileurl)
     
     except Exception as e:
             logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
@@ -5542,5 +5568,31 @@ async def delete_research_banks_and_branches(payload: dict,conn: psycopg2.extens
     except Exception as e:
         logging.info(traceback.print_exc())
         return giveFailure(f"Invalid Credentials",0,0)
+
+@app.post("/download/{file_name}")
+def download_file(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'got download file request with payload <{payload}>')
+    try:
+        file_name = payload['filename']
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            file_path = os.path.join(FILE_DIRECTORY, file_name)
+            # Security check - only allow filenames, no paths
+            if "/" in file_name or "\\" in file_name:
+                logging.info(f'invalid filepath <{file_path}')
+                return {"error": "Invalid file path"}
+            if os.path.exists(file_path):
+                logging.info(f'downloading file <{file_path}')
+                return FileResponse(path=file_path, filename=file_name, media_type='application/octet-stream')
+            return giveFailure(f'file <{file_name}> not found',payload['user_id'],role_access_status)
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+
 
 logger.info("program_started")
