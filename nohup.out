@@ -10643,3 +10643,103 @@ fastapi.exceptions.HTTPException: 400: Please provide either 'user_id' or 'usern
 2024-05-04 17:54:55,769 - uvicorn.access - send - INFO - 127.0.0.1:42710 - "GET /openapi.json HTTP/1.1" 200
 2024-05-04 18:43:55,684 - uvicorn.access - send - INFO - 127.0.0.1:37840 - "GET /docs HTTP/1.1" 200
 2024-05-04 18:43:55,811 - uvicorn.access - send - INFO - 127.0.0.1:37840 - "GET /openapi.json HTTP/1.1" 200
+2024-05-19 10:58:46,040 - uvicorn.error - INFO - Will watch for changes in these directories: ['/mnt/e/cura/cura_backend']
+2024-05-19 10:58:46,040 - uvicorn.error - INFO - Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2024-05-19 10:58:46,040 - uvicorn.error - INFO - Started reloader process [215125] using statreload
+2024-05-19 10:58:46,172 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-19 10:58:46,862 - main - <module> - INFO - program_started
+2024-05-19 10:58:46,863 - uvicorn.error - INFO - Started server process [215127]
+2024-05-19 10:58:46,863 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-19 10:58:46,864 - uvicorn.error - INFO - Application startup complete.
+2024-05-19 10:58:56,374 - root - runInTryCatch - INFO - get_research_mandals:RT: received payload <{'user_id': 1234, 'rows': ['id', 'name', 'typename', 'city', 'emailid', 'phoneno'], 'filters': [], 'sort_by': ['id'], 'order': 'desc', 'pg_no': 1, 'pg_size': 15, 'table_name': 'get_research_mandalas_view'}>
+2024-05-19 10:58:56,396 - root - check_role_access - INFO - QUERY IS : <SELECT roleid FROM usertable WHERE id = 1234>
+2024-05-19 10:58:56,396 - root - runInTryCatch - INFO - Pagination
+2024-05-19 10:58:56,397 - root - filterAndPaginate_v2 - INFO - []
+2024-05-19 10:58:56,557 - root - filterAndPaginate_v2 - INFO -  Prepared final query [SELECT id,name,typename,city,emailid,phoneno FROM get_research_mandalas_view WHERE isdeleted = false  ORDER BY id desc  NULLS LAST LIMIT 15 OFFSET 0]
+2024-05-19 10:58:56,694 - root - filterAndPaginate_v2 - INFO - Cursor message is SELECT 1
+2024-05-19 10:58:56,706 - root - filterAndPaginate_v2 - INFO -  Given filter yeilds <1> entries
+2024-05-19 10:58:56,707 - root - runInTryCatch - INFO - dict_keys(['data', 'total_count', 'message', 'colnames'])
+2024-05-19 10:58:56,707 - root - runInTryCatch - INFO - Formatting in progress for process get_research_mandals
+2024-05-19 10:58:56,708 - uvicorn.access - send - INFO - 127.0.0.1:52840 - "POST /getResearchMandals HTTP/1.1" 200
+2024-05-19 11:00:35,557 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-19 11:00:35,572 - uvicorn.error - INFO - Shutting down
+2024-05-19 11:00:35,673 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-19 11:00:35,673 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-19 11:00:35,673 - uvicorn.error - INFO - Finished server process [215127]
+2024-05-19 11:00:35,894 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-19 11:00:36,632 - main - <module> - INFO - program_started
+2024-05-19 11:00:36,633 - uvicorn.error - INFO - Started server process [215141]
+2024-05-19 11:00:36,633 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-19 11:00:36,633 - uvicorn.error - INFO - Application startup complete.
+2024-05-19 11:00:40,679 - uvicorn.access - send - INFO - 127.0.0.1:40484 - "GET /docs HTTP/1.1" 200
+2024-05-19 11:00:40,866 - uvicorn.access - send - INFO - 127.0.0.1:40484 - "GET /openapi.json HTTP/1.1" 200
+2024-05-19 11:01:12,323 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-19 11:01:12,355 - uvicorn.error - INFO - Shutting down
+2024-05-19 11:01:12,456 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-19 11:01:12,457 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-19 11:01:12,457 - uvicorn.error - INFO - Finished server process [215141]
+2024-05-19 11:01:12,694 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-19 11:01:13,381 - main - <module> - INFO - program_started
+2024-05-19 11:01:13,382 - uvicorn.error - INFO - Started server process [215145]
+2024-05-19 11:01:13,382 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-19 11:01:13,382 - uvicorn.error - INFO - Application startup complete.
+2024-05-19 11:01:16,529 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-19 11:01:16,592 - uvicorn.error - INFO - Shutting down
+2024-05-19 11:01:16,693 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-19 11:01:16,693 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-19 11:01:16,694 - uvicorn.error - INFO - Finished server process [215145]
+2024-05-19 11:01:16,911 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-19 11:01:17,698 - main - <module> - INFO - program_started
+2024-05-19 11:01:17,698 - uvicorn.error - INFO - Started server process [215146]
+2024-05-19 11:01:17,698 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-19 11:01:17,699 - uvicorn.error - INFO - Application startup complete.
+2024-05-19 11:01:37,908 - root - runInTryCatch - INFO - get_research_architech:RT: received payload <{'user_id': 1234, 'rows': ['*'], 'table_name': 'architech'}>
+2024-05-19 11:01:37,936 - root - check_role_access - INFO - QUERY IS : <SELECT roleid FROM usertable WHERE id = 1234>
+2024-05-19 11:01:37,936 - root - runInTryCatch - INFO - Pagination
+2024-05-19 11:01:37,937 - root - filterAndPaginate_v2 - INFO - []
+2024-05-19 11:01:37,937 - root - filterAndPaginate_v2 - INFO -  Prepared final query [SELECT * FROM architech WHERE isdeleted = false  LIMIT 10 OFFSET 0]
+2024-05-19 11:01:38,057 - root - filterAndPaginate_v2 - INFO - Cursor message is SELECT 2
+2024-05-19 11:01:38,069 - root - filterAndPaginate_v2 - INFO -  Given filter yeilds <2> entries
+2024-05-19 11:01:38,069 - root - runInTryCatch - INFO - dict_keys(['data', 'total_count', 'message', 'colnames'])
+2024-05-19 11:01:38,069 - root - runInTryCatch - INFO - Formatting in progress for process get_research_architech
+2024-05-19 11:01:38,070 - uvicorn.access - send - INFO - 127.0.0.1:59066 - "POST /getResearchArchitect HTTP/1.1" 200
+2024-05-19 11:03:10,488 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-19 11:03:10,525 - uvicorn.error - INFO - Shutting down
+2024-05-19 11:03:10,626 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-19 11:03:10,627 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-19 11:03:10,627 - uvicorn.error - INFO - Finished server process [215146]
+2024-05-19 11:03:10,817 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+Process SpawnProcess-5:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3/dist-packages/uvicorn/subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 68, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 76, in serve
+    config.load()
+  File "/usr/lib/python3/dist-packages/uvicorn/config.py", line 448, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/lib/python3/dist-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1017, in get_code
+  File "<frozen importlib._bootstrap_external>", line 947, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/mnt/e/cura/cura_backend/./main.py", line 5697
+    async def add_research_architech(payload)
+                                             ^
+SyntaxError: expected ':'
