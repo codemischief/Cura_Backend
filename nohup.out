@@ -10743,3 +10743,77 @@ Traceback (most recent call last):
     async def add_research_architech(payload)
                                              ^
 SyntaxError: expected ':'
+2024-05-19 11:04:33,172 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-19 11:04:33,318 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-19 11:04:34,286 - main - <module> - INFO - program_started
+2024-05-19 11:04:34,287 - uvicorn.error - INFO - Started server process [215158]
+2024-05-19 11:04:34,287 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-19 11:04:34,287 - uvicorn.error - INFO - Application startup complete.
+2024-05-19 11:04:34,288 - uvicorn.access - send - INFO - 127.0.0.1:42666 - "GET /docs HTTP/1.1" 200
+2024-05-19 11:04:34,493 - uvicorn.access - send - INFO - 127.0.0.1:42666 - "GET /openapi.json HTTP/1.1" 200
+2024-05-19 11:05:23,739 - root - runInTryCatch - INFO - get_research_architech:RT: received payload <{'user_id': 1234, 'rows': ['*'], 'table_name': 'architech'}>
+2024-05-19 11:05:23,763 - root - check_role_access - INFO - QUERY IS : <SELECT roleid FROM usertable WHERE id = 1234>
+2024-05-19 11:05:23,763 - root - runInTryCatch - INFO - Pagination
+2024-05-19 11:05:23,764 - root - filterAndPaginate_v2 - INFO - []
+2024-05-19 11:05:23,764 - root - filterAndPaginate_v2 - INFO -  Prepared final query [SELECT * FROM architech WHERE isdeleted = false  LIMIT 10 OFFSET 0]
+2024-05-19 11:05:23,876 - root - filterAndPaginate_v2 - INFO - Cursor message is SELECT 2
+2024-05-19 11:05:23,888 - root - filterAndPaginate_v2 - INFO -  Given filter yeilds <2> entries
+2024-05-19 11:05:23,889 - root - runInTryCatch - INFO - dict_keys(['data', 'total_count', 'message', 'colnames'])
+2024-05-19 11:05:23,889 - root - runInTryCatch - INFO - Formatting in progress for process get_research_architech
+2024-05-19 11:05:23,891 - uvicorn.access - send - INFO - 127.0.0.1:34588 - "POST /getResearchArchitect HTTP/1.1" 200
+2024-05-19 11:07:11,178 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-19 11:07:11,277 - uvicorn.error - INFO - Shutting down
+2024-05-19 11:07:11,378 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-19 11:07:11,378 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-19 11:07:11,378 - uvicorn.error - INFO - Finished server process [215158]
+2024-05-19 11:07:11,568 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-19 11:07:12,154 - main - <module> - INFO - program_started
+2024-05-19 11:07:12,155 - uvicorn.error - INFO - Started server process [215175]
+2024-05-19 11:07:12,155 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-19 11:07:12,156 - uvicorn.error - INFO - Application startup complete.
+2024-05-19 12:43:59,185 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-19 12:43:59,214 - uvicorn.error - INFO - Shutting down
+2024-05-19 12:43:59,317 - uvicorn.error - INFO - Waiting for application shutdown.
+2024-05-19 12:43:59,319 - uvicorn.error - INFO - Application shutdown complete.
+2024-05-19 12:43:59,319 - uvicorn.error - INFO - Finished server process [215175]
+2024-05-19 12:43:59,571 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+Process SpawnProcess-8:
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/usr/lib/python3/dist-packages/uvicorn/subprocess.py", line 76, in subprocess_started
+    target(sockets=sockets)
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 68, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/usr/lib/python3/dist-packages/uvicorn/server.py", line 76, in serve
+    config.load()
+  File "/usr/lib/python3/dist-packages/uvicorn/config.py", line 448, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/lib/python3/dist-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1017, in get_code
+  File "<frozen importlib._bootstrap_external>", line 947, in source_to_code
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/mnt/e/cura/cura_backend/./main.py", line 5729
+    payload['country'],g
+                       ^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+2024-05-19 12:44:37,580 - uvicorn.error - WARNING - StatReload detected file change in 'main.py'. Reloading...
+2024-05-19 12:44:37,691 - asyncio - __init__ - DEBUG - Using selector: EpollSelector
+2024-05-19 12:44:38,347 - main - <module> - INFO - program_started
+2024-05-19 12:44:38,347 - uvicorn.error - INFO - Started server process [216080]
+2024-05-19 12:44:38,347 - uvicorn.error - INFO - Waiting for application startup.
+2024-05-19 12:44:38,348 - uvicorn.error - INFO - Application startup complete.
