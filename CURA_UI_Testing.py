@@ -3306,6 +3306,7 @@ Country_Webpage()
 
 
 # %%
+
 def login_and_navigate_Locality(username, password, comkey):
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
@@ -3324,8 +3325,8 @@ def login_and_navigate_Locality(username, password, comkey):
     time.sleep(2)
     return driver
 
-# %%
 def test_Add_New_Locality_Success(driver):
+        wait=WebDriverWait(driver,10)
         addLocality_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4"))
         )
@@ -3345,25 +3346,20 @@ def test_Add_New_Locality_Success(driver):
         d2.select_by_visible_text('Pune')
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@name='empName']").send_keys("a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Add']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Add']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Add']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Add']"))).click()
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@type='text']").clear()
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@type='text']").send_keys("India")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[2]/div[1]/div[2]/div[2]/button[2]/img[1]").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Delete']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[2]/div[1]/div[2]/div[2]/button[2]/img[1]"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
         time.sleep(2)
 
 
-# %%
 def test_Edit_Locality_Success(driver):
+        wait=WebDriverWait(driver,10)
         addLocality_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4"))
         )
@@ -3383,18 +3379,11 @@ def test_Edit_Locality_Success(driver):
         d2.select_by_visible_text('Pune')
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@name='empName']").send_keys("a")
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Add']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Add']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
         time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Add']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Add']").click()
-        time.sleep(2)
-        # driver.find_element(By.XPATH,"//input[@type='text']").clear()
-        # time.sleep(2)
-        # driver.find_element(By.XPATH,"//input[@type='text']").send_keys("India")
-        # time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//div//div//div//div//div//div[1]//div[2]//div[2]//button[1]//img[1]").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//div//div//div//div//div//div[1]//div[2]//div[2]//button[1]//img[1]"))).click()
         driver.find_element(By.XPATH,"//input[@name='empName']").clear()
         driver.find_element(By.XPATH,"//input[@name='empName']").send_keys("ashish")
         driver.find_element(By.XPATH,"//button[normalize-space()='Save']").click()
@@ -3402,664 +3391,1136 @@ def test_Edit_Locality_Success(driver):
         driver.find_element(By.XPATH,"//input[@type='text']").clear()
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@type='text']").send_keys("ashish")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='trash']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Delete']").click()
-        time.sleep(2)
-        
-
-
-# %%
-def test_filter_Locality_CountryName_StartsWith(driver,send_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").send_keys(send_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='trash']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
         time.sleep(2)
 
-# %%
+
 def test_Filter_Locality_Country_name_StartsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CountryName_StartsWith(driver,"i")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "i"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[15%]  p-4']")
+        element_found = True
+        for item in filtered_elements[1:]:
+            if not item.text.lower().startswith("i"):
+                element_found = False
+                break
+
+        if element_found:
+            print("StartsWith filter in Locality with Country Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
         
 
-
-# %%
 def test_Filter_Locality_Country_name_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CountryName_StartsWith(driver,"i")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "i"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[15%]  p-4']")
+        element_found = True 
+        for item in filtered_elements[1:]:
+            if "i" not in item.text.lower():
+                element_found = False
+                break
+
+        if element_found:
+            print("Contains filter in Locality with Country Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
         
 
-
-# %%
 def test_Filter_Locality_Country_name_DoesNotContains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CountryName_StartsWith(driver,"i")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "India"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[15%]  p-4']")
+        element_found = False
+        for item in filtered_elements[1:]:
+            if item.text == "India":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in Locality with Country Name is Working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
         
 
 
-# %%
 def test_Filter_Locality_Country_name_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CountryName_StartsWith(driver,"i")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "i"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[15%]  p-4']")
+        element_found = True
+        for item in filtered_elements[1:]:
+            if not item.text.endswith("i"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in Locality with Country Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
+         
         
-
-
-# %%
 def test_Filter_Locality_Country_name_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CountryName_StartsWith(driver,"i")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "UK"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[15%]  p-4']")
+        element_found = True
+        for item in filtered_elements[1:]:
+            if item.text != "UK":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Locality with Country Name is working fine.")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_Locality_Country_name_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CountryName_StartsWith(driver,"i")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "UK"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Locality With Country Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
-
-# %%
 def test_Filter_Locality_Country_name_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CountryName_StartsWith(driver,"i")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "UK"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Locality With Country Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_Locality_Country_name_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CountryName_StartsWith(driver,"i")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "UK"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("NO filter in Locality With Country Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
-
-# %%
-def test_filter_Locality_StateName_StartsWith(driver,send_letter):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").send_keys(send_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-
-# %%
+        
 def test_Filter_Locality_State_name_StartsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        test_filter_Locality_StateName_StartsWith(driver,"m")
-        time.sleep(2)     
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "m"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=1]")
+        element_found = True
+        for item in filtered_elements[1:]:
+            if not item.text.lower().startswith("m"):
+                element_found = False
+                break
+
+        if element_found:
+            print("StartsWith filter in Locality with State Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_Locality_State_name_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        test_filter_Locality_StateName_StartsWith(driver,"m")
-        time.sleep(2) 
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "m"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=1]")
+        element_found = True 
+        for item in filtered_elements[1:]:
+            if "m" not in item.text.lower():
+                element_found = False
+                break
+
+        if element_found:
+            print("Contains filter in Locality with State Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_Locality_State_name_DoesNotContains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        test_filter_Locality_StateName_StartsWith(driver,"m")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "UAE"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=1]")
+        element_found = False
+        for item in filtered_elements[1:]:
+            if item.text == "UAE":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in Locality with State Name is Working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_Locality_State_name_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        test_filter_Locality_StateName_StartsWith(driver,"m")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=1]")
+        element_found = True
+        for item in filtered_elements[1:]:
+            if not item.text.endswith("a"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in Locality with State Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_Locality_State_name_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        test_filter_Locality_StateName_StartsWith(driver,"m")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Colombo"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=1]")
+        element_found = True
+        for item in filtered_elements[2:]:
+            if item.text != "Colombo":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Locality with State Name is working fine.")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
 
-# %%
 def test_Filter_Locality_State_name_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        test_filter_Locality_StateName_StartsWith(driver,"m")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Colombo"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Locality With State Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
         
 
-
-# %%
 def test_Filter_Locality_State_name_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        test_filter_Locality_StateName_StartsWith(driver,"m")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Colombo"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Locality With State Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
-        
+    
 
-
-# %%
 def test_Filter_Locality_State_name_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"div:nth-child(3) div:nth-child(1) input:nth-child(1)").clear()
-        test_filter_Locality_StateName_StartsWith(driver,"m")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Colombo"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("No filter in Locality With State Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
 
+def test_Filter_Locality_City_name_StartsWith_Success(driver):      
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "m"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=2]")
+        element_found = True
+        for item in filtered_elements[1:]:
+            if not item.text.lower().startswith("m"):
+                element_found = False
+                break
 
-# %%
-def test_filter_Locality_CityName_StartsWith(driver,send_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").send_keys(send_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-
-# %%
-def test_Filter_Locality_City_name_StartsWith_Success(driver): 
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CityName_StartsWith(driver,"p")
-        time.sleep(2)      
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
+        if element_found:
+            print("StartsWith filter in Locality with City Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
         
 
 
-# %%
 def test_Filter_Locality_City_name_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CityName_StartsWith(driver,"p")
-        time.sleep(2)  
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "m"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=2]")
+        element_found = True 
+        for item in filtered_elements[1:]:
+            if "m" not in item.text.lower():
+                element_found = False
+                break
+
+        if element_found:
+            print("Contains filter in Locality with city Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
-
-# %%
 def test_Filter_Locality_City_name_DoesNotContains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CityName_StartsWith(driver,"p")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Pune"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=2]")
+        element_found = False
+        for item in filtered_elements[1:]:
+            if item.text == "Pune":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in Locality with City Name is Working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
         
 
-
-# %%
 def test_Filter_Locality_City_name_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CityName_StartsWith(driver,"p")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "m"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=2]")
+        element_found = True
+        for item in filtered_elements[1:]:
+            if not item.text.endswith("m"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in City with State Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_Locality_City_name_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CityName_StartsWith(driver,"p")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Pune"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[20%]  p-4'][position()=2]")
+        element_found = True
+        for item in filtered_elements[2:]:
+            if item.text != "Pune":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Locality with City Name is working fine.")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_Locality_City_name_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CityName_StartsWith(driver,"p")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Pune"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Locality With City Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
 
-# %%
 def test_Filter_Locality_City_name_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CityName_StartsWith(driver,"p")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Pune"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Locality With City Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
         
-
-
-# %%
 def test_Filter_Locality_City_name_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_CityName_StartsWith(driver,"p")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Pune"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("No filter in Locality With City Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_filter_Locality_LocalityName_StartsWith(driver,send_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").send_keys(send_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
 
-# %%
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Pune"
+    )
+
 def test_Filter_Locality_name_StartsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityName_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "p"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[25%]  p-4 ml-1']")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.lower().startswith("p"):
+                element_found = False
+                break
+
+        if element_found:
+            print("StartsWith filter in Locality with Locality Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
         
 
-
-# %%
 def test_Filter_Locality_name_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityName_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "p"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[25%]  p-4 ml-1']")
+        element_found = True 
+        for item in filtered_elements:
+            if "p" not in item.text.lower():
+                element_found = False
+                break
+
+        if element_found:
+            print("Contains filter in Locality with Locality Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_Locality_name_DoesNotContains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityName_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[25%]  p-4 ml-1']")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "a":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in Locality with Locality Name is Working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_Locality_name_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityName_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[25%]  p-4 ml-1']")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.endswith("a"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in Locality with Locality Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_Locality_name_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityName_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Lavasa"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[25%]  p-4 ml-1']")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "Lavasa":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Locality with Locality Name is working fine.")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_Locality_name_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityName_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Lavasa"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Locality With City Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
-    
 
 
-# %%
 def test_Filter_Locality_name_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityName_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Lavasa"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='0 Items in 0 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Locality With City Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_Locality_name_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityName_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Lavasa"
+    )
+        a=driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[normalize-space()='47 Items in 4 Pages']")
+        if(filtered_element.text.startswith(words)):
+                print("Nofilter in Locality With City Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
 
-# %%
-def test_filter_Locality_LocalityID_StartsWith(driver,send_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").send_keys(send_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
-        time.sleep(2)
-
-# %%
 def test_Filter_Locality_ID_EqualsTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityID_StartsWith(driver,"16")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "16"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-1/2  p-4 ml-1')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "16":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Locality with ID is working fine.")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_Locality_ID_NotEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityID_StartsWith(driver,"16")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='NotEqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='NotEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "16"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-1/2  p-4 ml-1')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text == "16":
+                element_found = False
+                break
+
+        if element_found:
+            print("NotEqualTo Filter in Locality with ID is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
-
-# %%
 def test_Filter_Locality_ID_GreaterThan_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityID_StartsWith(driver,"16")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThan']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "16"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-1/2  p-4 ml-1')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text <= '16':
+                element_found = False
+                break
+
+        if element_found:
+            print("Greater Than Filter in Locality with ID is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_Locality_ID_LessThan_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityID_StartsWith(driver,"16")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThan']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "16"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-1/2  p-4 ml-1')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text >= "16":
+                element_found = False
+                break
+
+        if element_found:
+            print("LessThan Filter in Locality with ID is working fine.")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_Locality_ID_GreaterThanOrEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityID_StartsWith(driver,"16")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "16"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-1/2  p-4 ml-1')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text < "16":
+                element_found = False
+                break
+
+        if element_found:
+            print("GreaterThanOrEqualTo Filter in Locality with ID is working fine")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_Locality_ID_LessThanOrEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityID_StartsWith(driver,"16")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
-        time.sleep(2)
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "16"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-1/2  p-4 ml-1')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text > "16":
+                element_found = False
+                break
+
+        if element_found:
+            print("LessThanOrEqualTo Filter in Locality with ID is working fine")
+        else:
+            print("Error")
         
 
 
-# %%
 def test_Filter_Locality_ID_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityID_StartsWith(driver,"16")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "16"
+    )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        element_found = False
+        if filtered_element.text.startswith(words):
+            element_found = True
+
+        if element_found:
+            print("isNull Filter in Locality is working fine")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
         
 
-
-# %%
 def test_Filter_Locality_ID_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityID_StartsWith(driver,"16")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "16"
+    )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        element_found = False
+        if filtered_element.text.startswith(words):
+            element_found = True
+
+        if element_found:
+            print("isNotNull Filter in Locality is working fine")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_Locality_ID_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_Locality_LocalityID_StartsWith(driver,"16")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "16"
+    )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        element_found = False
+        if filtered_element.text.startswith(words):
+            element_found = True
+
+        if element_found:
+            print("NoFilter in Locality is working fine")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").click()
         time.sleep(2)
         
 
-
-# %%
 def test_Filter_Locality_Pagination_15_Success(driver):
-        ele=driver.find_element(By.XPATH,"//select[@name='currentPages']")
-        d=Select(ele)
-        d.select_by_visible_text('15')
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='2']").click()
-        time.sleep(2)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '15')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[5%] p-4')]")
+        count = 0
+        for pages in Number_of_pages[2:]:
+            count += 1
+
+        if count <= 15:  
+            print("Pagination for 15 Pages in Locality is Working fine")
 
 
-# %%
 def test_Filter_Locality_Pagination_25_Success(driver):
-        ele=driver.find_element(By.XPATH,"//select[@name='currentPages']")
-        d=Select(ele)
-        d.select_by_visible_text('25')
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='2']").click()
-        time.sleep(2)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '25')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[5%] p-4')]")
+        count = 0
+        for pages in Number_of_pages[2:]:
+            count += 1
+
+        if count <= 25:  
+            print("Pagination for 25 Pages in Locality is Working fine")
 
 
-# %%
 def test_Filter_Locality_Pagination_50_Success(driver):
-        ele=driver.find_element(By.XPATH,"//select[@name='currentPages']")
-        d=Select(ele)
-        d.select_by_visible_text('50')
-        time.sleep(2)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '50')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[5%] p-4')]")
+        count = 0
+        for pages in Number_of_pages[2:]:
+            count += 1
+
+        if count <= 50:  
+            print("Pagination for 50 Pages in Locality is Working fine")
 
 
-# %%
 def test_Filter_Locality_Refresh_Success(driver):
+        a=driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").text
         driver.find_element(By.XPATH,"//p[normalize-space()='Refresh']").click()
+        a=driver.find_element(By.XPATH,"//h1[normalize-space()='Locality']").text
+        if(a==a):
+             print("Refresh Button is Working Fine")
         time.sleep(2)
 
 
-# %%
 def test_Locality_Download_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.XPATH,"//p[normalize-space()='Download']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//p[normalize-space()='Download as Excel']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//p[normalize-space()='Download as Excel']"))).click()
         time.sleep(2)
 
 
-# %%
 def test_Locality_Return_Success(driver):
         driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1) > img:nth-child(1)").click()
         time.sleep(2)
         
 
 
-# %%
 def test_Locality_Country_ascending(driver):
     driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+    Country_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[15%]  p-4')]")
+    country_names = [country.text for country in Country_list[1:]]
+
+    if is_sorted_ascending_common(country_names):
+            print("The country list is sorted in ascending order.")
+    else:
+            print("The country list is not sorted in ascending order.")
     time.sleep(2)
 
-# %%
 def test_Locality_Country_descending(driver):
     driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[2]/p[1]/button[1]/span[1]").click()
+    Country_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[15%]  p-4')]")
+    country_names = [country.text for country in Country_list[1:]]
+
+    if is_sorted_descending_common(country_names):
+            print("The country list is sorted in descending order.")
+    else:
+            print("The country list is not sorted in descending order.")
+
     time.sleep(2)
     
 
-# %%
 def test_Locality_State_descending(driver):
     driver.find_element(By.XPATH,"//div//div//div//div//div//div[3]//p[1]//button[1]//span[1]").click()
+    State_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[20%]  p-4')][position()=1]")
+    country_names = [country.text for country in State_list[1:]]
+
+    if is_sorted_descending_common(country_names):
+            print("The state list is sorted in descending order.")
+    else:
+            print("The state list is not sorted in descending order.")
+
     time.sleep(2)
     
 
-# %%
 def test_Locality_State_ascending(driver):
     driver.find_element(By.XPATH,"//div//div//div//div//div//div[3]//p[1]//button[1]//span[1]").click()
+    state_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[20%]  p-4')][position()=1]")
+    state_names = [country.text for country in state_list[1:]]
+
+    if is_sorted_ascending_common(state_names):
+            print("The state list is sorted in ascending order.")
+    else:
+            print("The state list is not sorted in ascending order.")
     time.sleep(2)
     
 
-# %%
 def test_Locality_City_ascending(driver):
     driver.find_element(By.XPATH,"//div[4]//p[1]//button[1]//span[1]").click()
+    city_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[20%]  p-4')][position()=2]")
+    city_names = [country.text for country in city_list[1:]]
+
+    if is_sorted_ascending_common(city_names):
+            print("The city list is sorted in ascending order.")
+    else:
+            print("The city list is not sorted in ascending order.")
     time.sleep(2)
     
 
-# %%
 def test_Locality_City_descending(driver):
     driver.find_element(By.XPATH,"//div[4]//p[1]//button[1]//span[1]").click()
+    city_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[20%]  p-4')][position()=2]")
+    city_names = [country.text for country in city_list[1:]]
+
+    if is_sorted_descending_common(city_names):
+            print("The city list is sorted in descending order.")
+    else:
+            print("The city list is not sorted in descending order.")
     time.sleep(2)
     
 
-# %%
 def test_Locality_Localityname_descending(driver):
     driver.find_element(By.XPATH,"//div[5]//p[1]//button[1]//span[1]").click()
+    locality_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[25%]  p-4 ml-1')]")
+    locality_names = [country.text for country in locality_list]
+
+    if is_sorted_descending_common(locality_names):
+            print("The Locality list is sorted in descending order.")
+    else:
+            print("The Locality list is not sorted in descending order.")
     time.sleep(2)
     
 
-# %%
 def test_Locality_Localityname_ascending(driver):
     driver.find_element(By.XPATH,"//div[5]//p[1]//button[1]//span[1]").click()
+    locality_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-[25%]  p-4 ml-1')]")
+    locality_names = [country.text for country in locality_list]
+
+    if is_sorted_ascending_common(locality_names):
+            print("The Locality list is sorted in ascending order.")
+    else:
+            print("The Locality list is not sorted in ascending order.")
     time.sleep(2)
     
 
-# %%
 def test_Locality_ID_ascending(driver):
     driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    locality_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-1/2  p-4 ml-1')]")
+    locality_names = [country.text for country in locality_list]
+
+    if is_sorted_ascending_common(locality_names):
+            print("The Locality ID is sorted in ascending order.")
+    else:
+            print("The Locality ID is not sorted in ascending order.")
     time.sleep(2)
     
 
-# %%
 def test_Locality_ID_descending(driver):
     driver.find_element(By.XPATH,"//body/div/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    locality_list = driver.find_elements(By.XPATH, "//div[contains(@class,'w-1/2  p-4 ml-1')]")
+    locality_names = [country.text for country in locality_list]
+
+    if is_sorted_descending_common(locality_names):
+            print("The Locality ID is sorted in descending order.")
+    else:
+            print("The Locality ID is not sorted in descending order.")
     time.sleep(2)
     
 
-# %%
 def Locality_Webpage():
-    try:
         driver=login_and_navigate_Locality("ruderaw", "abcdefg", "9632")
-        test_Locality_Country_ascending(driver)
-        test_Locality_Country_descending(driver)
-        test_Locality_State_ascending(driver)
-        test_Locality_State_descending(driver)
-        test_Locality_City_ascending(driver)
-        test_Locality_City_descending(driver)
-        test_Locality_Localityname_ascending(driver)
-        test_Locality_Localityname_descending(driver)
-        test_Locality_ID_ascending(driver)
-        test_Locality_ID_descending(driver)
-        test_Filter_Locality_Country_name_StartsWith_Success(driver)
-        test_Filter_Locality_Country_name_Contains_Success(driver)
-        test_Filter_Locality_Country_name_DoesNotContains_Success(driver)
-        test_Filter_Locality_Country_name_EndsWith_Success(driver)
-        test_Filter_Locality_Country_name_EqualsTo_Success(driver)
-        test_Filter_Locality_Country_name_isNotNull_Success(driver)
-        test_Filter_Locality_Country_name_isNull_Success(driver)
-        test_Filter_Locality_Country_name_NoFilter_Success(driver)
-        test_Filter_Locality_State_name_StartsWith_Success(driver)
-        test_Filter_Locality_State_name_Contains_Success(driver)
-        test_Filter_Locality_State_name_DoesNotContains_Success(driver)
-        test_Filter_Locality_State_name_EndsWith_Success(driver)
-        test_Filter_Locality_State_name_EqualsTo_Success(driver)
-        test_Filter_Locality_State_name_isNotNull_Success(driver)
-        test_Filter_Locality_State_name_isNull_Success(driver)
-        test_Filter_Locality_State_name_NoFilter_Success(driver)
-        test_Filter_Locality_City_name_StartsWith_Success(driver)
-        test_Filter_Locality_City_name_Contains_Success(driver)
-        test_Filter_Locality_City_name_DoesNotContains_Success(driver)
-        test_Filter_Locality_City_name_EndsWith_Success(driver)
-        test_Filter_Locality_City_name_EqualsTo_Success(driver)
-        test_Filter_Locality_City_name_isNotNull_Success(driver)
-        test_Filter_Locality_City_name_isNull_Success(driver)
-        test_Filter_Locality_City_name_NoFilter_Success(driver)
-        test_Filter_Locality_name_StartsWith_Success(driver)
-        test_Filter_Locality_name_Contains_Success(driver)
-        test_Filter_Locality_name_DoesNotContains_Success(driver)
-        test_Filter_Locality_name_EndsWith_Success(driver)
-        test_Filter_Locality_name_EqualsTo_Success(driver)
-        test_Filter_Locality_name_isNotNull_Success(driver)
-        test_Filter_Locality_name_isNull_Success(driver)
-        test_Filter_Locality_name_NoFilter_Success(driver)
-        test_Filter_Locality_ID_EqualsTo_Success(driver)
-        test_Filter_Locality_ID_NotEqualTo_Success(driver)
-        test_Filter_Locality_ID_GreaterThan_Success(driver)
-        test_Filter_Locality_ID_LessThan_Success(driver)
-        test_Filter_Locality_ID_GreaterThanOrEqualTo_Success(driver)
-        test_Filter_Locality_ID_LessThanOrEqualTo_Success(driver)
-        test_Filter_Locality_ID_isNull_Success(driver)
-        test_Filter_Locality_ID_isNotNull_Success(driver)
-        test_Filter_Locality_ID_NoFilter_Success(driver)
-        test_Filter_Locality_Pagination_15_Success(driver)
-        test_Filter_Locality_Pagination_25_Success(driver)
-        test_Filter_Locality_Pagination_50_Success(driver)
-        test_Add_New_Locality_Success(driver)
-        test_Edit_Locality_Success(driver)
-        test_Filter_Locality_Refresh_Success(driver)
-        test_Locality_Download_Success(driver)
-        test_Locality_Return_Success(driver)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit() 
+        test_functions=[
+            test_Locality_Country_ascending,
+            test_Locality_Country_descending,
+            test_Locality_State_ascending,
+            test_Locality_State_descending,
+            test_Locality_City_ascending,
+            test_Locality_City_descending,
+            test_Locality_Localityname_ascending,
+            test_Locality_Localityname_descending,
+            test_Locality_ID_ascending,
+            test_Locality_ID_descending,
+            test_Filter_Locality_Country_name_StartsWith_Success,
+            test_Filter_Locality_Country_name_Contains_Success,
+            test_Filter_Locality_Country_name_DoesNotContains_Success,
+            test_Filter_Locality_Country_name_EndsWith_Success,
+            test_Filter_Locality_Country_name_EqualsTo_Success,
+            test_Filter_Locality_Country_name_isNotNull_Success,
+            test_Filter_Locality_Country_name_isNull_Success,
+            test_Filter_Locality_Country_name_NoFilter_Success,
+            test_Filter_Locality_State_name_StartsWith_Success,
+            test_Filter_Locality_State_name_Contains_Success,
+            test_Filter_Locality_State_name_DoesNotContains_Success,
+            test_Filter_Locality_State_name_EndsWith_Success,
+            test_Filter_Locality_State_name_EqualsTo_Success,
+            test_Filter_Locality_State_name_isNotNull_Success,
+            test_Filter_Locality_State_name_isNull_Success,
+            test_Filter_Locality_State_name_NoFilter_Success,
+            test_Filter_Locality_City_name_StartsWith_Success,
+            test_Filter_Locality_City_name_Contains_Success,
+            test_Filter_Locality_City_name_DoesNotContains_Success,
+            test_Filter_Locality_City_name_EndsWith_Success,
+            test_Filter_Locality_City_name_EqualsTo_Success,
+            test_Filter_Locality_City_name_isNotNull_Success,
+            test_Filter_Locality_City_name_isNull_Success,
+            test_Filter_Locality_City_name_NoFilter_Success,
+            test_Filter_Locality_name_StartsWith_Success,
+            test_Filter_Locality_name_Contains_Success,
+            test_Filter_Locality_name_DoesNotContains_Success,
+            test_Filter_Locality_name_EndsWith_Success,
+            test_Filter_Locality_name_EqualsTo_Success,
+            test_Filter_Locality_name_isNotNull_Success,
+            test_Filter_Locality_name_isNull_Success,
+            test_Filter_Locality_name_NoFilter_Success,
+            test_Filter_Locality_ID_EqualsTo_Success,
+            test_Filter_Locality_ID_NotEqualTo_Success,
+            test_Filter_Locality_ID_GreaterThan_Success,
+            test_Filter_Locality_ID_LessThan_Success,
+            test_Filter_Locality_ID_GreaterThanOrEqualTo_Success,
+            test_Filter_Locality_ID_LessThanOrEqualTo_Success,
+            test_Filter_Locality_ID_isNull_Success,
+            test_Filter_Locality_ID_isNotNull_Success,
+            test_Filter_Locality_ID_NoFilter_Success,
+            test_Filter_Locality_Pagination_15_Success,
+            test_Filter_Locality_Pagination_25_Success,
+            test_Filter_Locality_Pagination_50_Success,
+            test_Add_New_Locality_Success,
+            test_Edit_Locality_Success,
+            test_Filter_Locality_Refresh_Success,
+            test_Locality_Download_Success,
+            test_Locality_Return_Success       
+        ]
+        for test_func in test_functions:
+              test_func(driver)
 
 Locality_Webpage()
 
