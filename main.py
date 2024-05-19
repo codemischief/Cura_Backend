@@ -431,6 +431,7 @@ def filterAndPaginate_v2(db_config,
                 df.to_excel(fname, index=False, engine='openpyxl')
                 logging.info(f'generated excel file <{fname}>')
                 resp_payload['fileurl'] = f'{hostURL}/download/{_filename}'
+                resp_payload['filename'] = _filename 
             except Exception as e:
                 msg = str(e).replace("\n","")
                 logging.exception(f'failed to generate excel file due to <{msg}>')
@@ -567,9 +568,10 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
             "data":{}
             }
 
-def giveSuccess(uid,rid,data=[], total_count=None, fileurl = None):
+def giveSuccess(uid,rid,data=[], total_count=None, fileurl = None, filename = None):
     final_data =  {
         "fileurl": fileurl,
+        "filename": filename,
         "result":"success",
         "user_id":uid,
         "role_id":rid,
@@ -1778,6 +1780,7 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                 colnames = []
                 total_count = 0
                 fileurl = None
+                filename = None
                 if isPaginationRequired:
                     logging.info("Pagination")
                     data = filterAndPaginate_v2(DATABASE_URL,
@@ -1798,8 +1801,8 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                     colnames = data['colnames']
                     total_count = data['total_count']
                     fileurl = data['fileurl'] if 'fileurl' in data else None
+                    filename = data['filename'] if 'filename' in data else None
                     data = data['data']
-                    print(f'fileurl is <{fileurl}>')
                 else:
                     msg = logMessage(cursor,query)
                     logging.info(msg)
@@ -1815,9 +1818,9 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                         for i,colname in enumerate(colnames):
                             row_dict[colname] = row[i]
                         res.append(row_dict)
-                    return giveSuccess(payload['user_id'], role_access_status, res,total_count, fileurl = fileurl)
+                    return giveSuccess(payload['user_id'], role_access_status, res,total_count, fileurl = fileurl, filename = filename)
                 else:
-                    return giveSuccess(payload['user_id'],role_access_status,data,total_count, fileurl = fileurl)
+                    return giveSuccess(payload['user_id'],role_access_status,data,total_count, fileurl = fileurl, filename = filename)
     
     except Exception as e:
             logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
