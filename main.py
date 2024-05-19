@@ -9,17 +9,9 @@ from pydantic import BaseModel
 import logging
 import traceback
 import datetime
-import os
-from fastapi.responses import FileResponse
-import pandas as pd
-import uuid
 
 # from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
-
-hostURL = 'http://20.197.13.140:8000'
-
-FILE_DIRECTORY = './downloads'
 
 month_map = {
     1:"Jan",
@@ -260,7 +252,6 @@ def filterAndPaginate(db_config,
                 rows = search_results
             logging.info(f'filterAndPaginate: Given search key <{search_key}> yeilds <{total_count}> entries and after filtered rows are <{len(rows)}>')
 
-
         return {'data':rows, 'total_count' : total_count, 'message':'success', 'colnames':colnames}
     except Exception as e:
         logging.exception(traceback.print_exc())
@@ -421,21 +412,8 @@ def filterAndPaginate_v2(db_config,
                 rows = search_results[start_index:end_index]
             else:
                 rows = search_results
-        resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames}
-        # generate downloadable file
-        if page_number == 0 and page_size == 0:
-            try:
-                df = pd.DataFrame(rows, columns=colnames)
-                _filename = f'{uuid.uuid4()}.xls'
-                fname = f'./downloads/{_filename}'
-                df.to_excel(fname, index=False, engine='openpyxl')
-                logging.info(f'generated excel file <{fname}>')
-                resp_payload['fileurl'] = f'{hostURL}/download/{_filename}'
-            except Exception as e:
-                msg = str(e).replace("\n","")
-                logging.exception(f'failed to generate excel file due to <{msg}>')
 
-        return resp_payload
+        return {'data':rows, 'total_count' : total_count, 'message':'success', 'colnames':colnames}
     except Exception as e:
         logging.exception(f' exception {traceback.print_exc()}')
         #print(traceback.print_exc())
@@ -567,9 +545,8 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
             "data":{}
             }
 
-def giveSuccess(uid,rid,data=[], total_count=None, fileurl = None):
+def giveSuccess(uid,rid,data=[], total_count=None):
     final_data =  {
-        "fileurl": fileurl,
         "result":"success",
         "user_id":uid,
         "role_id":rid,
@@ -1246,7 +1223,7 @@ async def delete_localities(payload : dict,conn : psycopg2.extensions.connection
 async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'get_bank_statement: received payload <{payload}>')
     payload['table_name'] = 'get_bankst_view'
-    return await runInTryCatch(
+    data =  await runInTryCatch(
         conn = conn,
         fname = 'get_bank_statement',
         payload=payload,
@@ -1255,6 +1232,13 @@ async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
         formatData=True,
         isdeleted=False
     )
+    with conn[0].cursor() as cursor:
+        query = """SELECT
+    COALESCE(SUM(CASE WHEN lower(crdr) = 'cr' THEN amount ELSE 0 END), 0) - 
+    COALESCE(SUM(CASE WHEN lower(crdr) = 'dr' THEN amount ELSE 0 END), 0) AS difference
+FROM
+    bankst;
+"""
 
 
 @app.post('/addBankSt')
@@ -1776,8 +1760,6 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                 res = []
                 data = []
                 colnames = []
-                total_count = 0
-                fileurl = None
                 if isPaginationRequired:
                     logging.info("Pagination")
                     data = filterAndPaginate_v2(DATABASE_URL,
@@ -1797,16 +1779,14 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                         return giveFailure(data['message'],payload['user_id'],role_access_status)
                     colnames = data['colnames']
                     total_count = data['total_count']
-                    fileurl = data['fileurl'] if 'fileurl' in data else None
                     data = data['data']
-                    print(f'fileurl is <{fileurl}>')
                 else:
                     msg = logMessage(cursor,query)
                     logging.info(msg)
                     res_ = cursor.fetchall()
                     colnames = [desc[0] for desc in cursor.description]
                     data = res_
-                    return giveSuccess(payload['user_id'], role_access_status, data, total_count)
+                    return giveSuccess(payload['user_id'], role_access_status, data,total_count)
 
                 if formatData:
                     logging.info(f"Formatting in progress for process {fname}")
@@ -1815,9 +1795,10 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                         for i,colname in enumerate(colnames):
                             row_dict[colname] = row[i]
                         res.append(row_dict)
-                    return giveSuccess(payload['user_id'], role_access_status, res,total_count, fileurl = fileurl)
+                    
+                    return giveSuccess(payload['user_id'], role_access_status, res,total_count)
                 else:
-                    return giveSuccess(payload['user_id'],role_access_status,data,total_count, fileurl = fileurl)
+                    return giveSuccess(payload['user_id'],role_access_status,data,total_count)
     
     except Exception as e:
             logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
@@ -5569,22 +5550,115 @@ async def delete_research_banks_and_branches(payload: dict,conn: psycopg2.extens
         logging.info(traceback.print_exc())
         return giveFailure(f"Invalid Credentials",0,0)
 
-@app.post("/download/{file_name}")
-def download_file(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'got download file request with payload <{payload}>')
+
+@app.post('/getResearchMandals')
+async def get_research_mandals(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'get_research_mandalas_view'
+    return await runInTryCatch(
+        conn = conn,
+        payload=payload,
+        fname='get_research_mandals',
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+
+@app.post('/getReportOrderInvoice')
+async def get_report_order_invoice(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['filters'].append(['invoicedate','between',[payload['startdate'],payload['enddate']],'Date'])
+    payload['table_name'] = 'orderinvoicelistview'
+    return await runInTryCatch(
+        conn = conn,
+        payload=payload,
+        fname='get_report_order_invoice',
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+
+@app.post('/addResearchMandals')
+async def add_research_mandals(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
-        file_name = payload['filename']
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
-            file_path = os.path.join(FILE_DIRECTORY, file_name)
-            # Security check - only allow filenames, no paths
-            if "/" in file_name or "\\" in file_name:
-                logging.info(f'invalid filepath <{file_path}')
-                return {"error": "Invalid file path"}
-            if os.path.exists(file_path):
-                logging.info(f'downloading file <{file_path}')
-                return FileResponse(path=file_path, filename=file_name, media_type='application/octet-stream')
-            return giveFailure(f'file <{file_name}> not found',payload['user_id'],role_access_status)
+            with conn[0].cursor() as cursor:
+                query = """INSERT INTO banksandbranches (name,typeid,emailid,phoneno,
+                    suburb,city,state,country,website,email,email2,
+                     contactname1,contactname2,phoneno1,phoneno2,dated
+                    createdby,isdeleted,excludefrommailinglist) VALUES (%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                msg = logMessage(cursor,query,[
+                    payload['name'],
+                    payload['typeid'],
+                    payload['emailid'],
+                    payload['phoneno'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['website'],
+                    payload['email1'],
+                    payload['email2'],
+                    payload['contactname1'],
+                    payload['contactname2'],
+                    payload['phoneno1'],
+                    payload['phoneno2'],
+                    givenowtime(),
+                    payload['user_id'],
+                    False,
+                    payload['excludefrommailinglist']
+                ])
+                id = cursor.fetchone()[0]
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted Mandala":id})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+    
+@app.post('/editResearchMandals')
+async def edit_research_mandals(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """UPDATE mandalas SET name=%s,typeid=%s,emailid=%s,phoneno=%s,
+                    suburb=%s,city=%s,state=%s,country=%s,website=%s,email1=%s,email2=%s,
+                     contactname1=%s,contactname2=%s,phoneno1=%s,phoneno2=%s,dated=%s
+                    createdby=%s,isdeleted=%s,excludefrommailinglist=%s WHERE id=%s"""
+                msg = logMessage(cursor,query,[
+                    payload['name'],
+                    payload['typeid'],
+                    payload['emailid'],
+                    payload['phoneno'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['website'],
+                    payload['email1'],
+                    payload['email2'],
+                    payload['contactname1'],
+                    payload['contactname2'],
+                    payload['phoneno1'],
+                    payload['phoneno2'],
+                    givenowtime(),
+                    payload['user_id'],
+                    False,
+                    payload['excludefrommailinglist'],
+                    payload['id']
+                ])
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited Mandala":payload['id']})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
     except KeyError as ke:
@@ -5594,5 +5668,80 @@ def download_file(payload: dict,conn: psycopg2.extensions.connection = Depends(g
         logging.info(traceback.print_exc())
         return giveFailure(f"Invalid Credentials",0,0)
 
+@app.post('/deleteResearchMandals')
+async def delete_research_mandals(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """UPDATE mandalas SET isdeleted=true WHERE id=%s AND isdeleted=false"""
+                msg = logMessage(cursor,query,[
+                    payload['id']
+                ])
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Deleted Mandala":payload['id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+
+@app.post('/getResearchArchitect')
+async def get_research_architect(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'architech'
+    return await runInTryCatch(
+        conn = conn,
+        payload=payload,
+        fname='get_research_architech',
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+
+@app.post("/addResearchArchitect")
+async def add_research_architech(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """INSERT INTO banksandbranches (name,emailid,phoneno,
+                    project,societyname,dated,createdby,isdeleted,suburb,city,
+                     state,country,excludefrommailinglist) VALUES (%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                msg = logMessage(cursor,query,[
+                    payload['name'],
+                    payload['emailid'],
+                    payload['phoneno'],
+                    payload['project'],
+                    payload['societyname'],
+                    givenowtime(),
+                    payload['user_id'],
+                    False,
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['excludefrommailinglist']
+                ])
+                id = cursor.fetchone()[0]
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted Mandala":id})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+
+        
 
 logger.info("program_started")
