@@ -1,6 +1,8 @@
 import psycopg2
+import pandas as pd
+import os
 import bcrypt
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 import psycopg2.errorcodes
 import uuid
@@ -9,7 +11,12 @@ from pydantic import BaseModel
 import logging
 import traceback
 import datetime
-import os
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
+from datetime import timedelta,timezone
+import jwt
+import secrets
 from fastapi.responses import FileResponse
 import pandas as pd
 import uuid
@@ -18,7 +25,7 @@ import uuid
 logger = logging.getLogger(__name__)
 
 hostURL = 'http://20.197.13.140:8000'
-
+ALG = 'HS256'
 FILE_DIRECTORY = './downloads'
 
 month_map = {
@@ -1262,7 +1269,7 @@ async def delete_localities(payload : dict,conn : psycopg2.extensions.connection
 async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'get_bank_statement: received payload <{payload}>')
     payload['table_name'] = 'get_bankst_view'
-    return await runInTryCatch(
+    data =  await runInTryCatch(
         conn = conn,
         fname = 'get_bank_statement',
         payload=payload,
@@ -1271,6 +1278,16 @@ async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
         formatData=True,
         isdeleted=False
     )
+    with conn[0].cursor() as cursor:
+        query = '''SELECT
+    COALESCE(SUM(CASE WHEN crdr = 'cr' THEN amount ELSE 0 END), 0) - 
+    COALESCE(SUM(CASE WHEN crdr = 'dr' THEN amount ELSE 0 END), 0) AS difference
+FROM
+    your_table_name;
+'''
+        cursor.execute(query)
+        data['total_amount'] = cursor.fetchone()[0]
+        return data
 
 
 @app.post('/addBankSt')
@@ -5811,6 +5828,107 @@ async def add_research_architech(payload:dict,conn:psycopg2.extensions.connectio
         logging.info(traceback.print_exc())
         return giveFailure(f"Invalid Credentials",0,0)
 
-        
+def send_email(subject, body, to_email):
+    # SMTP server configuration
+    smtp_server = 'smtpout.secureserver.net'  # Example: 'smtp.gmail.com'
+    smtp_port = 587  # For SSL, use 465; for TLS/StartTLS, use 587
+    smtp_username = 'admin@mycuraservices.com'
+    smtp_password = 'Cura@123456'
+
+    # Create MIME message
+    msg = MIMEMultipart()
+    msg['From'] = smtp_username
+    msg['To'] = to_email
+    msg['Subject'] = subject
+
+    # Add body to the email
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Connect to the SMTP server
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()  # Enable security
+        server.login(smtp_username, smtp_password)
+        text = msg.as_string()
+        server.sendmail(smtp_username, to_email, text)
+        server.quit()
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+def create_token(payload: dict,expires:timedelta|None = None):
+    key = secrets.token_hex(4)
+    to_encode = payload.copy()
+    if expires:
+        expire = datetime.datetime.now(timezone.utc) + expires
+    else:
+        expire = datetime.datetime.now(timezone.utc) + timedelta(minutes=10)
+    to_encode.update({"exp":expire})
+    encoded_jwt = jwt.encode(to_encode,key=key,algorithm=ALG)
+    return encoded_jwt,key
+
+@app.post("/token")
+async def login_for_token(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            cursor.execute("SELECT email1 FROM usertable WHERE username = %s",(payload["username"],))
+            email = cursor.fetchone()
+
+            if email:
+                access_token_expires = timedelta(minutes=100)
+                access_token,key = create_token(payload,access_token_expires)
+                cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
+                send_email("Reset Password",f"""Reset password at 20.197.13.140:5173/reset/{access_token}""",email[0])
+                logging.info(f"""Reset password at 20.197.13.140:5173/reset/{access_token}""")
+                # print(access_token)
+                conn[0].commit()
+                return giveSuccess(0,0,"Sent Email")
+            else:
+                return giveFailure("No user exists",None,None)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(e,0,0)
+
+@app.post("/reset")
+async def getdata(payload:dict,request : Request,conn: psycopg2.extensions.connection = Depends(get_db_connection),):
+    try:
+        #header derive
+        headers = request.headers
+        logging.info(headers)
+
+        if 'authorization' not in headers:
+            return giveFailure("No token from user",0,0)
+        token = headers['authorization'][7:]
+        with conn[0].cursor() as cursor:
+            query = 'SELECT key FROM tokens where token = %s'
+            message = logMessage(cursor,query,[token])
+            
+            logging.info(message)
+            key = cursor.fetchone()[0]
+            # logging.info(type(key))
+        username = jwt.decode(token,key,algorithms=ALG)['username']
+        try:
+            with conn[0].cursor() as cursor:
+                #hashing to be done here, using bcrypt for now.
+                newp = bcrypt.hashpw(payload['password'].encode('ascii'),bcrypt.gensalt()).decode('utf-8')
+                logging.info(newp)
+                #update part
+                query = 'UPDATE usertable SET password = %s WHERE username = %s'
+                # msg = logMessage(cursor,query,[newp,payload['username']])
+                #logging.info(msg
+                logging.info(logMessage(cursor,query,[newp,username]))
+
+                logging.info(cursor.statusmessage)
+            conn[0].commit()
+            return giveSuccess(None,None,{"Change PW for":username})
+        except Exception as e:
+            logging.info(traceback.print_exc())
+            return giveFailure('Invalid Credentials',None,None)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure('Invalid Credentials',None,None)
+
+
+         
 
 logger.info("program_started")

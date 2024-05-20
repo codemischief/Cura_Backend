@@ -2282,3 +2282,37 @@ LEFT JOIN
 CREATE SEQUENCE IF NOT EXISTS banksandbranches_id_seq OWNED BY banksandbranches.id;
 SELECT setval('banksandbranches_id_seq', COALESCE(max(id), 0) + 1, false) FROM banksandbranches;
 ALTER TABLE banksandbranches ALTER COLUMN id SET DEFAULT nextval('banksandbranches_id_seq');
+
+alter table employee alter column dateofjoining type date;
+alter table employee alter column lastdateofworking type date;
+alter table employee alter column dob type date;
+
+CREATE OR REPLACE VIEW orderinvoicelistview
+SELECT order_invoice.id,
+    order_invoice.orderid,
+    order_invoice.invoicedate,
+    order_invoice.invoiceamount,
+    order_invoice.createdby AS createdbyid,
+    order_invoice.isdeleted,
+    (usertable.firstname || ' '::text) || usertable.lastname AS createdby,
+    getmonthyear(order_invoice.invoicedate::timestamp without time zone) AS monthyear,
+    getfinancialyear(order_invoice.invoicedate) AS fy,
+    order_invoice.entityid,
+    entity.name AS entityname,
+    order_invoice.dated,
+    orders.briefdescription AS orderdescription,
+    (client.firstname || ' '::text) || client.lastname AS clientname,
+    lob.name AS lobname,
+    services.id AS serviceid,
+    services.service,
+    orders.clientid,
+    'OI'::text AS type,
+    ''::text AS vendorname,
+    ''::text AS mode
+FROM lob
+     RIGHT JOIN services ON lob.id = services.lob
+     RIGHT JOIN orders ON services.id = orders.service
+     JOIN order_invoice ON orders.id = order_invoice.orderid
+     JOIN client ON orders.clientid = client.id
+     LEFT JOIN usertable ON order_invoice.createdby = usertable.id
+     LEFT JOIN entity ON order_invoice.entityid = entity.id;
