@@ -13,6 +13,36 @@ import random
 import string
 import pytest
 
+def filter_Common(driver, filter_xpath, text_css_selector, button_css_selector, starts_with_letter):
+    wait=WebDriverWait(driver,10)
+    driver.find_element(By.CSS_SELECTOR, text_css_selector).clear()
+    driver.find_element(By.CSS_SELECTOR, text_css_selector).send_keys(starts_with_letter)
+    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,button_css_selector))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,filter_xpath))).click()
+    time.sleep(1)
+   
+def filter_pagination_Common(driver, select_xpath, items_per_page):
+    wait = WebDriverWait(driver, 10)
+    select_element = driver.find_element(By.XPATH, select_xpath)
+    dropdown = Select(select_element)
+    dropdown.select_by_visible_text(items_per_page)
+    time.sleep(2) 
+
+def is_sorted_ascending_common(string_list):
+        for i in range(len(string_list) - 1):
+                if string_list[i] > string_list[i + 1]:
+                   return False
+        
+        return True
+
+
+def is_sorted_descending_common(string_list):
+        for i in range(len(string_list) - 1):
+                if string_list[i] < string_list[i + 1]:
+                   return False
+        
+        return True
+
 def login_and_navigate(username, password, comkey):
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
@@ -2318,8 +2348,6 @@ def City_webpage():
 City_webpage()
 
     
-
-# %%
 def login_and_navigate_LOB(username, password, comkey):
     driver = webdriver.Chrome()
     driver.get(drivers_config["login_url"])
@@ -2338,8 +2366,8 @@ def login_and_navigate_LOB(username, password, comkey):
     time.sleep(2)
     return driver
 
-# %%
 def test_Add_New_LOB_Success(driver):
+        wait=WebDriverWait(driver,10)
         addLOB_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4"))
         )
@@ -2352,21 +2380,19 @@ def test_Add_New_LOB_Success(driver):
         assert addLOB_header.text == "New LOB", "Add New LOB header text is incorrect"
         driver.find_element(By.XPATH,"//input[@name='empName']").send_keys("aa")
         driver.find_element(By.XPATH,"//button[normalize-space()='Add']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Add']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Add']"))).click()
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@type='text']").clear()
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@type='text']").send_keys("aa")
         driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='trash']").click()
-        driver.find_element(By.XPATH,"//button[normalize-space()='Delete']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='trash']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
         time.sleep(2)
 
 
-# %%
 def test_Edit_LOB_Success(driver):
+        wait=WebDriverWait(driver,10)
         driver.find_element(By.XPATH,"//input[@type='text']").clear()
         time.sleep(2)
         addLOB_button = WebDriverWait(driver, 10).until(
@@ -2381,17 +2407,14 @@ def test_Edit_LOB_Success(driver):
         assert addLOB_header.text == "New LOB", "Add New LOB header text is incorrect"
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@name='empName']").send_keys("aa")
-        driver.find_element(By.XPATH,"//button[normalize-space()='Add']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Add']"))).click()
         addLOB_header = WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, "div[class='mt-4 w-full text-center'] p[class='text-[14px]']"))
         )
-        driver.find_element(By.XPATH,"//button[normalize-space()='Add']").click()
-        # driver.find_element(By.XPATH,"//input[@type='text']").send_keys("")
-        time.sleep(4)
-        driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-        # driver.find_element(By.XPATH,"//input[@placeholder='Search']").clear()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Add']"))).click()
+        # wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
         time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='edit']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='edit']"))).click()
         driver.find_element(By.XPATH,"//input[@name='empName']").clear()
         driver.find_element(By.XPATH,"//input[@name='empName']").send_keys("ashish")
         driver.find_element(By.XPATH,"//button[normalize-space()='Save']").click()
@@ -2399,313 +2422,502 @@ def test_Edit_LOB_Success(driver):
         driver.find_element(By.XPATH,"//input[@type='text']").clear()
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@type='text']").send_keys("ashish")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//img[@alt='trash']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//button[normalize-space()='Delete']").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='trash']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
         time.sleep(2)
 
-
-# %%
-def test_filter_LOB_StartsWith(driver,send_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").send_keys(send_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)").click()
-        time.sleep(2)
-
-# %%
 def test_Filter_LOB_StartsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='StartsWith']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='StartsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "a"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[20%]  p-3 ml-[3px]')]")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.lower().startswith("a"):
+                element_found = False
+                break
+
+        if element_found:
+            print("StartsWith filter in LOB with LOB Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
         
 
-
-# %%
 def test_Filter_LOB_Contains_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Contains']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='Contains']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "a"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[20%]  p-3 ml-[3px]')]")
+        element_found = True 
+        for item in filtered_elements:
+            if "a" not in item.text.lower():
+                element_found = False
+                break
+
+        if element_found:
+            print("Contains filter in LOB with LOB Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
         
 
-
-# %%
 def test_Filter_LOB_DoesNotContain_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='DoesNotContain']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='DoesNotContain']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "a"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[20%]  p-3 ml-[3px]')]")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "a":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in LOB with LOB Name is Working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//div[contains(@class,'flex text-sm')]").click()
         time.sleep(2)
 
 
-
-# %%
 def test_Filter_LOB_EndsWith_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EndsWith']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EndsWith']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "a"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[20%]  p-3 ml-[3px]')]")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.endswith("a"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in LOB with LOB Name is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//div[contains(@class,'flex text-sm')]").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_LOB_EqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "Builder Sale"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'w-[20%]  p-3 ml-[3px]')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "Builder Sale":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in City with Country Name is working fine.")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//div[@class='flex text-sm']").click()
         time.sleep(2)
         
 
-
-# %%
 def test_Filter_LOB_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "a"
+    )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in LOB With LOB Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
 
-# %%
 def test_Filter_LOB_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "a"
+    )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in LOB With LOB Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
 
 
-
-# %%
 def test_Filter_LOB_Nofilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_LOB_StartsWith(driver,"a")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "a"
+    )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("No filter in LOB With LOB Name is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
 
 
+def test_Filter_ID_LOB_Equalto_Success(driver):        
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='EqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2 p-3 flex ml-[9px]']")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "12":
+                element_found = False
+                break
 
-# %%
-def test_filter_ID_LOB_StartsWith(driver,send_letter):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").send_keys(send_letter)
-        time.sleep(2)
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)").click()
-        time.sleep(2)
-
-# %%
-def test_Filter_ID_LOB_Equalto_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        if element_found:
+            print("EqualTo filter in LOB with ID is working fine")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_ID_LOB_NotEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='NotEqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='NotEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2 p-3 flex ml-[9px]']")
+        element_found = True
+        for item in filtered_elements:
+            if item.text == "12":
+                element_found = False
+                break
+
+        if element_found:
+            print("NotEqualTo Filter in LOB with ID is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_ID_LOB_GreaterThan_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThan']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2 p-3 flex ml-[9px]']")
+        element_found = True
+        for item in filtered_elements:
+            if item.text <= '12':
+                element_found = False
+                break
+
+        if element_found:
+            print("Greater Than Filter in LOB with ID is working fine.")
+        else:
+            print("Error.")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
     
 
-
-# %%
 def test_Filter_ID_LOB_GreaterThanOrEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='GreaterThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2 p-3 flex ml-[9px]']")
+        element_found = True
+        for item in filtered_elements:
+            if item.text < "12":
+                element_found = False
+                break
+
+        if element_found:
+            print("GreaterThanOrEqualTo Filter in LOB with ID is working fine")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
 
 
-
-# %%
 def test_Filter_ID_LOB_LessThan_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThan']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThan']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2 p-3 flex ml-[9px]']")
+        element_found = True
+        for item in filtered_elements:
+            if int(item.text) >= 12:
+                element_found = False
+                break
+
+        if element_found:
+            print("LessThan Filter in LOB with ID is working fine.")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
 
 
-# %%
 def test_Filter_ID_LOB_LessThanOrEqualTo_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='LessThanOrEqualTo']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "12"
+    )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-1/2 p-3 flex ml-[9px]']")
+        element_found = True
+        for item in filtered_elements:
+            if int(item.text) > 12:
+                element_found = False
+                break
+
+        if element_found:
+            print("LessThanOrEqualTo Filter in LOB with ID is working fine")
+        else:
+            print("Error")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
 
 
-
-# %%
-def test_Filter_ID_LOB_Between_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='Between']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
-        time.sleep(1)
-       
-
-# %%
-def test_Filter_ID_LOB_NotBetween_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='NotBetween']").click()
-        driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
-        time.sleep(2)
-       
-
-
-# %%
 def test_Filter_ID_LOB_isNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "12"
+    )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in LOB With ID is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
        
 
 
-
-# %%
 def test_Filter_ID_LOB_isNotNull_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='isNotNull']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='isNotNull']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "12"
+    )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in LOB With ID is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
     
 
 
-# %%
 def test_Filter_ID_LOB_NoFilter_Success(driver):
-        driver.find_element(By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)").clear()
-        test_filter_ID_LOB_StartsWith(driver,"12")
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//h1[normalize-space()='No Filter']").click()
+        filter_Common(
+        driver,
+        "//h1[normalize-space()='No Filter']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)",
+        "12"
+    )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("NO filter in LOB With ID is working fine")
         driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").click()
         time.sleep(2)
 
-
-# %%
 def test_Filter_LOB_Pagination_15_Success(driver):
-        ele=driver.find_element(By.XPATH,"//select[@name='currentPages']")
-        d=Select(ele)
-        d.select_by_visible_text('15')
-        time.sleep(2)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '15')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[@class='w-[10%] p-3 ml-[3px]']")
+        count = 0
+        for pages in Number_of_pages:
+            count += 1
 
+        if count <= 15:  
+            print("Pagination for 15 Pages in LOB is Working fine")
 
-# %%
 def test_Filter_LOB_Pagination_25_Success(driver):
-        ele=driver.find_element(By.XPATH,"//select[@name='currentPages']")
-        d=Select(ele)
-        d.select_by_visible_text('25')
-        time.sleep(2)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '25')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[@class='w-[10%] p-3 ml-[3px]']")
+        count = 0
+        for pages in Number_of_pages:
+            count += 1
+
+        if count <= 25:  
+            print("Pagination for 25 Pages in LOB is Working fine")
 
 
-# %%
 def test_Filter_LOB_Pagination_50_Success(driver):
-        ele=driver.find_element(By.XPATH,"//select[@name='currentPages']")
-        d=Select(ele)
-        d.select_by_visible_text('50')
-        time.sleep(2)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '50')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[@class='w-[10%] p-3 ml-[3px]']")
+        count = 0
+        for pages in Number_of_pages:
+            count += 1
+
+        if count <= 50:  
+            print("Pagination for 50 Pages in LOB is Working fine")
 
 
-# %%
 def test_Filter_LOB_Refresh_Success(driver):
+        a=driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").text
         driver.find_element(By.XPATH,"//p[normalize-space()='Refresh']").click()
+        a=driver.find_element(By.XPATH,"//h1[normalize-space()='LOB']").text
+        if(a==a):
+             print("Refresh Button in LOB is Working fine")
         time.sleep(2)
         
 
-
-
-# %%
 def test_LOB_Download_Success(driver):
-        driver.find_element(By.XPATH,"//p[normalize-space()='Download']").click()
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//p[normalize-space()='Download as Excel']").click()
+        wait=WebDriverWait(driver,10)
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//p[normalize-space()='Download']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//p[normalize-space()='Download as Excel']"))).click()
         time.sleep(2)
 
 
-# %%
 def test_LOB_return_Success(driver):
-        driver.find_element(By.XPATH,"//img[contains(@class,'w-5 h-5')]").click()
+        wait=WebDriverWait(driver,10)
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@src='/src/assets/back.png']"))).click()
         time.sleep(2)
         
+def LOB_ascending(driver):
+    driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[2]/p[1]/button[1]/span[1]").click()
+    LOB_list = driver.find_elements(By.XPATH, "//div[@class='w-[20%]  p-3 ml-[3px]']")
+    LOB_names = [country.text for country in LOB_list]
 
+    if is_sorted_ascending_common(LOB_names):
+            print("The LOB list is sorted in ascending order.")
+    else:
+            print("The LOB list is not sorted in ascending order.")
+    time.sleep(2)
 
-# %%
+def LOB_descending(driver):
+    driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[2]/p[1]/button[1]/span[1]").click()
+    LOB_list = driver.find_elements(By.XPATH, "//div[@class='w-[20%]  p-3 ml-[3px]']")
+    LOB_names = [country.text for country in LOB_list]
+
+    if is_sorted_descending_common(LOB_names):
+            print("The LOB list is sorted in descending order.")
+    else:
+            print("The LOB list is not sorted in descending order.")
+    time.sleep(2)
+
+def LOB_ID_descending(driver):
+    driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    LOB_ID = driver.find_elements(By.XPATH, "//div[@class='w-1/2 p-3 flex ml-[9px]']")
+    LOB_names = [country.text for country in LOB_ID]
+
+    if is_sorted_descending_common(LOB_names):
+            print("The LOB ID is sorted in descending order.")
+    else:
+            print("The LOB ID is not sorted in descending order.")
+    time.sleep(2)
+
+def LOB_ID_ascending(driver):
+    driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/div[1]/p[1]/button[1]/span[1]").click()
+    LOB_ID = driver.find_elements(By.XPATH, "//div[@class='w-1/2 p-3 flex ml-[9px]']")
+    LOB_names = [country.text for country in LOB_ID]
+
+    if is_sorted_ascending_common(LOB_names):
+            print("The LOB ID is sorted in ascending order.")
+    else:
+            print("The LOB ID is not sorted in ascending order.")
+    time.sleep(2)
+
 def LOB_Webpage():
-    try:
         driver=login_and_navigate_LOB("ruderaw", "abcdefg", "9632")
-        test_Filter_LOB_StartsWith_Success(driver)
-        test_Filter_LOB_Contains_Success(driver)
-        test_Filter_LOB_DoesNotContain_Success(driver)
-        test_Filter_LOB_EndsWith_Success(driver)
-        test_Filter_LOB_EqualTo_Success(driver)
-        test_Filter_LOB_isNull_Success(driver)
-        test_Filter_LOB_isNotNull_Success(driver)
-        test_Filter_LOB_Nofilter_Success(driver)
-        test_Filter_ID_LOB_Equalto_Success(driver)
-        test_Filter_ID_LOB_NotEqualTo_Success(driver)
-        test_Filter_ID_LOB_GreaterThan_Success(driver)
-        test_Filter_ID_LOB_GreaterThanOrEqualTo_Success(driver)
-        test_Filter_ID_LOB_LessThan_Success(driver)
-        test_Filter_ID_LOB_LessThanOrEqualTo_Success(driver)
-        test_Filter_ID_LOB_isNull_Success(driver)
-        test_Filter_ID_LOB_isNotNull_Success(driver)
-        test_Filter_ID_LOB_NoFilter_Success(driver)
-        test_Filter_LOB_Pagination_15_Success(driver)
-        test_Filter_LOB_Pagination_25_Success(driver)
-        test_Filter_LOB_Pagination_50_Success(driver)
-        test_Add_New_LOB_Success(driver)
-        test_Edit_LOB_Success(driver)
-        test_Filter_LOB_Refresh_Success(driver)
-        test_LOB_Download_Success(driver)
-        test_LOB_return_Success(driver)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        driver.quit()
+        test_functions=[
+            LOB_ascending,
+            LOB_descending,
+            LOB_ID_descending,
+            LOB_ID_ascending,
+            test_Filter_LOB_StartsWith_Success,
+            test_Filter_LOB_Contains_Success,
+            test_Filter_LOB_DoesNotContain_Success,
+            test_Filter_LOB_EndsWith_Success,
+            test_Filter_LOB_EqualTo_Success,
+            test_Filter_LOB_isNull_Success,
+            test_Filter_LOB_isNotNull_Success,
+            test_Filter_LOB_Nofilter_Success,
+            test_Filter_ID_LOB_Equalto_Success,
+            test_Filter_ID_LOB_NotEqualTo_Success,
+            test_Filter_ID_LOB_GreaterThan_Success,
+            test_Filter_ID_LOB_GreaterThanOrEqualTo_Success,
+            test_Filter_ID_LOB_LessThan_Success,
+            test_Filter_ID_LOB_LessThanOrEqualTo_Success,
+            test_Filter_ID_LOB_isNull_Success,
+            test_Filter_ID_LOB_isNotNull_Success,
+            test_Filter_ID_LOB_NoFilter_Success,
+            test_Filter_LOB_Pagination_15_Success,
+            test_Filter_LOB_Pagination_25_Success,
+            test_Filter_LOB_Pagination_50_Success,
+            test_Add_New_LOB_Success,
+            test_Edit_LOB_Success,
+            test_Filter_LOB_Refresh_Success,
+            test_LOB_Download_Success,
+            test_LOB_return_Success
+        ]
+        for test_func in test_functions:
+             test_func(driver)
+
 
 LOB_Webpage()
 
