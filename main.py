@@ -267,6 +267,19 @@ def filterAndPaginate(db_config,
         msg = str(e).replace("\n","")
         return {'data':None, 'message':f'exception due to <{msg}>'}
 
+def generateExcelOrPDF(downloadType=None, rows=None, colnames=None):
+    try:
+        df = pd.DataFrame(rows, columns=colnames)
+        filename = f'{uuid.uuid4()}.xls'
+        fname = f'./downloads/{filename}'
+        df.to_excel(fname, index=False, engine='openpyxl')
+        logging.info(f'generated excel file <{fname}>')
+        return filename
+    except Exception as e:
+        msg = str(e).replace("\n","")
+        logging.exception(f'failed to generate excel file due to <{msg}>')
+        return None
+
 def filterAndPaginate_v2(db_config,
                          required_columns,
                          table_name,
@@ -279,7 +292,8 @@ def filterAndPaginate_v2(db_config,
                          search_key = None,
                          whereinquery=False,
                          #if isdeleted is a flag in the db table
-                         isdeleted = False):
+                         isdeleted = False,
+                         downloadType=None):
     try:
         # Base query
         query_frontend = False
@@ -423,17 +437,11 @@ def filterAndPaginate_v2(db_config,
                 rows = search_results
         resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames}
         # generate downloadable file
-        if page_number == 0 and page_size == 0:
-            try:
-                df = pd.DataFrame(rows, columns=colnames)
-                _filename = f'{uuid.uuid4()}.xls'
-                fname = f'./downloads/{_filename}'
-                df.to_excel(fname, index=False, engine='openpyxl')
-                logging.info(f'generated excel file <{fname}>')
-                resp_payload['filename'] = _filename
-            except Exception as e:
-                msg = str(e).replace("\n","")
-                logging.exception(f'failed to generate excel file due to <{msg}>')
+        if page_number == 0 and page_size == 0 and (downloadType == 'excel' or downloadType == 'pdf'):
+            filename = generateExcelOrPDF(downloadType, rows, colnames)
+            resp_payload['filename'] = filename
+        elif page_number == 0 and page_size == 0 and downloadType == None:
+            logging.info(f'downloadType is <None>')
 
         return resp_payload
     except Exception as e:
@@ -681,7 +689,8 @@ def get_countries(payload : dict,conn: psycopg2.extensions.connection = Depends(
                     # query = "SELECT * FROM country ORDER BY id;"
                     data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'country', payload['filters'],
                                              payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                             search_key = payload['search_key'] if 'search_key' in payload else None)
+                                             search_key = payload['search_key'] if 'search_key' in payload else None,
+                                                downloadType=payload['downloadType'] if 'downloadType' in payload else None )
                     total_count = data['total_count']
                 return giveSuccess(payload['user_id'],role_access_status,data, total_count=total_count)
             else:
@@ -860,7 +869,8 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
             with conn[0].cursor() as cursor:
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,whereinquery=True)
+                                        search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,whereinquery=True,
+                                            downloadType=payload['downloadType'] if 'downloadType' in payload else None )
 
                 colnames = data['colnames']
                 total_count = data['total_count']
@@ -978,7 +988,10 @@ async def get_states_admin(payload:dict,conn: psycopg2.extensions.connection = D
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             # query = "SELECT DISTINCT  b.name as countryname, a.state, b.id as id FROM cities a,country b WHERE a.countryid=b.id order by a.state"
-            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'],'get_states_view', payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None,whereinquery=True)
+            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'],'get_states_view', payload['filters'],
+                                        payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
+                                        search_key = payload['search_key'] if 'search_key' in payload else None,whereinquery=True,
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None )
             total_count = data['total_count']
             return giveSuccess(payload["user_id"],role_access_status,data['data'], total_count=total_count)
         else:
@@ -1050,7 +1063,10 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
         country = get_countries_from_id(conn)
         if role_access_status==1:
             table_name = 'get_cities_view'
-            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"], search_key = payload['search_key'] if 'search_key' in payload else None)
+            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'],
+                                        payload['order'], payload["pg_no"], payload["pg_size"],
+                                        search_key = payload['search_key'] if 'search_key' in payload else None,
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None )
             total_count = data['total_count']
             colnames = payload['rows']
             logging.info(colnames)
@@ -1791,7 +1807,8 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                                              page_size=payload['pg_size'] if 'pg_size' in payload else 10,
                                              search_key=payload['search_key'] if 'search_key' in payload else None,
                                              whereinquery=whereinquery,
-                                             isdeleted=isdeleted)
+                                             isdeleted=isdeleted,
+                                            downloadType=payload['downloadType'] if 'downloadType' in payload else None)
                     logging.info(data.keys())
                     if 'total_count' not in data:
                         return giveFailure(data['message'],payload['user_id'],role_access_status)
@@ -1804,8 +1821,9 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                     logging.info(msg)
                     res_ = cursor.fetchall()
                     colnames = [desc[0] for desc in cursor.description]
+                    filename = generateExcelOrPDF(payload['downloadType'] if 'downloadType' in payload else None,rows=res_, colnames=colnames)
                     data = res_
-                    return giveSuccess(payload['user_id'], role_access_status, data, total_count)
+                    return giveSuccess(payload['user_id'], role_access_status, data, total_count, filename=filename)
 
                 if formatData:
                     logging.info(f"Formatting in progress for process {fname}")
@@ -1977,7 +1995,8 @@ async def get_client_info(payload : dict, conn : psycopg2.extensions.connection 
                 #    payload['rows'].remove('clienttypename')
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_client_info_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True)
+                                        search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None )
                 types = clienttype(payload,conn)['data']
                 logging.info(types)
                 colnames = data['colnames']
@@ -2206,7 +2225,10 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
             table_name = 'get_builder_contact_view'
             # data = filterAndPaginate(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],query = query,search_key = payload['search_key'] if 'search_key' in payload else None)
             payload['filters'].append(["builderid","equalTo",payload['builderid'],"Numeric"])
-            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name,payload['filters'], payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],search_key = payload['search_key'] if 'search_key' in payload else None)
+            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name,payload['filters'], payload['sort_by'],
+                                        payload['order'], payload["pg_no"], payload["pg_size"],
+                                        search_key = payload['search_key'] if 'search_key' in payload else None,
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None )
             total_count = data['total_count']
             colnames = payload['rows']
             res = []
@@ -2231,7 +2253,8 @@ async def get_client_property(payload : dict, conn : psycopg2.extensions.connect
             with conn[0].cursor() as cursor:
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None)
+                                        search_key = payload['search_key'] if 'search_key' in payload else None,
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None )
                 colnames = data['colnames']
                 total_count = data['total_count']
                 res = []
