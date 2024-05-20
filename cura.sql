@@ -920,6 +920,7 @@ SELECT DISTINCT
     c.name as entityname,
     a.dated,
     a.createdby,
+    a.isdeleted,
     concat_ws(' ',e.firstname,e.lastname) as createdbyname
 FROM
     order_invoice a
