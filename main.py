@@ -430,7 +430,6 @@ def filterAndPaginate_v2(db_config,
                 fname = f'./downloads/{_filename}'
                 df.to_excel(fname, index=False, engine='openpyxl')
                 logging.info(f'generated excel file <{fname}>')
-                resp_payload['fileurl'] = f'{hostURL}/download/{_filename}'
                 resp_payload['filename'] = _filename
             except Exception as e:
                 msg = str(e).replace("\n","")
@@ -568,9 +567,8 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
             "data":{}
             }
 
-def giveSuccess(uid,rid,data=[], total_count=None, fileurl = None, filename=None):
+def giveSuccess(uid,rid,data=[], total_count=None, filename=None):
     final_data =  {
-        "fileurl": fileurl,
         "filename": filename,
         "result":"success",
         "user_id":uid,
@@ -1779,7 +1777,6 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                 data = []
                 colnames = []
                 total_count = 0
-                fileurl = None
                 filename = None
                 if isPaginationRequired:
                     logging.info("Pagination")
@@ -1800,7 +1797,6 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                         return giveFailure(data['message'],payload['user_id'],role_access_status)
                     colnames = data['colnames']
                     total_count = data['total_count']
-                    fileurl = data['fileurl'] if 'fileurl' in data else None
                     filename = data['filename'] if 'filename' in data else None
                     data = data['data']
                 else:
@@ -1818,9 +1814,9 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                         for i,colname in enumerate(colnames):
                             row_dict[colname] = row[i]
                         res.append(row_dict)
-                    return giveSuccess(payload['user_id'], role_access_status, res,total_count, fileurl = fileurl, filename=filename)
+                    return giveSuccess(payload['user_id'], role_access_status, res,total_count,  filename=filename)
                 else:
-                    return giveSuccess(payload['user_id'],role_access_status,data,total_count, fileurl = fileurl, filename=filename)
+                    return giveSuccess(payload['user_id'],role_access_status,data,total_count,  filename=filename)
     
     except Exception as e:
             logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
