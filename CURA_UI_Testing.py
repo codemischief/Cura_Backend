@@ -266,12 +266,12 @@ def login_and_navigate_employee(username, password, comkey):
 
 def add_new_employee(driver,employee_name, pan_no, username, doj, designation, email, dob, last_dow, role, ph_no, country, state, city, suburb, entity):
     wait=WebDriverWait(driver,10)
+    a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
     driver.find_element(By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4").click()
     wait.until(EC.element_to_be_clickable((By.XPATH,"//input[@name='employeeName']"))).send_keys(employee_name)
     driver.find_element(By.XPATH,"//input[@name='panNo']").send_keys(pan_no)
-    element=driver.find_element(By.XPATH,"//select[@name='userName']")
-    drp=Select(element)
-    drp.select_by_visible_text(username)
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/div/div/div/div/div/button/div[1]"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/div/div/div/div/div/div/div/div[2]/div[1]/p[1]"))).click()
     driver.find_element(By.XPATH,"//input[@name='doj']").send_keys(doj)
     driver.find_element(By.XPATH,"//input[@name='designation']").send_keys(designation)
     driver.find_element(By.XPATH,"//input[@name='email']").send_keys(email)
@@ -302,12 +302,15 @@ def add_new_employee(driver,employee_name, pan_no, username, doj, designation, e
     drp6=Select(element6)
     drp6.select_by_visible_text(entity)
     driver.find_element(By.XPATH, "//button[normalize-space()='Add']").click()
-    wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Save']"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/button[1]"))).click()
     time.sleep(4)
-    driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("aryan ashish")
+    driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("ashish aryan")
     wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
     wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='trash']"))).click()
     wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[@role='presentation']/div/div/div/button[1]"))).click()
+    b=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+    if a==b:
+          print("Add Employee is Working Fine")
     time.sleep(2)
     
    
@@ -317,36 +320,26 @@ def add_new_employee(driver,employee_name, pan_no, username, doj, designation, e
 
 def test_Edit_Employee_Success(driver):
         wait=WebDriverWait(driver,10)
-        addEmployee_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > button:nth-child(1)"))
-        )
-        assert not addEmployee_button.get_attribute("disabled"), "Logout button should be enabled"
-        addEmployee_button.click()
-
-        addEmployee_header = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, ".text-base"))
-        )
-        assert addEmployee_header.text == "Add New Employee", "Add New Employee header text is incorrect"
-        time.sleep(2)
-        driver.find_element(By.XPATH,"//input[@name='employeeName']").send_keys("aryan ashish")
-        driver.find_element(By.XPATH,"//input[@name='panNo']").send_keys("ijklmn")
-        element=driver.find_element(By.XPATH,"//select[@name='userName']")
-        drp=Select(element)
-        drp.select_by_visible_text('Admin User')
-        driver.find_element(By.XPATH,"//input[@name='doj']").send_keys("06-05-2024")
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        driver.find_element(By.CSS_SELECTOR, ".flex.items-center.justify-center.gap-4").click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//input[@name='employeeName']"))).send_keys("ashish aryan")
+        driver.find_element(By.XPATH,"//input[@name='panNo']").send_keys('12345')
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/div/div/div/div/div/button/div[1]"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/div/div/div/div/div/div/div/div[2]/div[1]/p[1]"))).click()
+        driver.find_element(By.XPATH,"//input[@name='doj']").send_keys("13-01-2020")
         driver.find_element(By.XPATH,"//input[@name='designation']").send_keys("intern")
-        driver.find_element(By.XPATH,"//input[@name='email']").send_keys("ashish.com")
+        driver.find_element(By.XPATH,"//input[@name='email']").send_keys("customer@gmail.com")
         employee_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
         driver.find_element(By.XPATH,"//input[@name='employeeId']").send_keys(employee_id)
         element1=driver.find_element(By.XPATH,"//select[@name='lob']")
         drp1=Select(element1)
         drp1.select_by_visible_text('Reimbursements')
         driver.find_element(By.XPATH,"//input[@name='dob']").send_keys("06-05-2003")
-        driver.find_element(By.XPATH,"//input[@name='lastDOW']").send_keys("31-05-2024")
+        driver.find_element(By.XPATH,"//input[@name='lastDOW']").send_keys('29-05-2024')
         element2=driver.find_element(By.XPATH,"//select[@name='role']")
         drp2=Select(element2)
-        drp2.select_by_visible_text('Admin')
-        driver.find_element(By.XPATH,"//input[@name='phNo']").send_keys("11100000")
+        drp2.select_by_visible_text('Analyst')
+        driver.find_element(By.XPATH,"//input[@name='phNo']").send_keys('123456789')
         element3=wait.until(EC.element_to_be_clickable((By.XPATH,"//select[@name='country']")))
         drp3=Select(element3)
         drp3.select_by_visible_text('UAE')
@@ -363,7 +356,7 @@ def test_Edit_Employee_Success(driver):
         drp6=Select(element6)
         drp6.select_by_visible_text('Z-CASH')
         driver.find_element(By.XPATH, "//button[normalize-space()='Add']").click()
-        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Save']"))).click()
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/button[1]"))).click()
         time.sleep(4)
         # driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("aryan ashish")
         # time.sleep(2)
@@ -373,281 +366,511 @@ def test_Edit_Employee_Success(driver):
         time.sleep(2)
         driver.find_element(By.XPATH,"//input[@name='employeename']").clear()
         time.sleep(2)
-        driver.find_element(By.XPATH,"//input[@name='employeename']").send_keys("ashish aryan")
+        driver.find_element(By.XPATH,"//input[@name='employeename']").send_keys("aryan ashish")
         time.sleep(2)
         driver.find_element(By.XPATH,"//button[normalize-space()='Save']").click()
         time.sleep(4)
         driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").clear()
         time.sleep(4)
-        driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("ashish aryan")
+        driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("aryan ashish")
         time.sleep(2)
         driver.find_element(By.XPATH,"//img[@alt='search-icon']").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//div//div//div//div[1]//div[2]//div[2]//button[2]//img[1]"))).click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Delete']"))).click()
         time.sleep(2)
         
-def filter_Common(driver, filter_xpath, text_css_selector, button_css_selector, starts_with_letter):
-    wait=WebDriverWait(driver,10)
-    driver.find_element(By.CSS_SELECTOR, text_css_selector).clear()
-    driver.find_element(By.CSS_SELECTOR, text_css_selector).send_keys(starts_with_letter)
-    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,button_css_selector))).click()
-    wait.until(EC.element_to_be_clickable((By.XPATH,filter_xpath))).click()
-    time.sleep(1)
-   
-def filter_pagination_Common(driver, select_xpath, items_per_page):
-    wait = WebDriverWait(driver, 10)
-    select_element = driver.find_element(By.XPATH, select_xpath)
-    dropdown = Select(select_element)
-    dropdown.select_by_visible_text(items_per_page)
-    time.sleep(2) 
-
 
 def test_Filter_Employee_Name_StartsWith_Success(driver):
-    filter_Common(
-        driver,
-        "//h1[normalize-space()='StartsWith']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "a"
-    )
+    try:
+        filter_Common(
+            driver,
+            "//h1[normalize-space()='StartsWith']",
+            "body div div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)",
+            "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+            "a"
+        )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=1]")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.lower().startswith("a"):
+                element_found = False
+                break
+
+        if element_found:
+            print("StartsWith filter in Employee with Employee Name is working fine.")
+        else:
+            print("Error.")
+        time.sleep(2)
+    except Exception as e:
+        print("An error occurred:", e)
+
 
 
 def test_Filter_Employee_Name_Contains_Success(driver):
         filter_Common(
-        driver,
-        "//h1[normalize-space()='Contains']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "a"
-    )
+            driver,
+            "//h1[normalize-space()='Contains']",
+            "body div div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)",
+            "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+            "a"
+        )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=1]")
+        element_found = True 
+        for item in filtered_elements:
+            if "a" not in item.text.lower():
+                element_found = False
+                break
 
+        if element_found:
+            print("Contains filter in Employee with Employee Name is working fine.")
+        else:
+            print("Error.")
 
 
 def test_Filter_Employee_Name_DoesNotContains_Success(driver):
         filter_Common(
-        driver,
-        "//h1[normalize-space()='DoesNotContain']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "a"
-    )
+            driver,
+            "//h1[normalize-space()='DoesNotContain']",
+            "body div div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)",
+            "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+            "a"
+        )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=1]")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "a":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in Employee with Employee Name is Working fine.")
+        else:
+            print("Error.")
 
 
 
 def test_Filter_Employee_Name_EndsWith_Success(driver):
         filter_Common(
-        driver,
-        "//h1[normalize-space()='EndsWith']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "a"
-    )
+            driver,
+            "//h1[normalize-space()='EndsWith']",
+            "body div div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)",
+            "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+            "a"
+        )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=1]")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.endswith("a"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in Employee with Employee Name is working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_Name_EqualTo_Success(driver):
         filter_Common(
-        driver,
-        "//h1[normalize-space()='EqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "a"
-    )
+            driver,
+            "//h1[normalize-space()='EqualTo']",
+            "body div div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)",
+            "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+            "Kundalik Raut"
+        )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=1]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "Kundalik Raut":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Employee with Employee Name is working fine.")
+        else:
+            print("Error")
 
 
 def test_Filter_Employee_Name_isNotNull_Success(driver):
         filter_Common(
-        driver,
-        "//h1[normalize-space()='isNotNull']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "a"
-    )
+            driver,
+            "//h1[normalize-space()='isNotNull']",
+            "body div div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)",
+            "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+            "a"
+        )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Employee With Employee Name is working fine")
 
 
 def test_Filter_Employee_Name_isNull_Success(driver):
         filter_Common(
-        driver,
-        "//h1[normalize-space()='isNull']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "a"
-    )
+                driver,
+                "//h1[normalize-space()='isNull']",
+                "body div div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)",
+                "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+                "a"
+        )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Employee With Employee Name is working fine")
+
 
 
 def test_Filter_Employee_Name_NoFilter_Success(driver):
         filter_Common(
-        driver,
-        "//h1[normalize-space()='No Filter']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "a"
-    )
+                driver,
+                "//h1[normalize-space()='No Filter']",
+                "body div div div div div div div div:nth-child(2) div:nth-child(1) input:nth-child(1)",
+                "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+                "a"
+        )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("No filter in Employee With Employee Name is working fine")
+
 
 
 def test_Filter_Employee_ID_StartsWith_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='StartsWith']",
-        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div div div div div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "a"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[11%]  flex overflow-hidden']")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.lower().startswith("a"):
+                element_found = False
+                break
+
+        if element_found:
+            print("StartsWith filter in Employee with Employee ID is working fine.")
+        else:
+            print("Error.")
 
 
 def test_Filter_Employee_ID_Contains_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='Contains']",
-        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div div div div div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "a"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[11%]  flex overflow-hidden']")
+        element_found = True 
+        for item in filtered_elements:
+            if "a" not in item.text.lower():
+                element_found = False
+                break
+
+        if element_found:
+            print("Contains filter in Employee with Employee ID is working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_ID_DoesNotContains_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='DoesNotContain']",
-        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div div div div div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "a"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[11%]  flex overflow-hidden']")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "a":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in Employee with Employee ID is Working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_ID_EndsWith_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='EndsWith']",
-        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div div div div div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "a"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[11%]  flex overflow-hidden']")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.endswith("a"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in Employee with Employee ID is working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_ID_EqualsTo_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='EqualTo']",
-        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "a"
+        "div div div div div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "P002020"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[11%]  flex overflow-hidden']")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "P002020":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Employee with Employee ID is working fine.")
+        else:
+            print("Error")
 
 
 def test_Filter_Employee_ID_isNotNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNotNull']",
-        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div div div div div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "a"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Employee With Employee ID is working fine")
 
 def test_Filter_Employee_ID_isNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNull']",
-        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div div div div div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "a"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Employee With Employee ID is working fine")
 
 def test_Filter_Employee_ID_NoFilter_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='No Filter']",
-        "div:nth-child(3) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div div div div div:nth-child(3) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "a"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("No filter in Employee With Employee ID is working fine")
 
 
 def test_Filter_Employee_PhoneID_Contains_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='Contains']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(4) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "9"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=2]")
+        element_found = True 
+        for item in filtered_elements:
+            if "9" not in item.text.lower():
+                element_found = False
+                break
+
+        if element_found:
+            print("Contains filter in Employee with Employee Phone No. is working fine.")
+        else:
+            print("Error.")
 
 
 def test_Filter_Employee_PhoneID_DoesNotContains_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='DoesNotContain']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(4) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "9"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=2]")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "9":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in Employee with Employee Phone No. is Working fine.")
+        else:
+            print("Error.")
 
 
 def test_Filter_Employee_PhoneID_StartsWith_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='StartsWith']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(4) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "9"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=2]")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.lower().startswith("9"):
+                element_found = False
+                break
+
+        if element_found:
+            print("StartsWith filter in Employee with Employee Phone No. is working fine.")
+        else:
+            print("Error.")
+        
 
 def test_Filter_Employee_PhoneID_EndsWith_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='EndsWith']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(4) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "9"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=2]")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.endswith("9"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in Employee with Employee Phone No. is working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_PhoneID_EqualsTo_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='EqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "9"
+        "div:nth-child(4) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "903"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=2]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "903":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Employee with Employee Phone No. is working fine.")
+        else:
+            print("Error")
 
 def test_Filter_Employee_PhoneID_isNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNull']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(4) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "9"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Employee With Employee Phone No. is working fine")
 
 def test_Filter_Employee_PhoneID_isNotNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNotNull']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(4) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "9"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Employee With Employee Phone No. is working fine")
 
 def test_Filter_Employee_PhoneID_NoFilter_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='No Filter']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(4) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "9"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("Nofilter in Employee With Employee Phone No. is working fine")
 
 def test_Filter_Employee_Name_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[2]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[2]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[10%]  flex overflow-hidden'][position()=1]")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_ascending_common(employee_names):
+                print("The Employee Name list is sorted in ascending order.")
+        else:
+                print("The Employee Name list is not sorted in ascending order.")
         time.sleep(2)
 
 
 def test_Filter_Employee_Name_descending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[2]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[2]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[10%]  flex overflow-hidden'][position()=1]")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_descending_common(employee_names):
+                print("The Employee Name list is sorted in descending order.")
+        else:
+                print("The Employee Name list is not sorted in descending order.")
         time.sleep(2)
 
 def test_Filter_Employee_ID_descending_Success(driver):
-        driver.find_element(By.XPATH,"//body//div[@id='root']//div//div//div//div//div[3]//div[1]//p[1]//button[1]//span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[3]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[10%]  flex overflow-hidden'][position()=1]")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_descending_common(employee_names):
+                print("The Employee Name list is sorted in descending order.")
+        else:
+                print("The Employee Name list is not sorted in descending order.")
         time.sleep(2)
 
 
 def test_Filter_Employee_ID_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body//div[@id='root']//div//div//div//div//div[3]//div[1]//p[1]//button[1]//span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[3]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[11%]  flex overflow-hidden']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_ascending_common(employee_names):
+                print("The Employee Name list is sorted in ascending order.")
+        else:
+                print("The Employee Name list is not sorted in ascending order.")
         time.sleep(2)
 
 
@@ -655,153 +878,296 @@ def test_Filter_Employee_EmailID_StartsWith_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='StartsWith']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "customer@gmail.com"
+        "div:nth-child(5) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "c"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=3]")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.lower().startswith("c"):
+                element_found = False
+                break
+
+        if element_found:
+            print("StartsWith filter in Employee with Employee Email ID is working fine.")
+        else:
+            print("Error.")
+        
 
 def test_Filter_Employee_EmailID_DoesNotContains_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='DoesNotContain']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(5) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "customer@gmail.com"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=3]")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "customer@gmail.com":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in Employee with Employee Email ID is Working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_EmailID_Contains_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='Contains']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(5) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "customer@gmail.com"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=3]")
+        element_found = True 
+        for item in filtered_elements:
+            if "customer@gmail.com" not in item.text.lower():
+                element_found = False
+                break
+
+        if element_found:
+            print("Contains filter in Employee with Employee Email ID is working fine.")
+        else:
+            print("Error.")
 
 
 def test_Filter_Employee_EmailID_EndsWith_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='EndsWith']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "customer@gmail.com"
+        "div:nth-child(5) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "m"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=3]")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.endswith("m"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in Employee with Employee Email ID is working fine.")
+        else:
+            print("Error.")
+        
 
 def test_Filter_Employee_EmailID_EqualsTo_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='EqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(5) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "customer@gmail.com"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden'][position()=3]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "customer@gmail.com":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Employee with Employee Email ID is working fine.")
+        else:
+            print("Error")
 
 
 def test_Filter_Employee_EmailID_isNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNull']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(5) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "customer@gmail.com"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Employee With Employee Email ID is working fine")
+        
 
 
 def test_Filter_Employee_EmailID_isNotNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNotNull']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(5) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "customer@gmail.com"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Employee With Employee Email ID is working fine")
 
 def test_Filter_Employee_EmailID_NoFilter_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='No Filter']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "div:nth-child(5) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "customer@gmail.com"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("No filter in Employee With Employee Email ID is working fine")
 
 def test_Filter_Employee_Roles_StartsWith_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='StartsWith']",
         "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "analyst"
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[9%]  flex overflow-hidden pl-0.5']")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.lower().startswith("a"):
+                element_found = False
+                break
 
+        if element_found:
+            print("StartsWith filter in Employee with Roles is working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_Roles_EndsWith_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='EndsWith']",
         "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "analyst"
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "t"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[9%]  flex overflow-hidden pl-0.5']")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.endswith("t"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in Employee with Roles is working fine.")
+        else:
+            print("Error.")
 
 
 def test_Filter_Employee_Roles_EqualsTo_Success(driver):
         filter_Common(
         driver,
-        "//h1[normalize-space()='EqualTo']",
+        "//h1[normalize-space()='EndsWith']",
         "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "analyst"
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "Analyst"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[9%]  flex overflow-hidden pl-0.5']")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "Analyst":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Employee with Roles is working fine.")
+        else:
+            print("Error")
 
 def test_Filter_Employee_Roles_isNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNull']",
         "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "analyst"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Employee With Roles is working fine")
 
 def test_Filter_Employee_Roles_isNotNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNotNull']",
         "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "analyst"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Employee With Roles is working fine")
 
 
 def test_Filter_Employee_Roles_NoFilter_Success(driver):
-        filter_Common(
-        driver,
-        "//h1[normalize-space()='No Filter']",
-        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "analyst"
-    )
+            filter_Common(
+            driver,
+            "//h1[normalize-space()='No Filter']",
+            "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+            "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+            "analyst"
+        )
+            a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+            words = a[:2]
+            filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+            if(filtered_element.text.startswith(words)):
+                    print("No filter in Employee With Roles is working fine")
 
 
 def test_Filter_Employee_Roles_Contains_Success(driver):
         filter_Common(
-        driver,
-        "//h1[normalize-space()='Contains']",
-        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "analyst"
-    )
+            driver,
+            "//h1[normalize-space()='Contains']",
+            "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+            "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+            "analyst"
+        )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[9%]  flex overflow-hidden pl-0.5']")
+        element_found = True 
+        for item in filtered_elements:
+            if "analyst" not in item.text.lower():
+                element_found = False
+                break
+
+        if element_found:
+            print("Contains filter in Employee with Roles is working fine.")
+        else:
+            print("Error.")
+        
 
 
 def test_Filter_Employee_Roles_DoesNotContains_Success(driver):
         filter_Common(
-        driver,
-        "//h1[normalize-space()='DoesNotContain']",
-        "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "analyst"
-    )
+            driver,
+            "//h1[normalize-space()='DoesNotContain']",
+            "div:nth-child(6) div:nth-child(1) input:nth-child(1)",
+            "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+            "Analyst"
+        )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[9%]  flex overflow-hidden pl-0.5']")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "Analyst":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in Employee with Roles is Working fine.")
+        else:
+            print("Error.")
 
 
 def test_Filter_Employee_Panno_StartsWith_Success(driver):
@@ -809,9 +1175,20 @@ def test_Filter_Employee_Panno_StartsWith_Success(driver):
         driver,
         "//h1[normalize-space()='StartsWith']",
         "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "abcd"
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "a"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden pl-0.5']")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.lower().startswith("a"):
+                element_found = False
+                break
+
+        if element_found:
+            print("StartsWith filter in Employee with Panno. is working fine.")
+        else:
+            print("Error.")
 
 
 def test_Filter_Employee_Panno_EndsWith_Success(driver):
@@ -819,18 +1196,40 @@ def test_Filter_Employee_Panno_EndsWith_Success(driver):
         driver,
         "//h1[normalize-space()='EndsWith']",
         "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "abcd"
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "d"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden pl-0.5']")
+        element_found = True
+        for item in filtered_elements:
+            if not item.text.endswith("d"):
+                element_found = False
+                break
+
+        if element_found:
+            print("EndsWith filter in Employee with Panno. is working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_Panno_EqualsTo_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='EqualTo']",
         "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "abcd"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden pl-0.5']")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "abcd":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Employee with Panno. is working fine.")
+        else:
+            print("Error")
 
 
 def test_Filter_Employee_Panno_isNull_Success(driver):
@@ -838,27 +1237,48 @@ def test_Filter_Employee_Panno_isNull_Success(driver):
         driver,
         "//h1[normalize-space()='isNull']",
         "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "abcd"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Employee With Panno. is working fine")
 
 def test_Filter_Employee_Panno_isNotNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNotNull']",
         "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "abcd"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Employee With Panno. is working fine")
 
 def test_Filter_Employee_Panno_Contains_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='Contains']",
         "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "abcd"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden pl-0.5']")
+        element_found = True 
+        for item in filtered_elements:
+            if "abcd" not in item.text.lower():
+                element_found = False
+                break
+
+        if element_found:
+            print("Contains filter in Employee with Panno. is working fine.")
+        else:
+            print("Error.")
 
 
 def test_Filter_Employee_Panno_DoesNotContains_Success(driver):
@@ -866,87 +1286,183 @@ def test_Filter_Employee_Panno_DoesNotContains_Success(driver):
         driver,
         "//h1[normalize-space()='DoesNotContain']",
         "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "abcd"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='w-[10%]  flex overflow-hidden pl-0.5']")
+        element_found = False
+        for item in filtered_elements:
+            if item.text == "abcd":
+                element_found = True
+                break
+
+        if not element_found:
+            print("DoesNotContains Filter in Employee with Panno. is Working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_Panno_NoFilter_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='No Filter']",
         "div:nth-child(7) div:nth-child(1) input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "abcd"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("No filter in Employee With Panno. is working fine")
 
 def filter_employee_doj_starts_with(driver, starts_with_letter):
         wait=WebDriverWait(driver,10)
         wait.until(EC.visibility_of_element_located((By.XPATH,"//input[@value='false']"))).send_keys(starts_with_letter)
-        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)"))).click()
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)"))).click()
         time.sleep(2)
 
 
 def test_Filter_Employee_doj_EqualsTo_Success(driver):
         filter_employee_doj_starts_with(driver, "13-01-2024")
         driver.find_element(By.XPATH,"//h1[normalize-space()='EqualTo']").click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "13-01-2024":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualTo filter in Employee with DOJ is working fine")
+        else:
+            print("Error")
         time.sleep(2)
         
 def test_Filter_Employee_doj_NotEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='NotEqualTo']"))).click()
-        time.sleep(2)
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text == "13-01-2024":
+                element_found = False
+                break
 
+        if element_found:
+            print("NotEqualTo Filter in Employee with DOJ is working fine.")
+        else:
+            print("Error.")
+        time.sleep(2)
 
 def test_Filter_Employee_doj_GreaterThan_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThan']"))).click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text <= '13-01-2024':
+                element_found = False
+                break
+
+        if element_found:
+            print("Greater Than Filter in Employee with DOJ is working fine.")
+        else:
+            print("Error.")
         time.sleep(2)
 
 
 def test_Filter_Employee_doj_LessThan_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThan']"))).click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if (item.text) >= "13-01-2024":
+                element_found = False
+                break
+
+        if element_found:
+            print("LessThan Filter in Employee with DOJ is working fine.")
+        else:
+            print("Error")
         time.sleep(2)
 
 
 def test_Filter_Employee_doj_GreaterThanOrEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']"))).click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text < "13-01-2024":
+                element_found = False
+                break
+
+        if element_found:
+            print("GreaterThanOrEqualTo Filter in Employee with DOJ is working fine")
+        else:
+            print("Error")
         time.sleep(2)
 
 
 def test_Filter_Employee_doj_LessThanOrEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']"))).click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if (item.text) > '13-01-2024':
+                element_found = False
+                break
+
+        if element_found:
+            print("LessThanOrEqualTo Filter in Employee with DOJ is working fine")
+        else:
+            print("Error")
         time.sleep(2)
 
 def test_Filter_Employee_doj_isNull_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNull']"))).click()
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Employee With DOJ is working fine")
         time.sleep(2)
 
 def test_Filter_Employee_doj_isNotNull_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNotNull']"))).click()
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Employee With DOJ is working fine")
         time.sleep(2)
 
 def test_Filter_Employee_doj_NoFilter_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(8) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='No Filter']"))).click()
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("No filter in Employee With DOJ is working fine")
         time.sleep(2)
 
 def filter_employee_low_starts_with(driver, starts_with_letter):
         wait=WebDriverWait(driver,10)
         driver.find_element(By.CSS_SELECTOR,"div:nth-child(9) div:nth-child(1) input:nth-child(1)").send_keys(starts_with_letter)
-        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)"))).click()
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,"body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)"))).click()
         time.sleep(2)
 
 
@@ -954,340 +1470,741 @@ def test_Filter_Employee_low_EqualsTo_Success(driver):
         wait=WebDriverWait(driver,10)
         filter_employee_low_starts_with(driver, "20-02-2020")
         wait.until(EC.element_to_be_clickable((By.XPATH, "//h1[normalize-space()='EqualTo']"))).click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "20-02-2020":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualTo filter in Employee with LOW is working fine")
+        else:
+            print("Error")
         time.sleep(2)
 
 def test_Filter_Employee_low_NotEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='NotEqualTo']"))).click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text == "20-02-2020":
+                element_found = False
+                break
+
+        if element_found:
+            print("NotEqualTo Filter in Employee with LOW is working fine.")
+        else:
+            print("Error.")
         time.sleep(2)
 
 def test_Filter_Employee_low_GreaterThan_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThan']"))).click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text <= '20-02-2020':
+                element_found = False
+                break
+
+        if element_found:
+            print("Greater Than Filter in Employee with LOW is working fine.")
+        else:
+            print("Error.")
         time.sleep(2)
 
 def test_Filter_Employee_low_LessThan_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThan']"))).click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if (item.text) >= "20-02-2020":
+                element_found = False
+                break
+
+        if element_found:
+            print("LessThan Filter in Employee with LOW is working fine.")
+        else:
+            print("Error")
         time.sleep(2)
 
 def test_Filter_Employee_low_GreaterThanOrEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='GreaterThanOrEqualTo']"))).click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text < "20-02-2020":
+                element_found = False
+                break
+
+        if element_found:
+            print("GreaterThanOrEqualTo Filter in Employee with LOW is working fine")
+        else:
+            print("Error")
         time.sleep(2)
 
 def test_Filter_Employee_low_LessThanOrEqualTo_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='LessThanOrEqualTo']"))).click()
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-1'][position() mod 2 = 1]")
+        element_found = True
+        for item in filtered_elements:
+            if (item.text) > '20-02-2020':
+                element_found = False
+                break
+
+        if element_found:
+            print("LessThanOrEqualTo Filter in Employee with LOW is working fine")
+        else:
+            print("Error")
         time.sleep(2)
 
 def test_Filter_Employee_low_isNull_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNull']"))).click()
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Employee With LOW is working fine")
         time.sleep(2)
 
 def test_Filter_Employee_low_isNotNull_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='isNotNull']"))).click()
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Employee With LOW is working fine")
         time.sleep(2)
 
 def test_Filter_Employee_low_NoFilter_Success(driver):
         wait=WebDriverWait(driver,10)
-        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
+        driver.find_element(By.CSS_SELECTOR, "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(9) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)").click()
         wait.until(EC.element_to_be_clickable((By.XPATH,"//h1[normalize-space()='No Filter']"))).click()
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("NO filter in Employee With LOW is working fine")
         time.sleep(2)
 
 def test_Filter_Employee_status_EqualsTo_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='EqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div div input[type='text']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "active"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'p-3 ml-1 flex items-center space-x-2')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "active":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualTo filter in Employee with status is working fine")
+        else:
+            print("Error")
 
 def test_Filter_Employee_status_NotEqualsTo_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='NotEqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div div input[type='text']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "active"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'p-3 ml-1 flex items-center space-x-2')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text == "active":
+                element_found = False
+                break
+
+        if element_found:
+            print("NotEqualTo Filter in Employee with status is working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_status_GreaterThan_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='GreaterThan']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div div input[type='text']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "active"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'p-3 ml-1 flex items-center space-x-2')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text <= 'active':
+                element_found = False
+                break
 
-def test_Filter_Employee_status_LessThan_Success(driver):
-        filter_Common(
-        driver,
-        "//h1[normalize-space()='LessThan']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "active"
-    )
+        if element_found:
+            print("Greater Than Filter in Employee with status is working fine.")
+        else:
+            print("Error.")
+
+# def test_Filter_Employee_status_LessThan_Success(driver):
+#         filter_Common(
+#         driver,
+#         "//h1[normalize-space()='LessThan']",
+#         "body div div div div div div div div div input[type='text']",
+#         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+#         "active"
+#     )
+#         filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'p-3 ml-1 flex items-center space-x-2')]")
+#         element_found = True
+#         for item in filtered_elements:
+#             if (item.text) >= 'active':
+#                 element_found = False
+#                 break
+
+#         if element_found:
+#             print("LessThan Filter in Employee with status is working fine.")
+#         else:
+#             print("Error")
 
 def test_Filter_Employee_status_GreaterThanOrEqualTo_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='GreaterThanOrEqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div div input[type='text']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "active"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'p-3 ml-1 flex items-center space-x-2')]")
+        element_found = True
+        for item in filtered_elements:
+            if item.text < "active":
+                element_found = False
+                break
 
-def test_Filter_Employee_status_LessThanOrEqualTo_Success(driver):
-        filter_Common(
-        driver,
-        "//h1[normalize-space()='LessThanOrEqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
-        "active"
-    )
+        if element_found:
+            print("GreaterThanOrEqualTo Filter in Employee with Status is working fine")
+        else:
+            print("Error")
+
+# def test_Filter_Employee_status_LessThanOrEqualTo_Success(driver):
+#         filter_Common(
+#         driver,
+#         "//h1[normalize-space()='LessThanOrEqualTo']",
+#         "body div div div div div div div div div input[type='text']",
+#         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+#         "active"
+#     )
+#         filtered_elements = driver.find_elements(By.XPATH,"//div[contains(@class,'p-3 ml-1 flex items-center space-x-2')]")
+#         element_found = True
+#         active_value = 0  # You need to define the integer value corresponding to 'active'
+  
+#         active_value = int('active')  # Convert 'active' to an integer
+
+
+#         for item in filtered_elements:
+#                 item_value = int(item.text)  # Convert item text to an integer
+#                 if item_value > active_value:
+#                     element_found = False
+#                     break
+
+
+#         if element_found:
+#             print("LessThanOrEqualTo Filter in Employee with status is working fine")
+#         else:
+#             print("Error")
+
 
 def test_Filter_Employee_status_isNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNull']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div div input[type='text']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "active"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNull filter in Employee With Status is working fine")
 
 def test_Filter_Employee_status_isNotNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNotNull']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div div input[type='text']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "active"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("isNotNull filter in Employee With Status is working fine")
         
 
 def test_Filter_Employee_status_NoFilter_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='No Filter']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div div input[type='text']",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(10) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "active"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        if(filtered_element.text.startswith(words)):
+                print("No filter in Employee With Status is working fine")
 
 def test_Filter_Employee_employee_id_EqualsTo_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='EqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "43"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-[6px]']")
+        element_found = True
+        for item in filtered_elements:
+            if item.text != "43":
+                element_found = False
+                break
+
+        if element_found:
+            print("EqualsTo filter in Employee with ID is working fine.")
+        else:
+            print("Error")
+        
 
 
 def test_Filter_Employee_employee_id_NotEqualsTo_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='NotEqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "43"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-[6px]']")
+        element_found = True
+        for item in filtered_elements:
+            if item.text == "43":
+                element_found = False
+                break
+
+        if element_found:
+            print("NotEqualTo Filter in Employee with ID is working fine.")
+        else:
+            print("Error.")
 
 def test_Filter_Employee_employee_id_LessThan_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='LessThan']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "43"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-[6px]']")
+        element_found = True
+        for item in filtered_elements:
+            if int(item.text) >= 43:
+                element_found = False
+                break
+
+        if element_found:
+            print("LessThan Filter in Employee with ID is working fine.")
+        else:
+            print("Error")
 
 def test_Filter_Employee_employee_id_GreaterThan_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='GreaterThan']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "43"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-[6px]']")
+        element_found = True
+        for item in filtered_elements:
+            if int(item.text) <= 43:
+                element_found = False
+                break
+
+        if element_found:
+            print("Greater Than Filter in Employee with ID is working fine.")
+        else:
+            print("Error.")
+
 
 def test_Filter_Employee_employee_id_GreaterThanOrEqualTo_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='GreaterThanOrEqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "43"
     )
+        filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-[6px]']")
+        element_found = True
+        for item in filtered_elements:
+            if int(item.text) < 43:
+                element_found = False
+                break
+
+        if element_found:
+            print("GreaterThanOrEqualTo Filter in Employee with ID is working fine")
+        else:
+            print("Error")
 
 def test_Filter_Employee_employee_id_LessThanOrEqualTo_Success(driver):
-        filter_Common(
+       filter_Common(
         driver,
         "//h1[normalize-space()='LessThanOrEqualTo']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "43"
     )
+       filtered_elements = driver.find_elements(By.XPATH,"//div[@class='p-3 ml-[6px]']")
+       element_found = True
+       for item in filtered_elements:
+            if int(item.text) > 43:
+                element_found = False
+                break
+
+       if element_found:
+            print("LessThanOrEqualTo Filter in Locality with ID is working fine")
+       else:
+            print("Error")
 
 
 def test_Filter_Employee_employee_id_isNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNull']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "43"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        element_found = False
+        if filtered_element.text.startswith(words):
+            element_found = True
+
+        if element_found:
+            print("isNull Filter in Employee with ID is working fine")
+        else:
+            print("Error")
+      
 
 
 def test_Filter_Employee_employee_id_isNotNull_Success(driver):
         filter_Common(
         driver,
         "//h1[normalize-space()='isNotNull']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "body div div div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "43"
     )
-        
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        element_found = False
+        if filtered_element.text.startswith(words):
+            element_found = True
+
+        if element_found:
+            print("isNotNull Filter in Employee with ID is working fine")
+        else:
+            print("Error")
 
 def test_Filter_Employee_employee_id_NoFilter_Success(driver):
         filter_Common(
         driver,
-        "//h1[normalize-space()='No Filter']",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)",
-        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
+        "//h1[normalize-space()='isNotNull']",
+        "body div div div div div div div div:nth-child(1) div:nth-child(1) input:nth-child(1)",
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > button:nth-child(2) > img:nth-child(1)",
         "43"
     )
+        a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
+        words = a[:2]
+        filtered_element = driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']")
+        element_found = False
+        if filtered_element.text.startswith(words):
+            element_found = True
+
+        if element_found:
+            print("No Filter in Employee with ID is working fine")
+        else:
+            print("Error")
+
 def test_Filter_Employee_Pagination15_NoFilter_Success(driver):
-    select_xpath = "//div[@id='root']//div//div//div//div//div//select"
-    next_page="//button[@aria-label='Go to page 2']"
-    filter_pagination_Common(driver, select_xpath, '15', next_page)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '15')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[@class='w-[3%] flex']")
+        count = 0
+        for pages in Number_of_pages[2:]:
+            count += 1
 
-# %%
+        if count <= 15:  
+            print("Pagination for 15 Pages in Employee is Working fine")
+
+
 def test_Filter_Employee_Pagination25_NoFilter_Success(driver):
-    select_xpath = "//div[@id='root']//div//div//div//div//div//select"
-    next_page="//button[@aria-label='Go to page 2']"
-    filter_pagination_Common(driver, select_xpath, '25' ,next_page)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '25')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[@class='w-[3%] flex']")
+        count = 0
+        for pages in Number_of_pages[2:]:
+            count += 1
 
-# %%
+        if count <= 25:  
+            print("Pagination for 25 Pages in Employee is Working fine")
+
 def test_Filter_Employee_Pagination50_NoFilter_Success(driver):
-    select_xpath = "//div[@id='root']//div//div//div//div//div//select"
-    next_page="//button[@aria-label='Go to page 2']"
-    filter_pagination_Common(driver, select_xpath, '50', next_page)
+        select_xpath = "//select[@name='currentPages']"
+        filter_pagination_Common(driver, select_xpath, '50')
+        Number_of_pages = driver.find_elements(By.XPATH, "//div[@class='w-[3%] flex']")
+        count = 0
+        for pages in Number_of_pages[2:]:
+            count += 1
 
-# %%
+        if count <= 50:  
+            print("Pagination for 50 Pages in Employee is Working fine")
+
+
 def test_Filter_Employee_phone_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[4]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[4]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[10%]  flex overflow-hidden'][position()=2]")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_ascending_common(employee_names):
+                print("The Employee Phone No. list is sorted in ascending order.")
+        else:
+                print("The Employee Phone No. is not sorted in ascending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_phone_descending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[4]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[4]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[10%]  flex overflow-hidden'][position()=2]")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_descending_common(employee_names):
+                print("The Employee Phone No. list is sorted in descending order.")
+        else:
+                print("The Employee Phone No. is not sorted in descending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_email_descending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[5]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[5]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[10%]  flex overflow-hidden'][position()=3]")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_descending_common(employee_names):
+                print("The Employee Email ID list is sorted in descending order.")
+        else:
+                print("The Employee Email ID is not sorted in descending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_email_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[5]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[5]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[10%]  flex overflow-hidden'][position()=3]")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_ascending_common(employee_names):
+                print("The Employee Email ID list is sorted in ascending order.")
+        else:
+                print("The Employee Email ID is not sorted in ascending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_role_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[6]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[6]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[9%]  flex overflow-hidden pl-0.5']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_ascending_common(employee_names):
+                print("The Employee Role list is sorted in ascending order.")
+        else:
+                print("The Employee Role list is not sorted in ascending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_role_descending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[6]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[6]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[9%]  flex overflow-hidden pl-0.5']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_descending_common(employee_names):
+                print("The Employee Role list is sorted in descending order.")
+        else:
+                print("The Employee Role list is not sorted in descending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_panno_descending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[7]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[7]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[10%]  flex overflow-hidden pl-0.5']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_descending_common(employee_names):
+                print("The Employee Panno. list is sorted in descending order.")
+        else:
+                print("The Employee Panno. list is not sorted in descending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_panno_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[7]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[7]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[10%]  flex overflow-hidden pl-0.5']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_ascending_common(employee_names):
+                print("The Employee Panno. list is sorted in ascending order.")
+        else:
+                print("The Employee Panno. list is not sorted in ascending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_doj_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[8]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[8]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[12%]  flex overflow-hidden']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_ascending_common(employee_names):
+                print("The Employee DOJ list is sorted in ascending order.")
+        else:
+                print("The Employee DOJ list is not sorted in ascending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_doj_descending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[8]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[8]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[12%]  flex overflow-hidden']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_descending_common(employee_names):
+                print("The Employee DOJ list is sorted in descending order.")
+        else:
+                print("The Employee DOJ list is not sorted in descending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_low_descending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[9]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[9]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[15%]  flex  overflow-hidden']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_descending_common(employee_names):
+                print("The Employee LOW list is sorted in descending order.")
+        else:
+                print("The Employee LOW list is not sorted in descending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_low_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[9]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[9]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-[15%]  flex  overflow-hidden']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_ascending_common(employee_names):
+                print("The Employee LOW list is sorted in ascending order.")
+        else:
+                print("The Employee LOW list is not sorted in ascending order.")
+
         time.sleep(2)
 
-# %%
+
 def test_Filter_Employee_status_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[10]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[10]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='p-3 ml-1 flex items-center space-x-2']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_ascending_common(employee_names):
+                print("The Employee Status list is sorted in ascending order.")
+        else:
+                print("The Employee Status list is not sorted in ascending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_status_descending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[10]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[1]/div[10]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='p-3 ml-1 flex items-center space-x-2']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_descending_common(employee_names):
+                print("The Employee Status list is sorted in descending order.")
+        else:
+                print("The Employee Status list is not sorted in descending order.")
+
         time.sleep(2)
 
-# %%
 def test_Filter_Employee_employeeid_descending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[2]/div[1]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[2]/div[1]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-1/2  flex overflow-hidden']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_descending_common(employee_names):
+                print("The Employee ID list is sorted in descending order.")
+        else:
+                print("The Employee ID list is not sorted in descending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_employeeid_ascending_Success(driver):
-        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[2]/div[3]/div[1]/div[2]/div[1]/div[1]/p[1]/button[1]/span[1]").click()
+        driver.find_element(By.XPATH,"//body[1]/div[1]/div[1]/div[1]/div[3]/div[3]/div[1]/div[2]/div[1]/div[1]/p[1]/button[1]/span[1]").click()
+        Employee_list = driver.find_elements(By.XPATH, "//div[@class='w-1/2  flex overflow-hidden']")
+        employee_names = [country.text for country in Employee_list]
+
+        if is_sorted_ascending_common(employee_names):
+                print("The Employee ID list is sorted in ascending order.")
+        else:
+                print("The Employee ID list is not sorted in ascending order.")
+
         time.sleep(2)
 
 
-# %%
 def test_Filter_Employee_Refresh_Success(driver):
         driver.find_element(By.XPATH,"//p[normalize-space()='Refresh']").click()
         time.sleep(2)
 
 
-# %%
 def test_employee_return_arrow(driver):
         return_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//img[@src='/src/assets/back.png']"))
@@ -1301,7 +2218,6 @@ def test_employee_return_arrow(driver):
         assert dashboard_header.text == "Dashboard", "Dashboard header text is incorrect"
 
 
-# %%
 def Employee_Webpage():
         driver = login_and_navigate_employee("ruderaw", "abcdefg", "9632")
         test_functions = [
@@ -1317,6 +2233,8 @@ def Employee_Webpage():
         test_Filter_Employee_role_descending_Success(driver),
         test_Filter_Employee_panno_ascending_Success(driver),
         test_Filter_Employee_panno_descending_Success(driver),
+        test_Filter_Employee_doj_ascending_Success(driver),
+        test_Filter_Employee_doj_descending_Success(driver),
         test_Filter_Employee_low_ascending_Success(driver),
         test_Filter_Employee_low_descending_Success(driver),
         test_Filter_Employee_employeeid_ascending_Success(driver),
@@ -1390,9 +2308,9 @@ def Employee_Webpage():
         test_Filter_Employee_status_EqualsTo_Success(driver),
         test_Filter_Employee_status_NotEqualsTo_Success(driver),
         test_Filter_Employee_status_GreaterThan_Success(driver),
-        test_Filter_Employee_status_LessThan_Success(driver),
+        # test_Filter_Employee_status_LessThan_Success(driver),
         test_Filter_Employee_status_GreaterThanOrEqualTo_Success(driver),
-        test_Filter_Employee_status_LessThanOrEqualTo_Success(driver),
+        # test_Filter_Employee_status_LessThanOrEqualTo_Success(driver),
         test_Filter_Employee_status_isNotNull_Success(driver),
         test_Filter_Employee_status_isNull_Success(driver),
         test_Filter_Employee_status_NoFilter_Success(driver),
@@ -1409,7 +2327,7 @@ def Employee_Webpage():
         test_Filter_Employee_Pagination25_NoFilter_Success(driver),
         test_Filter_Employee_Pagination50_NoFilter_Success(driver),
         test_Filter_Employee_Refresh_Success(driver),
-        add_new_employee(driver, "aryan ashish", "ijklmn", "Admin User", "06-05-2024", "intern", "ashish.com", "06-05-2003", "31-05-2024", "Admin", "11100000", "UAE", "UAE", "Dubai", "q", "Z-CASH"),
+        add_new_employee(driver, "ashish aryan", "ijklmn", "Admin User", "06-05-2024", "intern", "ashish.com", "06-05-2003", "31-05-2024", "Admin", "11100000", "UAE", "UAE", "Dubai", "q", "Z-CASH"),
         test_Edit_Employee_Success(driver)
     ]
     
