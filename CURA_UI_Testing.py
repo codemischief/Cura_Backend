@@ -245,6 +245,49 @@ def Dashboard_Webpage():
         driver.quit()
 Dashboard_Webpage()
 
+import os
+import time
+import ui_config
+from ui_config import drivers_config
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import TimeoutException
+import random
+import string
+import pytest
+
+def filter_Common(driver, filter_xpath, text_css_selector, button_css_selector, starts_with_letter):
+    wait=WebDriverWait(driver,10)
+    driver.find_element(By.CSS_SELECTOR, text_css_selector).clear()
+    driver.find_element(By.CSS_SELECTOR, text_css_selector).send_keys(starts_with_letter)
+    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,button_css_selector))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,filter_xpath))).click()
+    time.sleep(1)
+   
+def filter_pagination_Common(driver, select_xpath, items_per_page):
+    wait = WebDriverWait(driver, 10)
+    select_element = driver.find_element(By.XPATH, select_xpath)
+    dropdown = Select(select_element)
+    dropdown.select_by_visible_text(items_per_page)
+    time.sleep(2) 
+
+def is_sorted_ascending_common(string_list):
+        for i in range(len(string_list) - 1):
+                if string_list[i] > string_list[i + 1]:
+                   return False
+        
+        return True
+
+
+def is_sorted_descending_common(string_list):
+        for i in range(len(string_list) - 1):
+                if string_list[i] < string_list[i + 1]:
+                   return False
+        
+        return True
 
 def login_and_navigate_employee(username, password, comkey):
     driver = webdriver.Chrome()
@@ -305,7 +348,7 @@ def add_new_employee(driver,employee_name, pan_no, username, doj, designation, e
     wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[contains(@role,'presentation')]/div/div/button[1]"))).click()
     time.sleep(4)
     driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("ashish aryan")
-    wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//img[contains(@alt,'search-icon')]"))).click()
     wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='trash']"))).click()
     wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[@role='presentation']/div/div/div/button[1]"))).click()
     b=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
@@ -317,7 +360,13 @@ def add_new_employee(driver,employee_name, pan_no, username, doj, designation, e
 
 
 # add_new_employee(driver, "aryan ashish", "ijklmn", "Admin User", "06-05-2024", "intern", "ashish.com", "06-05-2003", "31-05-2024", "Admin", "11100000", "UAE", "UAE", "Dubai", "q", "Z-CASH")
-
+def Delete_Success(driver):
+    wait=WebDriverWait(driver,10)
+    driver.find_element(By.XPATH,"//body/div[@id='root']/div/div/div/div/div/div/input[1]").send_keys("ashish aryan")
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='search-icon']"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//img[@alt='trash']"))).click()
+    wait.until(EC.element_to_be_clickable((By.XPATH,"//body/div[@role='presentation']/div/div/div/button[1]"))).click()
+      
 def test_Edit_Employee_Success(driver):
         wait=WebDriverWait(driver,10)
         a=driver.find_element(By.XPATH,"//p[@class='mr-11 text-gray-700']").text
@@ -2303,8 +2352,8 @@ def Employee_Webpage():
         test_Filter_Employee_low_GreaterThanOrEqualTo_Success(driver),
         test_Filter_Employee_low_LessThanOrEqualTo_Success(driver),
         test_Filter_Employee_low_isNotNull_Success(driver),
-        test_Filter_Employee_low_NoFilter_Success(driver),
         test_Filter_Employee_low_isNull_Success(driver),
+         test_Filter_Employee_low_NoFilter_Success(driver),
         test_Filter_Employee_status_EqualsTo_Success(driver),
         test_Filter_Employee_status_NotEqualsTo_Success(driver),
         test_Filter_Employee_status_GreaterThan_Success(driver),
