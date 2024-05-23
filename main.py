@@ -1,5 +1,6 @@
 import psycopg2
 import pandas as pd
+import openpyxl
 import os
 import bcrypt
 from fastapi import FastAPI, HTTPException, Depends, Request
@@ -274,16 +275,23 @@ def filterAndPaginate(db_config,
         msg = str(e).replace("\n","")
         return {'data':None, 'message':f'exception due to <{msg}>'}
 
-def generateExcelOrPDF(downloadType=None, rows=None, colnames=None):
+def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = None):
     try:
+        logging.info("Here")
+        if mapping:
+            colnames = [mapping[i] for i in colnames]
         df = pd.DataFrame(rows, columns=colnames)
-        filename = f'{uuid.uuid4()}.xls'
+        df.reset_index(inplace=True)
+        df['index'] += 1
+        df.rename(columns={"index":"Sr No."},inplace=True)
+        filename = f'{uuid.uuid4()}.xlsx'
         fname = f'./downloads/{filename}'
-        df.to_excel(fname, index=False, engine='openpyxl')
+        df.to_excel(fname, engine='openpyxl',index=False)
         logging.info(f'generated excel file <{fname}>')
         return filename
     except Exception as e:
         msg = str(e).replace("\n","")
+        logging.info(traceback.print_exc())
         logging.exception(f'failed to generate excel file due to <{msg}>')
         return None
 
@@ -300,7 +308,10 @@ def filterAndPaginate_v2(db_config,
                          whereinquery=False,
                          #if isdeleted is a flag in the db table
                          isdeleted = False,
-                         downloadType=None):
+                         downloadType=None,
+                         mapping = None,
+                         group_by = None,
+                         static = True):
     try:
         # Base query
         query_frontend = False
@@ -386,7 +397,7 @@ def filterAndPaginate_v2(db_config,
         elif where_clauses and whereinquery:
             query += " AND " + " AND ".join(where_clauses)
         logging.info(where_clauses)
-        if sort_column:
+        if sort_column and static:
             q = f'SELECT pg_typeof({sort_column[0]}) from {table_name} limit 1'
             conn = psycopg2.connect(db_config)
             cursor = conn.cursor()
@@ -396,8 +407,10 @@ def filterAndPaginate_v2(db_config,
                 query += f" ORDER BY {sort_column[0]} {'asc NULLS FIRST' if sort_order == 'asc' else 'desc  NULLS LAST'}"
             if datatype == 'text':
                 query += f" ORDER BY LOWER({sort_column[0]}) {'asc NULLS FIRST' if sort_order == 'asc' else 'desc  NULLS LAST'}"
-
         # Handle pagination
+        
+        if group_by:
+            query+= f"GROUP BY {','.join(group_by)}"
         counts_query = query
         if page_number !=0 and page_size !=0 and search_key is None:
             # Calculate OFFSET
@@ -445,7 +458,7 @@ def filterAndPaginate_v2(db_config,
         resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames}
         # generate downloadable file
         if page_number == 0 and page_size == 0 and (downloadType == 'excel' or downloadType == 'pdf'):
-            filename = generateExcelOrPDF(downloadType, rows, colnames)
+            filename = generateExcelOrPDF(downloadType, rows, colnames,mapping)
             resp_payload['filename'] = filename
         elif page_number == 0 and page_size == 0 and downloadType == None:
             logging.info(f'downloadType is <None>')
@@ -598,6 +611,7 @@ def giveSuccess(uid,rid,data=[], total_count=None, filename=None):
     return final_data
 
 def giveFailure(msg,uid,rid,data=[]):
+    # send_email("",msg,"theruderaw678@gmail.com")
     return {
         "result":"error",
         "message":msg,
@@ -606,7 +620,18 @@ def giveFailure(msg,uid,rid,data=[]):
         "data":data
     }
 
-def check_role_access(conn, payload: dict):
+def check_role_access(conn, payload: dict,request: Request = None):
+    if request and request.headers.get('authorization'):
+        with conn[0].cursor() as cursor:
+            token = request.headers['authorization'][7:]
+            logging.info(f"Token is <{token}>")
+            cursor.execute("SELECT key FROM tokens WHERE token = %s", (token,))
+            key = cursor.fetchone()
+            logging.info(key)
+        if key[0]:
+            payload = jwt.decode(token,key[0],algorithms=ALG)
+        else:
+            raise HTTPException(status_code=403,detail="Invalid Token")
     if 'user_id' in payload:
         identifier_id = payload['user_id']
         identifier_name = None
@@ -614,6 +639,7 @@ def check_role_access(conn, payload: dict):
         identifier_name = payload['username']
         identifier_id = None
     else:
+        logging.info(traceback.print_exc())
         raise HTTPException(status_code=400, detail="Please provide either 'user_id' or 'username' in the payload")
     cursor = conn[0].cursor()
     try:
@@ -661,9 +687,9 @@ async def payment_for_admin(payload: dict, conn: psycopg2.extensions.connection 
 
 # FastAPI route to get roleid based on id or username
 @app.post("/getRoleID")
-async def get_role_id(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def get_role_id(payload: dict, request: Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'get_role_id:payload received is {payload}')
-    role_id = check_role_access(conn, payload)
+    role_id = check_role_access(conn, payload,request)
     if role_id is not None:
         if role_id!=0:
             return {
@@ -685,29 +711,17 @@ async def get_role_id(payload: dict, conn: psycopg2.extensions.connection = Depe
 
 
 @app.post('/getCountries')
-def get_countries(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'received payload <{payload}>')
-    #todo: need to add pagination and filteration arrangement here
-    try:
-        role_access_status = check_role_access(conn,payload)
-        if role_access_status is not None:
-            if role_access_status == 1:
-                with conn[0].cursor() as cursor:
-                    # query = "SELECT * FROM country ORDER BY id;"
-                    data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'country', payload['filters'],
-                                             payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                             search_key = payload['search_key'] if 'search_key' in payload else None,
-                                                downloadType=payload['downloadType'] if 'downloadType' in payload else None )
-                    total_count = data['total_count']
-                return giveSuccess(payload['user_id'],role_access_status,data, total_count=total_count)
-            else:
-                return giveFailure("Access Denied",payload["user_id"],role_access_status)
-        else:
-            return giveFailure("User does not exist",payload["user_id"],role_access_status)
-
-    except Exception as e:
-        logging.exception(traceback.print_exc())
-        return giveFailure(f"error {e} found",payload['user_id'],0)
+async def get_countries(payload : dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'country'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'get_countries',
+        payload = payload,
+        isPaginationRequired=True,
+        formatData=True,
+        whereinquery=False,
+        isdeleted=False
+    )
 
 @app.post('/addCountry')
 async def add_country(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -881,6 +895,7 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
 
                 colnames = data['colnames']
                 total_count = data['total_count']
+                filename = data['filename'] if "filename" in data else None
                 res = []
                 for row in data['data']:
                     row_dict = {}
@@ -893,7 +908,7 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
                         "builder_info":res
                     }
                 
-                return giveSuccess(payload['user_id'],role_access_status,data,total_count)
+                return giveSuccess(payload['user_id'],role_access_status,data,total_count,filename)
         else:
             return giveFailure("Access Denied",payload["user_id"],role_access_status)
     except Exception as e:
@@ -1063,38 +1078,16 @@ async def get_cities(payload : dict, conn: psycopg2.extensions.connection = Depe
 #CITIES UPDATED
 @app.post('/getCitiesAdmin')
 async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'get_cities_admin: received payload <{payload}>')
-    try:
-        role_access_status = check_role_access(conn,payload)
-        cities = get_city_from_id(conn)
-        country = get_countries_from_id(conn)
-        if role_access_status==1:
-            table_name = 'get_cities_view'
-            data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name, payload['filters'], payload['sort_by'],
-                                        payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None )
-            total_count = data['total_count']
-            colnames = payload['rows']
-            logging.info(colnames)
-            res = []
-            for row in data['data']:
-                row_dict = {}
-                for i,colname in enumerate(colnames):
-                    row_dict[colname] = row[i]
-                res.append(row_dict)
-            # for i in res:
-            #     if 'countryid' in i:
-            #         i['countryid'] = country[i['countryid']] if i['countryid'] in country else f"NA_id_{i['countryid']}"
-            #     if 'city' in i:
-            #         i['city'] = cities[i['id']] if i['id'] in cities else f"NA_id_{i['id']}"
-            logging.info(f"payload is <{payload}>")
-            return giveSuccess(payload["user_id"],role_access_status,res, total_count=total_count)
-        else:
-            return giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
-    except Exception as e:
-        logging.exception(traceback.print_exc())
-        return giveFailure(f"getCitiesAdmin: {e} error found. exception <{traceback.print_exc()}>",payload['user_id'],0)
+    payload['table_name'] = 'get_cities_view'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'get_cities_admin',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
 
 
 @app.post('/getProjects')
@@ -1280,10 +1273,10 @@ async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
     )
     with conn[0].cursor() as cursor:
         query = '''SELECT
-    COALESCE(SUM(CASE WHEN crdr = 'cr' THEN amount ELSE 0 END), 0) - 
-    COALESCE(SUM(CASE WHEN crdr = 'dr' THEN amount ELSE 0 END), 0) AS difference
+    COALESCE(SUM(CASE WHEN lower(crdr) = 'cr' THEN amount ELSE 0 END), 0) - 
+    COALESCE(SUM(CASE WHEN lower(crdr) = 'dr' THEN amount ELSE 0 END), 0) AS difference
 FROM
-    your_table_name;
+    get_bankst_view
 '''
         cursor.execute(query)
         data['total_amount'] = cursor.fetchone()[0]
@@ -1825,7 +1818,10 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                                              search_key=payload['search_key'] if 'search_key' in payload else None,
                                              whereinquery=whereinquery,
                                              isdeleted=isdeleted,
-                                            downloadType=payload['downloadType'] if 'downloadType' in payload else None)
+                                            downloadType=payload['downloadType'] if 'downloadType' in payload else None,
+                                            mapping=payload['colmap'] if 'colmap' in payload else None,
+                                            group_by=payload['group_by'] if 'group_by' in payload else None,
+                                            static=True if 'static' not in payload else False)
                     logging.info(data.keys())
                     if 'total_count' not in data:
                         return giveFailure(data['message'],payload['user_id'],role_access_status)
@@ -2002,43 +1998,21 @@ def clienttype(payload,conn):
 
 @app.post('/getClientInfo')
 async def get_client_info(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'get_client_info: received payload <{payload}>')
-    try:
-        role_access_status = check_role_access(conn, payload)
+    payload['table_name'] = 'get_client_info_view'
+    res = await runInTryCatch(
+        conn = conn,
+        fname="get_client_info",
+        payload=payload,
+        isdeleted=True,
+        whereinquery=True,
+        isPaginationRequired=True,
+        formatData=True
+    )
+    if 'data' in res:
+        return giveSuccess(res['user_id'],res['role_id'],{"client_info":res['data']},res['total_count'],filename=res['filename'])
+    else:
+        return giveFailure("Access Denied",res['user_id'],res['role_id'])
 
-        if role_access_status == 1:  
-            with conn[0].cursor() as cursor:
-                #if 'clienttypename' in payload['rows']:
-                #    payload['rows'].remove('clienttypename')
-                data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_client_info_view', payload['filters'],
-                                        payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None )
-                types = clienttype(payload,conn)['data']
-                logging.info(types)
-                colnames = data['colnames']
-                total_count = data['total_count']
-                res = []
-                for row in data['data']:
-                    row_dict = {}
-                    for i,colname in enumerate(colnames):
-                        row_dict[colname] = row[i]
-                    if 'clienttype' in row_dict:
-                        row_dict['clienttypename'] = types[row_dict['clienttype']]
-                    else:
-                        row_dict['clienttypename'] = "none"
-                    # row_dict['city'] = get_name(row_dict['city'],cities)
-                    res.append(row_dict)
-                data={
-                    "client_info":res
-                }
-                
-                return giveSuccess(payload['user_id'],role_access_status,data,total_count)
-        else:
-            return giveFailure("Access Denied",payload["user_id"],role_access_status)
-    except Exception as e:
-        logging.exception(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 
 
@@ -2275,6 +2249,7 @@ async def get_client_property(payload : dict, conn : psycopg2.extensions.connect
                 colnames = data['colnames']
                 total_count = data['total_count']
                 res = []
+                filename = data['filename'] if "filename" in data else None
                 for row in data['data']:
                     row_dict = {}
                     for i,colname in enumerate(colnames):
@@ -2286,7 +2261,7 @@ async def get_client_property(payload : dict, conn : psycopg2.extensions.connect
                         "client_info":res
                     }
                 
-                return giveSuccess(payload['user_id'],role_access_status,data,total_count)
+                return giveSuccess(payload['user_id'],role_access_status,data,total_count,filename)
         else:
             return giveFailure("Access Denied",payload["user_id"],role_access_status)
     except Exception as e:
@@ -5882,12 +5857,11 @@ async def login_for_token(payload:dict,conn: psycopg2.extensions.connection = De
                 logging.info(f"""Reset password at 20.197.13.140:5173/reset/{access_token}""")
                 # print(access_token)
                 conn[0].commit()
-                return giveSuccess(0,0,"Sent Email")
+                return giveSuccess(0,0,email[0])
             else:
-                return giveFailure("No user exists",None,None)
+                raise HTTPException(status_code=401,detail="No username")
     except Exception as e:
-        logging.info(traceback.print_exc())
-        return giveFailure(e,0,0)
+        raise HTTPException(status_code=401,detail="Invalid Payload")
 
 @app.post("/reset")
 async def getdata(payload:dict,request : Request,conn: psycopg2.extensions.connection = Depends(get_db_connection),):
@@ -5895,7 +5869,6 @@ async def getdata(payload:dict,request : Request,conn: psycopg2.extensions.conne
         #header derive
         headers = request.headers
         logging.info(headers)
-
         if 'authorization' not in headers:
             return giveFailure("No token from user",0,0)
         token = headers['authorization'][7:]
@@ -5917,18 +5890,193 @@ async def getdata(payload:dict,request : Request,conn: psycopg2.extensions.conne
                 # msg = logMessage(cursor,query,[newp,payload['username']])
                 #logging.info(msg
                 logging.info(logMessage(cursor,query,[newp,username]))
-
                 logging.info(cursor.statusmessage)
             conn[0].commit()
             return giveSuccess(None,None,{"Change PW for":username})
         except Exception as e:
             logging.info(traceback.print_exc())
-            return giveFailure('Invalid Credentials',None,None)
+            raise HTTPException(status_code=401,detail="Invalid Payload")
+    except jwt.exceptions.ExpiredSignatureError as e:
+        logging.info(traceback.print_exc())
+        raise HTTPException(status_code=401,detail="Expired Token")
     except Exception as e:
         logging.info(traceback.print_exc())
-        return giveFailure('Invalid Credentials',None,None)
+        raise HTTPException(status_code=403,detail = "Invalid Credentials")
 
 
-         
+@app.post('/getReportClientReceipt')
+async def report_client_receipt(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'clientreceiptlistview'
+    payload['filters'].append(['recddate','between',[payload['startdate'],payload['enddate']],'Date'])
+
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_client_receipt',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=True,
+        isdeleted=True,
+        formatData=True
+    )
+
+@app.post('/getReportVendorInvoice')
+async def report_vendor_invoice(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'ordervendorestimatelistview'
+    payload['filters'].append(['invoicedate','between',[payload['startdate'],payload['enddate']],'Date'])
+
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_client_receipt',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=True,
+        isdeleted=True,
+        formatData=True
+    )
+
+@app.post('/getItemIDBySearch')
+async def get_client_id_by_search(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    query = f'SELECT {",".join(payload["rows"])} FROM {payload["table_name"]} WHERE id::text LIKE \'%{payload["id"]}%\''
+    
+    return await runInTryCatch(
+        conn = conn,
+        payload=payload,
+        fname = 'get_item_id_by_search',
+        query = query,
+        isPaginationRequired=True,
+        formatData=True,
+        isdeleted=True
+    )
+
+@app.post('/reportMonthlyMarginLOBReceiptPayments')
+async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'datewiselobserviceview'
+    payload['filters'].append(['recddate','between',[payload['startdate'],payload['enddate']],'Date'])
+    if 'lobName' in payload:
+        payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
+    data =  await runInTryCatch(
+        conn = conn,
+        fname = 'report_monthly_margin_lob_receipt_payments',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True
+    )
+    query = f'''SELECT SUM(orderreceiptamount) AS totalreceipt,SUM(paymentamount) AS totalpayment,SUM(orderreceiptamount - paymentamount)
+      AS total_diff FROM datewiselobserviceview'''
+    payload['sort_by'] = []
+    payload['filters'] = [['recddate','between',[payload['startdate'],payload['enddate']],'Date'],['lobname','equalTo',payload['lobName'].lower(),"String"]]
+    payload['search_key'] = ''
+    payload['pg_no'] = 1
+    payload['pg_size'] = 15
+    res = await runInTryCatch(
+        conn = conn,
+        fname='total_calc',
+        query = query,
+        payload=payload,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False,
+        isPaginationRequired=True
+    )
+    if not res['data']:
+        data['total'] = res['data']
+    data['total'] = res['data'][0]
+    return data
+
+@app.post('/reportMonthlyMarginEntityReceiptPayments')
+async def report_monthly_margin_entity_receipt_payments(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'datewiselobentityview'
+    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
+    if 'entityName' in payload:
+        payload['filters'].append(['entityname','equalTo',payload['entityName'],"String"])
+    
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'report_monthly_margin_entity_receipt_payments',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True
+    )
+    query = f'''SELECT SUM(orderreceiptamount) AS totalreceipt,SUM(paymentamount) AS totalpayment,SUM(orderreceiptamount - paymentamount)
+      AS total_diff FROM datewiselobentityview'''
+    payload['sort_by'] = []
+    payload['filters'] = [['date','between',[payload['startdate'],payload['enddate']],'Date'],['entityname','equalTo',payload['entityName'].lower(),"String"]]
+    payload['search_key'] = ''
+    payload['pg_no'] = 1
+    payload['pg_size'] = 15
+    res = await runInTryCatch(
+        conn = conn,
+        fname='total_calc',
+        query = query,
+        payload=payload,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False,
+        isPaginationRequired=True
+    )
+    if not res['data']:
+        data['total'] = res['data']
+    data['total'] = res['data'][0]
+    return data
+
+@app.post('/reportMonthlyMarginLOBReceiptPaymentsConsolidated')
+async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'datewiselobserviceview'
+    payload['static'] = True
+    query = """ select zz.lobname, zz.total_orderreceiptamount, zz.total_paymentamount, zz.total_diff from
+(SELECT
+    lobname,
+    SUM(orderreceiptamount) AS total_orderreceiptamount,
+    SUM(paymentamount) AS total_paymentamount,
+    SUM(orderreceiptamount - paymentamount) AS total_diff,
+    max(recddate) AS recddate
+        FROM     datewiselobserviceview group by lobname
+) as zz"""
+    payload['filters'].append(['recddate','between',[payload['startdate'],payload['enddate']],'Date'])
+    if 'lobName' in payload and payload['lobName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'report_monthly_margin_entity_receipt_payments',
+        query=query,
+        isPaginationRequired=True,
+        payload=payload,
+        whereinquery=False,
+        formatData=True
+    )
+    query = f'''SELECT SUM(zz.total_orderreceiptamount) AS totalreceipt,SUM(zz.total_paymentamount) AS totalpayment,SUM(zz.total_diff) as total_diff,max(zz.recddate) FROM (SELECT
+    lobname,
+    SUM(orderreceiptamount) AS total_orderreceiptamount,
+    SUM(paymentamount) AS total_paymentamount,
+    SUM(orderreceiptamount - paymentamount) AS total_diff,
+    max(recddate) AS recddate
+        FROM     datewiselobserviceview group by lobname
+) as zz '''
+    payload['sort_by'] = []
+    payload['filters'] = [['recddate','between',[payload['startdate'],payload['enddate']],'Date']]
+    if 'lobName' in payload and payload['lobName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
+    payload['search_key'] = ''
+    payload['pg_no'] = 1
+    payload['pg_size'] = 15
+    res = await runInTryCatch(
+        conn = conn,
+        fname='total_calc',
+        query = query,
+        payload=payload,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False,
+        isPaginationRequired=True
+    )
+    if not res['data']:
+        data['total'] = res['data']
+        return data
+    data['total'] = res['data'][0]
+    data['total'].pop('max')
+    return data
+    
 
 logger.info("program_started")

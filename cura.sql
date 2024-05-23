@@ -134,7 +134,6 @@ LEFT JOIN
 
 
 
-
 CREATE OR REPLACE FUNCTION delete_from_get_employee_view() RETURNS TRIGGER AS $$
 BEGIN
     -- Perform delete operation on the underlying table(s)
@@ -2316,3 +2315,80 @@ FROM lob
      JOIN client ON orders.clientid = client.id
      LEFT JOIN usertable ON order_invoice.createdby = usertable.id
      LEFT JOIN entity ON order_invoice.entityid = entity.id;
+
+create or replace view ordervendorestimatelistview as
+ SELECT order_vendorestimate.id,
+    order_vendorestimate.vendorid,
+    vendor.vendorname,
+    orders.service AS serviceid,
+    order_vendorestimate.orderid,
+    orders.briefdescription,
+    (client.firstname || ' '::text) || client.lastname AS clientname,
+    entity.name AS entityname,
+    services.service,
+    services.lob AS lobid,
+    getmonthyear(order_vendorestimate.estimatedate::timestamp without time zone) AS monthyear,
+    getfinancialyear(order_vendorestimate.estimatedate) AS fy,
+    lob.name AS lobname,
+    orders.clientid,
+    order_vendorestimate.invoicedate,
+    order_vendorestimate.invoiceamount,
+    orders.isdeleted,
+    'VI' as type,
+    '' as mode
+   FROM vendor
+     RIGHT JOIN order_vendorestimate ON vendor.id = order_vendorestimate.vendorid
+     LEFT JOIN entity ON order_vendorestimate.entityid = entity.id
+     LEFT JOIN orders ON order_vendorestimate.orderid = orders.id
+     LEFT JOIN client ON orders.clientid = client.id
+     JOIN services ON orders.service = services.id
+     JOIN lob ON services.lob = lob.id
+    WHERE order_vendorestimate.isdeleted = false;
+
+CREATE OR REPLACE clientreceiptlistview AS 
+ SELECT mode_of_payment.name AS paymentmode,
+    (client.firstname || ' '::text) || client.lastname AS clientname,
+    client_receipt.id,
+    client_receipt.amount,
+    client_receipt.recddate,
+    client_receipt.paymentmode AS paymentmodeid,
+    client_receipt.clientid,
+    client_receipt.createdby AS createdbyid,
+    client_receipt.isdeleted,
+    client_receipt.entityid,
+    entity.name AS entityname,
+    getmonthyear(client_receipt.recddate::timestamp without time zone) AS monthyear,
+    getfinancialyear(client_receipt.recddate) AS fy,
+    'CR' as type,
+    '' as vendorname,
+    '' as orderid,
+    '' as orderdescription,
+    '' as service,
+    '' as serviceid,
+    '' as lobname
+    
+   FROM client_receipt
+     LEFT JOIN usertable ON usertable.id = client_receipt.receivedby
+     LEFT JOIN mode_of_payment ON client_receipt.paymentmode = mode_of_payment.id
+     LEFT JOIN client ON client_receipt.clientid = client.id
+     LEFT JOIN entity ON client_receipt.entityid = entity.id;
+
+CREATE OR REPLACE VIEW datewiseLobServiceView AS
+SELECT
+    LOB.Name AS Lobname
+    Services.Service,
+    COALESCE(SUM(Order_Receipt.Amount), 0) AS orderReceiptAmount,
+    COALESCE(SUM(Order_Payment.Amount), 0) AS PaymentAmount,
+    Order_Receipt.RecdDate,
+    COALESCE(SUM(Order_Receipt.Amount), 0) - COALESCE(SUM(Order_Payment.Amount), 0) AS Diff
+FROM
+    Order_Payment
+    FULL OUTER JOIN orders ON Order_Payment.OrderID = orders.ID
+    LEFT OUTER JOIN Order_Receipt ON orders.ID = Order_Receipt.OrderID
+    LEFT OUTER JOIN Services ON orders.Service = Services.ID
+    LEFT OUTER JOIN LOB ON Services.LOB = LOB.ID
+    AND Order_Payment.PaymentDate = Order_Receipt.RecdDate
+GROUP BY
+    Services.Service,
+    LOB.Name,
+    Order_Receipt.RecdDate;
