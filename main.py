@@ -25,7 +25,7 @@ import uuid
 # from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
 
-hostURL = 'http://20.197.13.140:8000'
+hostURL = 'http://localhost:8000'
 ALG = 'HS256'
 FILE_DIRECTORY = './downloads'
 
@@ -53,7 +53,7 @@ def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: l
 
 # PostgreSQL database UR
 #todo : need to source user, password and ip port from variables
-DATABASE_URL = "postgresql://postgres:cura123@20.197.13.140:5432/cura_db"
+DATABASE_URL = "postgresql://postgres:cura123@localhost:5432/cura_db"
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -476,13 +476,18 @@ def givenowtime():
     return s
 
 def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL)
     try:
+        conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
         yield conn, cursor
+    except psycopg2.OperationalError as e:
+        logging.exception(f'Database connection error: {e}')
+        raise HTTPException(status_code=404, detail="Database connection error")
     finally:
-        cursor.close()
-        conn.close()
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
 
 def get_countries_from_id(conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
@@ -574,7 +579,7 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
                     "result": "success",
                     "user_id":userdata[1],
                     "role_id":userdata[2],
-                    "data": {}
+                    "token": await gentoken({"user_id":userdata[1]},conn,False)
                 }
                 return resp
             else:
@@ -5842,8 +5847,19 @@ def create_token(payload: dict,expires:timedelta|None = None):
     encoded_jwt = jwt.encode(to_encode,key=key,algorithm=ALG)
     return encoded_jwt,key
 
+async def gentoken(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection),email=False):
+    try:
+        with conn[0].cursor() as cursor:
+            access_token_expires = timedelta(minutes=100)
+            access_token,key = create_token(payload,access_token_expires)
+            cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
+            conn[0].commit()
+            return access_token
+    except Exception as e:
+        raise HTTPException(status_code=401,detail="Invalid Payload")
+
 @app.post("/token")
-async def login_for_token(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def login_for_token(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection),):
     try:
         with conn[0].cursor() as cursor:
             cursor.execute("SELECT email1 FROM usertable WHERE username = %s",(payload["username"],))
@@ -5853,11 +5869,13 @@ async def login_for_token(payload:dict,conn: psycopg2.extensions.connection = De
                 access_token_expires = timedelta(minutes=100)
                 access_token,key = create_token(payload,access_token_expires)
                 cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
-                send_email("Reset Password",f"""Reset password at 20.197.13.140:5173/reset/{access_token}""",email[0])
-                logging.info(f"""Reset password at 20.197.13.140:5173/reset/{access_token}""")
-                # print(access_token)
-                conn[0].commit()
-                return giveSuccess(0,0,email[0])
+                if email:
+                    send_email("Reset Password",f"""Reset password at 20.197.13.140:5173/reset/{access_token}""",email[0])
+                    logging.info(f"""Reset password at 20.197.13.140:5173/reset/{access_token}""")
+                    # print(access_token)
+                    conn[0].commit()
+                    return giveSuccess(0,0,email[0])
+                return access_token
             else:
                 raise HTTPException(status_code=401,detail="No username")
     except Exception as e:
@@ -6078,5 +6096,44 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict,
     data['total'].pop('max')
     return data
     
+@app.post('/reportPMABillingListView')
+async def report_PMA_Billing_List_View(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'PMABillingListView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_pma_billing_list_view',
+        payload=payload,
+        whereinquery=True,
+        isdeleted=True,
+        formatData=True,
+        isPaginationRequired=True
+    )
+
+@app.post('/reportPMABillingTrendView')
+async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'PMABillingTrendView'
+    payload['filters'].append(["fy","equalTo",payload['fy'],"String"])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_pma_billing_trend_view',
+        payload=payload,
+        whereinquery=False,
+        isdeleted=False,
+        formatData=True,
+        isPaginationRequired=True
+    )
+
+@app.post('/reportPMAClientPortalReport')
+async def report_PMA_Client_Portal_Report(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'PMAClientPortalReport'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_pma_client_portal',
+        payload=payload,
+        whereinquery=False,
+        isdeleted=False,
+        formatData=True,
+        isPaginationRequired=True
+    )
 
 logger.info("program_started")
