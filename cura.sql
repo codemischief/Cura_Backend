@@ -2392,3 +2392,43 @@ GROUP BY
     Services.Service,
     LOB.Name,
     Order_Receipt.RecdDate;
+
+CREATE OR REPLACE VIEW PMABillingTrendView AS
+SELECT 
+    ClientName,
+    gy AS FY,
+    COALESCE(Jan, 0) AS Jan,
+    COALESCE(Feb, 0) AS Feb,
+    COALESCE(Mar, 0) AS Mar,
+    COALESCE(Apr, 0) AS Apr,
+    COALESCE(May, 0) AS May,
+    COALESCE(Jun, 0) AS Jun,
+    COALESCE(Jul, 0) AS Jul,
+    COALESCE(Aug, 0) AS Aug,
+    COALESCE(Sep, 0) AS Sep,
+    COALESCE(Oct, 0) AS Oct,
+    COALESCE(Nov, 0) AS Nov,
+    COALESCE(Dec, 0) AS Dec
+FROM
+    crosstab(
+        $$SELECT ClientName, fy(invoicedate::timestamp), EXTRACT(MONTH FROM InvoiceDate) AS MONTH, SUM(InvoiceAmount)
+          FROM PMABillingListView
+          GROUP BY ClientName, gy, EXTRACT(MONTH FROM InvoiceDate)
+          ORDER BY ClientName, gy, EXTRACT(MONTH FROM InvoiceDate)$$,
+        $$VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12)$$
+    ) AS ct (
+        ClientName text,
+        gy int,
+        Jan numeric,
+        Feb numeric,
+        Mar numeric,
+        Apr numeric,
+        May numeric,
+        Jun numeric,
+        Jul numeric,
+        Aug numeric,
+        Sep numeric,
+        Oct numeric,
+        Nov numeric,
+        Dec numeric
+    );
