@@ -623,8 +623,8 @@ def giveFailure(msg,uid,rid,data=[]):
         "data":data
     }
 
-def check_role_access(conn, payload: dict,request: Request = None):
-    if request and request.headers.get('authorization'):
+def check_role_access(conn, payload: dict,request: Request = None,method: str = None):
+    if request and  request.headers.get('authorization'):
         with conn[0].cursor() as cursor:
             token = request.headers['authorization'][7:]
             logging.info(f"Token is <{token}>")
@@ -655,7 +655,20 @@ def check_role_access(conn, payload: dict,request: Request = None):
         else:
             return None
         role_id = cursor.fetchone()
+        if method in 'getBuilderInfo|addBuilderInfo|editBuilder|deleteBuilder':
+            query = f"SELECT id FROM rules WHERE method='{method}'"
+            logging.info(f"QUERY IS <{query}>")
+            cursor.execute(query)
+            rule_id = cursor.fetchone()
+            logging.info(f"Rule ID IS <{rule_id}>")
 
+            if role_id and rule_id:
+                query = f"SELECT true FROM roles_to_rules_map WHERE role_id={role_id[0]} AND rule_id={rule_id[0]}"
+                logging.info(f"QUERY IS <{query}>")
+                cursor.execute(query)
+                flag = True if cursor.fetchone() else False
+                logging.info(flag)
+                return flag
         if role_id is not None:
             return role_id[0]
         else:
@@ -831,11 +844,11 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
 
 
 @app.post('/addBuilderInfo')
-async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_builder_info: received payload <{payload}>')
     try:
-        role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1:
+        role_access_status = check_role_access(conn, payload,request=request,method='addBuilderInfo')
+        if role_access_status:
             with conn[0].cursor() as cursor:
                 query = '''
                     INSERT INTO builder (
@@ -871,7 +884,7 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
                 data= {
                     "entered":id
                 }
-            return giveSuccess(payload['user_id'],role_access_status,data)
+            return giveSuccess(None,role_access_status,data)
         elif role_access_status!=1:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
@@ -882,14 +895,14 @@ async def add_builder_info(payload: dict, conn: psycopg2.extensions.connection =
 
 #BUILDER UPDATED
 @app.post('/getBuilderInfo')
-def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'get_builder_info: received payload <{payload}>')
     countries = get_countries_from_id(conn=conn)
     cities = get_city_from_id(conn=conn)
     try:
-        role_access_status = check_role_access(conn, payload)
+        role_access_status = check_role_access(conn, payload,request=request,method='getBuilderInfo')
 
-        if role_access_status == 1:  
+        if role_access_status:  
             with conn[0].cursor() as cursor:
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
@@ -919,11 +932,11 @@ def getBuilderInfo(payload: dict, conn: psycopg2.extensions.connection = Depends
         return giveFailure("Invalid Credentials",payload['user_id'],0)
     
 @app.post("/editBuilder")
-async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'edit_builder: received payload <{payload}>')
     try:
         # Check user role
-        role_access_status = check_role_access(conn, payload)
+        role_access_status = check_role_access(conn, payload,request=request,method='addBuilderInfo')
 
         with conn[0].cursor() as cursor:
             # Check if the builder exists
@@ -941,7 +954,7 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
                     addressline1 = %s, addressline2 = %s, suburb = %s, city = %s, 
                     state = %s, country = %s, zip = %s, website = %s, comments = %s, 
                     dated = %s, createdby = %s, isdeleted = %s
-                    WHERE id = %s
+                    WHERE id = %s AND isdeleted=false
                 """
                 msg = logMessage(cursor,query_update, (
                     payload['builder_name'],
@@ -983,23 +996,25 @@ async def edit_builder(payload: dict, conn: psycopg2.extensions.connection = Dep
         return giveFailure(str(e),payload['user_id'],0)
 
 @app.post('/deleteBuilder')
-async def deleteBuilder(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'delete_builder: received payload <{payload}>')
     try:
-        role_access_status = check_role_access(conn,payload)
+        role_access_status = check_role_access(conn, payload,request=request,method='deleteBuilder')
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE builder SET isdeleted=true WHERE id=%s'
+                query = 'UPDATE builder SET isdeleted=true WHERE id=%s and isdeleted=False'
                 msg = logMessage(cursor,query,(payload['builder_id'],))
+                if cursor.statusmessage == 'UPDATE 0':
+                    return giveFailure("No Builder",None,role_access_status)
                 logging.info(msg)
                 conn[0].commit()
                 data = {
-                    "deleted_user":payload['builder_id']
+                    "deleted_builder":payload['builder_id']
                     }
-                return giveSuccess(payload['user_id'],role_access_status,data)
+                return giveSuccess(None,role_access_status,data)
 
         else:
-            return giveFailure("Access Denoed",payload['user_id'],0)
+            return giveFailure("Access Denied",None,0)
 
     except Exception as e:
         logging.exception(traceback.print_exc())

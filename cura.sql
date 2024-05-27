@@ -2704,3 +2704,649 @@ update bankst set isdeleted=false;
 CREATE SEQUENCE IF NOT EXISTS owners_id_seq OWNED BY owners.id;
 SELECT setval('owners_id_seq', COALESCE(max(id), 0) + 1, false) FROM owners;
 ALTER TABLE owners ALTER COLUMN id SET DEFAULT nextval('owners_id_seq');
+
+CREATE VIEW clientstatementview AS
+SELECT
+    'Invoice' AS type,
+    ov.clientname,
+    oi.id,
+    oi.invoicedate AS date,
+    oi.invoiceamount AS amount,
+    NULL AS tds,
+    ov.briefdescription AS orderdetails,
+    e.name,
+    s.service,
+    oi.quotedescription AS details,
+    oi.visibletoclient,
+    ov.clientid,
+    '' AS mode,
+    ov.lobname AS lob_name
+FROM
+    order_invoice oi
+LEFT JOIN
+    ordersview ov ON ov.id = oi.orderid
+LEFT JOIN
+    entity e ON e.id = oi.entityid
+LEFT JOIN
+    services s ON s.id = ov.serviceid
+
+UNION
+
+SELECT
+    'C Receipt' AS type,
+    cv.fullname,
+    crv.id,
+    crv.recddate AS date,
+    crv.amount AS amount,
+    crv.tds,
+    NULL AS orderdetails,
+    e.name AS entity,
+    NULL AS service,
+    crv.receiptdesc AS details,
+    crv.visibletoclient,
+    cv.id,
+    crv.paymentmode AS mode,
+    '' AS lob_name
+FROM
+    clientview cv
+INNER JOIN
+    clientreceiptview crv ON cv.id = crv.clientid
+LEFT JOIN
+    entity e ON crv.entityid = e.id
+
+UNION
+
+SELECT
+    'Payment' AS type,
+    cv.fullname,
+    opv.id,
+    opv.paymentdate AS date,
+    opv.amount AS amount,
+    opv.tds,
+    opv.orderdescription AS orderdetails,
+    e.name AS entity,
+    opv.service AS service,
+    opv.description AS details,
+    FALSE AS visible_to_client,
+    cv.id,
+    opv.mode_of_payment AS mode,
+    opv.lobname AS lob_name
+FROM
+    clientview cv
+INNER JOIN
+    orderpaymentview opv ON cv.id = opv.clientid
+LEFT JOIN
+    entity e ON opv.entityid = e.id
+
+UNION
+
+SELECT
+    'Order Receipt' AS type,
+    cv.fullname,
+    orv.id,
+    orv.recddate AS date,
+    orv.amount AS amount,
+    orv.tds,
+    orv.orderdescription AS orderdetails,
+    e.name AS entity,
+    orv.service AS service,
+    orv.receiptdesc AS details,
+    FALSE AS visible_to_client,
+    cv.id AS clientid,
+    orv.paymentmode AS mode,
+    orv.lobname AS lob_name
+FROM
+    clientview cv
+INNER JOIN
+    orderreceiptview orv ON cv.id = orv.clientid
+LEFT JOIN
+    entity e ON orv.entityid = e.id;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+CREATE VIEW duplicateclients AS
+SELECT
+    c.firstname,
+    c.lastname,
+    COUNT(c.email1) AS count,
+    c.clienttype,
+    ct.name
+FROM
+    client c
+INNER JOIN
+    client_type ct ON c.clienttype = ct.id
+GROUP BY
+    c.email1,
+    c.firstname,
+    c.lastname,
+    c.clienttype,
+    ct.name,
+    c.isdeleted
+HAVING
+    COUNT(c.email1) > 1
+    AND c.isdeleted = false;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+CREATE VIEW clientbankdetails AS
+SELECT
+    c.firstname,
+    c.lastname,
+    ca.onlinemailid,
+    cbi.bankname,
+    cbi.bankbranch,
+    cbi.bankaccountno,
+    cbi.bankaccountholdername,
+    cbi.bankcity,
+    cbi.bankifsccode,
+    cbi.bankaccounttype
+FROM
+    client_access ca
+INNER JOIN
+    client c ON ca.clientid = c.id
+INNER JOIN
+    client_bank_info cbi ON c.id = cbi.clientid;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+
+CREATE VIEW rpt_nonpmaclient AS
+SELECT
+    'Invoice' AS type,
+    ov.clientname,
+    oi.id,
+    oi.invoicedate AS date,
+    oi.invoiceamount AS amount,
+    NULL AS tds,
+    REPLACE(REPLACE(ov.briefdescription, CHR(10), ''), CHR(13), '') AS orderdetails,
+    e.name AS entity,
+    s.service,
+    REPLACE(REPLACE(oi.quotedescription, CHR(10), ''), CHR(13), '') AS details,
+    '' AS mode,
+    ov.clienttypename AS client_type,
+    ov.id AS order_id,
+    ov.clientid AS clientid,
+    getmonthyear(oi.invoicedate) AS monthyear,
+    getfinancialyear(oi.invoicedate) AS fy,
+    ov.lobname AS lobname
+FROM
+    order_invoice oi
+LEFT JOIN
+    ordersview ov ON ov.id = oi.orderid
+LEFT JOIN
+    entity e ON e.id = oi.entityid
+LEFT JOIN
+    services s ON s.id = ov.serviceid
+WHERE
+    ov.clienttypename NOT LIKE 'pma - owner' AND
+    ov.clientname NOT LIKE '%1-%'
+
+UNION ALL
+
+SELECT
+    'Payment' AS type,
+    cv.fullname,
+    crv.id,
+    crv.recddate AS date,
+    -1 * crv.amount AS amount,
+    crv.tds,
+    NULL AS orderdetails,
+    e.name AS entity,
+    NULL AS service,
+    hr.name AS details,
+    crv.paymentmode AS mode,
+    cv.clienttypename AS client_type,
+    NULL AS order_id,
+    cv.id AS clientid,
+    getmonthyear(crv.recddate) AS monthyear,
+    getfinancialyear(crv.recddate) AS fy,
+    NULL AS lobname
+FROM
+    clientview cv
+INNER JOIN
+    clientreceiptview crv ON cv.id = crv.clientid
+LEFT JOIN
+    entity e ON crv.entityid = e.id
+LEFT JOIN
+    howreceived hr ON crv.howreceivedid = hr.id
+WHERE
+    cv.clienttypename NOT LIKE 'pma - owner' AND
+    cv.firstname NOT LIKE '%1-%'
+
+UNION ALL
+
+SELECT
+    'OrderRec' AS type,
+    cv.fullname,
+    orv.id,
+    orv.recddate AS date,
+    -1 * orv.amount AS amount,
+    orv.tds,
+    orv.orderdescription AS orderdetails,
+    e.name AS entity,
+    orv.service AS service,
+    orv.receiptdesc AS details,
+    orv.paymentmode AS mode,
+    cv.clienttypename AS client_type,
+    orv.orderid AS order_id,
+    cv.id AS clientid,
+    getmonthyear(orv.recddate) AS monthyear,
+    getfinancialyear(orv.recddate) AS fy,
+    orv.lobname AS lobname
+FROM
+    clientview cv
+INNER JOIN
+    orderreceiptview orv ON cv.id = orv.clientid
+LEFT JOIN
+    entity e ON orv.entityid = e.id
+WHERE
+    cv.clienttypename NOT LIKE 'pma - owner' AND
+    cv.firstname NOT LIKE '%1-%';
+
+
+
+
+CREATE VIEW rpt_client_property_caretaking_agreementview AS
+SELECT
+    cpca.id,
+    cpca.clientpropertyid,
+    cpca.startdate,
+    cpca.enddate,
+    cpca.actualenddate,
+    cpca.monthlymaintenancedate,
+    cpca.monthlymaintenanceamount,
+    cpca.active,
+    cpca.scancopy,
+    cpca.reasonforearlyterminationifapplicable,
+    cpca.dated,
+    cpca.createdby AS createdbyid,
+    cpca.isdeleted,
+    ut.firstname || ' ' || ut.lastname AS createdby,
+    CASE
+        WHEN cpca.active = TRUE THEN 'Active'
+        ELSE 'Inactive'
+    END AS status,
+    pv.clientname,
+    pv.propertydescription,
+    pv.property_status AS propertystatus,
+    pv.electricitybillingduedate,
+    pv.electricitybillingunit,
+    pv.electricityconsumernumber,
+    pv.propertytaxnumber,
+    cpca.description,
+    lnl.startdate AS lnlstartdate,
+    lnl.actualenddate AS lnlenddate,
+    lnl.rentamount,
+    cpca.vacant,
+    cpca.rented,
+    cpca.fixed,
+    cpca.vacanttax,
+    cpca.rentedtax,
+    cpca.fixedtax,
+    cpca.electricitybillcreated,
+    cpca.propertytaxbillcreated,
+    cpca.pipedgasbillcreated,
+    cpca.societyduesbillcreated,
+    cpca.advanceforreimbursementcreated,
+    cpca.createclientportalaccount,
+    cpca.orderid,
+    o.briefdescription AS orderdescription,
+    pv.clientid,
+    cli.fulllegalname,
+    cv.clienttypename,
+    cpca.poastartdate,
+    cpca.poaenddate,
+    cpca.ptaxpaidtilldate,
+    cpca.societyduespaidtilldate,
+    cpca.poaholder
+FROM
+    client_property_caretaking_agreement cpca
+INNER JOIN
+    usertable ut ON cpca.createdby = ut.id
+INNER JOIN
+    propertiesview pv ON cpca.clientpropertyid = pv.id
+LEFT OUTER JOIN
+    clientview cv ON pv.clientid = cv.id
+LEFT OUTER JOIN
+    client_legal_info cli ON pv.clientid = cli.clientid
+LEFT OUTER JOIN
+    orders o ON cpca.orderid = o.id
+LEFT OUTER JOIN
+    client_property_leave_license_detailsview lnl ON lnl.clientpropertyid = cpca.clientpropertyid AND lnl.active = TRUE;
+
+CREATE VIEW client_property_leave_license_detailsview AS
+SELECT 
+    CASE 
+        WHEN cplld.active = 'true' THEN 'Active' 
+        ELSE 'Inactive' 
+    END AS status,
+    cplld.clientpropertyid,
+    cplld.orderid,
+    cplld.startdate,
+    cplld.vacatingdate,
+    cplld.durationinmonth,
+    cplld.actualenddate,
+    cplld.depositamount,
+    cplld.rentamount,
+    cplld.registrationtype,
+    cplld.rentpaymentdate,
+    cplld.paymentcycle,
+    cplld.reasonforclosure,
+    cplld.noticeperiodindays,
+    cplld.modeofrentpaymentid,
+    cplld.clientpropertyorderid,
+    cplld.signedby,
+    cplld.active,
+    cplld.tenantsearchmode AS tenantsearchmodeid,
+    cplld.llscancopy,
+    cplld.pvscancopy,
+    cplld.dated,
+    cplld.createdby AS expr2,
+    cplld.isdeleted,
+    zmp.name AS modeofrentpayment,
+    tsm.name AS tenantsearchmode,
+    cplld.id,
+    cplld.comments,
+    pv.clientname,
+    pv.propertydescription,
+    ov.propertydescription AS expr1,
+    getmonthyear(cplld.startdate) AS startdatemonthyear,
+    getmonthyear(cplld.actualenddate) AS enddatemonthyear,
+    ov.orderstatus,
+    ov.status AS orderstatusid,
+    pv.clientid,
+    pv.propertytaxnumber,
+    pv.property_status,
+    pv.electricitybillingunit,
+    pv.electricityconsumernumber
+FROM 
+    client_property_leave_license_details cplld
+INNER JOIN
+    propertiesview pv ON cplld.clientpropertyid = pv.id
+LEFT OUTER JOIN
+    z_modeofrentpayment zmp ON cplld.modeofrentpaymentid = zmp.id
+LEFT OUTER JOIN
+    z_tenant_search_mode tsm ON cplld.tenantsearchmode = tsm.id
+LEFT OUTER JOIN
+    ordersview ov ON cplld.orderid = ov.id
+WHERE 
+    cplld.isdeleted = 0;
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+
+CREATE VIEW projectcontactsview AS
+SELECT
+    pv.buildername,
+    pv.projectname,
+    pv.city,
+    pv.suburb,
+    pc.contactname,
+    pc.phone,
+    pc.email,
+    pc.effectivedate,
+    pc.role,
+    pc.tenureenddate,
+    pc.details
+FROM
+    project_contacts pc
+INNER JOIN
+    projectsview pv ON pc.projectid = pv.id;
+
+CREATE VIEW projectsview AS
+SELECT 
+    project.id,
+    project.builderid,
+    project.addressline1,
+    project.addressline2,
+    project.suburb,
+    project.city AS cityid,
+    project.state,
+    project.country,
+    project.zip,
+    project.project_type,
+    project.mailgroup1,
+    project.mailgroup2,
+    project.website,
+    project.project_legal_status,
+    project.rules,
+    project.completionyear,
+    project.jurisdiction,
+    project.taluka,
+    project.corporationward,
+    project.policechowkey,
+    project.policestation,
+    project.maintenance_details,
+    project.numberoffloors,
+    project.numberofbuildings,
+    project.approxtotalunits,
+    project.tenantstudentsallowed,
+    project.tenantworkingbachelorsallowed,
+    project.tenantforeignersallowed,
+    project.otherdetails,
+    project.duespayablemonth,
+    project.dated,
+    project.createdby AS createdbyid,
+    project.isdeleted,
+    cities.city,
+    country.name AS countryname,
+    usertable.firstname || ' ' || usertable.lastname AS createdby,
+    project.projectname,
+    project.nearestlandmark,
+    builder.buildername,
+    project_type.name AS projecttype,
+    CASE 
+        WHEN project.tenantstudentsallowed = '1' THEN 'Tenant Students Allowed,'
+        ELSE '' 
+    END 
+    || CASE 
+        WHEN project.tenantworkingbachelorsallowed = '1' THEN ' Tenant Working Bachelors Allowed,'
+        ELSE '' 
+    END 
+    || CASE 
+        WHEN project.tenantforeignersallowed = '1' THEN ' Tenant Foreigners Allowed' 
+        ELSE '' 
+    END AS tenantallowed
+FROM     
+    project
+INNER JOIN
+    cities ON project.city = cities.id
+INNER JOIN
+    country ON project.country = country.id
+INNER JOIN
+    usertable ON project.createdby = usertable.id
+INNER JOIN
+    builder ON project.builderid = builder.id
+INNER JOIN
+    project_type ON project.project_type = project_type.id;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+
+CREATE VIEW rpt_clientswithadvanceholdingamounts AS
+SELECT
+    clientname,
+    COALESCE(SUM(sumpayment), 0) AS payments,
+    COALESCE(SUM(sumreceipt), 0) AS receipts,
+    row_number() OVER (ORDER BY clientname) AS rn
+FROM
+    clientsummaryview
+WHERE
+    service = 'H-Advance Paid'
+GROUP BY
+    clientname
+HAVING
+    COALESCE(SUM(sumpayment), 0) < COALESCE(SUM(sumreceipt), 0);
+
+CREATE VIEW ClientSummaryView AS
+SELECT
+    OrdersView.ID AS OrderId,
+    COALESCE(OrdersView.ClientName, '') as ClientName,
+    COALESCE(OrdersView.PropertyDescription, '') as PropertyDescription,
+    COALESCE(OrdersView.BriefDescription, '') as BriefDescription,
+    COALESCE(OrdersView.Service, '') as Service,
+    COALESCE(SumVendorEstimate.EstimateAmount, 0) AS VendorEstimate,
+    COALESCE(SumVendorEstimate.InvoiceAmount, 0) AS VendorInvoiceAmount,
+    COALESCE(SumPayment.paymentamount, 0) AS SumPayment,
+    COALESCE(SumInvoice.EstimateAmount, 0) as EstimateAmount,
+    CASE
+        WHEN OrdersView.OrderStatus = 'Cancelled' THEN 0
+        ELSE
+            CASE
+                WHEN COALESCE(SumInvoice.invoiceamount, 0) = 0 THEN SumInvoice.EstimateAmount
+                ELSE SumInvoice.invoiceamount
+            END
+    END - COALESCE(SumReceipt.receiptamount, 0) AS ComputedPending,
+    COALESCE(SumReceipt.receiptamount, 0) AS SumReceipt,
+    OrdersView.OrderDate,
+    COALESCE(OrdersView.OrderStatus, '') as OrderStatus,
+    COALESCE(SumInvoice.invoiceamount, 0) as invoiceamount,
+    COALESCE(SumReceipt.receiptamount - SumPayment.paymentamount - SumInvoice.TaxAmount, 0) AS Profit,
+    COALESCE(OrdersView.Owner, 0) as Owner,
+    COALESCE(OrdersView.Status, 0) AS OrderStatusId,
+    COALESCE(OrdersView.LOBName, '') as LOBName,
+    COALESCE(OrdersView.OwnerName, '') as OwnerName,
+    COALESCE(OrdersView.ServiceType, '') as ServiceType,
+    OrdersView.ClientID,
+    COALESCE(OrdersView.ServiceId, 0) as ServiceId,
+    COALESCE(OrdersView.Ageing, 0) as Ageing,
+    COALESCE(OrdersView.EntityName, '') as EntityName
+FROM
+    OrdersView
+LEFT OUTER JOIN (
+    SELECT
+        OrderID,
+        SUM(InvoiceAmount) AS invoiceamount,
+        SUM(EstimateAmount) AS EstimateAmount,
+        SUM(COALESCE(Tax, 0)) AS TaxAmount
+    FROM
+        Order_Invoice
+    GROUP BY
+        OrderID
+) AS SumInvoice ON OrdersView.ID = SumInvoice.OrderID
+LEFT OUTER JOIN (
+    SELECT
+        OrderID,
+        SUM(Amount + COALESCE(TDS, 0)) AS receiptamount
+    FROM
+        Order_Receipt
+    GROUP BY
+        OrderID
+) AS SumReceipt ON OrdersView.ID = SumReceipt.OrderID
+LEFT OUTER JOIN (
+    SELECT
+        OrderID,
+        SUM(Amount) AS paymentamount
+    FROM
+        Order_Payment
+    GROUP BY
+        OrderID
+) AS SumPayment ON OrdersView.ID = SumPayment.OrderID
+LEFT OUTER JOIN (
+    SELECT
+        OrderID,
+        SUM(InvoiceAmount) AS InvoiceAmount,
+        SUM(Amount) AS EstimateAmount
+    FROM
+        Order_VendorEstimate
+    GROUP BY
+        OrderID
+) AS SumVendorEstimate ON OrdersView.ID = SumVendorEstimate.OrderID;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+
+CREATE VIEW rpt_clients_transactions AS
+SELECT
+    'Invoice' AS type,
+    ov.clientname,
+    oi.id,
+    oi.invoicedate AS date,
+    oi.invoiceamount AS amount,
+    NULL AS tds,
+    REPLACE(REPLACE(ov.briefdescription, CHR(10), ''), CHR(13), '') AS orderdetails,
+    e.name AS entity,
+    s.service,
+    REPLACE(REPLACE(oi.quotedescription, CHR(10), ''), CHR(13), '') AS details,
+    '' AS mode,
+    ov.clienttypename AS client_type,
+    ov.id AS order_id,
+    ov.clientid AS clientid,
+    getmonthyear(oi.invoicedate) AS monthyear,
+    getfinancialyear(oi.invoicedate) AS fy,
+    ov.lobname
+FROM
+    order_invoice oi
+LEFT JOIN
+    ordersview ov ON ov.id = oi.orderid
+LEFT JOIN
+    entity e ON e.id = oi.entityid
+LEFT JOIN
+    services s ON s.id = ov.serviceid
+WHERE
+    LOWER(ov.clienttypename) = 'pma-owner'
+
+UNION ALL
+
+SELECT
+    'Payment' AS type,
+    cv.fullname,
+    crv.id,
+    crv.recddate AS date,
+    -1 * crv.amount AS amount,
+    crv.tds,
+    NULL AS orderdetails,
+    e.name AS entity,
+    NULL AS service,
+    hr.name AS details,
+    crv.paymentmode AS mode,
+    cv.clienttypename,
+    NULL AS order_id,
+    cv.id AS clientid,
+    getmonthyear(crv.recddate) AS monthyear,
+    getfinancialyear(crv.recddate) AS fy,
+    NULL AS lobname
+FROM
+    clientview cv
+INNER JOIN
+    clientreceiptview crv ON cv.id = crv.clientid
+LEFT JOIN
+    entity e ON crv.entityid = e.id
+LEFT JOIN
+    howreceived hr ON crv.howreceivedid = hr.id
+WHERE
+    LOWER(cv.clienttypename) = 'pma-owner'
+
+UNION ALL
+
+SELECT
+    'OrderRec' AS type,
+    cv.fullname,
+    orv.id,
+    orv.recddate AS date,
+    -1 * orv.amount AS amount,
+    orv.tds,
+    orv.orderdescription AS orderdetails,
+    e.name AS entity,
+    orv.service,
+    orv.receiptdesc AS details,
+    orv.paymentmode AS mode,
+    cv.clienttypename,
+    NULL AS order_id,
+    cv.id AS clientid,
+    getmonthyear(orv.recddate) AS monthyear,
+    getfinancialyear(orv.recddate) AS fy,
+    orv.lobname
+FROM
+    clientview cv
+INNER JOIN
+    orderreceiptview orv ON cv.id = orv.clientid
+LEFT JOIN
+    entity e ON orv.entityid = e.id
+WHERE
+    LOWER(cv.clienttypename) = 'pma-owner';
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
