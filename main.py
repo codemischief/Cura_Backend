@@ -21,6 +21,10 @@ import secrets
 from fastapi.responses import FileResponse
 import pandas as pd
 import uuid
+from dotenv import load_dotenv
+import os
+
+# Load the .env file
 
 # from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
@@ -53,7 +57,10 @@ def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: l
 
 # PostgreSQL database UR
 #todo : need to source user, password and ip port from variables
-DATABASE_URL = "postgresql://postgres:cura123@localhost:5432/cura_db"
+load_dotenv()
+
+# Get the value of DATABASE_URL
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -564,7 +571,7 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
             logging.info(msg)
             company_key = cursor.fetchone()
             if userdata is None:
-                return giveFailure("User does not exist",None,None)
+                raise HTTPException(status_code=401,detail="Unauthorised")
             logger.info(f"{userdata[0]} is password hashed")
             encoded_pw = payload['password'].encode('utf-8')
             logger.info(f"{type(encoded_pw)} is type")
@@ -583,22 +590,13 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
                 }
                 return resp
             else:
-                return {
-                    "result": "error",
-                    "message": "Invalid Credentials",
-                }
+                return HTTPException(status_code=401,detail="Unauthorized")
     except KeyError as ke:
-        return {
-            "result": "error",
-            "message": f"key {ke} not found",
-        }
+        return HTTPException(status_code=400,detail=f"Bad Request,{ke} missing")
     except Exception as e:
-        logging.exception(traceback.print_exc())
-        return {
-            "result" : "Error",
-            "message":"Wrong input",
-            "data":{}
-            }
+        logging.info(traceback.print_exc())
+        return HTTPException(status_code=400,detail="Bad Request")
+
 
 def giveSuccess(uid,rid,data=[], total_count=None, filename=None):
     final_data =  {
@@ -1216,12 +1214,12 @@ async def add_localities(payload: dict, conn : psycopg2.extensions.connection = 
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
-            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+            return HTTPException(status_code=403,detail="Access Denied")
         else:
-            return giveFailure("Already Exists",payload['user_id'],role_access_status)
+            return HTTPException(status_code=403,detail="Already Exists")
     except Exception as e:
         print(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],0)
+        return HTTPException(status_code=400,detail="Invalid Credentials")
 
 @app.post('/editLocality')
 async def edit_localities(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1272,9 +1270,9 @@ async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
         fname = 'get_bank_statement',
         payload=payload,
         isPaginationRequired=True,
-        whereinquery=False,
+        whereinquery=True,
         formatData=True,
-        isdeleted=False
+        isdeleted=True
     )
     with conn[0].cursor() as cursor:
         query = '''SELECT
@@ -1348,11 +1346,11 @@ async def delete_bank_statement(payload : dict, conn : psycopg2.extensions.conne
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'DELETE FROM bankst WHERE id=%s'
+                query = 'UPDATE bankst SET isdeleted=true WHERE id=%s AND isdeleted=false'
                 msg = logMessage(cursor,query,(payload['id'],))
                 logging.info(msg)
-                if cursor.statusmessage == "DELETE 0":
-                    return giveFailure("No Bank st available",payload['user_id'],role_access_status)
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure(f"No Bank Stantement with id {payload['id']}",payload['user_id'],role_access_status)
                 conn[0].commit()
             data = {
                 "deleted_data":payload['id']
@@ -1480,16 +1478,13 @@ async def delete_employee(payload: dict, conn : psycopg2.extensions.connection =
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE employee SET isdeleted=true WHERE id=%s'
+                query = 'UPDATE employee SET isdeleted=true WHERE id=%s and isdeleted=false'
                 msg = logMessage(cursor,query,(payload['id'],))
+                
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure(f"No Employee with id {payload['id']}",payload['user_id'],role_access_status)
                 logging.info(msg)
                 conn[0].commit()
-                query = f'SELECT isdeleted FROM employee WHERE id = {payload["id"]}'
-                cursor.execute(query)
-                if cursor.fetchone() is None:
-                    return giveFailure("No record exists",payload['user_id'],role_access_status)
-                elif cursor.fetchone()[0]: 
-                    return giveFailure("No record exists",payload['user_id'],role_access_status)
             data = {
                 "deleted_user":payload['id']
             }
@@ -1606,19 +1601,20 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                query = 'INSERT INTO research_prospect (personname,suburb,city,state,country,propertylocation,possibleservices,dated,createdby,isdeleted,phoneno,email1) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-                msg =logMessage(cursor,query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['phoneno'],payload['email1']))
+                query = 'INSERT INTO research_prospect (personname,suburb,city,state,country,propertylocation,possibleservices,dated,createdby,isdeleted,phoneno,email1) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
+                msg =logMessage(cursor,query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],givenowtime(),payload['user_id'],False,payload['phoneno'],payload['email1']))
+                id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
             data = {
-                "added_data":payload['personname']
+                "added_prospect":id
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
-            giveFailure("Access Denied",payload['user_id'],role_access_status)
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/editResearchProspect')
 async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1630,7 +1626,7 @@ async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.conne
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                 query = 'UPDATE research_prospect SET personname=%s,phoneno=%s,email1=%s,suburb=%s,city=%s,state=%s,country=%s,propertylocation=%s,possibleservices=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
-                msg =logMessage(cursor,query,(payload['personname'],payload['phoneno'],payload['email1'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],payload['dated'],payload['createdby'],payload['isdeleted'],payload['id']))
+                msg =logMessage(cursor,query,(payload['personname'],payload['phoneno'],payload['email1'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],givenowtime(),payload['user_id'],False,payload['id']))
                 logging.info(msg)
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Prospect available",payload['user_id'],role_access_status)
@@ -1640,10 +1636,10 @@ async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.conne
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
-            giveFailure("Access Denied",payload['user_id'],role_access_status)
+            return giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/deleteResearchProspect')
 async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1841,7 +1837,7 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                     colnames = [desc[0] for desc in cursor.description]
                     filename = generateExcelOrPDF(payload['downloadType'] if 'downloadType' in payload else None,rows=res_, colnames=colnames)
                     data = res_
-                    return giveSuccess(payload['user_id'], role_access_status, data, total_count, filename=filename)
+                    success = giveSuccess(payload['user_id'], role_access_status, data, total_count, filename=filename)
 
                 if formatData:
                     logging.info(f"Formatting in progress for process {fname}")
@@ -1853,6 +1849,8 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                     return giveSuccess(payload['user_id'], role_access_status, res,total_count,  filename=filename)
                 else:
                     return giveSuccess(payload['user_id'],role_access_status,data,total_count,  filename=filename)
+                return success
+                
     
     except Exception as e:
             logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
@@ -2457,11 +2455,11 @@ async def delete_client_info(payload: dict, conn: psycopg2.extensions.connection
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE client SET isdeleted=true WHERE id=%s'
+                query = 'UPDATE client SET isdeleted=true WHERE id=%s AND isdeleted=false'
                 msg = logMessage(cursor,query,(payload['id'],))
                 logging.info(msg)
-                if cursor.statusmessage == "DELETE 0":
-                    return giveFailure("No CLient available",payload['user_id'],role_access_status)
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure(f"No Client available with id {payload['id']}",payload['user_id'],role_access_status)
 
                 query = "UPDATE client_access SET isdeleted=true WHERE clientid=%s"
                 logMessage(cursor,query,(payload['id'],))
@@ -3048,8 +3046,10 @@ async def delete_client_receipt(payload: dict, conn: psycopg2.extensions.connect
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "UPDATE client_receipt SET isdeleted=true WHERE id=%s"
+                query = "UPDATE client_receipt SET isdeleted=true WHERE id=%s AND isdeleted=False"
                 msg = logMessage(cursor,query,(payload['id'],))
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure(f"No Order Receipt with id {payload['id']}",payload['user_id'],role_access_status)
                 logging.info(msg)
                 conn[0].commit()
             if cursor.statusmessage !="UPDATE 0":
@@ -3652,10 +3652,10 @@ async def delete_orders(payload: dict, conn: psycopg2.extensions.connection = De
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE orders SET isdeleted=true WHERE id=%s'
+                query = 'UPDATE orders SET isdeleted=true WHERE id=%s and isdeleted=False'
                 msg = logMessage(cursor,query,[payload['order_id']])
                 logging.info(msg)
-                if cursor.statusmessage == 'DELETE 0':
+                if cursor.statusmessage == 'UPDATE 0':
                     return giveFailure("No record available",payload['user_id'],role_access_status)
                 query = 'DELETE FROM order_status_change WHERE orderid=%s'
                 logMessage(cursor,query,[payload['order_id']])
@@ -3805,10 +3805,12 @@ async def delete_order_invoice(payload: dict,conn:psycopg2.extensions.connection
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE order_invoice SET isdeleted=true WHERE id=%s'
+                query = 'UPDATE order_invoice SET isdeleted=true WHERE id=%s and isdeleted=false'
                 msg = logMessage(cursor,query,[
                     payload['id']
                 ])
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure(f"No client invoice with id {payload['id']}",payload['user_id'],role_access_status)
                 logging.info(msg)
             conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
@@ -3883,10 +3885,12 @@ async def delete_order_receipt(payload: dict,conn:psycopg2.extensions.connection
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE order_receipt SET isdeleted=true WHERE id=%s'
+                query = 'UPDATE order_receipt SET isdeleted=true WHERE id=%s AND isdeleted=false'
                 msg = logMessage(cursor,query,[
                     payload['id']
                 ])
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure(f"No Order Receipt with id {payload['id']}",payload['user_id'],role_access_status)
                 logging.info(msg)
             conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
@@ -4123,8 +4127,10 @@ async def delete_vendors(payload : dict, conn : psycopg2.extensions.connection =
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE vendor SET isdeleted=true WHERE id=%s'
+                query = 'UPDATE vendor SET isdeleted=true WHERE id=%s and isdeleted=false'
                 msg = logMessage(cursor,query,[payload['id']])
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure(f"No Vendors with id {payload['id']}",payload['user_id'],role_access_status)
                 logging.info(msg)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
@@ -4201,9 +4207,11 @@ async def delete_vendor_invoice(payload: dict,conn:psycopg2.extensions.connectio
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE order_vendorestimate SET isdeleted=true WHERE id=%s'
+                query = 'UPDATE order_vendorestimate SET isdeleted=true WHERE id=%s and isdeleted=False'
                 msg = logMessage(cursor,query,[payload['id']])
                 logging.info(msg)
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure(f"No vendor invoice with id {payload['id']}",payload['user_id'],role_access_status)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
         else:
@@ -4306,6 +4314,8 @@ async def delete_vendor_payment(payload: dict,conn: psycopg2.extensions.connecti
             with conn[0].cursor() as cursor:
                 query = 'UPDATE order_payment SET isdeleted=true WHERE id=%s'
                 msg = logMessage(cursor,query,[payload['id']])
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure(f"No Order Payment with id {payload['id']}",payload['user_id'],role_access_status)
                 logging.info(msg)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Payment":payload['id']})
@@ -4689,8 +4699,10 @@ async def delete_user(payload: dict, conn: psycopg2.extensions.connection = Depe
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = f"UPDATE usertable SET isdeleted=true WHERE id={payload['id']}"
+                query = f"UPDATE usertable SET isdeleted=true WHERE id={payload['id']} and isdeleted=false"
                 cursor.execute(query)
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure(f"No User with id {payload['id']}",payload['user_id'],role_access_status)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted User ID":payload['id']})
         else:
@@ -5758,7 +5770,7 @@ async def delete_research_mandals(payload: dict,conn: psycopg2.extensions.connec
 
 @app.post('/getResearchArchitect')
 async def get_research_architect(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'architech'
+    payload['table_name'] = 'get_research_architect_view'
     return await runInTryCatch(
         conn = conn,
         payload=payload,
@@ -5770,16 +5782,16 @@ async def get_research_architect(payload: dict,conn: psycopg2.extensions.connect
     )
 
 @app.post("/addResearchArchitect")
-async def add_research_architech(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+async def add_research_architect(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """INSERT INTO banksandbranches (name,emailid,phoneno,
+                query = """INSERT INTO architech (name,emailid,phoneno,
                     project,societyname,dated,createdby,isdeleted,suburb,city,
-                     state,country,excludefrommailinglist) VALUES (%s,
+                     state,country,excludefrommailinglist) VALUES (
                     %s,%s,%s,%s,%s,%s,%s,%s,%s,
-                    %s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                    %s,%s,%s,%s) RETURNING id"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
                     payload['emailid'],
@@ -5798,7 +5810,66 @@ async def add_research_architech(payload:dict,conn:psycopg2.extensions.connectio
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
-                return giveSuccess(payload['user_id'],role_access_status,{"Inserted Mandala":id})
+                return giveSuccess(payload['user_id'],role_access_status,{"Inserted Architect":id})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+
+@app.post('/editResearchArchitect')
+async def edit_research_architect(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """UPDATE banksandbranches SET name=%s,emailid=%s,phoneno=%s,
+                    project=%s,societyname=%s,dated=%s,createdby=%s,isdeleted=%s,suburb=%s,city=%s,
+                     state=%s,country=%s,excludefrommailinglist=%s WHERE id=%s"""
+                msg = logMessage(cursor,query,[
+                    payload['name'],
+                    payload['emailid'],
+                    payload['phoneno'],
+                    payload['project'],
+                    payload['societyname'],
+                    givenowtime(),
+                    payload['user_id'],
+                    False,
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['excludefrommailinglist'],
+                    payload["id"]
+                ])
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited Architect":payload['id']})
+        else:
+            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except KeyError as ke:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Missing key {ke}",0,0)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure(f"Invalid Credentials",0,0)
+
+@app.post('/deleteResearchArchitect')
+async def delete_research_architect(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = """UPDATE banksandbranches SET isdeleted=true WHERE id=%s AND isdeleted=False"""
+                msg = logMessage(cursor,query,[
+                    payload["id"]
+                ])
+                logging.info(msg)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited Architect":payload['id']})
         else:
             return giveFailure('Access Denied',payload['user_id'],role_access_status)
     except KeyError as ke:
@@ -5941,7 +6012,6 @@ async def report_client_receipt(payload: dict,conn: psycopg2.extensions.connecti
 async def report_vendor_invoice(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'ordervendorestimatelistview'
     payload['filters'].append(['invoicedate','between',[payload['startdate'],payload['enddate']],'Date'])
-
     return await runInTryCatch(
         conn = conn,
         fname = 'report_client_receipt',
@@ -5968,10 +6038,14 @@ async def get_client_id_by_search(payload: dict, conn: psycopg2.extensions.conne
 
 @app.post('/reportMonthlyMarginLOBReceiptPayments')
 async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+
     payload['table_name'] = 'datewiselobserviceview'
-    payload['filters'].append(['recddate','between',[payload['startdate'],payload['enddate']],'Date'])
-    if 'lobName' in payload:
+    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
+    logging.info("Here")
+    logging.info('lobName' in payload and payload['lobName'] != 'all')
+    if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
+    logging.info(payload['filters'])
     data =  await runInTryCatch(
         conn = conn,
         fname = 'report_monthly_margin_lob_receipt_payments',
@@ -5980,26 +6054,25 @@ async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycop
         whereinquery=False,
         formatData=True
     )
-    query = f'''SELECT SUM(orderreceiptamount) AS totalreceipt,SUM(paymentamount) AS totalpayment,SUM(orderreceiptamount - paymentamount)
-      AS total_diff FROM datewiselobserviceview'''
-    payload['sort_by'] = []
-    payload['filters'] = [['recddate','between',[payload['startdate'],payload['enddate']],'Date'],['lobname','equalTo',payload['lobName'].lower(),"String"]]
-    payload['search_key'] = ''
-    payload['pg_no'] = 1
-    payload['pg_size'] = 15
-    res = await runInTryCatch(
+    total = {'totalreceipt':0,'totalpayment':0,'total_diff':0}
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    forSum =  await runInTryCatch(
         conn = conn,
-        fname='total_calc',
-        query = query,
+        fname = 'report_monthly_margin_lob_receipt_payments',
         payload=payload,
+        isPaginationRequired=True,
         whereinquery=False,
-        formatData=True,
-        isdeleted=False,
-        isPaginationRequired=True
+        formatData=True
     )
-    if not res['data']:
-        data['total'] = res['data']
-    data['total'] = res['data'][0]
+    for i in forSum['data']:
+        total['totalreceipt'] += i['orderreceiptamount']
+        total['totalpayment'] += i['paymentamount']
+        total['total_diff'] += i['diff']
+    data['total'] = total
+    logging.info(total)
+    # logging.info(data)
+
     return data
 
 @app.post('/reportMonthlyMarginEntityReceiptPayments')
@@ -6049,10 +6122,10 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict,
     SUM(orderreceiptamount) AS total_orderreceiptamount,
     SUM(paymentamount) AS total_paymentamount,
     SUM(orderreceiptamount - paymentamount) AS total_diff,
-    max(recddate) AS recddate
+    max(date) AS date
         FROM     datewiselobserviceview group by lobname
 ) as zz"""
-    payload['filters'].append(['recddate','between',[payload['startdate'],payload['enddate']],'Date'])
+    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
     data = await runInTryCatch(
@@ -6064,36 +6137,64 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict,
         whereinquery=False,
         formatData=True
     )
-    query = f'''SELECT SUM(zz.total_orderreceiptamount) AS totalreceipt,SUM(zz.total_paymentamount) AS totalpayment,SUM(zz.total_diff) as total_diff,max(zz.recddate) FROM (SELECT
+    query = """ select zz.lobname, zz.total_orderreceiptamount, zz.total_paymentamount, zz.total_diff from
+(SELECT
     lobname,
     SUM(orderreceiptamount) AS total_orderreceiptamount,
     SUM(paymentamount) AS total_paymentamount,
     SUM(orderreceiptamount - paymentamount) AS total_diff,
-    max(recddate) AS recddate
+    max(date) AS date
         FROM     datewiselobserviceview group by lobname
-) as zz '''
-    payload['sort_by'] = []
-    payload['filters'] = [['recddate','between',[payload['startdate'],payload['enddate']],'Date']]
+) as zz"""
+    payload['pg_size'] = 0
+    payload['pg_no'] = 0
+    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
-    payload['search_key'] = ''
-    payload['pg_no'] = 1
-    payload['pg_size'] = 15
-    res = await runInTryCatch(
+    dt = await runInTryCatch(
         conn = conn,
-        fname='total_calc',
-        query = query,
+        fname = 'report_monthly_margin_entity_receipt_payments',
+        query=query,
+        isPaginationRequired=True,
         payload=payload,
         whereinquery=False,
-        formatData=True,
-        isdeleted=False,
-        isPaginationRequired=True
+        formatData=True
     )
-    if not res['data']:
-        data['total'] = res['data']
-        return data
-    data['total'] = res['data'][0]
-    data['total'].pop('max')
+    total = {}
+    total_orderreceiptamount = 0
+    total_paymentamount = 0
+    total_diff = 0
+    for i in dt['data']:
+        total_orderreceiptamount += i['total_orderreceiptamount']
+        total_paymentamount += i['total_paymentamount']
+        total_diff += i['total_diff']
+    total['total_orderreceiptamount'] = total_orderreceiptamount
+    total['total_paymentamount'] = total_paymentamount
+    total['total_diff'] = total_diff
+#     query = f'''SELECT SUM(zz.total_orderreceiptamount) AS total_orderreceiptamount,SUM(zz.total_paymentamount) AS total_paymentamount,SUM(zz.total_diff) as total_diff,max(zz.date) FROM (SELECT
+#     lobname,
+#     SUM(orderreceiptamount) AS total_orderreceiptamount,
+#     SUM(paymentamount) AS total_paymentamount,
+#     SUM(orderreceiptamount - paymentamount) AS total_diff,
+#     max(date) AS date
+#         FROM     datewiselobserviceview group by lobname
+# ) as zz '''
+#     payload['pg_size'] = 0
+#     payload['pg_no'] = 0
+#     res = await runInTryCatch(
+#         conn = conn,
+#         fname='total_calc',
+#         query = query,
+#         payload=payload,
+#         whereinquery=False,
+#         formatData=True,
+#         isdeleted=False,
+#         isPaginationRequired=True
+#     )
+    # if not res['data']:
+    #     data['total'] = res['data']
+    #     return data
+    data['total'] = total
     return data
     
 @app.post('/reportPMABillingListView')
@@ -6113,7 +6214,7 @@ async def report_PMA_Billing_List_View(payload:dict, conn: psycopg2.extensions.c
 async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'PMABillingTrendView'
     payload['filters'].append(["fy","equalTo",payload['fy'],"String"])
-    return await runInTryCatch(
+    data = await runInTryCatch(
         conn = conn,
         fname = 'report_pma_billing_trend_view',
         payload=payload,
@@ -6122,6 +6223,27 @@ async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.
         formatData=True,
         isPaginationRequired=True
     )
+    query = f"""SELECT
+    SUM(COALESCE(jan, 0)) AS jan_sum,
+    SUM(COALESCE(feb, 0)) AS feb_sum,
+    SUM(COALESCE(mar, 0)) AS mar_sum,
+    SUM(COALESCE(apr, 0)) AS apr_sum,
+    SUM(COALESCE(may, 0)) AS may_sum,
+    SUM(COALESCE(jun, 0)) AS jun_sum,
+    SUM(COALESCE(jul, 0)) AS jul_sum,
+    SUM(COALESCE(aug, 0)) AS aug_sum,
+    SUM(COALESCE(sep, 0)) AS sep_sum,
+    SUM(COALESCE(oct, 0)) AS oct_sum,
+    SUM(COALESCE(nov, 0)) AS nov_sum,
+    SUM(COALESCE(dec, 0)) AS dec_sum
+FROM pmabillingtrendview
+WHERE fy = '{payload['fy']}';"""
+    with conn[0].cursor() as cursor:
+        msg = logMessage(cursor,query)
+        logging.info(msg)
+        colnames = [col[0] for col in cursor.description]
+        data['total'] = dict(zip(colnames, cursor.fetchone()))
+    return data
 
 @app.post('/reportPMAClientPortalReport')
 async def report_PMA_Client_Portal_Report(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6135,5 +6257,202 @@ async def report_PMA_Client_Portal_Report(payload:dict, conn: psycopg2.extension
         formatData=True,
         isPaginationRequired=True
     )
+
+@app.post('/reportPMAClientReceivable')
+async def report_PMA_Client_Receivables(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'rpt_pmaclient_receivables'
+    data =  await runInTryCatch(
+        conn = conn,
+        fname = 'report_pma_client_receivable',
+        payload=payload,
+        whereinquery=False,
+        isdeleted=False,
+        formatData=True,
+        isPaginationRequired=True
+    )
+    payload['pg_size'] = 0
+    payload['pg_no'] = 0
+    dt = await runInTryCatch(
+        conn = conn,
+        fname = 'rpt_pma_client_receivables',
+        payload=payload,
+        isPaginationRequired=True,
+        formatData=True,
+        whereinquery=False,
+        isdeleted=False
+    )
+    total = {'total_amount':0}
+    if dt['data']:
+        for i in dt['data']:
+            total['total_amount'] += i['amount']
+    data['total'] = total
+    return data
+
+@app.post('/getResearchColleges')
+async def get_research_colleges(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'get_research_colleges_view'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'get_research_colleges',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+        
+@app.post('/addResearchColleges')
+async def add_research_colleges(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                query = 'INSERT INTO colleges (name,typeid,emailid,phoneno,dated,createdby,isdeleted,suburb,city,state,country,website,email1,email2,contactname1,contactname2,phoneno1,phoneno2,excludefrommailinglist) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
+                msg =logMessage(cursor,query,(payload['name'],payload['typeid'],payload['emailid'],payload['phoneno'],givenowtime(),payload['user_id'],False,payload['suburb'],payload['city'],payload['state'],payload['country'],payload['website'],payload['email1'],payload['email2'],payload['contactname1'],payload['contactname2'],payload['phoneno1'],payload['phoneno2'],payload['excludefrommailinglist']))
+                logging.info(msg)
+                id = cursor.fetchone()[0]
+                conn[0].commit()
+            data = {
+                "added_data":id
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/editResearchColleges')
+async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'edit_research_prospect: received payload <{payload}>')
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                query = 'UPDATE colleges SET name=%s,typeid=%s,emailid=%s,phoneno=%s,dated=%s,createdby=%s,isdeleted=%s,suburb=%s,city=%s,state=%s,country=%s,website=%s,email1=%s,email2=%s,contactname1=%s,contactname2=%s,phoneno1=%s,phoneno2=%s,excludefrommailinglist=%s WHERE id=%s'
+                msg =logMessage(cursor,query,(payload['name'],payload['typeid'],payload['emailid'],payload['phoneno'],givenowtime(),payload['user_id'],False,payload['suburb'],payload['city'],payload['state'],payload['country'],payload['website'],payload['email1'],payload['email2'],payload['contactname1'],payload['contactname2'],payload['phoneno1'],payload['phoneno2'],payload['excludefrommailinglist'],payload['id']))
+                logging.info(msg)
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure("No College available",payload['user_id'],role_access_status)
+                conn[0].commit()
+            data = {
+                "edited_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/deleteResearchColleges')
+async def delete_research_colleges(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'delete_colleges: received payload <{payload}>')
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE colleges SET isdeleted=true WHERE id=%s AND isdeleted=false'
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure("No College available",payload['user_id'],role_access_status)
+            conn[0].commit()
+            data = {
+                "deleted_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/getResearchOwners')
+async def get_research_colleges(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'owners'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'get_research_owners',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+        
+@app.post('/addResearchOwners')
+async def add_research_colleges(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                query = 'INSERT INTO owners (societyname, name, propertytaxno, address, phoneno, emailid, corporation, dated, createdby, isdeleted, suburb, city, state, country, isexcludedmailinglist, propertydetails, propertyfor, phoneno1, phoneno2, source) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id'
+                msg =logMessage(cursor,query,(payload['societyname'],payload['name'],payload['propertytaxno'],payload['address'],payload['phoneno'],payload['emailid'],payload['corporation'],givenowtime(),payload['user_id'],False,payload['suburb'],payload['city'],payload['state'],payload['country'],payload['isexcludedmailinglist'],payload['propertydetails'],payload['propertyfor'],payload['phoneno1'],payload['phoneno2'],payload['source']))
+                logging.info(msg)
+                id = cursor.fetchone()[0]
+                conn[0].commit()
+            data = {
+                "added_data":id
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/editResearchOwners')
+async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'edit_research_prospect: received payload <{payload}>')
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                query = 'UPDATE owners SET societyname = %s, name = %s, propertytaxno = %s, address = %s, phoneno = %s, emailid = %s, corporation = %s, dated = %s, createdby = %s, isdeleted = %s, suburb = %s, city = %s, state = %s, country = %s, isexcludedmailinglist = %s, propertydetails = %s, propertyfor = %s, phoneno1 = %s, phoneno2 = %s, source = %s WHERE id = %s;'
+                msg =logMessage(cursor,query,(payload['societyname'],payload['name'],payload['propertytaxno'],payload['address'],payload['phoneno'],payload['emailid'],payload['corporation'],givenowtime(),payload['user_id'],False,payload['suburb'],payload['city'],payload['state'],payload['country'],payload['isexcludedmailinglist'],payload['propertydetails'],payload['propertyfor'],payload['phoneno1'],payload['phoneno2'],payload['source'],payload['id']))
+                logging.info(msg)
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure("No owners available",payload['user_id'],role_access_status)
+                conn[0].commit()
+            data = {
+                "edited_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
+@app.post('/deleteResearchOwners')
+async def delete_research_colleges(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'delete_colleges: received payload <{payload}>')
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'UPDATE owners SET isdeleted=true WHERE id=%s AND isdeleted=false'
+                msg = logMessage(cursor,query,(payload['id'],))
+                logging.info(msg)
+                if cursor.statusmessage == "UPDATE 0":
+                    return giveFailure("No owners available",payload['user_id'],role_access_status)
+            conn[0].commit()
+            data = {
+                "deleted_data":payload['id']
+            }
+            return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        print(traceback.print_exc())
+        giveFailure("Invalid Credentials",payload['user_id'],0)
+
 
 logger.info("program_started")

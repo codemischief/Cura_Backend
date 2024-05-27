@@ -1920,6 +1920,7 @@ SELECT
     a.details,
     a.vendorid,
     a.createdby,
+    a.isdeleted,
     CONCAT_WS(' ', b.firstname, b.middlename, b.lastname) AS clientname,
     c.briefdescription AS orderdescription,
     d.vendorname,
@@ -2373,25 +2374,83 @@ CREATE OR REPLACE clientreceiptlistview AS
      LEFT JOIN client ON client_receipt.clientid = client.id
      LEFT JOIN entity ON client_receipt.entityid = entity.id;
 
-CREATE OR REPLACE VIEW datewiseLobServiceView AS
+
+CREATE OR REPLACE VIEW orderreceiptlobview AS
+SELECT 
+    RecdDate AS date,
+    MonthYear,
+    SUM(Amount) AS orderreceiptamount,
+    LOBName,
+    Service,
+    ServiceId
+FROM 
+    orderreceiptview
+GROUP BY 
+    LOBName,
+    RecdDate,
+    Service,
+    ServiceId,
+    MonthYear;
+    
+    
+CREATE OR REPLACE VIEW public.orderpaymentlobview AS
 SELECT
-    LOB.Name AS Lobname
-    Services.Service,
-    COALESCE(SUM(Order_Receipt.Amount), 0) AS orderReceiptAmount,
-    COALESCE(SUM(Order_Payment.Amount), 0) AS PaymentAmount,
-    Order_Receipt.RecdDate,
-    COALESCE(SUM(Order_Receipt.Amount), 0) - COALESCE(SUM(Order_Payment.Amount), 0) AS Diff
+    OrderPaymentView.PaymentDate AS date,
+    OrderPaymentView.MonthYear,
+    SUM(OrderPaymentView.Amount) AS paymentamount,
+    OrderPaymentView.LOBName,
+    OrderPaymentView.Service,
+    OrderPaymentView.ServiceId
 FROM
-    Order_Payment
-    FULL OUTER JOIN orders ON Order_Payment.OrderID = orders.ID
-    LEFT OUTER JOIN Order_Receipt ON orders.ID = Order_Receipt.OrderID
-    LEFT OUTER JOIN Services ON orders.Service = Services.ID
-    LEFT OUTER JOIN LOB ON Services.LOB = LOB.ID
-    AND Order_Payment.PaymentDate = Order_Receipt.RecdDate
+    orderpaymentview
 GROUP BY
-    Services.Service,
-    LOB.Name,
-    Order_Receipt.RecdDate;
+    OrderPaymentView.LOBName,
+    OrderPaymentView.PaymentDate,
+    OrderPaymentView.Service,
+    OrderPaymentView.ServiceId,
+    OrderPaymentView.MonthYear;
+
+CREATE OR REPLACE VIEW datewiselobserviceview AS
+SELECT
+    lobname,
+    service,
+    date,
+    monthyear,
+    SUM(COALESCE(orderreceiptamount, 0)) AS orderreceiptamount,
+    SUM(COALESCE(paymentamount, 0)) AS paymentamount,
+    SUM(COALESCE(orderreceiptamount, 0)) - SUM(COALESCE(paymentamount, 0)) AS diff
+FROM (
+    SELECT
+        lobname,
+        service,
+        date,
+        monthyear,
+        orderreceiptamount,
+        0 AS paymentamount,
+        serviceid
+    FROM
+        orderreceiptlobview
+
+    UNION ALL
+
+    SELECT
+        lobname,
+        service,
+        date,
+        monthyear,
+        0 AS orderreceiptamount,
+        paymentamount,
+        serviceid
+    FROM
+        orderpaymentlobview
+) AS tempdata
+GROUP BY
+    lobname,
+    date,
+    service,
+    monthyear;
+
+
 
 CREATE OR REPLACE VIEW PMABillingTrendView AS
 SELECT 
@@ -2411,14 +2470,14 @@ SELECT
     COALESCE(Dec, 0) AS Dec
 FROM
     crosstab(
-        $$SELECT ClientName, fy(invoicedate::timestamp), EXTRACT(MONTH FROM InvoiceDate) AS MONTH, SUM(InvoiceAmount)
+        $$SELECT ClientName, EXTRACT(YEAR FROM InvoiceDate), EXTRACT(MONTH FROM InvoiceDate) AS MONTH, SUM(InvoiceAmount)
           FROM PMABillingListView
-          GROUP BY ClientName, gy, EXTRACT(MONTH FROM InvoiceDate)
-          ORDER BY ClientName, gy, EXTRACT(MONTH FROM InvoiceDate)$$,
+          GROUP BY ClientName, EXTRACT(YEAR FROM InvoiceDate), EXTRACT(MONTH FROM InvoiceDate)
+          ORDER BY ClientName, EXTRACT(YEAR FROM InvoiceDate), EXTRACT(MONTH FROM InvoiceDate)$$,
         $$VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12)$$
     ) AS ct (
         ClientName text,
-        gy int,
+        gy text,
         Jan numeric,
         Feb numeric,
         Mar numeric,
@@ -2432,3 +2491,216 @@ FROM
         Nov numeric,
         Dec numeric
     );
+
+CREATE VIEW PMABillingListView AS
+ SELECT oiv.clientname,
+    oiv.orderdescription,
+    oiv.baseamount,
+    oiv.propertydescription,
+    oiv.tax,
+    oiv.entityname,
+    oiv.entityid,
+    oiv.owner,
+    oiv.createdby,
+    oiv.isdeleted,
+    oiv.createdbyid,
+    oiv.dated,
+    oiv.paymentsourceid,
+    oiv.quotedescription,
+    oiv.invoiceamount,
+    oiv.invoicedate,
+    oiv.estimateamount,
+    oiv.estimatedate,
+    ov.service,
+    ov.serviceid,
+    EXTRACT(MONTH FROM oiv.invoicedate) AS invoicemonth,
+    EXTRACT(year FROM oiv.invoicedate) AS invoiceyear
+   FROM orderinvoiceview oiv
+     JOIN ordersview ov ON oiv.orderid = ov.id AND ov.serviceid = 62;
+
+CREATE OR REPLACE VIEW clientreceiptview AS
+SELECT
+    mode_of_payment.name AS paymentmode,
+    u1.firstname || ' ' || u1.lastname AS receivedby,
+    u2.firstname || ' ' || u2.lastname AS createdby,
+    c.firstname || ' ' || c.lastname AS clientname,
+    client_receipt.id,
+    client_receipt.receivedby AS receivedbyid,
+    client_receipt.amount,
+    client_receipt.recddate,
+    client_receipt.paymentmode AS paymentmodeid,
+    client_receipt.clientid,
+    client_receipt.paymentstatus,
+    client_receipt.receiptdesc,
+    client_receipt.banktransactionid,
+    client_receipt.paymentsource AS paymentsourceid,
+    client_receipt.dated,
+    client_receipt.createdby AS createdbyid,
+    client_receipt.isdeleted,
+    payment_source.name AS paymentsource,
+    client_receipt.tds,
+    CASE WHEN client_receipt.syncronized = 'true' THEN 'Syncronized' ELSE 'Asyncronized' END AS syncronized,
+    client_receipt.visibletoclient,
+    client_receipt.serviceamount,
+    client_receipt.reimbursementamount,
+    CASE WHEN client_receipt.visibletoclient = 'true' THEN 'Yes' ELSE 'No' END AS visible_to_client,
+    client_receipt.entityid,
+    entity.name AS entityname,
+    howreceived.name,
+    client_receipt.howreceivedid,
+    client_receipt.officeid,
+    office.name AS officename
+FROM
+    client_receipt
+INNER JOIN usertable u1 ON u1.id = client_receipt.receivedby
+INNER JOIN office ON office.id = client_receipt.officeid
+INNER JOIN mode_of_payment ON client_receipt.paymentmode = mode_of_payment.id
+INNER JOIN usertable u2 ON u2.id = client_receipt.createdby
+INNER JOIN client c ON client_receipt.clientid = c.id
+LEFT OUTER JOIN howreceived ON client_receipt.howreceivedid = howreceived.id
+LEFT OUTER JOIN entity ON client_receipt.entityid = entity.id
+LEFT OUTER JOIN payment_source ON client_receipt.paymentsource = payment_source.id;
+
+CREATE VIEW rpt_pmaclient AS
+SELECT
+    'Invoice' AS type,
+    ordersview.clientname,
+    order_invoice.id,
+    order_invoice.invoicedate AS date,
+    order_invoice.invoiceamount AS amount,
+    NULL AS tds,
+    REPLACE(REPLACE(ordersview.briefdescription, CHR(10), ''), CHR(13), '') AS orderdetails,
+    entity.name AS entity,
+    services.service,
+    REPLACE(REPLACE(order_invoice.quotedescription, CHR(10), ''), CHR(13), '') AS details,
+    '' AS mode,
+    ordersview.clienttypename AS clienttype,
+    ordersview.id AS orderid,
+    ordersview.clientid AS clientid,
+    getmonthyear(order_invoice.invoicedate) AS monthyear,
+    getfinancialyear(order_invoice.invoicedate) AS fy,
+    ordersview.lobname
+FROM
+    order_invoice
+LEFT OUTER JOIN ordersview ON ordersview.id = order_invoice.orderid
+LEFT OUTER JOIN entity ON entity.id = order_invoice.entityid
+LEFT OUTER JOIN services ON services.id = ordersview.serviceid
+WHERE
+    lower(ordersview.clienttypename) LIKE 'Pma - Owner'
+UNION ALL
+SELECT
+    'Payment' AS type,
+    clientview.fullname,
+    clientreceiptview.id,
+    clientreceiptview.recddate AS date,
+    -1 * clientreceiptview.amount,
+    clientreceiptview.tds,
+    NULL AS orderdetails,
+    entity.name AS entity,
+    NULL AS service,
+    howreceived.name AS details,
+    clientreceiptview.paymentmode AS mode,
+    clientview.clienttypename,
+    NULL AS orderid,
+    clientview.id AS clientid,
+    getmonthyear(clientreceiptview.recddate) AS monthyear,
+    getfinancialyear(clientreceiptview.recddate) AS fy,
+    NULL AS lobname
+FROM
+    clientview
+INNER JOIN clientreceiptview ON clientview.id = clientreceiptview.clientid
+LEFT OUTER JOIN entity ON clientreceiptview.entityid = entity.id
+LEFT OUTER JOIN howreceived ON clientreceiptview.howreceivedid = howreceived.id
+WHERE
+    lower(clientview.clienttypename) LIKE 'pma - owner';
+
+
+
+CREATE VIEW rpt_pmaclient_receivables AS
+SELECT 
+    clientname AS clientname,
+    SUM(amount) AS amount
+FROM rpt_pmaclient
+WHERE entity LIKE '%CURA%' AND 
+      type NOT LIKE '%OrderRec%'
+GROUP BY clientname;
+
+CREATE SEQUENCE IF NOT EXISTS architech_id_seq OWNED BY architech.id;
+SELECT setval('architech_id_seq', COALESCE(max(id), 0) + 1, false) FROM architech;
+ALTER TABLE architech ALTER COLUMN id SET DEFAULT nextval('architech_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS colleges_id_seq OWNED BY colleges.id;
+SELECT setval('colleges_id_seq', COALESCE(max(id), 0) + 1, false) FROM colleges;
+ALTER TABLE colleges ALTER COLUMN id SET DEFAULT nextval('colleges_id_seq');
+
+CREATE VIEW get_research_architect_view AS
+SELECT
+    a.id,
+    a.name,
+    a.emailid,
+    a.phoneno,
+    a.project,
+    a.societyname,
+    a.dated,
+    a.createdby,
+    concat_ws(' ',b.firstname,b.lastname) as createdbyname,
+    a.isdeleted,
+    a.suburb,
+    a.city as cityid,
+    c.city,
+    a.state,
+    a.country as countryid,
+    d.name as country,
+    a.excludefrommailinglist
+FROM
+    architech a
+LEFT JOIN
+    usertable b ON a.createdby=b.id
+LEFT JOIN
+    cities c ON a.city = c.id
+LEFT JOIN
+    country d ON a.country = d.id;
+
+CREATE VIEW get_research_colleges_view AS
+SELECT DISTINCT
+    a.id,
+    a.name,
+    a.typeid,
+    e.name as type,
+    a.emailid,
+    a.phoneno,
+    a.dated,
+    a.createdby,
+    concat_ws(' ',b.firstname,b.lastname) as createdbyname,
+    a.isdeleted,
+    a.suburb,
+    a.city as cityid,
+    c.city,
+    a.state,
+    a.country as countryid,
+    d.name as country,
+    a.website,
+    a.email1,
+    a.email2,
+    a.contactname1,
+    a.contactname2,
+    a.phoneno1,
+    a.phoneno2,
+    a.excludefrommailinglist
+FROM
+    colleges a
+LEFT JOIN
+    usertable b ON a.createdby = b.id
+LEFT JOIN
+    cities c ON a.city = c.id
+LEFT JOIN
+    country d ON a.country = d.id
+LEFT JOIN
+    collegetypes e ON a.typeid = e.id;
+
+alter table bankst add column isdeleted type boolean;
+update bankst set isdeleted=false;
+
+CREATE SEQUENCE IF NOT EXISTS owners_id_seq OWNED BY owners.id;
+SELECT setval('owners_id_seq', COALESCE(max(id), 0) + 1, false) FROM owners;
+ALTER TABLE owners ALTER COLUMN id SET DEFAULT nextval('owners_id_seq');
