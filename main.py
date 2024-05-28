@@ -2283,7 +2283,7 @@ async def get_client_property(payload : dict, conn : psycopg2.extensions.connect
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping=payload['colmap'])
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping=payload['colmap'] if 'colmap' in payload else None)
                 colnames = data['colnames']
                 total_count = data['total_count']
                 res = []
