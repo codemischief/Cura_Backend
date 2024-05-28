@@ -597,6 +597,9 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
         raise h
     except KeyError as ke:
         return HTTPException(status_code=400,detail=f"Bad Request,{ke} missing")
+    except HTTPException as h:
+        logging.info(f"HTTP Exception is {h}")
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         return HTTPException(status_code=400,detail="Bad Request")
@@ -851,7 +854,8 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
 async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_builder_info: received payload <{payload}>')
     try:
-        role_access_status = check_role_access(conn, payload,request=request,method='addBuilderInfo')
+        role = await getrole(payload,conn,request)
+        role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
         if role_access_status:
             with conn[0].cursor() as cursor:
                 query = '''
@@ -897,15 +901,16 @@ async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensi
         logging.exception(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
 
+
 #BUILDER UPDATED
 @app.post('/getBuilderInfo')
-def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'get_builder_info: received payload <{payload}>')
     countries = get_countries_from_id(conn=conn)
     cities = get_city_from_id(conn=conn)
     try:
-        role_access_status = check_role_access(conn, payload,request=request,method='getBuilderInfo')
-
+        role = await getrole(payload,conn,request)
+        role_access_status = check_role_access_new(conn, payload,request=request,method='getBuilderInfo')
         if role_access_status:  
             with conn[0].cursor() as cursor:
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
@@ -928,7 +933,7 @@ def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extensions.conn
                         "builder_info":res
                     }
                 
-                return giveSuccess(payload['user_id'],role_access_status,data,total_count,filename)
+                return giveSuccess(payload['user_id'],role,data,total_count,filename)
         else:
             return giveFailure("Access Denied",payload["user_id"],role_access_status)
     except Exception as e:
@@ -939,8 +944,8 @@ def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extensions.conn
 async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'edit_builder: received payload <{payload}>')
     try:
-        # Check user role
-        role_access_status = check_role_access(conn, payload,request=request,method='addBuilderInfo')
+        role = await getrole(payload,conn,request)
+        role_access_status = await check_role_access_new(conn, payload,request=request,method='editBuilder')
 
         with conn[0].cursor() as cursor:
             # Check if the builder exists
@@ -1003,7 +1008,8 @@ async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.
 async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'delete_builder: received payload <{payload}>')
     try:
-        role_access_status = check_role_access(conn, payload,request=request,method='deleteBuilder')
+        role = await getrole(payload,conn,request)
+        role_access_status = await check_role_access_new(conn, payload,request=request,method='deleteBuilder')
         if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE builder SET isdeleted=true WHERE id=%s and isdeleted=False'
@@ -1668,7 +1674,7 @@ async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.conne
                 msg =logMessage(cursor,query,(payload['personname'],payload['phoneno'],payload['email1'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],givenowtime(),payload['user_id'],False,payload['id']))
                 logging.info(msg)
                 if cursor.statusmessage == "UPDATE 0":
-                    return giveFailure("No Prospect available",payload['user_id'],role_access_status)
+                    raise HTTPException(status_code=404,detail="Record not found")
                 conn[0].commit()
             data = {
                 "edited_data":payload['id']
@@ -1696,8 +1702,8 @@ async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.con
                 query = 'UPDATE research_prospect SET isdeleted=true WHERE id=%s AND isdeleted=false'
                 msg = logMessage(cursor,query,(payload['id'],))
                 logging.info(msg)
-                if cursor.statusmessage == "DELETE 0":
-                    return giveFailure("No Prospect available",payload['user_id'],role_access_status)
+                if cursor.statusmessage == "UPDATE 0":
+                    raise HTTPException(status_code=404,detail="Record not found")
                 conn[0].commit()
             data = {
                 "deleted_prospect":payload['id']
@@ -6000,7 +6006,7 @@ def create_token(payload: dict,expires:timedelta|None = None):
 async def gentoken(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection),email=False):
     try:
         with conn[0].cursor() as cursor:
-            access_token_expires = timedelta(minutes=100)
+            access_token_expires = timedelta(minutes=15)
             access_token,key = create_token(payload,access_token_expires)
             cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
             conn[0].commit()
@@ -6533,5 +6539,93 @@ async def delete_research_colleges(payload: dict, conn : psycopg2.extensions.con
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
 
+async def check_role_access_new(conn: psycopg2.extensions.connection,payload: dict,request:Request,method:str):
+    try:
+        cursor = conn[0].cursor()
+        role_id = await getrole(payload,conn,request)
+        logging.info(role_id)
+        query = f"SELECT id FROM rules WHERE method='{method}'"
+        logging.info(f"QUERY IS <{query}>")
+        cursor.execute(query)
+        rule_id = cursor.fetchone()
+        logging.info(f"Rule ID IS <{rule_id}>")
 
+        if role_id and rule_id:
+            query = f"SELECT true FROM roles_to_rules_map WHERE role_id={role_id} AND rule_id={rule_id[0]}"
+            logging.info(f"QUERY IS <{query}>")
+            cursor.execute(query)
+            flag = True if cursor.fetchone() else False
+            logging.info(flag)
+            return flag
+        else:
+            return 0
+    except KeyError as ke:
+        raise HTTPException(status_code=400,detail="Bad Request {ke} missing")
+    except HTTPException as h:
+        logging.info(f'Exception found <{h}>')
+        raise h
+    except Exception as e:
+        logging.exception(traceback.print_exc())
+        raise HTTPException(status_code=400,detail="Bad Request {e} error")
+    finally:
+        cursor.close()
+
+async def getrole(payload:dict,conn:psycopg2.extensions.connection,request=Request):
+    try:
+        if 'authorization' not in request.headers: raise HTTPException(status_code=400,detail="No token recognized")
+        with conn[0].cursor() as cursor:
+            token = request.headers['authorization'][7:]
+            logging.info(f"Token is <{token}>")
+            logMessage(cursor,"SELECT key FROM tokens WHERE token = %s", (token,))
+            key = cursor.fetchone()
+            logging.info(key)
+            if key[0]:
+                payload = jwt.decode(token,key[0],algorithms=ALG)
+            else:
+                raise HTTPException(status_code=403,detail="Invalid Token")
+        if 'user_id' in payload:
+            identifier_id = payload['user_id']
+            identifier_name = None
+        elif 'username' in payload:
+            identifier_name = payload['username']
+            identifier_id = None
+        else:
+            logging.info(traceback.print_exc())
+            raise HTTPException(status_code=400, detail="Please provide either 'user_id' or 'username' in the payload")
+        cursor = conn[0].cursor()
+        if identifier_id:
+            msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE id = %s", (identifier_id,))
+            logging.info(msg)
+        elif identifier_name:
+            msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE username = %s", (identifier_name,))
+            logging.info(msg)
+        else:
+            raise HTTPException(status_code=403,detail=f"Bad Request {e}")
+        role_id = cursor.fetchone()
+        if role_id is None:
+            raise HTTPException(status_code=404,detail="User not found")
+        else:
+            return role_id[0]
+    except HTTPException as h:
+        raise h
+    except Exception as e:
+        logging.info(traceback.format_exc())
+        raise HTTPException(status_code=403,detail=f"Bad Request {e}")
+
+@app.post('/getRoleAccess')
+async def get_role_access(payload: dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'get_role_access: received payload <{payload}>')
+    try:
+        role_access_status = await getrole(payload,conn,request)
+        query = f"select method from rules where id in (select rule_id from roles_to_rules_map where role_id=%s) and status=true"
+        with conn[0].cursor() as cursor:
+            cursor.execute(query,(role_access_status,))
+            data = cursor.fetchall()
+        res = [i[0] for i in data]
+        return giveSuccess(None,role_access_status,res)
+    except HTTPException as h:
+        raise h
+    except Exception as e:
+        logging.exception(traceback.print_exc())
+        raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 logger.info("program_started")
