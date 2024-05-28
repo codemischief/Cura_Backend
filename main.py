@@ -288,6 +288,7 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         if mapping:
             colnames = [mapping[i] for i in colnames]
         df = pd.DataFrame(rows, columns=colnames)
+        logging.info([colnames,mapping])
         df.reset_index(inplace=True)
         df['index'] += 1
         df.rename(columns={"index":"Sr No."},inplace=True)
@@ -655,7 +656,7 @@ def check_role_access(conn, payload: dict,request: Request = None,method: str = 
         else:
             return None
         role_id = cursor.fetchone()
-        if method in 'getBuilderInfo|addBuilderInfo|editBuilder|deleteBuilder':
+        if method and method in 'getBuilderInfo|addBuilderInfo|editBuilder|deleteBuilder':
             query = f"SELECT id FROM rules WHERE method='{method}'"
             logging.info(f"QUERY IS <{query}>")
             cursor.execute(query)
@@ -1328,6 +1329,7 @@ async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
         print(traceback.print_exc())
         return giveFailure(f"failed to add bank statement due to exception <{str(e)}>",payload['user_id'],0)
 
+
 @app.post('/editBankSt')
 async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'edit_bank_statement: received payload <{payload}>')
@@ -1626,10 +1628,16 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
-            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=403,detail=f"Access Denied")
+    except KeyError as ke:
+        logging.info(f"KeyError exception encountered:{traceback.format_exc()}")
+        raise HTTPException(status_code=400,detail=f"Bad Request {ke} missing")
+    except HTTPException as h:
+        logging.info(f"HTTP exception encountered <{h}>")
+        raise h
     except Exception as e:
-        print(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],0)
+        logging.info(f"Exception encountered:{traceback.format_exc()}")
+        raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
 @app.post('/editResearchProspect')
 async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1651,10 +1659,16 @@ async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.conne
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
-            return giveFailure("Access Denied",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=403,detail=f"Access Denied")
+    except KeyError as ke:
+        logging.info(f"KeyError exception encountered:{traceback.format_exc()}")
+        raise HTTPException(status_code=400,detail=f"Bad Request {ke} missing")
+    except HTTPException as h:
+        logging.info(f"HTTP exception encountered <{h}>")
+        raise h
     except Exception as e:
-        print(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],0)
+        logging.info(f"Exception encountered:{traceback.format_exc()}")
+        raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
 @app.post('/deleteResearchProspect')
 async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1663,7 +1677,7 @@ async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.con
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE research_prospect SET isdeleted=true WHERE id=%s'
+                query = 'UPDATE research_prospect SET isdeleted=true WHERE id=%s AND isdeleted=false'
                 msg = logMessage(cursor,query,(payload['id'],))
                 logging.info(msg)
                 if cursor.statusmessage == "DELETE 0":
@@ -1674,10 +1688,16 @@ async def delete_research_prospect(payload: dict, conn : psycopg2.extensions.con
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
-            giveFailure("Access Denied",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=403,detail=f"Access Denied")
+    except KeyError as ke:
+        logging.info(f"KeyError exception encountered:{traceback.format_exc()}")
+        raise HTTPException(status_code=400,detail=f"Bad Request {ke} missing")
+    except HTTPException as h:
+        logging.info(f"HTTP exception encountered <{h}>")
+        raise h
     except Exception as e:
-        print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        logging.info(f"Exception encountered:{traceback.format_exc()}")
+        raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
 @app.post('/getPayments')
 async def get_payments(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2263,7 +2283,7 @@ async def get_client_property(payload : dict, conn : psycopg2.extensions.connect
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None )
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping=payload['colmapr'])
                 colnames = data['colnames']
                 total_count = data['total_count']
                 res = []
@@ -2982,7 +3002,7 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "INSERT INTO client_receipt(receivedby,amount,tds,paymentmode,recddate,clientid,receiptdesc,serviceamount,reimbursementamount,entityid,howreceivedid,officeid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
+                query = "INSERT INTO client_receipt(receivedby,amount,tds,paymentmode,recddate,clientid,receiptdesc,serviceamount,reimbursementamount,entityid,howreceivedid,officeid,dated,createdby,isdeleted,banktransactionid) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
                 msg = logMessage(cursor,query,[
                     payload["receivedby"],
                     payload["amount"],
@@ -2998,7 +3018,8 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
                     payload["officeid"],
                     givenowtime(),
                     payload["user_id"],
-                    False
+                    False,
+                    payload['banktransactionid']
                 ])
                 logging.info(msg)
                 data = cursor.fetchone()[0]
@@ -4861,13 +4882,16 @@ async def add_research_employer(payload:dict, conn: psycopg2.extensions.connecti
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"Inserted Employer":id})
         else:
-            return giveFailure('Access Denied',payload['user_id'],role_access_status)
+            raise HTTPException(status_code=403,detail=f"Access Denied")
     except KeyError as ke:
-        logging.info(traceback.print_exc())
-        return giveFailure(f"Missing key {ke}",0,0)
+        logging.info(f"KeyError exception encountered:{traceback.format_exc()}")
+        raise HTTPException(status_code=400,detail=f"Bad Request {ke} missing")
+    except HTTPException as h:
+        logging.info(f"HTTP exception encountered <{h}>")
+        raise h
     except Exception as e:
-        logging.info(traceback.print_exc())
-        return giveFailure(f"Invalid Credentials",0,0)
+        logging.info(f"Exception encountered:{traceback.format_exc()}")
+        raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
 @app.post('/editResearchEmployer')
 async def edit_research_employer(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
