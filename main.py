@@ -592,6 +592,9 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
                 return resp
             else:
                 raise HTTPException(status_code=401,detail="Unauthorized")
+    except HTTPException as h:
+        logging.info(traceback.print_exc())
+        raise h
     except KeyError as ke:
         return HTTPException(status_code=400,detail=f"Bad Request,{ke} missing")
     except HTTPException as h:
@@ -1621,8 +1624,21 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                query = 'INSERT INTO research_prospect (personname,suburb,city,state,country,propertylocation,possibleservices,dated,createdby,isdeleted,phoneno,email1) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
-                msg =logMessage(cursor,query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],givenowtime(),payload['user_id'],False,payload['phoneno'],payload['email1']))
+                query = ('INSERT INTO research_prospect (personname,suburb,city,state,country,'
+                         'propertylocation,possibleservices,dated,createdby,isdeleted,phoneno,email1) '
+                         'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id')
+                msg =logMessage(cursor,query,(
+                    payload['personname'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['propertylocation'],
+                    payload['possibleservices'],
+                    givenowtime(),
+                    payload['user_id'],False,
+                    payload['phoneno'] if 'phoneno' in payload else '',
+                    payload['email1'] if 'email1' in payload else ''))
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
@@ -2570,13 +2586,37 @@ async def add_client_property(payload: dict, conn: psycopg2.extensions.connectio
                 client_property_photos_list = payload['client_property_photos']
                 client_property_poa = payload['client_property_poa']
                 client_property_owner = payload['client_property_owner']
-                query = "INSERT INTO client_property (clientid,projectid,propertydescription,propertytype,suburb,city,state,country,layoutdetails,numberofparkings,internalfurnitureandfittings,leveloffurnishing,status,initialpossessiondate,poagiven,poaid,electricityconsumernumber,electricitybillingunit,otherelectricitydetails,gasconnectiondetails,propertytaxnumber,clientservicemanager,propertymanager,comments,propertyownedbyclientonly,textforposting,electricitybillingduedate,dated,createdby,isdeleted,indexiicollected) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
-                msg = logMessage(cursor,query,(client_property["clientid"],client_property["projectid"],client_property["propertydescription"],client_property['propertytype'],client_property["suburb"],client_property["city"],client_property["state"],client_property["country"],client_property["layoutdetails"],client_property["numberofparkings"],client_property["internalfurnitureandfittings"],client_property["leveloffurnishing"],client_property["status"],client_property["initialpossessiondate"],client_property["poagiven"],client_property["poaid"],client_property["electricityconsumernumber"],client_property["electricitybillingunit"],client_property["otherelectricitydetails"],client_property["gasconnectiondetails"],client_property["propertytaxnumber"],client_property["clientservicemanager"],client_property["propertymanager"],client_property["comments"],client_property["propertyownedbyclientonly"],client_property["textforposting"],client_property["electricitybillingduedate"],givenowtime(),payload['user_id'],False,client_property['indexiicollected']))
+                query = ("INSERT INTO client_property (clientid,projectid,propertydescription,propertytype,suburb,city,"
+                         "state,country,layoutdetails,numberofparkings,internalfurnitureandfittings,leveloffurnishing,"
+                         "status,initialpossessiondate,poagiven,poaid,electricityconsumernumber,electricitybillingunit,"
+                         "otherelectricitydetails,gasconnectiondetails,propertytaxnumber,clientservicemanager,"
+                         "propertymanager,comments,propertyownedbyclientonly,textforposting,electricitybillingduedate,"
+                         "dated,createdby,isdeleted,indexiicollected) "
+                         "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,"
+                         "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id")
+                msg = logMessage(cursor,query,(client_property["clientid"],client_property["projectid"],
+                                               client_property["propertydescription"],client_property['propertytype'],
+                                               client_property["suburb"],client_property["city"],
+                                               client_property["state"],client_property["country"],
+                                               client_property["layoutdetails"],client_property["numberofparkings"],
+                                               client_property["internalfurnitureandfittings"],
+                                               client_property["leveloffurnishing"],client_property["status"],
+                                               client_property["initialpossessiondate"],client_property["poagiven"],
+                                               client_property["poaid"],client_property["electricityconsumernumber"],
+                                               client_property["electricitybillingunit"],
+                                               client_property["otherelectricitydetails"],client_property["gasconnectiondetails"],
+                                               client_property["propertytaxnumber"],client_property["clientservicemanager"],
+                                               client_property["propertymanager"],client_property["comments"],
+                                               client_property["propertyownedbyclientonly"],
+                                               client_property["textforposting"],
+                                               client_property["electricitybillingduedate"],givenowtime(),
+                                               payload['user_id'],False,client_property['indexiicollected']))
                 logging.info(msg)
                 prop_id = cursor.fetchone()[0]
                 conn[0].commit()
                 for client_property_photos in client_property_photos_list:
-                    query = "INSERT INTO client_property_photos (clientpropertyid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)"
+                    query = ("INSERT INTO client_property_photos (clientpropertyid,photolink,description,phototakenwhen,"
+                             "dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)")
                     logMessage (cursor,query,(prop_id,client_property_photos["photolink"],client_property_photos["description"],client_property_photos["phototakenwhen"],givenowtime(),payload['user_id'],False))
                 query = "INSERT INTO client_property_poa (clientpropertyid,poalegalname,poapanno,poaaddressline1,poaaddressline2,poasuburb,poacity,poastate,poacountry,poazip,poaoccupation,poabirthyear,poaphoto,poaemployername,poarelation,poarelationwith,poaeffectivedate,poaenddate,poafor,scancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
                 logMessage (cursor,query,(prop_id,client_property_poa["poalegalname"],client_property_poa["poapanno"],client_property_poa["poaaddressline1"],client_property_poa["poaaddressline2"],client_property_poa["poasuburb"],client_property_poa["poacity"],client_property_poa["poastate"],client_property_poa["poacountry"],client_property_poa["poazip"],client_property_poa["poaoccupation"],client_property_poa["poabirthyear"],client_property_poa["poaphoto"],client_property_poa["poaemployername"],client_property_poa["poarelation"],client_property_poa["poarelationwith"],client_property_poa["poaeffectivedate"],client_property_poa["poaenddate"],client_property_poa["poafor"],client_property_poa["scancopy"],givenowtime(),payload['user_id'],False))
