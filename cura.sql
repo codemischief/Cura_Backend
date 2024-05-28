@@ -3347,4 +3347,109 @@ WHERE
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 CREATE VIEW get_owners_view AS
-    SELEC
+    SELECT DISTINCT
+        a.id,
+        a.societyname,
+        a.name,
+        a.propertytaxno,
+        a.address,
+        a.phoneno,
+        a.emailid,
+        a.corporation,
+        a.dated,
+        a.createdby,
+        concat_ws(' ',d.firstname,d.lastname) as createdbyname,
+        a.isdeleted,
+        a.suburb,
+        a.city as cityid,
+        b.city,
+        a.state,
+        a.country as countryid,
+        c.name as country,
+        a.isexcludedmailinglist,
+        a.propertydetails,
+        a.propertyfor,
+        a.phoneno1,
+        a.phoneno2,
+        a.source
+    FROM
+        owners a
+    LEFT JOIN
+        cities b ON a.city = b.id
+    LEFT JOIN
+        country c ON a.country = c.id
+    LEFT JOIN
+        usertable d ON a.createdby = d.id;
+
+-------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE VIEW public.rpt_nonpmaclient
+AS
+SELECT 'Invoice'::text AS type,
+    ov.clientname,
+    oi.id,
+    oi.invoicedate AS date,
+    oi.invoiceamount AS amount,
+    NULL::numeric AS tds,
+    replace(replace(ov.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
+    e.name AS entity,
+    s.service,
+    replace(replace(oi.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
+    ''::text AS mode,
+    ov.clienttypename AS client_type,
+    ov.id AS order_id,
+    ov.clientid,
+    getmonthyear(oi.invoicedate::timestamp without time zone) AS monthyear,
+    getfinancialyear(oi.invoicedate) AS fy,
+    ov.lobname
+   FROM order_invoice oi
+     LEFT JOIN ordersview ov ON ov.id = oi.orderid
+     LEFT JOIN entity e ON e.id = oi.entityid
+     LEFT JOIN services s ON s.id = ov.serviceid
+WHERE ov.clienttypename NOT LIKE '%PMA%' AND ov.clientname NOT LIKE '%1-%'
+
+UNION ALL
+ SELECT 'Payment'::text AS type,
+    cv.fullname AS clientname,
+    crv.id,
+    crv.recddate AS date,
+    '-1'::integer::numeric * crv.amount AS amount,
+    crv.tds,
+    NULL::text AS orderdetails,
+    e.name AS entity,
+    NULL::text AS service,
+    hr.name AS details,
+    crv.paymentmode AS mode,
+    cv.clienttypename AS client_type,
+    NULL::bigint AS order_id,
+    cv.id AS clientid,
+    getmonthyear(crv.recddate::timestamp without time zone) AS monthyear,
+    getfinancialyear(crv.recddate) AS fy,
+    NULL::text AS lobname
+   FROM clientview cv
+     JOIN clientreceiptview crv ON cv.id = crv.clientid
+     LEFT JOIN entity e ON crv.entityid = e.id
+     LEFT JOIN howreceived hr ON crv.howreceivedid = hr.id
+WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%'
+UNION ALL
+ SELECT 'OrderRec'::text AS type,
+    cv.fullname AS clientname,
+    orv.id,
+    orv.recddate AS date,
+    '-1'::integer::numeric * orv.amount AS amount,
+    orv.tds,
+    orv.orderdescription AS orderdetails,
+    e.name AS entity,
+    orv.service,
+    orv.receiptdesc AS details,
+    orv.paymentmode AS mode,
+    cv.clienttypename AS client_type,
+    orv.orderid AS order_id,
+    cv.id AS clientid,
+    getmonthyear(orv.recddate::timestamp without time zone) AS monthyear,
+    getfinancialyear(orv.recddate) AS fy,
+    orv.lobname
+   FROM clientview cv
+     JOIN orderreceiptview orv ON cv.id = orv.clientid
+     LEFT JOIN entity e ON orv.entityid = e.id
+WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%';
