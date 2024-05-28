@@ -592,6 +592,9 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
                 return resp
             else:
                 raise HTTPException(status_code=401,detail="Unauthorized")
+    except HTTPException as h:
+        logging.info(traceback.print_exc())
+        raise h
     except KeyError as ke:
         return HTTPException(status_code=400,detail=f"Bad Request,{ke} missing")
     except Exception as e:
