@@ -6412,7 +6412,7 @@ async def delete_research_colleges(payload: dict, conn : psycopg2.extensions.con
 
 @app.post('/getResearchOwners')
 async def get_research_colleges(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'owners'
+    payload['table_name'] = 'get_owners_view'
     return await runInTryCatch(
         conn = conn,
         fname = 'get_research_owners',

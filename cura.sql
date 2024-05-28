@@ -3166,19 +3166,15 @@ INNER JOIN
 
 
 CREATE VIEW rpt_clientswithadvanceholdingamounts AS
-SELECT
-    clientname,
-    COALESCE(SUM(sumpayment), 0) AS payments,
-    COALESCE(SUM(sumreceipt), 0) AS receipts,
-    row_number() OVER (ORDER BY clientname) AS rn
-FROM
-    clientsummaryview
-WHERE
-    service = 'H-Advance Paid'
-GROUP BY
-    clientname
-HAVING
-    COALESCE(SUM(sumpayment), 0) < COALESCE(SUM(sumreceipt), 0);
+ SELECT clientsummaryview.clientname,
+    COALESCE(sum(clientsummaryview.sumpayment), 0::numeric) AS payments,
+    COALESCE(sum(clientsummaryview.sumreceipt), 0::numeric) AS receipts,
+    row_number() OVER (ORDER BY clientsummaryview.clientname) AS rn
+   FROM clientsummaryview
+  WHERE clientsummaryview.service ~~* '%Advance hold%'::text
+  GROUP BY clientsummaryview.clientname
+ HAVING COALESCE(sum(clientsummaryview.sumpayment), 0::numeric) < COALESCE(sum(clientsummaryview.sumreceipt), 0::numeric);
+
 
 CREATE VIEW ClientSummaryView AS
 SELECT
@@ -3350,3 +3346,5 @@ WHERE
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
+CREATE VIEW get_owners_view AS
+    SELEC
