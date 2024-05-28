@@ -1618,8 +1618,21 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                query = 'INSERT INTO research_prospect (personname,suburb,city,state,country,propertylocation,possibleservices,dated,createdby,isdeleted,phoneno,email1) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
-                msg =logMessage(cursor,query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],givenowtime(),payload['user_id'],False,payload['phoneno'],payload['email1']))
+                query = ('INSERT INTO research_prospect (personname,suburb,city,state,country,'
+                         'propertylocation,possibleservices,dated,createdby,isdeleted,phoneno,email1) '
+                         'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id')
+                msg =logMessage(cursor,query,(
+                    payload['personname'],
+                    payload['suburb'],
+                    payload['city'],
+                    payload['state'],
+                    payload['country'],
+                    payload['propertylocation'],
+                    payload['possibleservices'],
+                    givenowtime(),
+                    payload['user_id'],False,
+                    payload['phoneno'] if 'phoneno' in payload else '',
+                    payload['email1'] if 'email1' in payload else ''))
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
