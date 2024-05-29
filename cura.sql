@@ -2713,7 +2713,7 @@ SELECT
     oi.invoiceamount AS amount,
     NULL AS tds,
     ov.briefdescription AS orderdetails,
-    e.name,
+    e.name AS entity,
     s.service,
     oi.quotedescription AS details,
     oi.visibletoclient,
