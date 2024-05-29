@@ -347,7 +347,7 @@ def filterAndPaginate_v2(db_config,
                 elif filter_type == 'equalTo':
                     where_clauses.append(f"lower({column}) = '{value.lower()}'")
                 elif filter_type == 'isNull':
-                    where_clauses.append(f"{column} is null OR {column} = ''")
+                    where_clauses.append(f"({column} is null OR {column} = '')")
                 elif filter_type == 'isNotNull':
                     where_clauses.append(f"{column} is not null AND {column} != ''")
             ##########################################################
