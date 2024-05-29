@@ -2864,15 +2864,16 @@ async def edit_client_property(payload: dict,conn : psycopg2.extensions.connecti
                 # update client information in 'client' table
                 query = ''.join(('UPDATE client_property SET '
                          'clientid=%s,' 'propertytype=%s,' 'leveloffurnishing=%s,' 'numberofparkings=%s,' 'state=%s,' 'city=%s,' 
-                         'suburb=%s,' 'projectid=%s,' 'status=%s,'
+                         'suburb=%s,' 'projectid=%s,' 'status=%s,' 'clientservicemanager=%s,' 'propertymanager=%s,'
                          'propertydescription=%s,' 'layoutdetails=%s,' 'email=%s,' 'website=%s,' 'initialpossessiondate=%s,'
                          'electricityconsumernumber=%s,' 'otherelectricitydetails=%s,' 'electricitybillingduedate=%s,' 'comments=%s,' 
                          'gasconnectiondetails=%s,' 'indexiicollected=%s,' 'textforposting=%s WHERE ID=%s and isdeleted = false'))
                 msg = logMessage(cursor,
                     query,(
                         ci["clientid"],ci["propertytype"],ci["leveloffurnishing"],ci["numberofparkings"],
-                        ci["state"],ci["city"],ci["suburb"],ci["projectid"],ci["status"],ci["propertydescription"],
-                        ci["layoutdetails"],ci["email"],ci["website"],ci["initialpossessiondate"],ci["electricityconsumernumber"],
+                        ci["state"],ci["city"],ci["suburb"],ci["projectid"],ci["status"],ci["clientservicemanager"],
+                        ci["propertymanager"],ci["propertydescription"],ci["layoutdetails"],ci["email"],
+                        ci["website"],ci["initialpossessiondate"],ci["electricityconsumernumber"],
                         ci["otherelectricitydetails"],ci["electricitybillingduedate"],ci["comments"],ci["gasconnectiondetails"],
                         ci["indexiicollected"],ci["textforposting"],propertyid))
                 logging.info(msg)

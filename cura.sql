@@ -509,8 +509,8 @@ SELECT DISTINCT
     a.otherelectricitydetails,
     a.gasconnectiondetails,
     a.propertytaxnumber,
-    CONCAT(h.firstname,' ',h.lastname) as clientservicemanager,
-    CONCAT(i.firstname,' ',i.lastname) as propertymanager,
+    a.clientservicemanager,
+    a.propertymanager,
     concat_ws(' ',c.projectname,a.propertydescription) as property,
     a.comments,
     a.propertyownedbyclientonly,
@@ -530,11 +530,7 @@ LEFT JOIN
 LEFT JOIN
     country f ON a.country = f.id
 LEFT JOIN
-    property_status g ON a.status = g.id
-LEFT JOIN
-    usertable h ON a.clientservicemanager = h.id
-LEFT JOIN
-    usertable i ON a.propertymanager = i.id;
+    property_status g ON a.status = g.id;
 
 
 CREATE OR REPLACE FUNCTION delete_from_get_client_property_view() RETURNS TRIGGER AS $$
@@ -1427,6 +1423,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE VIEW orderpaymentview AS
 SELECT
+
   Order_Payment.ID,
   Order_Payment.PaymentBy AS PaymentById,
   Order_Payment.Amount,
@@ -1458,7 +1455,8 @@ SELECT
   Office.Name AS OfficeName,
   ordersview.ClientID,
   ordersview.Service,
-  ordersview.TallyLedger
+  ordersview.TallyLedger,
+ 'OP' as type
 FROM
   Order_Payment
   LEFT OUTER JOIN usertable ON Order_Payment.PaymentBy = usertable.ID
@@ -1499,7 +1497,7 @@ INSERT INTO payment_source (id, name) VALUES
 
 
 
-CREATE VIEW orderreceiptview AS
+CREATE OR REPLACE VIEW orderreceiptview AS
 SELECT
   Mode_Of_payment.Name AS PaymentMode,
   usertable.FirstName || ' ' || usertable.LastName AS ReceivedBy,
@@ -1533,7 +1531,8 @@ SELECT
   Order_Receipt.EntityId,
   Entity.Name AS EntityName,
   OrdersView.ClientTypeName,
-  OrdersView.ClientID
+  OrdersView.ClientID,
+  'OR' as type
 FROM
   Order_Receipt
   LEFT JOIN usertable ON Order_Receipt.ReceivedBy = usertable.ID
