@@ -2316,36 +2316,16 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
 
 @app.post('/getClientProperty')
 async def get_client_property(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'get_client_property: received payload <{payload}>')
-    try:
-        role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1:
-            with conn[0].cursor() as cursor:
-                data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
-                                        payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping=payload['colmap'] if 'colmap' in payload else None)
-                colnames = data['colnames']
-                total_count = data['total_count']
-                res = []
-                filename = data['filename'] if "filename" in data else None
-                for row in data['data']:
-                    row_dict = {}
-                    for i,colname in enumerate(colnames):
-                        row_dict[colname] = row[i]
-                    # row_dict['country'] = get_name(row_dict['country'],countries)
-                    # row_dict['city'] = get_name(row_dict['city'],cities)
-                    res.append(row_dict)
-                    data={
-                        "client_info":res
-                    }
-                
-                return giveSuccess(payload['user_id'],role_access_status,data,total_count,filename)
-        else:
-            return giveFailure("Access Denied",payload["user_id"],role_access_status)
-    except Exception as e:
-        logging.exception(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],0)
+    payload['table_name'] = 'get_client_property_view'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'get_client_property',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
 
 @app.post('/getBuildersAndProjectsList')
 async def get_builders_and_projects_list(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
