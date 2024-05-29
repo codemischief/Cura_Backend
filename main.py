@@ -558,7 +558,7 @@ app.add_middleware(
 )
 
 @app.post('/validateCredentials')
-async def validate_credentials(payload : dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def validate_credentials(payload : dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'validate_credentials: received payload <{payload}>')
     try:
         with conn[0].cursor() as cursor:
@@ -583,23 +583,22 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
             if bcrypt.checkpw(encoded_pw,database_pw) and company_key[0]:
             # if userdata and payload=userdata[0],userdata[0]) and key[0]:
                 logger.info('Password is ok')
+                token = await gentoken({"user_id":userdata[1]},conn,False)
                 resp = {
                     "result": "success",
                     "user_id":userdata[1],
                     "role_id":userdata[2],
-                    "token": await gentoken({"user_id":userdata[1]},conn,False)
+                    "token": token,
+                    "access_rights": await get_role_access(payload,token,request,conn)
                 }
                 return resp
             else:
                 raise HTTPException(status_code=401,detail="Unauthorized")
     except HTTPException as h:
-        logging.info(traceback.print_exc())
+        logging.info(traceback.format_exc())
         raise h
     except KeyError as ke:
         return HTTPException(status_code=400,detail=f"Bad Request,{ke} missing")
-    except HTTPException as h:
-        logging.info(f"HTTP Exception is {h}")
-        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         return HTTPException(status_code=400,detail="Bad Request")
@@ -2316,36 +2315,20 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
 
 @app.post('/getClientProperty')
 async def get_client_property(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'get_client_property: received payload <{payload}>')
-    try:
-        role_access_status = check_role_access(conn, payload)
-        if role_access_status == 1:
-            with conn[0].cursor() as cursor:
-                data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_client_property_view', payload['filters'],
-                                        payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
-                                        search_key = payload['search_key'] if 'search_key' in payload else None,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping=payload['colmap'] if 'colmap' in payload else None)
-                colnames = data['colnames']
-                total_count = data['total_count']
-                res = []
-                filename = data['filename'] if "filename" in data else None
-                for row in data['data']:
-                    row_dict = {}
-                    for i,colname in enumerate(colnames):
-                        row_dict[colname] = row[i]
-                    # row_dict['country'] = get_name(row_dict['country'],countries)
-                    # row_dict['city'] = get_name(row_dict['city'],cities)
-                    res.append(row_dict)
-                    data={
-                        "client_info":res
-                    }
-                
-                return giveSuccess(payload['user_id'],role_access_status,data,total_count,filename)
-        else:
-            return giveFailure("Access Denied",payload["user_id"],role_access_status)
-    except Exception as e:
-        logging.exception(traceback.print_exc())
-        return giveFailure("Invalid Credentials",payload['user_id'],0)
+    payload['table_name'] = 'get_client_property_view'
+    data =  await runInTryCatch(
+        conn = conn,
+        fname = 'get_client_property',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+    if 'message' not in data:
+        return giveSuccess(data['user_id'],data['role_id'],{"client_info":data['data']},data['total_count'],data['filename'])
+    else:
+        return giveFailure(data['user_id'],data['role_id'],data['data'])
 
 @app.post('/getBuildersAndProjectsList')
 async def get_builders_and_projects_list(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6031,6 +6014,7 @@ async def gentoken(payload:dict,conn: psycopg2.extensions.connection = Depends(g
             access_token,key = create_token(payload,access_token_expires)
             cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
             conn[0].commit()
+
             return access_token
     except Exception as e:
         raise HTTPException(status_code=401,detail="Invalid Payload")
@@ -6592,11 +6576,17 @@ async def check_role_access_new(conn: psycopg2.extensions.connection,payload: di
     finally:
         cursor.close()
 
-async def getrole(payload:dict,conn:psycopg2.extensions.connection,request=Request):
+async def getrole(payload:dict,conn,request:Request,token:str=None):
     try:
-        if 'authorization' not in request.headers: raise HTTPException(status_code=400,detail="No token recognized")
+        if not token:
+            if 'authorization' not in request.headers:
+                raise HTTPException(status_code=400,detail="No token recognized")
+            else:
+                token = request.headers['authorization'][7:]
+        else:
+            token=token
         with conn[0].cursor() as cursor:
-            token = request.headers['authorization'][7:]
+            
             logging.info(f"Token is <{token}>")
             logMessage(cursor,"SELECT key FROM tokens WHERE token = %s", (token,))
             key = cursor.fetchone()
@@ -6635,17 +6625,17 @@ async def getrole(payload:dict,conn:psycopg2.extensions.connection,request=Reque
         logging.info(traceback.format_exc())
         raise HTTPException(status_code=403,detail=f"Bad Request {e}")
 
-@app.post('/getRoleAccess')
-async def get_role_access(payload: dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f'get_role_access: received payload <{payload}>')
+
+async def get_role_access(payload: dict,header:str,request:Request,conn):
+    logging.info(f'get_role_access: received payload <{payload}>,request <{request}>')
     try:
-        role_access_status = await getrole(payload,conn,request)
+        role_access_status = await getrole(payload,conn,request,header)
         query = f"select method from rules where id in (select rule_id from roles_to_rules_map where role_id=%s) and status=true"
         with conn[0].cursor() as cursor:
             cursor.execute(query,(role_access_status,))
             data = cursor.fetchall()
         res = [i[0] for i in data]
-        return giveSuccess(None,role_access_status,res)
+        return res
     except HTTPException as h:
         raise h
     except Exception as e:
