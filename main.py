@@ -897,6 +897,11 @@ async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensi
             return giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
             return giveFailure("Already Exists",payload['user_id'],role_access_status)
+    except jwt.exceptions.ExpiredSignatureError as e:
+        logging.format(traceback.format_exc())
+        raise HTTPException(403,"Expired Token")
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -936,6 +941,11 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
                 return giveSuccess(payload['user_id'],role,data,total_count,filename)
         else:
             return giveFailure("Access Denied",payload["user_id"],role_access_status)
+    except jwt.exceptions.ExpiredSignatureError as e:
+        logging.format(traceback.format_exc())
+        raise HTTPException(403,"Expired Token")
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -999,10 +1009,14 @@ async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.
     except KeyError as ke:
         logging.info(traceback.print_exc)
         return giveFailure(f"key {ke} not found",payload['user_id'],0)
+    except jwt.exceptions.ExpiredSignatureError as e:
+        logging.format(traceback.format_exc())
+        raise HTTPException(403,"Expired Token")
+    except HTTPException as h:
+        raise h
     except Exception as e:
-        logging.info(traceback.print_exc)
-
-        return giveFailure(str(e),payload['user_id'],0)
+        logging.exception(traceback.print_exc())
+        return giveFailure("Invalid Credentials",payload['user_id'],0)
 
 @app.post('/deleteBuilder')
 async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1026,6 +1040,11 @@ async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.c
         else:
             return giveFailure("Access Denied",None,0)
 
+    except jwt.exceptions.ExpiredSignatureError as e:
+        logging.format(traceback.format_exc())
+        raise HTTPException(403,"Expired Token")
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
         return giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -5997,8 +6016,10 @@ def create_token(payload: dict,expires:timedelta|None = None):
     to_encode = payload.copy()
     if expires:
         expire = datetime.datetime.now(timezone.utc) + expires
+        logging.info('token active')
     else:
-        expire = datetime.datetime.now(timezone.utc) + timedelta(minutes=10)
+        expire = datetime.datetime.now(timezone.utc) + timedelta(minutes=1)
+        logging.info('token expiring')
     to_encode.update({"exp":expire})
     encoded_jwt = jwt.encode(to_encode,key=key,algorithm=ALG)
     return encoded_jwt,key
@@ -6006,7 +6027,7 @@ def create_token(payload: dict,expires:timedelta|None = None):
 async def gentoken(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection),email=False):
     try:
         with conn[0].cursor() as cursor:
-            access_token_expires = timedelta(minutes=15)
+            access_token_expires = timedelta(seconds=30)
             access_token,key = create_token(payload,access_token_expires)
             cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
             conn[0].commit()
@@ -6022,12 +6043,12 @@ async def login_for_token(payload:dict,conn: psycopg2.extensions.connection = De
             email = cursor.fetchone()
 
             if email:
-                access_token_expires = timedelta(minutes=100)
+                access_token_expires = timedelta(seconds=30)
                 access_token,key = create_token(payload,access_token_expires)
                 cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
                 if email:
-                    send_email("Reset Password",f"""Reset password at 20.197.13.140:5173/reset/{access_token}""",email[0])
-                    logging.info(f"""Reset password at 20.197.13.140:5173/reset/{access_token}""")
+                    send_email("Reset Password",f"""Reset password at localhost:5173/reset/{access_token}""",email[0])
+                    logging.info(f"""Reset password at localhost:5173/reset/{access_token}""")
                     # print(access_token)
                     conn[0].commit()
                     return giveSuccess(0,0,email[0])
@@ -6042,7 +6063,6 @@ async def getdata(payload:dict,request : Request,conn: psycopg2.extensions.conne
     try:
         #header derive
         headers = request.headers
-        logging.info(headers)
         if 'authorization' not in headers:
             return giveFailure("No token from user",0,0)
         token = headers['authorization'][7:]
@@ -6053,7 +6073,9 @@ async def getdata(payload:dict,request : Request,conn: psycopg2.extensions.conne
             logging.info(message)
             key = cursor.fetchone()[0]
             # logging.info(type(key))
-        username = jwt.decode(token,key,algorithms=ALG)['username']
+        pl = jwt.decode(token,key,algorithms=ALG)
+        logging.info(pl)
+        username = pl['username']
         try:
             with conn[0].cursor() as cursor:
                 #hashing to be done here, using bcrypt for now.
@@ -6583,6 +6605,7 @@ async def getrole(payload:dict,conn:psycopg2.extensions.connection,request=Reque
                 payload = jwt.decode(token,key[0],algorithms=ALG)
             else:
                 raise HTTPException(status_code=403,detail="Invalid Token")
+            logging.info(payload)
         if 'user_id' in payload:
             identifier_id = payload['user_id']
             identifier_name = None
