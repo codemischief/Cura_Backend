@@ -6164,7 +6164,7 @@ async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycop
 async def report_monthly_margin_entity_receipt_payments(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'datewiselobentityview'
     payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
-    if 'entityName' in payload:
+    if 'entityName' in payload and payload['entityName'] != 'all':
         payload['filters'].append(['entityname','equalTo',payload['entityName'],"String"])
     
     data = await runInTryCatch(
@@ -6178,10 +6178,9 @@ async def report_monthly_margin_entity_receipt_payments(payload: dict, conn: psy
     query = f'''SELECT SUM(orderreceiptamount) AS totalreceipt,SUM(paymentamount) AS totalpayment,SUM(orderreceiptamount - paymentamount)
       AS total_diff FROM datewiselobentityview'''
     payload['sort_by'] = []
-    payload['filters'] = [['date','between',[payload['startdate'],payload['enddate']],'Date'],['entityname','equalTo',payload['entityName'].lower(),"String"]]
     payload['search_key'] = ''
-    payload['pg_no'] = 1
-    payload['pg_size'] = 15
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
     res = await runInTryCatch(
         conn = conn,
         fname='total_calc',
@@ -6195,6 +6194,7 @@ async def report_monthly_margin_entity_receipt_payments(payload: dict, conn: psy
     if not res['data']:
         data['total'] = res['data']
     data['total'] = res['data'][0]
+    logging.info(res['data'][0])
     return data
 
 @app.post('/reportMonthlyMarginLOBReceiptPaymentsConsolidated')
