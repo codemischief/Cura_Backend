@@ -6668,4 +6668,58 @@ async def report_active_pma_agreements(payload:dict,conn:psycopg2.extensions.con
         isdeleted=True
     )
 
+
+@app.post('/reportProjectContacts')
+async def report_project_contacts(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'projectcontactsview'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportAdvanceHoldingAmount')
+async def report_advance_holding_amount(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_ClientsWithAdvanceHoldingAmounts'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportPMAClientAll')
+async def report_pma_client_all(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_PMAClient'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportPMAClientStatements')
+async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_PMAClient'
+    payload['filters'].extend([["type","doesnotContain","orderrec","String"],["entity","equalTo","cura","String"]])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
 logger.info("program_started")
