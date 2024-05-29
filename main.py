@@ -6780,6 +6780,10 @@ async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psy
 @app.post('/reportPMAClientStatementMargins')
 async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'Rpt_PMAClient'
+    if 'lobName' in payload and payload['lobName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
+    if 'entityName' in payload and payload['entityName'] != 'all':
+        payload['filters'].append(['entityname','equalTo',payload['entityName'],'String'])  
     return await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
