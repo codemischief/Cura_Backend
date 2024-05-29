@@ -582,8 +582,12 @@ async def validate_credentials(payload : dict,request:Request, conn: psycopg2.ex
             database_pw = bytes(userdata[0],'ascii')
             if bcrypt.checkpw(encoded_pw,database_pw) and company_key[0]:
             # if userdata and payload=userdata[0],userdata[0]) and key[0]:
+                query = "SELECT * FROM token_access_config"
+                msg = logMessage(cursor,query)
+                timedata = cursor.fetchone()[0]
+                logging.info(f"The time assigned is {timedata}")
                 logger.info('Password is ok')
-                access_token_expires = timedelta(minutes=1)
+                access_token_expires = timedelta(seconds=timedata)
                 access_token,key = create_token(payload,access_token_expires)
                 cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
                 conn[0].commit()
