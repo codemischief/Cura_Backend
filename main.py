@@ -3057,7 +3057,7 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "INSERT INTO client_receipt(receivedby,amount,tds,paymentmode,recddate,clientid,receiptdesc,serviceamount,reimbursementamount,entityid,howreceivedid,officeid,dated,createdby,isdeleted,banktransactionid) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
+                query = "INSERT INTO client_receipt(receivedby,amount,tds,paymentmode,recddate,clientid,receiptdesc,serviceamount,reimbursementamount,entityid,howreceivedid,officeid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
                 msg = logMessage(cursor,query,[
                     payload["receivedby"],
                     payload["amount"],
@@ -3073,11 +3073,14 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
                     payload["officeid"],
                     givenowtime(),
                     payload["user_id"],
-                    False,
-                    payload['banktransactionid']
+                    False
                 ])
                 logging.info(msg)
                 data = cursor.fetchone()[0]
+                if 'banktransactionid' in payload:
+                    query = 'UPDATE bankst SET clientid=%s WHERE id=%s'
+                    cursor.execute(query,[payload["clientid"],payload["banktransactionid"]])
+                    conn[0].commit()
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted_Receipt":data})
         else:
