@@ -588,6 +588,7 @@ async def validate_credentials(payload : dict, conn: psycopg2.extensions.connect
                     "user_id":userdata[1],
                     "role_id":userdata[2],
                     "token": await gentoken({"user_id":userdata[1]},conn,False)
+                    
                 }
                 return resp
             else:
@@ -2317,7 +2318,7 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
 @app.post('/getClientProperty')
 async def get_client_property(payload : dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'get_client_property_view'
-    return await runInTryCatch(
+    data =  await runInTryCatch(
         conn = conn,
         fname = 'get_client_property',
         payload = payload,
@@ -2326,6 +2327,10 @@ async def get_client_property(payload : dict, conn : psycopg2.extensions.connect
         formatData=True,
         isdeleted=True
     )
+    if 'message' not in data:
+        return giveSuccess(data['user_id'],data['role_id'],{"client_info":data['data']},data['total_count'],data['filename'])
+    else:
+        return giveFailure(data['user_id'],data['role_id'],data['data'])
 
 @app.post('/getBuildersAndProjectsList')
 async def get_builders_and_projects_list(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6615,7 +6620,7 @@ async def getrole(payload:dict,conn:psycopg2.extensions.connection,request=Reque
         logging.info(traceback.format_exc())
         raise HTTPException(status_code=403,detail=f"Bad Request {e}")
 
-@app.post('/getRoleAccess')
+
 async def get_role_access(payload: dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'get_role_access: received payload <{payload}>')
     try:
@@ -6625,7 +6630,7 @@ async def get_role_access(payload: dict,request:Request,conn: psycopg2.extension
             cursor.execute(query,(role_access_status,))
             data = cursor.fetchall()
         res = [i[0] for i in data]
-        return giveSuccess(None,role_access_status,res)
+        return res
     except HTTPException as h:
         raise h
     except Exception as e:
