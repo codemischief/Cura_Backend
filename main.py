@@ -6626,8 +6626,10 @@ async def getrole(payload:dict,conn,request:Request,token:str=None):
         raise HTTPException(status_code=403,detail=f"Bad Request {e}")
 
 
+
 async def get_role_access(payload: dict,header:str,request:Request,conn):
     logging.info(f'get_role_access: received payload <{payload}>,request <{request}>')
+
     try:
         role_access_status = await getrole(payload,conn,request,header)
         query = f"select method from rules where id in (select rule_id from roles_to_rules_map where role_id=%s) and status=true"
