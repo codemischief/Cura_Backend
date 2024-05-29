@@ -6654,4 +6654,18 @@ async def get_role_access(payload: dict,header:str,request:Request,conn):
     except Exception as e:
         logging.exception(traceback.print_exc())
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
+
+@app.post('/reportActivePMAAgreements')
+async def report_active_pma_agreements(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_Client_Property_Caretaking_AgreementView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_active_pma_agreements',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+
 logger.info("program_started")
