@@ -6006,7 +6006,7 @@ def create_token(payload: dict,expires:timedelta|None = None):
 async def gentoken(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection),email=False):
     try:
         with conn[0].cursor() as cursor:
-            access_token_expires = timedelta(minutes=15)
+            access_token_expires = timedelta(minutes=20)
             access_token,key = create_token(payload,access_token_expires)
             cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
             conn[0].commit()
@@ -6022,7 +6022,7 @@ async def login_for_token(payload:dict,conn: psycopg2.extensions.connection = De
             email = cursor.fetchone()
 
             if email:
-                access_token_expires = timedelta(minutes=100)
+                access_token_expires = timedelta(minutes=60)
                 access_token,key = create_token(payload,access_token_expires)
                 cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
                 if email:
