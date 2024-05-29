@@ -6640,14 +6640,28 @@ async def getrole(payload:dict,conn,request:Request,token:str=None):
 
 async def get_role_access(payload: dict,header:str,request:Request,conn):
     logging.info(f'get_role_access: received payload <{payload}>,request <{request}>')
-
+    permission_json = {
+	"get" : False,
+	"delete" : False,
+	"edit" : False,
+	"add" : False
+}
     try:
+        res = {}
+        cursor = conn[0].cursor()
         role_access_status = await getrole(payload,conn,request,header)
-        query = f"select method from rules where id in (select rule_id from roles_to_rules_map where role_id=%s) and status=true"
-        with conn[0].cursor() as cursor:
-            cursor.execute(query,(role_access_status,))
-            data = cursor.fetchall()
-        res = [i[0] for i in data]
+        query = f"select distinct module from rules"
+        cursor.execute(query)
+        modulelist = [i[0] for i in cursor.fetchall()]
+        for module in modulelist:
+            query = f"select method from rules where id in (select rule_id from roles_to_rules_map where role_id=%s and module=%s) and status=true"
+            with conn[0].cursor() as cursor:
+                cursor.execute(query,(role_access_status,module))
+                data = [i[0] for i in cursor.fetchall()]
+            for i in permission_json:
+                if i in '|'.join(data):
+                    permission_json[i] = True
+            res[module] = permission_json
         return res
     except HTTPException as h:
         raise h
