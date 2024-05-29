@@ -6722,4 +6722,72 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         isdeleted=False
     )
 
+@app.post('/reportClientStatement')
+async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'clientstatementview'
+    payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportDuplicateClients')
+async def report_duplicate_clients(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'duplicateclients'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+
+
+@app.post('/reportClientBankDetails')
+async def report_client_bank_details(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'ClientBankDetails'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportNonPMAClientStatementsAndReceivables')
+async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_NonPMAClient'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportPMAClientStatementMargins')
+async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_PMAClient'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
 logger.info("program_started")
