@@ -3453,3 +3453,14 @@ UNION ALL
      JOIN orderreceiptview orv ON cv.id = orv.clientid
      LEFT JOIN entity e ON orv.entityid = e.id
 WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%';
+
+ CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
+SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
+ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
+
+CREATE TABLE token_access_config(
+    timedata int
+);
+
+alter table client_property alter column propertyemanager type text;
+alter table client_property alter column propertymanager type text;
