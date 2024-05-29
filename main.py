@@ -582,14 +582,21 @@ async def validate_credentials(payload : dict,request:Request, conn: psycopg2.ex
             database_pw = bytes(userdata[0],'ascii')
             if bcrypt.checkpw(encoded_pw,database_pw) and company_key[0]:
             # if userdata and payload=userdata[0],userdata[0]) and key[0]:
+                query = "SELECT * FROM token_access_config"
+                msg = logMessage(cursor,query)
+                timedata = cursor.fetchone()[0]
+                logging.info(f"The time assigned is {timedata}")
                 logger.info('Password is ok')
-                token = await gentoken({"user_id":userdata[1]},conn,False)
+                access_token_expires = timedelta(seconds=timedata)
+                access_token,key = create_token(payload,access_token_expires)
+                cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
+                conn[0].commit()
                 resp = {
                     "result": "success",
                     "user_id":userdata[1],
                     "role_id":userdata[2],
-                    "token": token,
-                    "access_rights": await get_role_access(payload,token,request,conn)
+                    "token": access_token,
+                    "access_rights": await get_role_access(payload,access_token,request,conn)
                 }
                 return resp
             else:
@@ -897,7 +904,7 @@ async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensi
         else:
             return giveFailure("Already Exists",payload['user_id'],role_access_status)
     except jwt.exceptions.ExpiredSignatureError as e:
-        logging.format(traceback.format_exc())
+        logging.info("Expired Token")
         raise HTTPException(403,"Expired Token")
     except HTTPException as h:
         raise h
@@ -1009,7 +1016,7 @@ async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.
         logging.info(traceback.print_exc)
         return giveFailure(f"key {ke} not found",payload['user_id'],0)
     except jwt.exceptions.ExpiredSignatureError as e:
-        logging.format(traceback.format_exc())
+        logging.info("Expired Token")
         raise HTTPException(403,"Expired Token")
     except HTTPException as h:
         raise h
@@ -1040,7 +1047,7 @@ async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.c
             return giveFailure("Access Denied",None,0)
 
     except jwt.exceptions.ExpiredSignatureError as e:
-        logging.format(traceback.format_exc())
+        logging.info("Expired Token")
         raise HTTPException(403,"Expired Token")
     except HTTPException as h:
         raise h
@@ -6010,7 +6017,7 @@ def create_token(payload: dict,expires:timedelta|None = None):
 async def gentoken(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection),email=False):
     try:
         with conn[0].cursor() as cursor:
-            access_token_expires = timedelta(minutes=20)
+            access_token_expires = timedelta(seconds=30)
             access_token,key = create_token(payload,access_token_expires)
             cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
             conn[0].commit()
@@ -6027,7 +6034,7 @@ async def login_for_token(payload:dict,conn: psycopg2.extensions.connection = De
             email = cursor.fetchone()
 
             if email:
-                access_token_expires = timedelta(minutes=60)
+                access_token_expires = timedelta(seconds=30)
                 access_token,key = create_token(payload,access_token_expires)
                 cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
                 if email:
@@ -6077,7 +6084,7 @@ async def getdata(payload:dict,request : Request,conn: psycopg2.extensions.conne
             logging.info(traceback.print_exc())
             raise HTTPException(status_code=401,detail="Invalid Payload")
     except jwt.exceptions.ExpiredSignatureError as e:
-        logging.info(traceback.print_exc())
+        logging.info("Expired Token")
         raise HTTPException(status_code=401,detail="Expired Token")
     except Exception as e:
         logging.info(traceback.print_exc())
