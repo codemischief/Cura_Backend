@@ -6855,4 +6855,188 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
     data['total_amount'] = total_amount['data']
     return data
 
+
+@app.post('/reportNonPMAClientStatementsAndReceivables')
+async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_NonPMAClient'
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    payload['sort_by'] = []
+    payload['order'] = ''
+    query = '''SELECT SUM(zz.amount) AS sumamount FROM (SELECT clientname,date,type,orderdetails,details,amount FROM Rpt_NonPMAClient) as zz'''
+    total_amount = await runInTryCatch(
+        conn = conn,
+        fname = 'get_total_amount',
+        query = query,
+        payload=payload,
+        isPaginationRequired=True,
+        formatData=True,
+        whereinquery=False,
+        isdeleted=False
+    )
+    data['total_amount'] = total_amount['data']
+    return data
+
+
+@app.post('/reportPMAClientStatementMargins')
+async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_PMAClient'
+    if 'lobName' in payload and payload['lobName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
+    if 'entityName' in payload and payload['entityName'] != 'all':
+        payload['filters'].append(['entityname','equalTo',payload['entityName'],'String'])  
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    payload['sort_by'] = []
+    payload['order'] = ''
+    query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
+    total_amount = await runInTryCatch(
+        conn = conn,
+        fname = 'get_total_amount',
+        query = query,
+        payload=payload,
+        isPaginationRequired=True,
+        formatData=True,
+        whereinquery=False,
+        isdeleted=False
+    )
+    data['total_amount'] = total_amount['data']
+    return data
+
+@app.post('/reportClientBankDetails')
+async def report_client_bank_details(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_ClientAndOrderReceiptMismatchDetails'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportClientOrderReceiptMismatchDetails')
+async def report_client_order_receipt_mismatch_details(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_ClientAndOrderReceiptMismatchDetails'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_client_order_receipt_mismatch_details',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportBankBalanceReconciliation')
+async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payloadforapplication = payload.copy()
+    payloadforapplication.pop('filterPassbook')
+    payloadforapplication['filters'] = payloadforapplication['filterApplication']
+    payloadforapplication['table_name'] = 'BankSTBalanceView'
+    if 'bankName' in payloadforapplication and payloadforapplication['bankName'] != 'all':
+        payloadforapplication['filters'].append(['name','equalTo',payloadforapplication['bankName'],"String"])
+    if 'startdate' in payload:
+        payloadforapplication['filters'].append(['date','greaterThanOrEqualTo',payloadforapplication['startdate'],"Date"])
+    databankstbalance = await runInTryCatch(
+        conn = conn,
+        fname = 'report_bank_balance_reconciliation',
+        payload = payloadforapplication,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    payloadforpassbook = payload.copy()
+    payloadforpassbook.pop('filterApplication')
+    payloadforpassbook['filters'] = payloadforpassbook['filterPassbook']
+    payloadforpassbook['table_name'] = 'Bank_Pmt_Rcpts'
+    if 'bankName' in payloadforpassbook and payloadforpassbook['bankName'] != 'all':
+        payloadforpassbook['filters'].append(['bankname','equalTo',payloadforpassbook['bankName'],"String"])
+    if 'startdate' in payload:
+        payloadforpassbook['filters'].append(['date','greaterThanOrEqualTo',payload['startdate'],"Date"])
+    payloadforpassbook['table_name'] = 'Bank_Pmt_Rcpts'
+    databankpmtrcpts = await runInTryCatch(
+        conn = conn,
+        fname = 'report_bank_balance_reconciliation',
+        payload = payloadforpassbook,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    try:
+        return giveSuccess(payload['user_id'],databankstbalance['role_id'],{'bankstbalance':databankstbalance['data'],'bankpmtrcps':databankpmtrcpts['data']},[databankstbalance['total_count'],databankpmtrcpts['total_count']])
+    except KeyError as e:
+        logging.info(traceback.format_exc())
+        return giveFailure("Access Denied",0,None)
+    
+@app.post('/reportMonthlyBankSummary')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'MonthlyBalanceView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportBankTransferReconciliation')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'RPT_Bank_Transfer_Reco'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportDailyBankReceiptsReconciliation')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'RPT_Daily_Bank_Receipts_Reco'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportDailyBankPaymentsReconciliation')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'RPT_Daily_Bank_Payments_Reco'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+
 logger.info("program_started")
