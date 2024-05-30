@@ -6748,7 +6748,7 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         whereinquery=False,
         isdeleted=False
     )
-    data['total'] = total_amount['data']
+    data['total'] = total_amount['data'][0]
     return data
 
 
@@ -6819,7 +6819,7 @@ async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psy
         whereinquery=False,
         isdeleted=False
     )
-    data['total'] = total_amount['data']
+    data['total'] = total_amount['data'][0]
     return data
 
 
@@ -6852,7 +6852,7 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
         whereinquery=False,
         isdeleted=False
     )
-    data['total'] = total_amount['data']
+    data['total'] = total_amount['data'][0]
     return data
 
 logger.info("program_started")
