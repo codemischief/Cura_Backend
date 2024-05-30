@@ -6712,7 +6712,7 @@ async def report_pma_client_all(payload:dict,conn:psycopg2.extensions.connection
 async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'Rpt_PMAClient'
     payload['filters'].extend([["type","doesnotContain","orderrec","String"],["entity","equalTo","cura","String"]])
-    return await runInTryCatch(
+    data = await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
@@ -6721,6 +6721,22 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         formatData=True,
         isdeleted=False
     )
+    payload['sort_by'] = []
+    payload['order'] = ''
+    query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
+    total_amount = await runInTryCatch(
+        conn = conn,
+        fname = 'get_total_amount',
+        query = query,
+        payload=payload,
+        isPaginationRequired=True,
+        formatData=True,
+        whereinquery=False,
+        isdeleted=False
+    )
+    data['total_amount'] = total_amount['data']
+    return data
+
 
 @app.post('/reportClientStatement')
 async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6767,7 +6783,7 @@ async def report_client_bank_details(payload:dict,conn:psycopg2.extensions.conne
 @app.post('/reportNonPMAClientStatementsAndReceivables')
 async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'Rpt_NonPMAClient'
-    return await runInTryCatch(
+    data = await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
@@ -6776,6 +6792,22 @@ async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psy
         formatData=True,
         isdeleted=False
     )
+    payload['sort_by'] = []
+    payload['order'] = ''
+    query = '''SELECT SUM(zz.amount) AS sumamount FROM (SELECT clientname,date,type,orderdetails,details,amount FROM Rpt_NonPMAClient) as zz'''
+    total_amount = await runInTryCatch(
+        conn = conn,
+        fname = 'get_total_amount',
+        query = query,
+        payload=payload,
+        isPaginationRequired=True,
+        formatData=True,
+        whereinquery=False,
+        isdeleted=False
+    )
+    data['total_amount'] = total_amount['data']
+    return data
+
 
 @app.post('/reportPMAClientStatementMargins')
 async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6784,7 +6816,7 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
         payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
     if 'entityName' in payload and payload['entityName'] != 'all':
         payload['filters'].append(['entityname','equalTo',payload['entityName'],'String'])  
-    return await runInTryCatch(
+    data = await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
@@ -6793,5 +6825,20 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
         formatData=True,
         isdeleted=False
     )
+    payload['sort_by'] = []
+    payload['order'] = ''
+    query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
+    total_amount = await runInTryCatch(
+        conn = conn,
+        fname = 'get_total_amount',
+        query = query,
+        payload=payload,
+        isPaginationRequired=True,
+        formatData=True,
+        whereinquery=False,
+        isdeleted=False
+    )
+    data['total_amount'] = total_amount['data']
+    return data
 
 logger.info("program_started")
