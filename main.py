@@ -337,39 +337,39 @@ def filterAndPaginate_v2(db_config,
             ##########################################################
             if dataType == 'String':
                 if filter_type == 'contains':
-                    where_clauses.append(f"lower({column}) LIKE '%{value.lower()}%'")
+                    where_clauses.append(f"lower(COALESCE({column},'')) LIKE '%{value.lower()}%'")
                 elif filter_type == 'doesNotContain':
-                    where_clauses.append(f"lower({column}) NOT LIKE '%{value.lower()}%'")
+                    where_clauses.append(f"lower(COALESCE({column},'')) NOT LIKE '%{value.lower()}%'")
                 elif filter_type == 'startsWith':
-                    where_clauses.append(f"lower({column}) LIKE '{value.lower()}%'")
+                    where_clauses.append(f"lower(COALESCE({column},'')) LIKE '{value.lower()}%'")
                 elif filter_type == 'endsWith':
-                    where_clauses.append(f"lower({column}) LIKE '%{value.lower()}'")
+                    where_clauses.append(f"lower(COALESCE({column},'')) LIKE '%{value.lower()}'")
                 elif filter_type == 'equalTo':
-                    where_clauses.append(f"lower({column}) = '{value.lower()}'")
+                    where_clauses.append(f"lower(COALESCE({column},'')) = '{value.lower()}'")
                 elif filter_type == 'isNull':
-                    where_clauses.append(f"({column} is null OR {column} = '')")
+                    where_clauses.append(f"(COALESCE({column},'') = '')")
                 elif filter_type == 'isNotNull':
-                    where_clauses.append(f"{column} is not null AND {column} != ''")
+                    where_clauses.append(f"COALESCE({column},'') != ''")
             ##########################################################
             #                     NUMERIC FILTERS
             ##########################################################
             elif dataType == 'Numeric':
                 if filter_type == 'equalTo':
-                    where_clauses.append(f"{column} = {value}")
+                    where_clauses.append(f"COALESCE({column},0) = {value}")
                 elif filter_type == 'notEqualTo':
-                    where_clauses.append(f"{column} != {value}")
+                    where_clauses.append(f"COALESCE({column},0) != {value}")
                 elif filter_type == 'greaterThan':
-                    where_clauses.append(f"{column} > {value}")
+                    where_clauses.append(f"COALESCE({column},0) > {value}")
                 elif filter_type == 'lessThan':
-                    where_clauses.append(f"{column} < {value}")
+                    where_clauses.append(f"COALESCE({column},0) < {value}")
                 elif filter_type == 'greaterThanOrEqualTo':
-                    where_clauses.append(f"{column} >= {value}")
+                    where_clauses.append(f"COALESCE({column},0) >= {value}")
                 elif filter_type == 'lessThanOrEqualTo':
-                    where_clauses.append(f"{column} <= {value}")
+                    where_clauses.append(f"COALESCE({column},0) <= {value}")
                 elif filter_type == 'between':
-                    where_clauses.append(f" ({column} >= {value[0]} AND {column} <= {value[1]}) ")
+                    where_clauses.append(f" (COALESCE({column},0) >= {value[0]} AND COALESCE({column},0) <= {value[1]}) ")
                 elif filter_type == 'notBetween':
-                    where_clauses.append(f" ({column} <= {value[0]} OR {column} >= {value[1]}) ")
+                    where_clauses.append(f" (COALESCE({column},0) <= {value[0]} OR COALESCE({column},0) >= {value[1]}) ")
                 elif filter_type == 'isNull':
                     where_clauses.append(f"{column} is null")
                 elif filter_type == 'isNotNull':
