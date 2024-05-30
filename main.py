@@ -6748,7 +6748,7 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         whereinquery=False,
         isdeleted=False
     )
-    data['totalf'] = total_amount['data']
+    data['total'] = total_amount['data']
     return data
 
 
