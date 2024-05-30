@@ -2803,13 +2803,14 @@ LEFT JOIN
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE VIEW duplicateclients AS
+CREATE OR REPLACE VIEW duplicateclients AS
 SELECT
     c.firstname,
     c.lastname,
     COUNT(c.email1) AS count,
     c.clienttype,
-    ct.name
+    ct.name AS clienttypename,
+    c.firstname || ' ' || c.lastname AS clientname
 FROM
     client c
 INNER JOIN
@@ -2827,7 +2828,7 @@ HAVING
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE VIEW clientbankdetails AS
+CREATE OR REPLACE VIEW clientbankdetails AS
 SELECT
     c.firstname,
     c.lastname,
@@ -2838,7 +2839,8 @@ SELECT
     cbi.bankaccountholdername,
     cbi.bankcity,
     cbi.bankifsccode,
-    cbi.bankaccounttype
+    cbi.bankaccounttype,
+    c.firstname || ' ' || c.lastname AS clientname
 FROM
     client_access ca
 INNER JOIN
