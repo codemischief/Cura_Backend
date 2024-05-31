@@ -1349,7 +1349,7 @@ async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
                     'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,vendorid,createdby) '
                     'VALUES (%s,%s,%s,%s,%s,%s,%s)'
                          )
-                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['createdby']))
+                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['user_id']))
                 logging.info(msg)
                 conn[0].commit()
             data = {
@@ -7048,6 +7048,234 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         formatData=True,
         isdeleted=False
     )
+
+@app.post('/reportClientReceiptBankMode')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Tally_ClientReceipt'
+    payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
+    if 'paymentMode' in payload and payload['paymentMode'] != 'all':
+        payload['filters'].append(['paymentmodeid','equalTo',payload['paymentMode'],'Numeric'])
+    if 'entity' in payload and payload['entity'] != 'all':
+        payload['filters'].append(['entityid','equalTo',payload['entityMode'],'Numeric'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    sumdata = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_ClientReceipt',
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    data['total'] = sumdata['data']
+    return data
+
+@app.post('/reportOrderPaymentDD')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Tally_OrderPayments_Taxes'
+    payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
+    if 'paymentMode' in payload and payload['paymentMode'] != 'all':
+        payload['filters'].append(['mode','equalTo',payload['paymentMode'],'Numeric'])
+    if 'entity' in payload and payload['entity'] != 'all':
+        payload['filters'].append(['entityid','equalTo',payload['entityMode'],'Numeric'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    sumdata = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_Taxes',
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    data['total'] = sumdata['data']
+    return data
+
+@app.post('/reportOrderPaymentBank2Cash')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Tally_OrderPayments_Bank2Cash'
+    payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
+    if 'paymentMode' in payload and payload['paymentMode'] != 'all':
+        payload['filters'].append(['mode','equalTo',payload['paymentMode'],'Numeric'])
+    if 'entity' in payload and payload['entity'] != 'all':
+        payload['filters'].append(['entityid','equalTo',payload['entityMode'],'Numeric'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    sumdata = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_Bank2Cash',
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    data['total'] = sumdata['data']
+    return data
+
+@app.post('/reportOrderPaymentBank2Bank')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Tally_OrderPayment_Bank2Bank'
+    payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
+    if 'paymentMode' in payload and payload['paymentMode'] != 'all':
+        payload['filters'].append(['mode','equalTo',payload['paymentMode'],'Numeric'])
+    if 'entity' in payload and payload['entity'] != 'all':
+        payload['filters'].append(['entityid','equalTo',payload['entityMode'],'Numeric'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    sumdata = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayment_Bank2Bank',
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    data['total'] = sumdata['data']
+    return data
+
+@app.post('/reportOrderPaymentCRToSalesInvoice')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'TALLY_CR_To_SalesInvoice'
+    payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
+    if 'paymentMode' in payload and payload['paymentMode'] != 'all':
+        payload['filters'].append(['mode','equalTo',payload['paymentMode'],'Numeric'])
+    if 'entity' in payload and payload['entity'] != 'all':
+        payload['filters'].append(['entityid','equalTo',payload['entityMode'],'Numeric'])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportOrderPaymentNoTDS')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Tally_OrderPayments_No_TDS'
+    payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
+    if 'paymentMode' in payload and payload['paymentMode'] != 'all':
+        payload['filters'].append(['mode','equalTo',payload['paymentMode'],'Numeric'])
+    if 'entity' in payload and payload['entity'] != 'all':
+        payload['filters'].append(['entityid','equalTo',payload['entityMode'],'Numeric'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    sumdata = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_No_TDS',
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    data['total'] = sumdata['data']
+    return data
+
+@app.post('/reportOrderPaymentWithTDS')
+async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Tally_OrderPayments_With_TDS'
+    payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
+    if 'paymentMode' in payload and payload['paymentMode'] != 'all':
+        payload['filters'].append(['mode','equalTo',payload['paymentMode'],'Numeric'])
+    if 'entity' in payload and payload['entity'] != 'all':
+        payload['filters'].append(['entityid','equalTo',payload['entityMode'],'Numeric'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    sumdata = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_With_TDS',
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    data['total'] = sumdata['data']
+    return data
 
 
 logger.info("program_started")
