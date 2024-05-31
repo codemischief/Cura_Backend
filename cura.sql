@@ -3465,3 +3465,565 @@ CREATE TABLE token_access_config(
 
 alter table client_property alter column propertyemanager type text;
 alter table client_property alter column propertymanager type text;
+
+-- 1. Bank Record - Client Order Receipt Mismatch Details
+
+CREATE VIEW rptinternal_sumclientreceiptsview AS
+SELECT
+    clientview.fullname, 
+    SUM(client_receipt.amount) AS receiptamount, 
+    CAST(client_receipt.recddate AS DATE) AS date, 
+    mode_of_payment.name AS paymentmode, 
+    mode_of_payment.id AS paymentmodeid, 
+    clientview.id AS clientid
+FROM client_receipt 
+INNER JOIN mode_of_payment 
+    ON client_receipt.paymentmode = mode_of_payment.id 
+INNER JOIN clientview 
+    ON client_receipt.clientid = clientview.id
+WHERE client_receipt.isdeleted = FALSE 
+    AND client_receipt.recddate >= '2016-04-01' 
+    AND mode_of_payment.id <> 3
+GROUP BY client_receipt.recddate, mode_of_payment.name, clientview.fullname, mode_of_payment.id, clientview.id;
+
+CREATE VIEW rptinternal_sumorderreceiptsview AS
+SELECT
+    clientview.fullname, 
+    CAST(order_receipt.recddate AS DATE) AS date, 
+    mode_of_payment.name AS paymentmode, 
+    SUM(order_receipt.amount) AS receiptamount, 
+    clientview.id AS clientid, 
+    mode_of_payment.id AS paymentmodeid
+FROM orders 
+INNER JOIN order_receipt 
+    ON order_receipt.orderid = orders.id 
+INNER JOIN mode_of_payment 
+    ON order_receipt.paymentmode = mode_of_payment.id 
+INNER JOIN clientview 
+    ON orders.clientid = clientview.id
+WHERE order_receipt.isdeleted = FALSE 
+    AND order_receipt.recddate >= '2016-04-01' 
+    AND mode_of_payment.id <> 3
+GROUP BY order_receipt.recddate, mode_of_payment.name, clientview.fullname, clientview.id, mode_of_payment.id;
+
+CREATE VIEW rpt_clientandorderreceiptmismatchdetails AS
+SELECT 
+    'clientreceipt' AS type, 
+    COALESCE(rptinternal_sumclientreceiptsview.receiptamount, 0) - COALESCE(rptinternal_sumorderreceiptsview.receiptamount, 0) AS diff, 
+    rptinternal_sumclientreceiptsview.date, 
+    rptinternal_sumclientreceiptsview.paymentmode, 
+    rptinternal_sumclientreceiptsview.fullname, 
+    ROW_NUMBER() OVER (ORDER BY rptinternal_sumclientreceiptsview.fullname) AS rn
+FROM rptinternal_sumclientreceiptsview 
+LEFT OUTER JOIN rptinternal_sumorderreceiptsview 
+    ON rptinternal_sumclientreceiptsview.date = rptinternal_sumorderreceiptsview.date 
+    AND rptinternal_sumclientreceiptsview.paymentmodeid = rptinternal_sumorderreceiptsview.paymentmodeid 
+    AND rptinternal_sumclientreceiptsview.clientid = rptinternal_sumorderreceiptsview.clientid
+WHERE COALESCE(rptinternal_sumclientreceiptsview.receiptamount, 0) - COALESCE(rptinternal_sumorderreceiptsview.receiptamount, 0) <> 0 
+    AND rptinternal_sumclientreceiptsview.fullname NOT LIKE '1%'
+UNION ALL
+SELECT 
+    'orderreceipt' AS type, 
+    COALESCE(rptinternal_sumorderreceiptsview.receiptamount, 0) - COALESCE(rptinternal_sumclientreceiptsview.receiptamount, 0) AS diff, 
+    rptinternal_sumorderreceiptsview.date, 
+    rptinternal_sumorderreceiptsview.paymentmode, 
+    rptinternal_sumorderreceiptsview.fullname, 
+    ROW_NUMBER() OVER (ORDER BY rptinternal_sumorderreceiptsview.fullname) AS rn
+FROM rptinternal_sumorderreceiptsview 
+LEFT OUTER JOIN rptinternal_sumclientreceiptsview 
+    ON rptinternal_sumorderreceiptsview.date = rptinternal_sumclientreceiptsview.date 
+    AND rptinternal_sumorderreceiptsview.paymentmodeid = rptinternal_sumclientreceiptsview.paymentmodeid 
+    AND rptinternal_sumorderreceiptsview.clientid = rptinternal_sumclientreceiptsview.clientid
+WHERE COALESCE(rptinternal_sumorderreceiptsview.receiptamount, 0) - COALESCE(rptinternal_sumclientreceiptsview.receiptamount, 0) <> 0 
+    AND rptinternal_sumorderreceiptsview.fullname NOT LIKE '1%';
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--2. Bank Record - Bank Balance Reconciliation
+
+CREATE OR REPLACE VIEW BankSTBalanceView AS
+SELECT
+    ID,
+    date,
+    Name,
+    SUM(COALESCE(Payments, 0)) AS Payments,
+    SUM(COALESCE(Receipts, 0)) AS Receipts,
+    ModeofPayment,
+    MonthYear
+FROM (
+    SELECT
+        BankSt.ID,
+        BankSt.ModeofPayment,
+        getMonthYear(BankSt.date) AS MonthYear,
+        BankSt.date,
+        Mode_Of_payment.Name,
+        SUM(CASE WHEN BankSt.crdr = 'DR' THEN BankSt.Amount ELSE 0 END) AS Payments,
+        0 AS Receipts
+    FROM
+        BankSt
+        INNER JOIN Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
+    GROUP BY
+        BankSt.ModeofPayment,
+        BankSt.date,
+        Mode_Of_payment.Name,
+        BankSt.ID,
+        getMonthYear(BankSt.date)
+    
+    UNION ALL
+    
+    SELECT
+        BankSt.ID,
+        BankSt.ModeofPayment,
+        getMonthYear(BankSt.date) AS MonthYear,
+        BankSt.date,
+        Mode_Of_payment.Name,
+        0 AS Payments,
+        SUM(CASE WHEN BankSt.crdr = 'CR' THEN BankSt.Amount ELSE 0 END) AS Receipts
+    FROM
+        BankSt
+        INNER JOIN Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
+    GROUP BY
+        BankSt.ModeofPayment,
+        BankSt.date,
+        Mode_Of_payment.Name,
+        BankSt.ID,
+        getMonthYear(BankSt.date)
+) AS TempData
+GROUP BY
+    ModeofPayment,
+    date,
+    Name,
+    ID,
+    MonthYear
+LIMIT 100;
+
+CREATE OR REPLACE VIEW Bank_Pmt_Rcpts AS
+SELECT
+    -1 * Order_Payment.amount AS Amount,
+    PaymentDate AS date,
+    Mode_Of_payment.Name AS BankName
+FROM
+    Order_Payment,
+    Mode_Of_payment
+WHERE
+    Order_Payment.Mode = Mode_Of_payment.ID
+    AND Mode_Of_payment.Name NOT IN ('Cash')
+UNION ALL
+SELECT
+    Order_Receipt.amount AS Amount,
+    Order_Receipt.RecdDate AS date,
+    Mode_Of_payment.Name AS BankName
+FROM
+    Order_Receipt,
+    Mode_Of_payment
+WHERE
+    Order_Receipt.PaymentMode = Mode_Of_payment.ID
+    AND Mode_Of_payment.Name NOT IN ('Cash')
+UNION ALL
+SELECT
+    -1 * REF_Contractual_Payments.amount AS Amount,
+    PaidOn AS date,
+    Mode_Of_payment.Name AS BankName
+FROM
+    REF_Contractual_Payments,
+    Mode_Of_payment
+WHERE
+    REF_Contractual_Payments.PaymentMode = Mode_Of_payment.ID
+    AND Mode_Of_payment.Name NOT IN ('Cash');
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--3. Bank Record - Monthly Bank Summary
+
+
+CREATE VIEW fin_bank_transactions_daily_pmts_summary AS
+SELECT
+    mode_of_payment.name,
+    orderpaymentview.monthyear,
+    orderpaymentview.paymentdate AS date,
+    SUM(orderpaymentview.amount) AS payments,
+    mode_of_payment.id AS modeid
+FROM
+    orderpaymentview
+    INNER JOIN mode_of_payment ON orderpaymentview.mode_of_payment = mode_of_payment.name
+WHERE
+    orderpaymentview.isdeleted = false
+GROUP BY
+    mode_of_payment.name,
+    orderpaymentview.monthyear,
+    orderpaymentview.paymentdate,
+    mode_of_payment.id;
+
+CREATE VIEW fin_bank_transactions_daily_rcpts_summary AS
+SELECT
+    mode_of_payment.name,
+    orderreceiptview.monthyear,
+    orderreceiptview.recddate AS date,
+    SUM(orderreceiptview.amount) AS payments,
+    mode_of_payment.id AS modeid
+FROM
+    orderreceiptview
+    INNER JOIN mode_of_payment ON orderreceiptview.paymentmode = mode_of_payment.name
+WHERE
+    orderreceiptview.isdeleted = false
+GROUP BY
+    mode_of_payment.name,
+    orderreceiptview.monthyear,
+    orderreceiptview.recddate,
+    mode_of_payment.id;
+
+CREATE VIEW fin_bank_transactions_daily_contractual_pmts_summary AS
+SELECT
+    paymentmode,
+    monthyear,
+    paidon AS date,
+    SUM(amount) AS payments,
+    paymentmodeid AS modeid
+FROM
+    contractualpaymentsview
+WHERE
+    paymentmode NOT IN ('Cash', 'Stores')
+    AND isdeleted = false
+GROUP BY
+    paymentmode,
+    monthyear,
+    paidon,
+    paymentmodeid;
+
+CREATE VIEW fin_bank_transactions_daily_bankrcpts_summary AS
+SELECT
+    mode_of_payment.name,
+    to_char(bankst.date, 'YYYY-MM') AS monthyear,
+    bankst.date AS date,
+    SUM(CASE WHEN bankst.cr_dr = 'CR' THEN bankst.amount ELSE 0 END) AS receipts,
+    SUM(CASE WHEN bankst.cr_dr = 'DR' THEN bankst.amount ELSE 0 END) AS payments,
+    mode_of_payment.id AS modeid
+FROM
+    bankst
+    INNER JOIN mode_of_payment ON bankst.modeofpayment = mode_of_payment.id
+GROUP BY
+    mode_of_payment.name,
+    to_char(bankst.date, 'YYYY-MM'),
+    bankst.date,
+    mode_of_payment.id;
+
+CREATE VIEW fin_bank_transactions_daily_summary AS
+SELECT
+    name,
+    monthyear,
+    date,
+    SUM(payments + COALESCE(cpayments, 0)) AS payments,
+    SUM(COALESCE(reciepts, 0)) AS receipts,
+    SUM(COALESCE(bankreciept, 0)) AS bankreceipts,
+    SUM(COALESCE(bankpayments, 0)) AS bankpayments,
+    modeid
+FROM
+    (
+        SELECT
+            name,
+            monthyear,
+            date,
+            payments,
+            0 AS reciepts,
+            0 AS cpayments,
+            0 AS bankreciept,
+            0 AS bankpayments,
+            modeid
+        FROM
+            fin_bank_transactions_daily_pmts_summary
+        UNION
+        SELECT
+            name,
+            monthyear,
+            date,
+            0 AS payments,
+            payments AS reciepts,
+            0 AS cpayments,
+            0 AS bankreciept,
+            0 AS bankpayments,
+            modeid
+        FROM
+            fin_bank_transactions_daily_rcpts_summary
+        UNION
+        SELECT
+            name AS paymentmode,
+            monthyear,
+            date,
+            0 AS payments,
+            0 AS reciepts,
+            payments AS cpayments,
+            0 AS bankreciept,
+            0 AS bankpayments,
+            modeid
+        FROM
+            fin_bank_transactions_daily_contractual_pmts_summary
+        UNION
+        SELECT
+            name,
+            monthyear,
+            date,
+            0 AS payments,
+            0 AS reciepts,
+            0 AS cpayments,
+            receipts AS bankreciept,
+            payments AS bankpayments,
+            modeid
+        FROM
+            fin_bank_transactions_daily_bankrcpts_summary
+    ) AS tempdata
+GROUP BY
+    monthyear,
+    date,
+    name,
+    modeid
+ORDER BY
+    date;
+
+
+CREATE VIEW monthly_balance_view AS
+SELECT DISTINCT ON (name, monthyear)
+    SUM(COALESCE(payments, 0)) AS payments,
+    name,
+    monthyear,
+    SUM(COALESCE(receipts, 0)) AS receipts,
+    SUM(COALESCE(receipts, 0)) - SUM(COALESCE(payments, 0)) AS total,
+    SUM(COALESCE(bankreceipts, 0)) AS bankreceipts,
+    SUM(COALESCE(bankpayments, 0)) AS bankpayments,
+    SUM(COALESCE(bankreceipts, 0)) - SUM(COALESCE(bankpayments, 0)) AS banktotal
+FROM
+    fin_bank_transactions_daily_summary
+GROUP BY
+    name,
+    monthyear
+ORDER BY
+    monthyear DESC;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--4.
+CREATE VIEW BankReconcillationview AS
+
+SELECT
+    p.Date,
+    p.PaymentMode,
+    COALESCE(p.Bankst, 0) AS BankStAMount,
+    COALESCE(p.ORAmount, 0) AS ORAmount,
+    COALESCE(p.CRAMount, 0) AS CRAMount
+FROM
+    (
+        SELECT
+            COALESCE(BankSt.Date, ORAmount.Date, CRAMount.Date) AS Date,
+            COALESCE(BankSt.Name, ORAmount.Name, CRAMount.Name) AS PaymentMode,
+            COALESCE(BankSt.BankStAMount, 0) AS Bankst,
+            COALESCE(ORAmount.ORAmount, 0) AS ORAmount,
+            COALESCE(CRAMount.CRAMount, 0) AS CRAMount
+        FROM
+            RptBankstAmount AS BankSt
+        FULL OUTER JOIN RptOrderAmount AS ORAmount ON BankSt.Date = ORAmount.Date AND BankSt.Name = ORAmount.Name
+        FULL OUTER JOIN RptClientAmount AS CRAMount ON BankSt.Date = CRAMount.Date AND BankSt.Name = CRAMount.Name
+    ) AS p;
+
+CREATE VIEW RptBankstAmount1 AS
+
+SELECT
+    COALESCE(SUM(CASE WHEN BankSt.crdr = 'DR' THEN BankSt.Amount ELSE 0 END), 0) AS BankStAMount,
+    BankSt.Date,
+    BankSt.ModeofPayment,
+    Mode_Of_payment.Name
+FROM
+    BankSt
+INNER JOIN
+    Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
+GROUP BY
+    BankSt.Date,
+    BankSt.ModeofPayment,
+    Mode_Of_payment.Name;
+
+CREATE VIEW RptClientAmount AS
+
+SELECT
+    COALESCE(SUM(Client_Receipt.Amount), 0) AS CRAMount,
+    Client_Receipt.RecdDate AS Date,
+    Mode_Of_payment.Name,
+    Client_Receipt.PaymentMode
+FROM
+    Client_Receipt
+INNER JOIN
+    Mode_Of_payment ON Client_Receipt.PaymentMode = Mode_Of_payment.ID
+WHERE
+    Client_Receipt.IsDeleted = false
+GROUP BY
+    Client_Receipt.RecdDate,
+    Mode_Of_payment.Name,
+    Client_Receipt.PaymentMode;
+
+CREATE VIEW RptOrderAmount AS
+
+SELECT
+    COALESCE(SUM(Order_Receipt.Amount), 0) AS ORAmount,
+    Order_Receipt.RecdDate AS Date,
+    Mode_Of_payment.Name,
+    Order_Receipt.PaymentMode
+FROM
+    Order_Receipt
+INNER JOIN
+    Mode_Of_payment ON Order_Receipt.PaymentMode = Mode_Of_payment.ID
+WHERE
+    Order_Receipt.IsDeleted = false
+GROUP BY
+    Order_Receipt.RecdDate,
+    Mode_Of_payment.Name,
+    Order_Receipt.PaymentMode;
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--5.
+
+CREATE VIEW BankReconcillationviewPayment AS
+SELECT
+    p.Date,
+    p.PaymentMode,
+    COALESCE(p.Bankst, 0) AS BankStAMount,
+    COALESCE(p.OPAMount, 0) AS OPAMount,
+    COALESCE(p.CPAMount, 0) AS CPAMount,
+    COALESCE(p.OPAMount, 0) + COALESCE(p.CPAMount, 0) AS TotalPayment
+FROM
+    (
+        SELECT
+            COALESCE(BankSt.Date, OPAMount.Date, CPAMount.Date) AS Date,
+            COALESCE(BankSt.Name, OPAMount.Name, CPAMount.Name) AS PaymentMode,
+            COALESCE(BankSt.BankStAMount, 0) AS Bankst,
+            COALESCE(OPAMount.OPAMount, 0) AS OPAMount,
+            COALESCE(CPAMount.CPAMount, 0) AS CPAMount
+        FROM
+            RptBankstAmount1 AS BankSt
+        FULL OUTER JOIN RptOrderPaymentAmount1 AS OPAMount ON BankSt.Date = OPAMount.Date AND BankSt.Name = OPAMount.Name
+        FULL OUTER JOIN RptContractualPaymentAmount1 AS CPAMount ON BankSt.Date = CPAMount.Date AND BankSt.Name = CPAMount.Name
+    ) AS p;
+
+CREATE VIEW RptBankstAmount1 AS
+SELECT
+    COALESCE(SUM(CASE WHEN BankSt.crdr = 'DR' THEN BankSt.Amount ELSE 0 END), 0) AS BankStAMount,
+    BankSt.Date,
+    BankSt.ModeofPayment,
+    Mode_Of_payment.Name
+FROM
+    BankSt
+INNER JOIN
+    Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
+GROUP BY
+    BankSt.Date,
+    BankSt.ModeofPayment,
+    Mode_Of_payment.Name;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--6.
+CREATE VIEW rpt_contractual_payment_amount1 AS
+SELECT
+    COALESCE(SUM(ref_contractual_payments.amount), 0) AS cpamount,
+    ref_contractual_payments.paidon AS date,
+    mode_of_payment.name,
+    ref_contractual_payments.paymentmode
+FROM
+    ref_contractual_payments
+INNER JOIN
+    mode_of_payment ON ref_contractual_payments.paymentmode = mode_of_payment.id
+WHERE
+    ref_contractual_payments.isdeleted = false
+GROUP BY
+    ref_contractual_payments.paidon,
+    mode_of_payment.name,
+    ref_contractual_payments.paymentmode;
+
+CREATE VIEW rpt_order_payment_amount1 AS
+SELECT
+    COALESCE(SUM(order_payment.amount), 0) AS opamount,
+    order_payment.paymentdate AS date,
+    mode_of_payment.name,
+    order_payment.mode
+FROM
+    order_payment
+INNER JOIN
+    mode_of_payment ON order_payment.mode = mode_of_payment.id
+WHERE
+    order_payment.isdeleted = false
+GROUP BY
+    order_payment.paymentdate,
+    mode_of_payment.name,
+    order_payment.mode;
+
+
+CREATE VIEW MonthlyBalanceView AS SELECT SUM(COALESCE(Payments, 0)) AS Payments, Name, MonthYear, SUM(COALESCE(Receipts, 0)) AS Receipts, SUM(COALESCE(Receipts, 0)) - SUM(COALESCE(Payments, 0)) AS Total, SUM(COALESCE(BankReceipts, 0)) AS BankReceipts, SUM(COALESCE(BankPayments, 0)) AS BankPayments, SUM(COALESCE(BankReceipts, 0)) - SUM(COALESCE(BankPayments, 0)) AS BankTotal FROM FIN_Bank_Transactions_Daily_Summary GROUP BY Name, MonthYear ORDER BY MonthYear DESC;
+
+‌
+
+CREATE VIEW RPT_Bank_Transfer_Reco AS
+SELECT
+'OrderReceipt' AS Type,
+OrderReceiptView.OrderDescription,
+CAST(OrderReceiptView.RecdDate AS DATE) AS Date,
+OrderReceiptView.PaymentMode AS Mode,
+OrderReceiptView.Amount
+FROM
+OrderReceiptView
+WHERE
+OrderReceiptView.OrderID = 429163
+AND OrderReceiptView.RecdDate > '2016-03-31 00:00:00'
+AND OrderReceiptView.IsDeleted = FALSE
+UNION ALL
+SELECT
+'OrderPayment' AS Type,
+OrderPaymentView.OrderDescription,
+CAST(OrderPaymentView.PaymentDate AS DATE) AS Date,
+OrderPaymentView.Mode_Of_payment AS Mode,
+OrderPaymentView.Amount * (-1)
+FROM
+OrderPaymentView
+WHERE
+OrderPaymentView.OrderId = 429163
+AND OrderPaymentView.PaymentDate > '2016-03-31 00:00:00'
+AND OrderPaymentView.IsDeleted = FALSE;
+
+CREATE VIEW RPT_Daily_Bank_Payments_Reco AS
+SELECT
+CAST(Date AS DATE) AS Date,
+SUM(BankStAMount) AS BankSt_DR,
+SUM(OPAMount) AS Order_Payments,
+SUM(CPAMount) AS Contractual_Payments,
+SUM(TotalPayment) AS ContorderPayments
+FROM
+BankReconcillationviewPayment
+WHERE
+PaymentMode = 'DAP-ICICI-42'
+AND Date BETWEEN '2022-01-01' AND '2022-10-01'
+GROUP BY
+Date
+ORDER BY
+Date DESC;
+
+CREATE VIEW RptOrderPaymentAmount1 AS
+SELECT
+COALESCE(SUM(Order_Payment.Amount), 0) AS OPAMount,
+Order_Payment.PaymentDate AS Date,
+Mode_Of_payment.Name,
+Order_Payment.Mode
+FROM
+Order_Payment
+INNER JOIN Mode_Of_payment ON Order_Payment.Mode = Mode_Of_payment.ID
+WHERE
+Order_Payment.IsDeleted = FALSE
+GROUP BY
+Order_Payment.PaymentDate,
+Mode_Of_payment.Name,
+Order_Payment.Mode;
+
+CREATE VIEW RptContractualPaymentAmount1 AS
+SELECT
+COALESCE(SUM(REF_Contractual_Payments.Amount), 0) AS CPAMount,
+REF_Contractual_Payments.PaidOn AS Date,
+Mode_Of_payment.Name,
+REF_Contractual_Payments.PaymentMode
+FROM
+REF_Contractual_Payments
+INNER JOIN Mode_Of_payment ON REF_Contractual_Payments.PaymentMode = Mode_Of_payment.ID
+WHERE
+REF_Contractual_Payments.isDeleted = FALSE
