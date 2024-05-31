@@ -1346,10 +1346,10 @@ async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = (
-                    'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,vendorid,createdby) '
-                    'VALUES (%s,%s,%s,%s,%s,%s,%s)'
+                    'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,vendorid,createdby,isdeleted) '
+                    'VALUES (%s,%s,%s,%s,%s,%s,%s,%s)'
                          )
-                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['user_id']))
+                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['user_id'],False))
                 logging.info(msg)
                 conn[0].commit()
             data = {
