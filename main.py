@@ -7026,7 +7026,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
 @app.post('/reportDailyBankReceiptsReconciliation')
 async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'RPT_Daily_Bank_Receipts_Reco'
-    return await runInTryCatch(
+    data = await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
@@ -7034,12 +7034,28 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         whereinquery=False,
         formatData=True,
         isdeleted=False
+    )    
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    sumdata = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        query = 'SELECT SUM(bankst_cr) as bankst_cr,SUM(client_receipt) AS client_receipt,SUM(order_receipt) AS order_receipt FROM Tally_OrderPayments_With_TDS',
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
     )
+    data['total'] = sumdata['data']
+    return data
 
 @app.post('/reportDailyBankPaymentsReconciliation')
 async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'RPT_Daily_Bank_Payments_Reco'
-    return await runInTryCatch(
+    data = await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
@@ -7048,6 +7064,22 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         formatData=True,
         isdeleted=False
     )
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    sumdata = await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        query = 'SELECT SUM(bankst_dr) as bankst_dr,SUM(order_payments) as order_payments,SUM(contractual_payments) AS contractual_payments,SUM(contorderpayments) AS contorderpayments FROM RPT_Daily_Bank_Payments_Reco',
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    data['total'] = sumdata['data']
+    return data
 
 @app.post('/reportClientReceiptBankMode')
 async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -7066,6 +7098,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         formatData=True,
         isdeleted=False
     )
+
 
     payload['pg_no'] = 0
     payload['pg_size'] = 0
