@@ -7043,7 +7043,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(bankst_cr) as bankst_cr,SUM(client_receipt) AS client_receipt,SUM(order_receipt) AS order_receipt FROM Tally_OrderPayments_With_TDS',
+        query = 'SELECT SUM(bankst_cr) as bankst_cr,SUM(client_receipt) AS client_receipt,SUM(order_receipt) AS order_receipt FROM RPT_Daily_Bank_Receipts_Reco',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
