@@ -461,6 +461,7 @@ def filterAndPaginate_v2(db_config,
             end_index = start_index + page_size
             if start_index!=end_index:
                 rows = search_results[start_index:end_index]
+                logging.info([start_index,end_index])
             else:
                 rows = search_results
         resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames}
@@ -6735,6 +6736,8 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         formatData=True,
         isdeleted=False
     )
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
     query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
@@ -6806,9 +6809,13 @@ async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psy
         formatData=True,
         isdeleted=False
     )
+    #need to do pg_no and pg_size 0 as total has only one element. slicing gives no values in pages after 1
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
-    query = '''SELECT SUM(zz.amount) AS sumamount FROM (SELECT clientname,date,type,orderdetails,details,amount FROM Rpt_NonPMAClient) as zz'''
+    query = '''SELECT SUM(zz.amount) AS sumamount FROM (SELECT clientname,date,type,
+                orderdetails,details,amount FROM Rpt_NonPMAClient) as zz'''
     total_amount = await runInTryCatch(
         conn = conn,
         fname = 'get_total_amount',
@@ -6819,6 +6826,7 @@ async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psy
         whereinquery=False,
         isdeleted=False
     )
+    logging.info(total_amount)
     data['total'] = total_amount['data'][0] if total_amount['data'] else []
     return data
 
@@ -6839,6 +6847,8 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
         formatData=True,
         isdeleted=False
     )
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
     query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
@@ -6852,6 +6862,7 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
         whereinquery=False,
         isdeleted=False
     )
+    logging.info(total_amount)
     data['total'] = total_amount['data'][0] if total_amount['data'] else []
     return data
 
