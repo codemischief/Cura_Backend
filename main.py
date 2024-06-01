@@ -6847,6 +6847,8 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
         formatData=True,
         isdeleted=False
     )
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
     query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
