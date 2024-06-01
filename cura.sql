@@ -3509,3 +3509,94 @@ LEFT JOIN
     country AS c ON a.country = c.id
 LEFT JOIN
     usertable AS u ON a.createdby = u.id;
+
+--11.1
+
+CREATE VIEW TotalClientIDsView AS
+SELECT 'Property ID' AS Type, Client.ID AS ClientID, Client_Property.ID AS RelatedID
+FROM Client
+INNER JOIN Client_Property ON Client.ID = Client_Property.ClientID
+
+UNION
+
+SELECT 'ClientReceipt ID' AS Type, Client.ID AS ClientID, Client_Receipt.ID AS RelatedID
+FROM Client
+INNER JOIN Client_Receipt ON Client.ID = Client_Receipt.ClientID
+
+UNION
+
+SELECT 'Order ID' AS Type, Client.ID AS ClientID, Orders.ID AS RelatedID
+FROM Client
+INNER JOIN Orders ON Client.ID = Orders.ClientID
+
+UNION
+
+SELECT 'ClientPOA ID' AS Type, Client.ID AS ClientID, Client_POA.ID AS RelatedID
+FROM Client
+INNER JOIN Client_POA ON Client.ID = Client_POA.ClientID
+
+UNION
+
+SELECT 'BankSt ID' AS Type, Client.ID AS ClientID, BankSt.ID AS RelatedID
+FROM Client
+INNER JOIN BankSt ON Client.ID = BankSt.ClientID;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--11.2
+
+CREATE VIEW TotalOrderIDsView AS
+SELECT 'Order Receipt ID' AS Type, Orders.ID, Order_Receipt.ID AS OrderID
+FROM Orders
+INNER JOIN Order_Receipt ON Orders.ID = Order_Receipt.OrderID
+
+UNION 
+
+SELECT 'Order Payment ID' AS Type, Orders.ID, Order_Payment.ID AS OrderID
+FROM Orders
+INNER JOIN Order_Payment ON Orders.ID = Order_Payment.OrderID
+
+UNION
+
+SELECT 'Order Invoice ID' AS Type, Orders.ID, Order_Invoice.ID AS OrderID
+FROM Orders
+INNER JOIN Order_Invoice ON Orders.ID = Order_Invoice.OrderID
+
+UNION
+
+SELECT 'Vendor Invoice ID' AS Type, Orders.ID, Order_VendorEstimate.ID AS OrderID
+FROM Orders
+INNER JOIN Order_VendorEstimate ON Orders.ID = Order_VendorEstimate.OrderID
+
+UNION
+
+SELECT 'Order Task ID' AS Type, Orders.ID, Order_Task.ID AS OrderID
+FROM Orders
+INNER JOIN Order_Task ON Orders.ID = Order_Task.OrderID
+
+UNION
+
+SELECT 'Order Status Change ID' AS Type, Orders.ID, Order_Status_Change.ID AS OrderID
+FROM Orders
+INNER JOIN Order_Status_Change ON Orders.ID = Order_Status_Change.OrderID;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+-11.3
+
+CREATE VIEW TotalVendorIDsView AS
+SELECT 'Order Payment ID' AS Type, Vendor.ID, Order_Payment.ID AS VendorID
+FROM Vendor
+INNER JOIN Order_Payment ON Vendor.ID = Order_Payment.VendorID
+
+UNION
+
+SELECT 'Vendor Invoice ID' AS Type, Vendor.ID, Order_VendorEstimate.ID AS VendorID
+FROM Vendor
+INNER JOIN Order_VendorEstimate ON Vendor.ID = Order_VendorEstimate.VendorID
+
+UNION
+
+SELECT 'BankSt ID' AS Type, Vendor.ID, BankSt.ID AS VendorID
+FROM Vendor
+INNER JOIN BankSt ON Vendor.ID = BankSt.VendorID;

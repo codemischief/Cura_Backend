@@ -7562,5 +7562,46 @@ async def delete_research_colleges(payload: dict, conn : psycopg2.extensions.con
         logging.info(f"Exception encountered:{traceback.format_exc()}")
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
+@app.post('/reportClientTrace')
+async def report_client_trace(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'TotalClientIDsView'
+    payload['filters'].append(['clientid','equalTo',payload['clientID'],'Numeric'])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_client_trace',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportOrderTrace')
+async def report_order_trace(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'TotalOrderIDsView'
+    payload['filters'].append(['id','equalTo',payload['orderID'],'Numeric'])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_client_trace',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportVendorTrace')
+async def report_vendor_trace(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'TotalVendorIDsView'
+    payload['filters'].append(['id','equalTo',payload['vendorID'],'Numeric'])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_client_trace',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
 
 logger.info("program_started")
