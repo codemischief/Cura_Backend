@@ -7105,33 +7105,6 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
     except Exception as e:
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
-=======
-    payload['table_name'] = 'RPT_Daily_Bank_Payments_Reco'
-    data = await runInTryCatch(
-        conn = conn,
-        fname = 'report_project_contacts_view',
-        payload = payload,
-        isPaginationRequired=True,
-        whereinquery=False,
-        formatData=True,
-        isdeleted=False
-    )
-    payload['pg_no'] = 0
-    payload['pg_size'] = 0
-    payload['sort_by'] = []
-    payload['order'] = ''
-    sumdata = await runInTryCatch(
-        conn = conn,
-        fname = 'report_project_contacts_view',
-        payload = payload,
-        query = 'SELECT SUM(bankst_dr) as bankst_dr,SUM(order_payments) as order_payments,SUM(contractual_payments) AS contractual_payments,SUM(contorderpayments) AS contorderpayments FROM RPT_Daily_Bank_Payments_Reco',
-        isPaginationRequired=True,
-        whereinquery=False,
-        formatData=True,
-        isdeleted=False
-    )
-    data['total'] = sumdata['data']
-    return data
 
 @app.post('/reportClientReceiptBankMode')
 async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
