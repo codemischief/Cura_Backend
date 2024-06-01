@@ -7463,7 +7463,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
 
 @app.post('/getResearchApartments')
 async def get_research_colleges(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'serviceapartmentsandguesthouses'
+    payload['table_name'] = 'get_apartment_view'
     return await runInTryCatch(
         conn = conn,
         fname = 'get_research_owners',
@@ -7480,7 +7480,7 @@ async def add_research_apartments(payload: dict, conn : psycopg2.extensions.conn
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'INSERT INTO serviceapartmentsandguesthouses (name, emailid, phoneno, website, contactperson1, contactperson2, email1, email2, contactname1, contactname2, createdby, dated, isdeleted, suburb, city, state, country, apartments_guesthouse) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id'
+                query = 'INSERT INTO serviceapartmentsandguesthouses (name, emailid, phoneno, website, contactperson1, contactperson2, email1, email2, contactname1, contactname2, createdby, dated, isdeleted, suburb, city, state, country, apartments_guesthouse) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id'
                 msg =logMessage(cursor,query,(payload['name'], payload['emailid'], payload['phoneno'], payload['website'], payload['contactperson1'], payload['contactperson2'], payload['email1'], payload['email2'], payload['contactname1'], payload['contactname2'], payload['user_id'], givenowtime(), False, payload['suburb'], payload['city'], payload['state'], payload['country'], payload['apartments_guesthouse']))
                 logging.info(msg)
                 id = cursor.fetchone()[0]
@@ -7509,7 +7509,7 @@ async def edit_research_apartments(payload: dict, conn : psycopg2.extensions.con
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
 
-                query = 'UPDATE serviceapartmentsandguesthouses SET name=%s, emailid=%s, phoneno=%s, website=%s, contactperson1=%s, contactperson2=%s, email1=%s, email2=%s, contactname1=%s, contactname2=%s, createdby=%s, dated=%s, isdeleted=%s, suburb=%s, city=%s, state=%s, country=%s, apartments_guesthouse=%s id=%s'
+                query = 'UPDATE serviceapartmentsandguesthouses SET name=%s, emailid=%s, phoneno=%s, website=%s, contactperson1=%s, contactperson2=%s, email1=%s, email2=%s, contactname1=%s, contactname2=%s, createdby=%s, dated=%s, isdeleted=%s, suburb=%s, city=%s, state=%s, country=%s, apartments_guesthouse=%s WHERE id=%s'
                 msg =logMessage(cursor,query,(payload['name'], payload['emailid'], payload['phoneno'], payload['website'], payload['contactperson1'], payload['contactperson2'], payload['email1'], payload['email2'], payload['contactname1'], payload['contactname2'], payload['user_id'], givenowtime(), False, payload['suburb'], payload['city'], payload['state'], payload['country'], payload['apartments_guesthouse'], payload['id']))
                 logging.info(msg)
                 if cursor.statusmessage == "UPDATE 0":

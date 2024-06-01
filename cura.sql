@@ -3473,3 +3473,39 @@ CREATE TABLE token_access_config(
 
 alter table client_property alter column propertyemanager type text;
 alter table client_property alter column propertymanager type text;
+
+CREATE SEQUENCE IF NOT EXISTS serviceapartmentsandguesthouses_id_seq OWNED BY serviceapartmentsandguesthouses.id;
+SELECT setval('serviceapartmentsandguesthouses_id_seq', COALESCE(max(id), 0) + 1, false) FROM serviceapartmentsandguesthouses;
+ALTER TABLE serviceapartmentsandguesthouses ALTER COLUMN id SET DEFAULT nextval('serviceapartmentsandguesthouses_id_seq');
+
+CREATE VIEW get_apartment_view AS
+SELECT
+    a.id,
+    a.name,
+    a.emailid,
+    a.phoneno,
+    a.website,
+    a.contactperson1,
+    a.contactperson2,
+    a.email1,
+    a.email2,
+    a.contactname1,
+    a.contactname2,
+    a.createdby,
+    CONCAT(u.firstname, ' ', u.lastname) AS createdbyname,
+    a.dated,
+    a.isdeleted,
+    a.suburb,
+    b.city AS city,
+    a.state,
+    a.country AS countryid,
+    c.name AS country,
+    a.apartments_guesthouse
+FROM
+    serviceapartmentsandguesthouses AS a
+LEFT JOIN
+    cities AS b ON a.city = b.id
+LEFT JOIN
+    country AS c ON a.country = c.id
+LEFT JOIN
+    usertable AS u ON a.createdby = u.id;
