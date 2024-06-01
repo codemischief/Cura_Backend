@@ -7005,9 +7005,23 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
             isdeleted=False
         )
 
+        payload['pg_no'] = 0
+        payload['pg_size'] = 0
+        payload['sort_by'] = []
+        payload['order'] = ''
+        sumdata = await runInTryCatch(
+            conn = conn,
+            fname = 'report_project_contacts_view',
+            payload = payload,
+            query = 'SELECT SUM(bankst_dr) as bankst_dr,SUM(order_payments) as order_payments,SUM(contractual_payments) AS contractual_payments,SUM(contorderpayments) AS contorderpayments FROM RPT_Daily_Bank_Payments_Reco',
+            isPaginationRequired=True,
+            whereinquery=False,
+            formatData=True,
+            isdeleted=False
+        )
         cursor.execute(f'DROP VIEW {table}')
         conn[0].commit()
-
+        data['total'] = sumdata['data']
         return data
 
 
