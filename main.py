@@ -7013,7 +7013,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
             conn = conn,
             fname = 'report_project_contacts_view',
             payload = payload,
-            query = 'SELECT SUM(bankst_dr) as bankst_dr,SUM(order_payments) as order_payments,SUM(contractual_payments) AS contractual_payments,SUM(contorderpayments) AS contorderpayments FROM RPT_Daily_Bank_Payments_Reco',
+            query = f'SELECT SUM(bankst_dr) as bankst_dr,SUM(order_payments) as order_payments,SUM(contractual_payments) AS contractual_payments,SUM(contorderpayments) AS contorderpayments FROM {table}',
             isPaginationRequired=True,
             whereinquery=False,
             formatData=True,
