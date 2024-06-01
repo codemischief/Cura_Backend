@@ -3348,7 +3348,7 @@ async def get_client_property_admin(payload: dict, conn: psycopg2.extensions.con
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "SELECT DISTINCT id,property as propertyname from get_client_property_view WHERE clientid=%s ORDER BY property"
+                query = "SELECT DISTINCT id,property as propertyname,buildername4 from get_client_property_view WHERE clientid=%s ORDER BY property"
                 msg = logMessage(cursor,query,(payload['client_id'],))
                 logging.info(msg)
                 data = cursor.fetchall()
