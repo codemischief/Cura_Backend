@@ -1905,11 +1905,16 @@ CREATE VIEW get_bankst_view AS
 SELECT
     a.id,
     a.modeofpayment,
-    f.name as mode,
+    f.name AS mode,
     a.date,
     a.amount,
     a.particulars,
     a.crdr,
+    CASE LOWER(a.crdr)
+        WHEN 'cr' THEN 'Credit'
+        WHEN 'dr' THEN 'Debit'
+        ELSE NULL
+    END AS creditdebit,
     a.chequeno,
     a.availablebalance,
     a.dateadded,
