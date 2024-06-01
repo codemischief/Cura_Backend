@@ -6862,84 +6862,8 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
         whereinquery=False,
         isdeleted=False
     )
-    logging.info(total_amount)
-    data['total'] = total_amount['data'][0] if total_amount['data'] else []
-    return data
-
-
-@app.post('/reportNonPMAClientStatementsAndReceivables')
-async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'Rpt_NonPMAClient'
-    data = await runInTryCatch(
-        conn = conn,
-        fname = 'report_project_contacts_view',
-        payload = payload,
-        isPaginationRequired=True,
-        whereinquery=False,
-        formatData=True,
-        isdeleted=False
-    )
-    payload['sort_by'] = []
-    payload['order'] = ''
-    query = '''SELECT SUM(zz.amount) AS sumamount FROM (SELECT clientname,date,type,orderdetails,details,amount FROM Rpt_NonPMAClient) as zz'''
-    total_amount = await runInTryCatch(
-        conn = conn,
-        fname = 'get_total_amount',
-        query = query,
-        payload=payload,
-        isPaginationRequired=True,
-        formatData=True,
-        whereinquery=False,
-        isdeleted=False
-    )
     data['total_amount'] = total_amount['data']
     return data
-
-
-@app.post('/reportPMAClientStatementMargins')
-async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'Rpt_PMAClient'
-    if 'lobName' in payload and payload['lobName'] != 'all':
-        payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
-    if 'entityName' in payload and payload['entityName'] != 'all':
-        payload['filters'].append(['entityname','equalTo',payload['entityName'],'String'])  
-    data = await runInTryCatch(
-        conn = conn,
-        fname = 'report_project_contacts_view',
-        payload = payload,
-        isPaginationRequired=True,
-        whereinquery=False,
-        formatData=True,
-        isdeleted=False
-    )
-    payload['sort_by'] = []
-    payload['order'] = ''
-    query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
-    total_amount = await runInTryCatch(
-        conn = conn,
-        fname = 'get_total_amount',
-        query = query,
-        payload=payload,
-        isPaginationRequired=True,
-        formatData=True,
-        whereinquery=False,
-        isdeleted=False
-    )
-    data['total_amount'] = total_amount['data']
-    return data
-
-@app.post('/reportClientBankDetails')
-async def report_client_bank_details(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'Rpt_ClientAndOrderReceiptMismatchDetails'
-    return await runInTryCatch(
-        conn = conn,
-        fname = 'report_project_contacts_view',
-        payload = payload,
-        isPaginationRequired=True,
-        whereinquery=False,
-        formatData=True,
-        isdeleted=False
-    )
 
 @app.post('/reportClientOrderReceiptMismatchDetails')
 async def report_client_order_receipt_mismatch_details(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -7054,6 +6978,134 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
 
 @app.post('/reportDailyBankPaymentsReconciliation')
 async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+
+    table = f"RPT_Daily_Bank_Payments_Reco_{uuid.uuid4().hex}"
+    query = f'''
+  CREATE VIEW {table} AS
+   SELECT bankreconcillationviewpayment.date,
+    sum(bankreconcillationviewpayment.bankstamount) AS bankst_dr,
+    sum(bankreconcillationviewpayment.opamount) AS order_payments,
+    sum(bankreconcillationviewpayment.cpamount) AS contractual_payments,
+    sum(bankreconcillationviewpayment.totalpayment) AS contorderpayments
+   FROM bankreconcillationviewpayment
+  WHERE bankreconcillationviewpayment.paymentmode = '{payload['bankName']}' AND bankreconcillationviewpayment.date >= '{payload['startdate']}'::date AND bankreconcillationviewpayment.date <= '{payload['enddate']}'::date
+  GROUP BY bankreconcillationviewpayment.date
+  ORDER BY bankreconcillationviewpayment.date DESC;'''
+    with conn[0].cursor() as cursor:
+        cursor.execute(query)
+        conn[0].commit()
+        payload['table_name'] = table
+        data = await runInTryCatch(
+            conn = conn,
+            fname = 'report_project_contacts_view',
+            payload = payload,
+            isPaginationRequired=True,
+            whereinquery=False,
+            formatData=True,
+            isdeleted=False
+        )
+
+        cursor.execute(f'DROP VIEW {table}')
+        conn[0].commit()
+
+        return data
+
+
+@app.post('/sendClientStatement')
+async def send_client_statement(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        table = f'client_statement_{uuid.uuid4().hex}'
+        query = f'''
+            CREATE VIEW {table} AS
+            WITH Payments AS (
+            SELECT
+            c.id AS Clientid,
+            c.FirstName || ' ' || c.LastName AS Clientname,
+            cr.RecdDate::DATE AS Date,
+            'Payment' AS Type,
+            '  ' AS Property,
+            cr.ReceiptDesc AS Description,
+            cr.Amount * -1 AS Amount,
+            cr.dated
+            FROM
+            Client_Receipt cr
+            LEFT JOIN
+            Client c ON cr.clientid = c.id
+            WHERE
+            cr.EntityId = {payload['entityid']} AND cr.IsDeleted = false AND clientid = {payload['clientid']}
+            ),
+            Invoices AS (
+            SELECT
+            c.id AS Clientid,
+            c.FirstName || ' ' || c.LastName AS Clientname,
+            orec.RecdDate::DATE AS Date,
+            'Invoice' AS Type,
+            cp.PropertyDescription AS Property,
+            orec.ReceiptDesc AS Description,
+            orec.Amount AS Amount,
+            orec.dated
+            FROM
+            order_receipt orec
+            LEFT JOIN
+            Orders o ON orec.orderid = o.id
+            LEFT JOIN
+            Client_Property cp ON o.ClientPropertyID = cp.ID
+            LEFT JOIN
+            Client c ON o.clientid = c.id
+            WHERE
+            orec.EntityId = {payload['entityid']} AND orec.IsDeleted = false AND o.clientid = {payload['clientid']}
+            ),
+            Combinedtable AS (
+            SELECT * FROM Payments
+            UNION ALL
+            SELECT * FROM Invoices
+            )
+            SELECT
+            ClientID,
+            ClientName,
+            dated,
+            Date,
+            Type,
+            Amount,
+            COALESCE(SUM(Amount) OVER (ORDER BY Date, Type ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0) AS Opening_balance,
+            SUM(Amount) OVER (ORDER BY Date, Type ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS Closing_balance
+            FROM
+            Combinedtable
+            WHERE clientid = {payload['clientid']} and date > '{payload['startdate']}' and date < '{payload['enddate']}'
+            ORDER BY
+            Date DESC, Type DESC
+    '''
+        with conn[0].cursor() as cursor:
+            cursor.execute(query)
+            conn[0].commit()
+            payload['table_name'] = table
+            data = await runInTryCatch(
+                conn = conn,
+                fname = 'report_project_contacts_view',
+                payload = payload,
+                isPaginationRequired=True,
+                whereinquery=False,
+                formatData=True,
+                isdeleted=False
+            )
+            queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
+            queryclosing = f"SELECT closing_balance,date from {table}"
+            cursor.execute(queryopening)
+            opening = cursor.fetchone()
+            cursor.execute(queryclosing)
+            closing = cursor.fetchone()
+            data['opening_balance'] = opening
+            data['closing_balance'] = closing
+
+            cursor.execute(f'DROP VIEW {table}')
+            conn[0].commit()
+
+            return data
+    except psycopg2.Error as e:
+        raise HTTPException(status_code=400,detail=f"Bad Request {e}")
+    except Exception as e:
+        raise HTTPException(status_code=400,detail=f"Bad Request {e}")
+=======
     payload['table_name'] = 'RPT_Daily_Bank_Payments_Reco'
     data = await runInTryCatch(
         conn = conn,
@@ -7309,6 +7361,5 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
     )
     data['total'] = sumdata['data']
     return data
-
 
 logger.info("program_started")
