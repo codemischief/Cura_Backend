@@ -7604,4 +7604,76 @@ async def report_vendor_trace(payload: dict,conn: psycopg2.extensions.connection
         isdeleted=False
     )
 
+@app.post('/reportTDSByVendor')
+async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'FIN_TDS_Paid_By_Vendor'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'tds_paid_by_viewer',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportVendorPaymentSummary')
+async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'VendorSummaryForFinancialYearView'
+    payload['filters'].append(['paymentdate','between',[payload['startdate'],payload['enddate']],'Date'])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_summary_for_period',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportTDStoGovernment')
+async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'TDSPaidtoGovernment'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'tds_paid_to_government',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportVendorStatement')
+async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'VendorStatementView'
+    payload['filters'].append(['vendorid','equalTo',payload['vendorID'],'Numeric'])
+    payload['filters'].append(['invoicedate_orderpaymentdate','between',[payload['startdate'],payload['enddate']],'Date'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    query = 'SELECT COALESCE(SUM(invoiceamount_orderpaymentamount),0) AS invoiceamount_orderpaymentamount FROM VendorStatementView'
+    total_data = await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        query = query,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    data['total'] = total_data['data'][0] if total_data['data'] else []
+    return data
+
 logger.info("program_started")

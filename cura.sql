@@ -3600,3 +3600,259 @@ UNION
 SELECT 'BankSt ID' AS Type, Vendor.ID, BankSt.ID AS VendorID
 FROM Vendor
 INNER JOIN BankSt ON Vendor.ID = BankSt.VendorID;
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+--13.1
+
+CREATE VIEW VendorSummaryForFinancialYearView AS
+SELECT
+    Vendor.VendorName,
+    Vendor.AddressLine1,
+    Vendor.AddressLine2,
+    Vendor.Suburb,
+    Vendor.PANNo,
+    Vendor.TANNo,
+    Vendor.VATTinNo,
+    Vendor.GSTServiceTaxNo,  -- Changed column name
+    Vendor.LBTNo,
+    Vendor.TDSSection,
+    CASE WHEN Vendor.Registered = 'true' THEN 'Yes' ELSE 'No' END AS Registered,
+    Vendor.BankName,
+    Vendor.BankBranch,
+    Vendor.BankCity,
+    Vendor.BankAcctHolderName,
+    Vendor.BankAcctNo,
+    Vendor.BankIFSCCode,
+    Vendor.BankMICRCode,
+    Vendor.BankAcctType,
+    Vendor.VendorDealerStatus,
+    OrderPaymentView.ID,
+    OrderPaymentView.PaymentById,
+    OrderPaymentView.Amount,
+    OrderPaymentView.PaymentDate,
+    OrderPaymentView.OrderID,
+    OrderPaymentView.VendorID,
+    OrderPaymentView.Mode,
+    OrderPaymentView.Description,
+    OrderPaymentView.ServiceTaxAmount,
+    OrderPaymentView.Dated,
+    OrderPaymentView.CreatedById,
+    OrderPaymentView.IsDeleted,
+    OrderPaymentView.Mode_Of_payment,
+    OrderPaymentView.CreatedBy,
+    OrderPaymentView.PaymentBy,
+    OrderPaymentView.ClientName,
+    OrderPaymentView.OrderDescription,
+    OrderPaymentView.TDS,
+    OrderPaymentView.PropertyDescription,
+    OrderPaymentView.VendorName AS Expr1,
+    OrderPaymentView.LOBName,
+    OrderPaymentView.ServiceType,
+    OrderPaymentView.ServiceId,
+    OrderPaymentView.MonthYear,
+    OrderPaymentView.FY
+FROM Vendor
+INNER JOIN OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
+
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--13.2
+
+CREATE VIEW OrderVendorEstimateView AS
+SELECT
+    Order_VendorEstimate.EstimateDate,
+    Order_VendorEstimate.Amount,
+    Order_VendorEstimate.ID,
+    Order_VendorEstimate.EstimateDesc,
+    Order_VendorEstimate.OrderID,
+    Order_VendorEstimate.VendorID,
+    Order_VendorEstimate.InvoiceDate,
+    Order_VendorEstimate.InvoiceAmount,
+    OrdersView.BriefDescription,
+    OrdersView.ClientName,
+    Vendor.VendorName,
+    Order_VendorEstimate.Notes,
+    z_VendorEstimateStatus.Status,
+    Order_VendorEstimate.InvoiceNumber,
+    Order_VendorEstimate.Vat1,
+    Order_VendorEstimate.Vat2,
+    Order_VendorEstimate.ServiceTax,
+    OrdersView.ClientID,
+    z_VendorEstimateStatus.ID AS StatusID,
+    Order_VendorEstimate.CreatedBy AS CreatedById,
+    UserView.FullName AS CreatedBy,
+    Order_VendorEstimate.EntityId,
+    Entity.Name AS EntityName,
+    Order_VendorEstimate.OfficeId,
+    Office.Name AS OfficeName
+FROM
+    Order_VendorEstimate
+INNER JOIN
+    OrdersView ON Order_VendorEstimate.OrderID = OrdersView.ID
+INNER JOIN
+    Office ON Office.ID = Order_VendorEstimate.OfficeId
+INNER JOIN
+    UserView ON Order_VendorEstimate.CreatedBy = UserView.UserId
+LEFT OUTER JOIN
+    Entity ON Order_VendorEstimate.EntityId = Entity.ID
+LEFT OUTER JOIN
+    z_VendorEstimateStatus ON Order_VendorEstimate.StatusId = z_VendorEstimateStatus.ID
+LEFT OUTER JOIN
+    Vendor ON Vendor.ID = Order_VendorEstimate.VendorID;
+
+CREATE VIEW vendorstatementview AS
+SELECT
+    'Invoice' AS type,
+    ordervendorestimateview.invoicedate AS invoicedate_orderpaymentdate,
+    ordervendorestimateview.invoiceamount AS invoiceamount_orderpaymentamount,
+    ordervendorestimateview.briefdescription AS estimatedescription_orderdescription,
+    ordervendorestimateview.clientname AS clientname_vendorname,
+    NULL AS modeofpayment,
+    ordersview.clientname,
+    entity.name AS entityname,
+    ordersview.clientid,
+    ordervendorestimateview.vendorid,
+    ordervendorestimateview.id,
+    to_char(ordervendorestimateview.invoicedate, 'YYYY-MM') AS monthyear
+FROM
+    ordersview
+INNER JOIN
+    ordervendorestimateview ON ordersview.id = ordervendorestimateview.orderid
+LEFT OUTER JOIN
+    entity ON ordervendorestimateview.entityid = entity.id
+UNION
+SELECT
+    'Payments' AS type,
+    order_payment.paymentdate,
+    order_payment.amount,
+    ordersview.briefdescription AS orderdescription,
+    vendor.vendorname,
+    mode_of_payment.name AS modeofpayment,
+    ordersview.clientname,
+    entity.name,
+    ordersview.id,
+    vendor.id AS vendorid,
+    order_payment.id,
+    to_char(order_payment.paymentdate, 'YYYY-MM') AS monthyear
+FROM
+    mode_of_payment
+INNER JOIN
+    order_payment ON mode_of_payment.id = order_payment.mode
+INNER JOIN
+    vendor ON order_payment.vendorid = vendor.id
+INNER JOIN
+    ordersview ON order_payment.orderid = ordersview.id
+INNER JOIN
+    client ON ordersview.clientid = client.id
+LEFT OUTER JOIN
+    entity ON order_payment.entityid = entity.id;
+
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--17.1
+
+ CREATE VIEW FIN_TDS_Paid_By_Vendor AS
+SELECT
+    Vendor.VendorName,
+    CASE WHEN Vendor.companydeductee != false THEN 'YES' ELSE 'NO' END AS companydeductee,
+    Vendor_Category.Name AS VendorCategory,
+    CASE WHEN Vendor.Registered != false THEN 'Yes' ELSE 'No' END AS Registered,
+    Order_Payment.PaymentDate,
+    Order_Payment.Amount,
+    getMonthYear(Order_Payment.PaymentDate) AS MonthYear,
+    getFinancialYear(Order_Payment.PaymentDate) AS FY,
+    Mode_Of_payment.Name AS PaymentMode,
+    Order_Payment.TDS,
+    Vendor.PANNo,
+    Vendor.TDSSection,
+    Order_Payment.ID
+FROM
+    Order_Payment
+INNER JOIN Vendor ON Order_Payment.VendorID = Vendor.ID
+INNER JOIN Vendor_Category ON Vendor.Category = Vendor_Category.ID
+INNER JOIN Mode_Of_payment ON Order_Payment.Mode = Mode_Of_payment.ID
+WHERE
+    Order_Payment.TDS > 0;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--17.2
+
+CREATE VIEW VendorSummaryForFinancialYearView AS
+SELECT
+    Vendor.VendorName,
+    Vendor.AddressLine1,
+    Vendor.AddressLine2,
+    Vendor.Suburb,
+    Vendor.PANNo,
+    Vendor.TANNo,
+    Vendor.VATTinNo,
+    Vendor.LBTNo,
+    Vendor.TDSSection,
+    Vendor.gstservicetaxno,
+    CASE WHEN Vendor.Registered = 'true' THEN 'Yes' ELSE 'No' END AS Registered,
+    Vendor.BankName,
+    Vendor.BankBranch,
+    Vendor.BankCity,
+    Vendor.BankAcctHolderName,
+    Vendor.BankAcctNo,
+    Vendor.BankIFSCCode,
+    Vendor.BankMICRCode,
+    Vendor.BankAcctType,
+    Vendor.VendorDealerStatus,
+    OrderPaymentView.ID,
+    OrderPaymentView.PaymentById,
+    OrderPaymentView.Amount,
+    OrderPaymentView.PaymentDate,
+    OrderPaymentView.OrderID,
+    OrderPaymentView.VendorID,
+    OrderPaymentView.Mode,
+    OrderPaymentView.Description,
+    OrderPaymentView.ServiceTaxAmount,
+    OrderPaymentView.Dated,
+    OrderPaymentView.CreatedById,
+    OrderPaymentView.IsDeleted,
+    OrderPaymentView.Mode_Of_payment,
+    OrderPaymentView.CreatedBy,
+    OrderPaymentView.PaymentBy,
+    OrderPaymentView.ClientName,
+    OrderPaymentView.OrderDescription,
+    OrderPaymentView.TDS,
+    OrderPaymentView.PropertyDescription,
+    OrderPaymentView.VendorName AS Expr1,
+    OrderPaymentView.LOBName,
+    OrderPaymentView.ServiceType,
+    OrderPaymentView.ServiceId,
+    OrderPaymentView.MonthYear,
+    OrderPaymentView.FY
+FROM
+    Vendor
+INNER JOIN
+    OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--17.3
+
+CREATE VIEW TDSPaidtoGovernment AS
+SELECT
+    REPLACE(REPLACE(orders.BriefDescription, E'\n', ''), E'\r', '') AS order_description,
+    Order_Payment.Amount,
+    TO_CHAR(Order_Payment.PaymentDate, 'DD-MM-YYYY') AS Date,
+    REPLACE(REPLACE(Order_Payment.Description, E'\n', ''), E'\r', '') AS Payment_Description,
+    Vendor.VendorName,
+    orders.ID AS OrderID
+FROM
+    Order_Payment
+INNER JOIN
+    orders ON Order_Payment.OrderID = orders.ID
+INNER JOIN
+    Vendor ON Order_Payment.VendorID = Vendor.ID
+WHERE
+    orders.ID IN (31648, 10770, 31649, 353444, 122525);
