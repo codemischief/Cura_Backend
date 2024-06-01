@@ -518,7 +518,8 @@ SELECT DISTINCT
     a.dated,
     a.createdby,
     a.isdeleted,
-    a.electricitybillingduedate
+    a.electricitybillingduedate,
+    h.buildername
 FROM
     client_property a
 LEFT JOIN
@@ -530,7 +531,9 @@ LEFT JOIN
 LEFT JOIN
     country f ON a.country = f.id
 LEFT JOIN
-    property_status g ON a.status = g.id;
+    property_status g ON a.status = g.id
+LEFT JOIN
+    builder h ON a.projectid = h.id;
 
 
 CREATE OR REPLACE FUNCTION delete_from_get_client_property_view() RETURNS TRIGGER AS $$
