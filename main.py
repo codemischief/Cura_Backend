@@ -4676,7 +4676,7 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
                 data = await runInTryCatch(conn,fname='pma_billing',payload=payload,isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False)
                 for row in data['data']:
                     row['invoicedate'] = f"01-{month_map[payload['month']]}-{payload['year']}"
-                if not payload['insertIntoDB']:
+                if not payload['insertIntoDB'] or role_access_status!=1:
                     return data
                 else:
                     cursor.execute(f'select * from {tbl}')
@@ -6766,15 +6766,17 @@ async def get_role_access(payload: dict,header:str,request:Request,conn):
         query = f"select distinct module from rules"
         cursor.execute(query)
         modulelist = [i[0] for i in cursor.fetchall()]
+        logging.info(modulelist)
         for module in modulelist:
+            pmj = permission_json.copy()
             query = f"select method from rules where id in (select rule_id from roles_to_rules_map where role_id=%s and module=%s) and status=true"
             with conn[0].cursor() as cursor:
                 cursor.execute(query,(role_access_status,module))
                 data = [i[0] for i in cursor.fetchall()]
-            for i in permission_json:
+            for i in pmj:
                 if i in '|'.join(data):
-                    permission_json[i] = True
-            res[module] = permission_json
+                    pmj[i] = True
+            res[module] = pmj
         return res
     except HTTPException as h:
         raise h
