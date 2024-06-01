@@ -7264,7 +7264,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
 @app.post('/reportOrderPaymentCRToSalesInvoice')
 async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'TALLY_CR_To_SalesInvoice'
-    payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
+    payload['filters'].append(["vch_date","between",[payload['startdate'],payload['enddate']],"Date"])
     if 'paymentMode' in payload and payload['paymentMode'] != 'all':
         payload['filters'].append(['mode','equalTo',payload['paymentMode'],'Numeric'])
     if 'entity' in payload and payload['entity'] != 'all':
