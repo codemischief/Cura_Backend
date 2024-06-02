@@ -7688,4 +7688,140 @@ async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connec
     data['total'] = total_data['data'][0] if total_data['data'] else []
     return data
 
+
+@app.post('/reportOrderStatistics')
+async def report_order_statistics(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'OrderStatisticsView'
+    if 'lobName' in payload and payload['lobName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    total_data = await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    result = {}
+    for i in total_data['data']:
+        for key in i:
+            if key=='service' or key=='lobname':
+                pass
+            elif key in result:
+                result[key]+=i[key]
+            else:
+                result[key]=i[key]
+    data['total'] = result
+    return data
+
+@app.post('/reportAgedOrders')
+async def report_aged_orders(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'OrderStatisticsView'
+    if 'lobName' in payload and payload['lobName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
+    if 'statusName' in payload and payload['statusName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['statusName'],'String'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    total_data = await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    result = {}
+    for i in total_data['data']:
+        for key in i:
+            if key=='service' or key=='lobname':
+                pass
+            elif key in result:
+                result[key]+=i[key]
+            else:
+                result[key]=i[key]
+    data['total'] = result
+    return data
+
+@app.post('/reportOrderAnalysis')
+async def report_order_analysis(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'OrderSummary'
+    if 'lobName' in payload and payload['lobName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
+    if 'statusName' in payload and payload['statusName'] != 'all':
+        payload['filters'].append(['orderstatus','equalTo',payload['statusName'],'String'])
+    if 'serviceName' in payload and payload['statusName'] != 'all':
+        payload['filters'].append(['service','equalTo',payload['serviceName'],'String'])
+    if 'clientName' in payload and payload['statusName'] != 'all':
+        payload['filters'].append(['clientname','equalTo',payload['clientName'],'String'])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportActiveLLAgreement')
+async def report_acitve_ll_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Client_Property_Leave_License_DetailsView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportLLAgreement')
+async def report_ll_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Client_Property_Leave_License_DetailsListView'
+    if 'clientPropertyID' in payload and payload['clientPropertyID'] != 'all':
+        payload['filters'].append(['clientpropertyid','equalTo',payload['clientPropertyID'],'String'])
+    if 'statusName' in payload and payload['statusName'] != 'all':
+        payload['filters'].append(['orderstatus','equalTo',payload['statusName'],'String'])
+    if 'typeName' in payload and payload['typeName'] != 'all':
+        payload['filters'].append(['clienttypename','equalTo',payload['typeName'],'String'])
+    if 'clientName' in payload and payload['clientName'] != 'all':
+        payload['filters'].append(['clientname','equalTo',payload['clientName'],'String'])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
 logger.info("program_started")
