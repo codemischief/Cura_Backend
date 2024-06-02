@@ -1904,7 +1904,7 @@ CREATE SEQUENCE IF NOT EXISTS realestateagents_id_seq OWNED BY realestateagents.
 SELECT setval('realestateagents_id_seq', COALESCE(max(id), 0) + 1, false) FROM realestateagents;
 ALTER TABLE realestateagents ALTER COLUMN id SET DEFAULT nextval('realestateagents_id_seq');
 
-CREATE VIEW get_bankst_view AS
+CREATE OR REPLACE VIEW get_bankst_view AS
 SELECT
     a.id,
     a.modeofpayment,
@@ -1923,7 +1923,7 @@ SELECT
     a.dateadded,
     a.clientid,
     a.orderid,
-    a.receivedby,
+    a.receivedhow,
     a.details,
     a.vendorid,
     a.createdby,
@@ -2593,7 +2593,7 @@ LEFT OUTER JOIN ordersview ON ordersview.id = order_invoice.orderid
 LEFT OUTER JOIN entity ON entity.id = order_invoice.entityid
 LEFT OUTER JOIN services ON services.id = ordersview.serviceid
 WHERE
-    lower(ordersview.clienttypename) like '%PMA%'
+    ordersview.clienttypename ilike '%PMA%'
 UNION ALL
 SELECT
     'Payment' AS type,
