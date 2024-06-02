@@ -4086,4 +4086,4 @@ INNER JOIN
 WHERE
     orders.ID IN (31648, 10770, 31649, 353444, 122525);
 
-ALTER TABLE bankst ADD COLUMN receivedhow int;
+alter table bankst rename column receivedby to receivedhow;
