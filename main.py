@@ -7269,7 +7269,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
     sum = 0
     for i in range(len(sumdata['data'])):
         sum += sumdata['data'][i]['ledgeramount']
-    data['total'] = {"ledgerammount":sum}
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/reportOrderPaymentDD')
@@ -7306,7 +7306,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
     sum = 0
     for i in range(len(sumdata['data'])):
         sum += sumdata['data'][i]['ledgeramount']
-    data['total'] = {"ledgerammount":sum}
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/reportOrderPaymentBank2Cash')
@@ -7343,7 +7343,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
     sum = 0
     for i in range(len(sumdata['data'])):
         sum += sumdata['data'][i]['ledgeramount']
-    data['total'] = {"ledgerammount":sum}
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/reportOrderPaymentBank2Bank')
@@ -7380,7 +7380,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
     sum = 0
     for i in range(len(sumdata['data'])):
         sum += sumdata['data'][i]['ledgeramount']
-    data['total'] = {"ledgerammount":sum}
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/reportOrderPaymentCRToSalesInvoice')
@@ -7435,7 +7435,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
     sum = 0
     for i in range(len(sumdata['data'])):
         sum += sumdata['data'][i]['ledgeramount']
-    data['total'] = {"ledgerammount":sum}
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/reportOrderPaymentWithTDS')
@@ -7472,7 +7472,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
     sum = 0
     for i in range(len(sumdata['data'])):
         sum += sumdata['data'][i]['ledgeramount']
-    data['total'] = {"ledgerammount":sum}
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/getResearchApartments')
