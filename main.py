@@ -7261,13 +7261,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_ClientReceipt',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"ledgerammount":sum}
     return data
 
 @app.post('/reportOrderPaymentDD')
@@ -7296,13 +7298,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_Taxes',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"ledgerammount":sum}
     return data
 
 @app.post('/reportOrderPaymentBank2Cash')
@@ -7331,13 +7335,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_Bank2Cash',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"ledgerammount":sum}
     return data
 
 @app.post('/reportOrderPaymentBank2Bank')
@@ -7366,13 +7372,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayment_Bank2Bank',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"ledgerammount":sum}
     return data
 
 @app.post('/reportOrderPaymentCRToSalesInvoice')
@@ -7419,13 +7427,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_No_TDS',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"ledgerammount":sum}
     return data
 
 @app.post('/reportOrderPaymentWithTDS')
@@ -7454,13 +7464,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_With_TDS',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"ledgerammount":sum}
     return data
 
 @app.post('/getResearchApartments')
