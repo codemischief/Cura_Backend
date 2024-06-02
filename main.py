@@ -947,7 +947,7 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
                         "builder_info":res
                     }
                 
-                return giveSuccess(payload['user_id'],role,data,total_count,filename)
+                return giveSuccess(payload['user_id'],role_access_status,data,total_count,filename)
         else:
             return giveFailure("Access Denied",payload["user_id"],role_access_status)
     except jwt.exceptions.ExpiredSignatureError as e:
