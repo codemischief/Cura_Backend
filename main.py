@@ -861,9 +861,10 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
 async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_builder_info: received payload <{payload}>')
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
-        if role_access_status:
+        # role = await getrole(payload,conn,request)
+        # role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
+        role_access_status=check_role_access(conn,payload)
+        if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = '''
                     INSERT INTO builder (
@@ -921,9 +922,10 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
     countries = get_countries_from_id(conn=conn)
     cities = get_city_from_id(conn=conn)
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = check_role_access_new(conn, payload,request=request,method='getBuilderInfo')
-        if role_access_status:  
+        # role = await getrole(payload,conn,request)
+        # role_access_status = check_role_access_new(conn, payload,request=request,method='getBuilderInfo')
+        role_access_status=check_role_access(conn,payload)
+        if role_access_status==1:  
             with conn[0].cursor() as cursor:
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
@@ -961,9 +963,9 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
 async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'edit_builder: received payload <{payload}>')
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = await check_role_access_new(conn, payload,request=request,method='editBuilder')
-
+        # role = await getrole(payload,conn,request)
+        # role_access_status = await check_role_access_new(conn, payload,request=request,method='editBuilder')
+        role_access_status=check_role_access(conn,payload)
         with conn[0].cursor() as cursor:
             # Check if the builder exists
             query_check_builder = "SELECT EXISTS (SELECT 1 FROM builder WHERE id = %s)"
@@ -1029,8 +1031,9 @@ async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.
 async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'delete_builder: received payload <{payload}>')
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = await check_role_access_new(conn, payload,request=request,method='deleteBuilder')
+        # role = await getrole(payload,conn,request)
+        # role_access_status = await check_role_access_new(conn, payload,request=request,method='deleteBuilder')
+        role_access_status=check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE builder SET isdeleted=true WHERE id=%s and isdeleted=False'
