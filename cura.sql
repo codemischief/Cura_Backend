@@ -2568,7 +2568,7 @@ LEFT OUTER JOIN howreceived ON client_receipt.howreceivedid = howreceived.id
 LEFT OUTER JOIN entity ON client_receipt.entityid = entity.id
 LEFT OUTER JOIN payment_source ON client_receipt.paymentsource = payment_source.id;
 
-CREATE VIEW rpt_pmaclient AS
+CREATE OR REPLACE VIEW rpt_pmaclient AS
 SELECT
     'Invoice' AS type,
     ordersview.clientname,
@@ -2593,7 +2593,7 @@ LEFT OUTER JOIN ordersview ON ordersview.id = order_invoice.orderid
 LEFT OUTER JOIN entity ON entity.id = order_invoice.entityid
 LEFT OUTER JOIN services ON services.id = ordersview.serviceid
 WHERE
-    lower(ordersview.clienttypename) LIKE 'Pma - Owner'
+    lower(ordersview.clienttypename) like '%PMA%'
 UNION ALL
 SELECT
     'Payment' AS type,
@@ -2619,7 +2619,7 @@ INNER JOIN clientreceiptview ON clientview.id = clientreceiptview.clientid
 LEFT OUTER JOIN entity ON clientreceiptview.entityid = entity.id
 LEFT OUTER JOIN howreceived ON clientreceiptview.howreceivedid = howreceived.id
 WHERE
-    lower(clientview.clienttypename) LIKE 'pma - owner';
+    lower(clientview.clienttypename) LIKE '%pma%';
 
 
 
@@ -3263,7 +3263,7 @@ LEFT OUTER JOIN (
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 
-CREATE VIEW rpt_clients_transactions AS
+CREATE OR REPLACE VIEW rpt_clients_transactions AS
 SELECT
     'Invoice' AS type,
     ov.clientname,
@@ -3291,7 +3291,7 @@ LEFT JOIN
 LEFT JOIN
     services s ON s.id = ov.serviceid
 WHERE
-    LOWER(ov.clienttypename) = 'pma-owner'
+    LOWER(ov.clienttypename) = '%pma%'
 
 UNION ALL
 
@@ -3322,7 +3322,7 @@ LEFT JOIN
 LEFT JOIN
     howreceived hr ON crv.howreceivedid = hr.id
 WHERE
-    LOWER(cv.clienttypename) = 'pma-owner'
+    LOWER(cv.clienttypename) = '%pma%'
 
 UNION ALL
 
@@ -3351,7 +3351,7 @@ INNER JOIN
 LEFT JOIN
     entity e ON orv.entityid = e.id
 WHERE
-    LOWER(cv.clienttypename) = 'pma-owner';
+    LOWER(cv.clienttypename) = '%pma%';
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
