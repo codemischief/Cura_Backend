@@ -3080,8 +3080,8 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
                 logging.info(msg)
                 data = cursor.fetchone()[0]
                 if 'banktransactionid' in payload:
-                    query = 'UPDATE bankst SET clientid=%s WHERE id=%s'
-                    cursor.execute(query,[payload["clientid"],payload["banktransactionid"]])
+                    query = 'UPDATE bankst SET clientid=%s,receivedhow=%s WHERE id=%s'
+                    cursor.execute(query,[payload["clientid"],payload['howreceivedid'],payload["banktransactionid"]])
                     conn[0].commit()
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted_Receipt":data})

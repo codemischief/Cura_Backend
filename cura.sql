@@ -3856,3 +3856,5 @@ INNER JOIN
     Vendor ON Order_Payment.VendorID = Vendor.ID
 WHERE
     orders.ID IN (31648, 10770, 31649, 353444, 122525);
+
+ALTER TABLE bankst ADD COLUMN receivedhow int;
