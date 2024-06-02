@@ -1346,10 +1346,10 @@ async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = (
-                    'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,vendorid,createdby,isdeleted) '
-                    'VALUES (%s,%s,%s,%s,%s,%s,%s,%s)'
+                    'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,receivedhow,vendorid,createdby,isdeleted) '
+                    'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                          )
-                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['user_id'],False))
+                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['howreceived'],payload['vendorid'],payload['user_id'],False))
                 logging.info(msg)
                 conn[0].commit()
             data = {
@@ -1375,8 +1375,8 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = ('UPDATE bankst SET modeofpayment=%s,'
                          'date=%s,amount=%s,particulars=%s,'
-                         'crdr=%s,vendorid=%s,createdby=%s WHERE id=%s')
-                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['user_id'],payload['id']))
+                         'crdr=%s,receivedhow=%s,vendorid=%s,createdby=%s WHERE id=%s')
+                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['howreceived'],payload['vendorid'],payload['user_id'],payload['id']))
                 logging.info(msg)
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
