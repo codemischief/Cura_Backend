@@ -3471,6 +3471,235 @@ CREATE TABLE token_access_config(
     timedata int
 );
 
+--10.04
+
+
+CREATE VIEW tally_orderpayment_bank2bank AS
+SELECT
+ '' AS uniqueid,
+ CAST(paymentdate AS DATE) AS date,
+ 'Payment' AS voucher,
+ 'Payment' AS vouchertype,
+ '' AS vouchernumber,
+CASE 
+    WHEN mode = 5 THEN 'DAP-ICICI-65'
+    WHEN mode = 17 THEN 'DAP-ICICI-42'
+    ELSE 'SENDINGMODE'
+END AS drledger,
+ mode_of_payment AS crledger,
+ amount AS ledgeramount,
+ clientname || '- ' || orderdescription || '- ' || description AS narration,
+ '' AS instrumentno,
+ '' AS instrumentdate,
+ mode,
+ entityid,
+ tds,
+ serviceid,
+ clientid
+FROM orderpaymentview
+WHERE serviceid = 76
+  AND isdeleted = false;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--10.03
+
+CREATE VIEW tally_orderpayments_bank2cash AS
+SELECT
+ '' AS uniqueid,
+ CAST(paymentdate AS DATE) AS date,
+ 'Payment' AS voucher,
+ 'Payment' AS vouchertype,
+ '' AS vouchernumber,
+ CASE 
+    WHEN mode = 3 THEN 'DAP-ICICI-42'
+    WHEN mode <> 3 THEN 'Cash'
+ END AS drledger,
+ mode_of_payment AS crledger,
+ amount AS ledgeramount,
+ clientname || '- ' || orderdescription || '- ' || description AS narration,
+ '' AS instrumentno,
+ '' AS instrumentdate,
+ mode,
+ entityid,
+ tds,
+ serviceid,
+ clientid
+FROM orderpaymentview
+WHERE serviceid = 75
+  AND isdeleted = false;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--10.02
+
+CREATE OR REPLACE VIEW tally_orderpayments_taxes AS
+SELECT 
+ '' AS uniqueid,
+ CAST(paymentdate AS DATE) AS date,
+ 'Payment' AS voucher,
+ 'Payment' AS vouchertype,
+ '' AS vouchernumber,
+ orderdescription AS drledger,
+ mode_of_payment AS crledger,
+ amount AS ledgeramount,
+ clientname || '- ' || orderdescription || '- ' || description AS narration,
+ '' AS instrumentno,
+ '' AS instrumentdate,
+ mode,
+ entityid,
+ tds,
+ serviceid,
+ clientid,
+ 'Payment' AS type
+FROM orderpaymentview
+WHERE clientid = 15284
+  AND isdeleted = false;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--10.06
+
+CREATE VIEW tally_orderpayments_no_tds AS
+SELECT 
+ '' AS uniqueid,
+ CAST(paymentdate AS DATE) AS date,
+ 'Payment' AS voucher,
+ 'Payment' AS vouchertype,
+ '' AS vouchernumber,
+ vendorname AS drledger,
+ mode_of_payment AS crledger,
+ amount AS ledgeramount,
+ clientname || '- ' || orderdescription || '- ' || description AS narration,
+ '' AS instrumentno,
+ '' AS instrumentdate,
+ mode,
+ entityid,
+ tds,
+ serviceid,
+ clientid
+FROM orderpaymentview
+WHERE clientid NOT IN (15284, 15285)
+  AND isdeleted = false
+  AND (tds < 0.01 OR tds IS NULL);
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--10.07
+
+CREATE VIEW tally_orderpayments_with_tds AS
+SELECT 
+ '' AS uniqueid,
+ CAST(paymentdate AS DATE) AS date,
+ 'Payment' AS voucher,
+ 'Payment' AS vouchertype,
+ '' AS vouchernumber,
+ vendorname AS drledger,
+ mode_of_payment AS crledger,
+ amount AS ledgeramount,
+ clientname || '- ' || orderdescription || '- ' || description AS narration,
+ '' AS instrumentno,
+ '' AS instrumentdate,
+ mode,
+ entityid,
+ tds,
+ serviceid,
+ clientid
+FROM orderpaymentview
+WHERE clientid NOT IN (15284, 15285)
+  AND isdeleted = false
+  AND tds > 0.00;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--10.01
+
+CREATE VIEW tally_clientreceipt AS
+SELECT
+ ' ' AS uniqueid,
+ CAST(recddate AS DATE) AS date,
+ 'Receipt' AS type,
+ 'Receipt' AS vouchertype,    
+ ' ' AS vouchernumber,
+ paymentmode AS drledger,
+ clientname AS crledger,
+ amount AS ledgeramount,
+ 'Property management charges received' AS narration,
+ ' ' AS instrumentno,
+ ' ' AS instrumentdate,
+ paymentmodeid,
+ entityid
+FROM clientreceiptlistview
+WHERE isdeleted = false;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--10.05
+
+CREATE OR REPLACE VIEW tally_cr_to_salesinvoice AS
+SELECT
+' ' AS uniqueid,
+'Sales' AS base_vch_type,
+'GST Invoice' AS vch_type,
+' ' AS vch_no,
+CAST(client_receipt.recddate AS DATE) AS vch_date,
+' ' AS ref_no,
+' ' AS ref_date,
+client.firstname || ' ' || client.lastname AS party,
+' ' AS gstin,
+'Maharashtra' AS state,
+'Property Services' AS item_name,
+' ' AS item_hsn_code,
+' ' AS item_units,
+' ' AS item_qty,
+' ' AS item_rate,
+' ' AS item_discountpercentage,
+ROUND(client_receipt.amount / 1.18, 2) AS item_amount,
+' ' AS igst_percentage,
+' ' AS igst_amount,
+'9' AS cgst_percentage,
+ROUND(client_receipt.amount * 0.076271, 2) AS cgst_amount,
+'9' AS sgst_percentage,
+ROUND(client_receipt.amount * 0.076271, 2) AS sgst_amount,
+'GST Sale B2C' AS sales_purchase_ledger,
+' ' AS igst_ledger,
+'Output CGST' AS cgst_ledger,
+'Output SGST' AS sgst_ledger,
+'Real estate service fees (HSN 9972)' AS narration,
+'Yes' AS auto_round_off_yes_no,
+client_receipt.tds,
+client_receipt.serviceamount,
+client_receipt.reimbursementamount
+FROM client_receipt
+INNER JOIN client ON client_receipt.clientid = client.id
+INNER JOIN entity ON client_receipt.entityid = entity.id
+WHERE
+entity.name ILIKE '%CURA%'
+AND
+client_receipt.isdeleted = false
+AND
+client_receipt.recddate > '2023-12-31'
+LIMIT 100;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+SELECT 
+    SUM(receipts) - SUM(payments) AS diff
+FROM 
+    bankstbalanceview
+WHERE 
+    name LIKE '%DAP-ICICI-42%' 
+    AND date <= '2024-03-31';
+
+
+SELECT
+    SUM(amount)
+FROM
+    bank_pmt_rcpts
+WHERE
+    bankname LIKE '%DAP-ICICI-42%'
+    AND date <= '2024-03-31';
+
 alter table client_property alter column propertyemanager type text;
 alter table client_property alter column propertymanager type text;
 
@@ -3582,7 +3811,7 @@ INNER JOIN Order_Status_Change ON Orders.ID = Order_Status_Change.OrderID;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
--11.3
+--11.3
 
 CREATE VIEW TotalVendorIDsView AS
 SELECT 'Order Payment ID' AS Type, Vendor.ID, Order_Payment.ID AS VendorID
