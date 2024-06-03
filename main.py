@@ -6221,8 +6221,30 @@ async def get_client_id_by_search(payload: dict, conn: psycopg2.extensions.conne
 @app.post('/reportMonthlyMarginLOBReceiptPayments')
 async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
 
-    payload['table_name'] = 'datewiselobserviceview'
-    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
+    payload['table_name'] = f'datewiselobserviceview_{uuid.uuid4().hex}'
+    query = f'''create or replace view {payload['table_name']} AS SELECT tempdata.lobname,
+    tempdata.service,
+    sum(COALESCE(tempdata.orderreceiptamount, 0::numeric)) AS orderreceiptamount,
+    sum(COALESCE(tempdata.paymentamount, 0::numeric)) AS paymentamount,
+    sum(COALESCE(tempdata.orderreceiptamount, 0::numeric)) - sum(COALESCE(tempdata.paymentamount, 0::numeric)) AS diff
+   FROM ( SELECT orderreceiptlobview.lobname,
+            orderreceiptlobview.service,
+            orderreceiptlobview.orderreceiptamount,
+            0 AS paymentamount,
+            orderreceiptlobview.serviceid
+           FROM orderreceiptlobview WHERE orderreceiptlobview.date > '{payload['startdate']}' AND orderreceiptlobview.date < '{payload['enddate']}'
+        UNION ALL
+         SELECT orderpaymentlobview.lobname,
+            orderpaymentlobview.service,
+            0 AS orderreceiptamount,
+            orderpaymentlobview.paymentamount,
+            orderpaymentlobview.serviceid
+            FROM orderpaymentlobview WHERE orderpaymentlobview.date > '{payload['startdate']}' AND orderpaymentlobview.date < '{payload['enddate']}'
+           ) tempdata 
+  GROUP BY tempdata.lobname, tempdata.service'''
+    with conn[0].cursor() as cursor:
+        cursor.execute(query)
+    conn[0].commit()
     logging.info("Here")
     logging.info('lobName' in payload and payload['lobName'] != 'all')
     if 'lobName' in payload and payload['lobName'] != 'all':
@@ -6253,8 +6275,10 @@ async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycop
         total['total_diff'] += i['diff']
     data['total'] = total
     logging.info(total)
+    with conn[0].cursor() as cursor:
+        cursor.execute(f"DROP view {payload['table_name']}")
+    conn[0].commit()
     # logging.info(data)
-
     return data
 
 @app.post('/reportMonthlyMarginEntityReceiptPayments')

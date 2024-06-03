@@ -2422,7 +2422,6 @@ SELECT
     lobname,
     service,
     date,
-    monthyear,
     SUM(COALESCE(orderreceiptamount, 0)) AS orderreceiptamount,
     SUM(COALESCE(paymentamount, 0)) AS paymentamount,
     SUM(COALESCE(orderreceiptamount, 0)) - SUM(COALESCE(paymentamount, 0)) AS diff
@@ -2430,11 +2429,10 @@ FROM (
     SELECT
         lobname,
         service,
-        date,
-        monthyear,
         orderreceiptamount,
         0 AS paymentamount,
-        serviceid
+        serviceid,
+        date
     FROM
         orderreceiptlobview
 
@@ -2443,19 +2441,17 @@ FROM (
     SELECT
         lobname,
         service,
-        date,
-        monthyear,
         0 AS orderreceiptamount,
         paymentamount,
-        serviceid
+        serviceid,
+        date
     FROM
         orderpaymentlobview
 ) AS tempdata
 GROUP BY
     lobname,
-    date,
     service,
-    monthyear;
+    date;
 
 
 
