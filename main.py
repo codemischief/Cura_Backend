@@ -861,9 +861,10 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
 async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_builder_info: received payload <{payload}>')
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
-        if role_access_status:
+        # role = await getrole(payload,conn,request)
+        # role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
+        role_access_status=check_role_access(conn,payload)
+        if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = '''
                     INSERT INTO builder (
@@ -921,9 +922,10 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
     countries = get_countries_from_id(conn=conn)
     cities = get_city_from_id(conn=conn)
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = check_role_access_new(conn, payload,request=request,method='getBuilderInfo')
-        if role_access_status:  
+        # role = await getrole(payload,conn,request)
+        # role_access_status = check_role_access_new(conn, payload,request=request,method='getBuilderInfo')
+        role_access_status=check_role_access(conn,payload)
+        if role_access_status==1:  
             with conn[0].cursor() as cursor:
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
@@ -945,7 +947,7 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
                         "builder_info":res
                     }
                 
-                return giveSuccess(payload['user_id'],role,data,total_count,filename)
+                return giveSuccess(payload['user_id'],role_access_status,data,total_count,filename)
         else:
             return giveFailure("Access Denied",payload["user_id"],role_access_status)
     except jwt.exceptions.ExpiredSignatureError as e:
@@ -961,9 +963,9 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
 async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'edit_builder: received payload <{payload}>')
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = await check_role_access_new(conn, payload,request=request,method='editBuilder')
-
+        # role = await getrole(payload,conn,request)
+        # role_access_status = await check_role_access_new(conn, payload,request=request,method='editBuilder')
+        role_access_status=check_role_access(conn,payload)
         with conn[0].cursor() as cursor:
             # Check if the builder exists
             query_check_builder = "SELECT EXISTS (SELECT 1 FROM builder WHERE id = %s)"
@@ -1029,8 +1031,9 @@ async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.
 async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'delete_builder: received payload <{payload}>')
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = await check_role_access_new(conn, payload,request=request,method='deleteBuilder')
+        # role = await getrole(payload,conn,request)
+        # role_access_status = await check_role_access_new(conn, payload,request=request,method='deleteBuilder')
+        role_access_status=check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE builder SET isdeleted=true WHERE id=%s and isdeleted=False'
@@ -6218,8 +6221,30 @@ async def get_client_id_by_search(payload: dict, conn: psycopg2.extensions.conne
 @app.post('/reportMonthlyMarginLOBReceiptPayments')
 async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
 
-    payload['table_name'] = 'datewiselobserviceview'
-    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
+    payload['table_name'] = f'datewiselobserviceview_{uuid.uuid4().hex}'
+    query = f'''create or replace view {payload['table_name']} AS SELECT tempdata.lobname,
+    tempdata.service,
+    sum(COALESCE(tempdata.orderreceiptamount, 0::numeric)) AS orderreceiptamount,
+    sum(COALESCE(tempdata.paymentamount, 0::numeric)) AS paymentamount,
+    sum(COALESCE(tempdata.orderreceiptamount, 0::numeric)) - sum(COALESCE(tempdata.paymentamount, 0::numeric)) AS diff
+   FROM ( SELECT orderreceiptlobview.lobname,
+            orderreceiptlobview.service,
+            orderreceiptlobview.orderreceiptamount,
+            0 AS paymentamount,
+            orderreceiptlobview.serviceid
+           FROM orderreceiptlobview WHERE orderreceiptlobview.date > '{payload['startdate']}' AND orderreceiptlobview.date < '{payload['enddate']}'
+        UNION ALL
+         SELECT orderpaymentlobview.lobname,
+            orderpaymentlobview.service,
+            0 AS orderreceiptamount,
+            orderpaymentlobview.paymentamount,
+            orderpaymentlobview.serviceid
+            FROM orderpaymentlobview WHERE orderpaymentlobview.date > '{payload['startdate']}' AND orderpaymentlobview.date < '{payload['enddate']}'
+           ) tempdata 
+  GROUP BY tempdata.lobname, tempdata.service'''
+    with conn[0].cursor() as cursor:
+        cursor.execute(query)
+    conn[0].commit()
     logging.info("Here")
     logging.info('lobName' in payload and payload['lobName'] != 'all')
     if 'lobName' in payload and payload['lobName'] != 'all':
@@ -6250,8 +6275,10 @@ async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycop
         total['total_diff'] += i['diff']
     data['total'] = total
     logging.info(total)
+    with conn[0].cursor() as cursor:
+        cursor.execute(f"DROP view {payload['table_name']}")
+    conn[0].commit()
     # logging.info(data)
-
     return data
 
 @app.post('/reportMonthlyMarginEntityReceiptPayments')
