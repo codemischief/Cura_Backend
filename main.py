@@ -7686,7 +7686,8 @@ async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connectio
 @app.post('/reportVendorStatement')
 async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'VendorStatementView'
-    payload['filters'].append(['vendorid','equalTo',payload['vendorID'],'Numeric'])
+    if 'vendorid' in payload and payload['vendorid'] != 'all':
+        payload['filters'].append(['vendorid','equalTo',payload['vendorID'],'Numeric'])
     payload['filters'].append(['invoicedate_orderpaymentdate','between',[payload['startdate'],payload['enddate']],'Date'])
     data = await runInTryCatch(
         conn = conn,
