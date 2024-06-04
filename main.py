@@ -7851,4 +7851,56 @@ async def report_ll_agreement(payload: dict, conn: psycopg2.extensions.connectio
         isdeleted=False
     )
 
+@app.post('/reportClientStatistics')
+async def report_client_statistic(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'ClientTypeCountView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_client_statistic',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportStatisticsReport')
+async def report_statistic_report(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'TotalCountView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_statistic_report',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportOwnersStatistics')
+async def report_client_statistic(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'OwnersStatisticsView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_owners_statistic',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+
+@app.post('/reportServiceTaxReports')
+async def report_client_statistic(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Fin_Service_Tax_Paid_By_Vendor'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_service_tax_reports',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
 logger.info("program_started")
