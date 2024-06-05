@@ -8026,4 +8026,68 @@ async def report_exception_properties_no_projects(payload: dict, conn: psycopg2.
         isdeleted=False
     )
 
+@app.post('/reportOwnerAllMailIDs')
+async def report_all_owner_mail_ids(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_Client_And_Inquiry_MailIDs'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_all_owner_mail_ids',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportAllTenantsMailIDs')
+async def report_all_tenant_mail_ids(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_AllTenantMailIds'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_all_tenant_mail_ids',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportClientContacts')
+async def report_client_contacts(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'ClientView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_client_contacts',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportOwnerPhoneNos')
+async def report_owner_phone_nos(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'OwnersPhonenoView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_owner_phone_nos',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportClientPhoneNos')
+async def report_client_phone_nos(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'ClientPhonenoView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_client_phone_nos',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
 logger.info("program_started")
