@@ -3845,7 +3845,7 @@ SELECT
     replace(replace(orders.briefdescription, ''::text, ''::text),
     ''::text, ''::text) AS order_description,
     order_payment.amount,
-    order_payment.paymentdate,
+    order_payment.paymentdate as date,
     replace(replace(order_payment.description, ''::text, ''::text),
     ''::text, ''::text) AS payment_description,
     vendor.vendorname,
