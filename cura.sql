@@ -3840,19 +3840,17 @@ INNER JOIN
 
 --17.3
 
-CREATE VIEW TDSPaidtoGovernment AS
-SELECT
-    REPLACE(REPLACE(orders.BriefDescription, E'\n', ''), E'\r', '') AS order_description,
-    Order_Payment.Amount,
-    TO_CHAR(Order_Payment.PaymentDate, 'DD-MM-YYYY') AS Date,
-    REPLACE(REPLACE(Order_Payment.Description, E'\n', ''), E'\r', '') AS Payment_Description,
-    Vendor.VendorName,
-    orders.ID AS OrderID
-FROM
-    Order_Payment
-INNER JOIN
-    orders ON Order_Payment.OrderID = orders.ID
-INNER JOIN
-    Vendor ON Order_Payment.VendorID = Vendor.ID
-WHERE
-    orders.ID IN (31648, 10770, 31649, 353444, 122525);
+create view tdspaidtogovernment as
+SELECT 
+    replace(replace(orders.briefdescription, ''::text, ''::text),
+    ''::text, ''::text) AS order_description,
+    order_payment.amount,
+    order_payment.paymentdate,
+    replace(replace(order_payment.description, ''::text, ''::text),
+    ''::text, ''::text) AS payment_description,
+    vendor.vendorname,
+    orders.id AS orderid
+   FROM order_payment
+     JOIN orders ON order_payment.orderid = orders.id
+     JOIN vendor ON order_payment.vendorid = vendor.id
+  WHERE orders.id = ANY (ARRAY[31648::bigint, 10770::bigint, 31649::bigint, 353444::bigint, 122525::bigint])
