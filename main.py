@@ -7908,4 +7908,122 @@ async def report_client_statistic(payload: dict, conn: psycopg2.extensions.conne
         formatData=True,
         isdeleted=False
     )
+
+@app.post('/reportExceptionPaymentUnderSuspeseOrder')
+async def report_exception_payment_under_suspense_order(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_SuspensePayments'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_exception_payment_under_suspense_order',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportExceptionReceiptUnderSuspeseOrder')
+async def report_exception_payment_under_receipt_order(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_SuspenseReceipts'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_exception_payment_under_receipt_order',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportExceptionClientWithOrderButEmailMissing')
+async def report_exception_payment_under_suspense_order(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_ClientsWithOrderButEmailMissing'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_exception_payment_under_suspense_order',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportExceptionEmployeeWithoutVendor')
+async def report_exception_employee_without_vendor(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_UserVendorMapping'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_exception_employee_without_vendor',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportExceptionBankStWrongNames')
+async def report_exception_bank_st_wrong_names(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_BankTransactionsWithWrongNames'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_exception_bank_st_wrong_names',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportExceptionEntityBlank')
+async def report_exception_entity_blank(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Rpt_EntityblankView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_exception_entity_blank',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportExceptionOwnerNoProperties')
+async def report_exception_owner_no_properties(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'noPropertyOwnersView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_exception_owner_no_properties',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportServicesAgencyRepairServices')
+async def report_services_agency_repair_services(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'FIN_Agency_Services_Receipts_For_Taxes'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_services_agency_repair_services',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportExceptionPropertiesNoProjects')
+async def report_exception_properties_no_projects(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'PropertiesView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_exception_properties_no_projects',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
 logger.info("program_started")
