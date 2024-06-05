@@ -4777,10 +4777,14 @@ async def edit_user(payload: dict, conn: psycopg2.extensions.connection = Depend
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                payload['password'] = bcrypt.hashpw(base64.b64decode(payload['password']),bcrypt.gensalt(12)).decode("utf-8")
-                query = "UPDATE usertable SET username=%s,roleid=%s,password=%s,officeid=%s,lobid=%s,usercode=%s,firstname=%s,lastname=%s,status=%s,effectivedate=%s,homephone=%s,workphone=%s,email1=%s,email2=%s,addressline1=%s,addressline2=%s,suburb=%s,city=%s,state=%s,country=%s,zip=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s WHERE id=%s"
-                msg = logMessage(cursor,query,(payload['username'],payload['roleid'],payload['password'],payload['officeid'],payload['lobid'],payload['usercode'],payload['firstname'],payload['lastname'],payload['status'],payload['effectivedate'],payload['homephone'],payload['workphone'],payload['email1'],payload['email2'],payload['addressline1'],payload['addressline2'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['zip'],givenowtime(),payload['user_id'],False,payload['entityid'],payload['id']))
+                if payload['password'] != None:
+                    payload['password'] = bcrypt.hashpw(base64.b64decode(payload['password']),bcrypt.gensalt(12)).decode("utf-8")
+                query = "UPDATE usertable SET username=%s,roleid=%s,officeid=%s,lobid=%s,usercode=%s,firstname=%s,lastname=%s,status=%s,effectivedate=%s,homephone=%s,workphone=%s,email1=%s,email2=%s,addressline1=%s,addressline2=%s,suburb=%s,city=%s,state=%s,country=%s,zip=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s WHERE id=%s"
+                msg = logMessage(cursor,query,(payload['username'],payload['roleid'],payload['officeid'],payload['lobid'],payload['usercode'],payload['firstname'],payload['lastname'],payload['status'],payload['effectivedate'],payload['homephone'],payload['workphone'],payload['email1'],payload['email2'],payload['addressline1'],payload['addressline2'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['zip'],givenowtime(),payload['user_id'],False,payload['entityid'],payload['id']))
                 logging.info(msg)
+                if payload['password']:
+                    query = "UPDATE usertable SET password=%s WHERE id=%s"
+                    msg = logMessage(cursor,query,(payload['password'],payload['id']))
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited User ID":payload['id']})
         else:
