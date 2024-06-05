@@ -2034,7 +2034,7 @@ async def get_users_admin(payload: dict, conn : psycopg2.extensions.connection =
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = "SELECT firstname,lastname,id,username from usertable order by firstname where isdeleted=false"
+                query = "SELECT firstname,lastname,id,username from usertable where isdeleted=false order by firstname"
                 msg = logMessage(cursor,query)
                 logging.info(msg)
                 arr = []
