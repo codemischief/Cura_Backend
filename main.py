@@ -563,7 +563,7 @@ async def validate_credentials(payload : dict,request:Request, conn: psycopg2.ex
     logging.info(f'validate_credentials: received payload <{payload}>')
     try:
         with conn[0].cursor() as cursor:
-            query = 'SELECT password,id,roleid FROM usertable where username = %s'
+            query = 'SELECT password,id,roleid FROM usertable where username = %s and isdeleted=false'
             query2 = "SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = %s)"
 
             msg = logMessage(cursor,query,(payload['username'],))
@@ -861,9 +861,10 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
 async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_builder_info: received payload <{payload}>')
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
-        if role_access_status:
+        # role = await getrole(payload,conn,request)
+        # role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
+        role_access_status=check_role_access(conn,payload)
+        if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = '''
                     INSERT INTO builder (
@@ -921,9 +922,10 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
     countries = get_countries_from_id(conn=conn)
     cities = get_city_from_id(conn=conn)
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = check_role_access_new(conn, payload,request=request,method='getBuilderInfo')
-        if role_access_status:  
+        # role = await getrole(payload,conn,request)
+        # role_access_status = check_role_access_new(conn, payload,request=request,method='getBuilderInfo')
+        role_access_status=check_role_access(conn,payload)
+        if role_access_status==1:  
             with conn[0].cursor() as cursor:
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
@@ -945,7 +947,7 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
                         "builder_info":res
                     }
                 
-                return giveSuccess(payload['user_id'],role,data,total_count,filename)
+                return giveSuccess(payload['user_id'],role_access_status,data,total_count,filename)
         else:
             return giveFailure("Access Denied",payload["user_id"],role_access_status)
     except jwt.exceptions.ExpiredSignatureError as e:
@@ -961,9 +963,9 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
 async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'edit_builder: received payload <{payload}>')
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = await check_role_access_new(conn, payload,request=request,method='editBuilder')
-
+        # role = await getrole(payload,conn,request)
+        # role_access_status = await check_role_access_new(conn, payload,request=request,method='editBuilder')
+        role_access_status=check_role_access(conn,payload)
         with conn[0].cursor() as cursor:
             # Check if the builder exists
             query_check_builder = "SELECT EXISTS (SELECT 1 FROM builder WHERE id = %s)"
@@ -1029,8 +1031,9 @@ async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.
 async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'delete_builder: received payload <{payload}>')
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = await check_role_access_new(conn, payload,request=request,method='deleteBuilder')
+        # role = await getrole(payload,conn,request)
+        # role_access_status = await check_role_access_new(conn, payload,request=request,method='deleteBuilder')
+        role_access_status=check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = 'UPDATE builder SET isdeleted=true WHERE id=%s and isdeleted=False'
@@ -1346,10 +1349,10 @@ async def add_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = (
-                    'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,vendorid,createdby,isdeleted) '
-                    'VALUES (%s,%s,%s,%s,%s,%s,%s,%s)'
+                    'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,receivedhow,vendorid,createdby,isdeleted) '
+                    'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                          )
-                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['user_id'],False))
+                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['howreceived'],payload['vendorid'],payload['user_id'],False))
                 logging.info(msg)
                 conn[0].commit()
             data = {
@@ -1375,8 +1378,8 @@ async def edit_bank_statement(payload : dict, conn : psycopg2.extensions.connect
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = ('UPDATE bankst SET modeofpayment=%s,'
                          'date=%s,amount=%s,particulars=%s,'
-                         'crdr=%s,vendorid=%s,createdby=%s WHERE id=%s')
-                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['vendorid'],payload['user_id'],payload['id']))
+                         'crdr=%s,receivedhow=%s,vendorid=%s,createdby=%s WHERE id=%s')
+                msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['howreceived'],payload['vendorid'],payload['user_id'],payload['id']))
                 logging.info(msg)
                 if cursor.statusmessage == "UPDATE 0":
                     return giveFailure("No Bank st available",payload['user_id'],role_access_status)
@@ -2031,7 +2034,7 @@ async def get_users_admin(payload: dict, conn : psycopg2.extensions.connection =
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = "SELECT firstname,lastname,id,username from usertable order by firstname"
+                query = "SELECT firstname,lastname,id,username from usertable where isdeleted=false order by firstname"
                 msg = logMessage(cursor,query)
                 logging.info(msg)
                 arr = []
@@ -3080,8 +3083,8 @@ async def add_client_receipt(payload: dict, conn: psycopg2.extensions.connection
                 logging.info(msg)
                 data = cursor.fetchone()[0]
                 if 'banktransactionid' in payload:
-                    query = 'UPDATE bankst SET clientid=%s WHERE id=%s'
-                    cursor.execute(query,[payload["clientid"],payload["banktransactionid"]])
+                    query = 'UPDATE bankst SET clientid=%s,receivedhow=%s WHERE id=%s'
+                    cursor.execute(query,[payload["clientid"],payload['howreceivedid'],payload["banktransactionid"]])
                     conn[0].commit()
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted_Receipt":data})
@@ -4774,10 +4777,14 @@ async def edit_user(payload: dict, conn: psycopg2.extensions.connection = Depend
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                payload['password'] = bcrypt.hashpw(base64.b64decode(payload['password']),bcrypt.gensalt(12)).decode("utf-8")
-                query = "UPDATE usertable SET username=%s,roleid=%s,password=%s,officeid=%s,lobid=%s,usercode=%s,firstname=%s,lastname=%s,status=%s,effectivedate=%s,homephone=%s,workphone=%s,email1=%s,email2=%s,addressline1=%s,addressline2=%s,suburb=%s,city=%s,state=%s,country=%s,zip=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s WHERE id=%s"
-                msg = logMessage(cursor,query,(payload['username'],payload['roleid'],payload['password'],payload['officeid'],payload['lobid'],payload['usercode'],payload['firstname'],payload['lastname'],payload['status'],payload['effectivedate'],payload['homephone'],payload['workphone'],payload['email1'],payload['email2'],payload['addressline1'],payload['addressline2'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['zip'],givenowtime(),payload['user_id'],False,payload['entityid'],payload['id']))
+                if payload['password'] != None:
+                    payload['password'] = bcrypt.hashpw(base64.b64decode(payload['password']),bcrypt.gensalt(12)).decode("utf-8")
+                query = "UPDATE usertable SET username=%s,roleid=%s,officeid=%s,lobid=%s,usercode=%s,firstname=%s,lastname=%s,status=%s,effectivedate=%s,homephone=%s,workphone=%s,email1=%s,email2=%s,addressline1=%s,addressline2=%s,suburb=%s,city=%s,state=%s,country=%s,zip=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s WHERE id=%s"
+                msg = logMessage(cursor,query,(payload['username'],payload['roleid'],payload['officeid'],payload['lobid'],payload['usercode'],payload['firstname'],payload['lastname'],payload['status'],payload['effectivedate'],payload['homephone'],payload['workphone'],payload['email1'],payload['email2'],payload['addressline1'],payload['addressline2'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['zip'],givenowtime(),payload['user_id'],False,payload['entityid'],payload['id']))
                 logging.info(msg)
+                if payload['password']:
+                    query = "UPDATE usertable SET password=%s WHERE id=%s"
+                    msg = logMessage(cursor,query,(payload['password'],payload['id']))
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited User ID":payload['id']})
         else:
@@ -6218,8 +6225,30 @@ async def get_client_id_by_search(payload: dict, conn: psycopg2.extensions.conne
 @app.post('/reportMonthlyMarginLOBReceiptPayments')
 async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
 
-    payload['table_name'] = 'datewiselobserviceview'
-    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
+    payload['table_name'] = f'datewiselobserviceview_{uuid.uuid4().hex}'
+    query = f'''create or replace view {payload['table_name']} AS SELECT tempdata.lobname,
+    tempdata.service,
+    sum(COALESCE(tempdata.orderreceiptamount, 0::numeric)) AS orderreceiptamount,
+    sum(COALESCE(tempdata.paymentamount, 0::numeric)) AS paymentamount,
+    sum(COALESCE(tempdata.orderreceiptamount, 0::numeric)) - sum(COALESCE(tempdata.paymentamount, 0::numeric)) AS diff
+   FROM ( SELECT orderreceiptlobview.lobname,
+            orderreceiptlobview.service,
+            orderreceiptlobview.orderreceiptamount,
+            0 AS paymentamount,
+            orderreceiptlobview.serviceid
+           FROM orderreceiptlobview WHERE orderreceiptlobview.date > '{payload['startdate']}' AND orderreceiptlobview.date < '{payload['enddate']}'
+        UNION ALL
+         SELECT orderpaymentlobview.lobname,
+            orderpaymentlobview.service,
+            0 AS orderreceiptamount,
+            orderpaymentlobview.paymentamount,
+            orderpaymentlobview.serviceid
+            FROM orderpaymentlobview WHERE orderpaymentlobview.date > '{payload['startdate']}' AND orderpaymentlobview.date < '{payload['enddate']}'
+           ) tempdata 
+  GROUP BY tempdata.lobname, tempdata.service'''
+    with conn[0].cursor() as cursor:
+        cursor.execute(query)
+    conn[0].commit()
     logging.info("Here")
     logging.info('lobName' in payload and payload['lobName'] != 'all')
     if 'lobName' in payload and payload['lobName'] != 'all':
@@ -6250,8 +6279,10 @@ async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycop
         total['total_diff'] += i['diff']
     data['total'] = total
     logging.info(total)
+    with conn[0].cursor() as cursor:
+        cursor.execute(f"DROP view {payload['table_name']}")
+    conn[0].commit()
     # logging.info(data)
-
     return data
 
 @app.post('/reportMonthlyMarginEntityReceiptPayments')
@@ -7261,13 +7292,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_ClientReceipt',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/reportOrderPaymentDD')
@@ -7296,13 +7329,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_Taxes',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/reportOrderPaymentBank2Cash')
@@ -7331,13 +7366,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_Bank2Cash',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/reportOrderPaymentBank2Bank')
@@ -7366,13 +7403,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayment_Bank2Bank',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/reportOrderPaymentCRToSalesInvoice')
@@ -7380,7 +7419,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
     payload['table_name'] = 'TALLY_CR_To_SalesInvoice'
     payload['filters'].append(["vch_date","between",[payload['startdate'],payload['enddate']],"Date"])
     if 'paymentMode' in payload and payload['paymentMode'] != 'all':
-        payload['filters'].append(['mode','equalTo',payload['paymentMode'],'Numeric'])
+        payload['filters'].append(['paymentmodeid','equalTo',payload['paymentMode'],'Numeric'])
     if 'entity' in payload and payload['entity'] != 'all':
         payload['filters'].append(['entityid','equalTo',payload['entityMode'],'Numeric'])
     return await runInTryCatch(
@@ -7419,13 +7458,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_No_TDS',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/reportOrderPaymentWithTDS')
@@ -7454,13 +7495,15 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(ledgeramount) AS total_amount FROM Tally_OrderPayments_With_TDS',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    sum = 0
+    for i in range(len(sumdata['data'])):
+        sum += sumdata['data'][i]['ledgeramount']
+    data['total'] = {"total_amount":sum}
     return data
 
 @app.post('/getResearchApartments')
@@ -7647,7 +7690,8 @@ async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connectio
 @app.post('/reportVendorStatement')
 async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'VendorStatementView'
-    payload['filters'].append(['vendorid','equalTo',payload['vendorID'],'Numeric'])
+    if 'vendorid' in payload and payload['vendorid'] != 'all':
+        payload['filters'].append(['vendorid','equalTo',payload['vendorID'],'Numeric'])
     payload['filters'].append(['invoicedate_orderpaymentdate','between',[payload['startdate'],payload['enddate']],'Date'])
     data = await runInTryCatch(
         conn = conn,
@@ -7676,4 +7720,192 @@ async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connec
     data['total'] = total_data['data'][0] if total_data['data'] else []
     return data
 
+
+@app.post('/reportOrderStatistics')
+async def report_order_statistics(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'OrderStatisticsView'
+    if 'lobName' in payload and payload['lobName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    total_data = await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    result = {}
+    for i in total_data['data']:
+        for key in i:
+            if key=='service' or key=='lobname':
+                pass
+            elif key in result:
+                result[key]+=i[key]
+            else:
+                result[key]=i[key]
+    data['total'] = result
+    return data
+
+@app.post('/reportAgedOrders')
+async def report_aged_orders(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'OrderStatisticsView'
+    if 'lobName' in payload and payload['lobName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
+    if 'statusName' in payload and payload['statusName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['statusName'],'String'])
+    data = await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    payload['sort_by'] = []
+    payload['order'] = ''
+    total_data = await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    result = {}
+    for i in total_data['data']:
+        for key in i:
+            if key=='service' or key=='lobname':
+                pass
+            elif key in result:
+                result[key]+=i[key]
+            else:
+                result[key]=i[key]
+    data['total'] = result
+    return data
+
+@app.post('/reportOrderAnalysis')
+async def report_order_analysis(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'OrderSummary'
+    if 'lobName' in payload and payload['lobName'] != 'all':
+        payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
+    if 'statusName' in payload and payload['statusName'] != 'all':
+        payload['filters'].append(['orderstatus','equalTo',payload['statusName'],'String'])
+    if 'serviceName' in payload and payload['statusName'] != 'all':
+        payload['filters'].append(['service','equalTo',payload['serviceName'],'String'])
+    if 'clientName' in payload and payload['statusName'] != 'all':
+        payload['filters'].append(['clientname','equalTo',payload['clientName'],'String'])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportActiveLLAgreement')
+async def report_acitve_ll_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Client_Property_Leave_License_DetailsView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportLLAgreement')
+async def report_ll_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Client_Property_Leave_License_DetailsListView'
+    if 'clientPropertyID' in payload and payload['clientPropertyID'] != 'all':
+        payload['filters'].append(['clientpropertyid','equalTo',payload['clientPropertyID'],'String'])
+    if 'statusName' in payload and payload['statusName'] != 'all':
+        payload['filters'].append(['orderstatus','equalTo',payload['statusName'],'String'])
+    if 'typeName' in payload and payload['typeName'] != 'all':
+        payload['filters'].append(['clienttypename','equalTo',payload['typeName'],'String'])
+    if 'clientName' in payload and payload['clientName'] != 'all':
+        payload['filters'].append(['clientname','equalTo',payload['clientName'],'String'])
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'vendor_payment_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportClientStatistics')
+async def report_client_statistic(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'ClientTypeCountView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_client_statistic',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportStatisticsReport')
+async def report_statistic_report(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'TotalCountView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_statistic_report',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+@app.post('/reportOwnersStatistics')
+async def report_client_statistic(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'OwnersStatisticsView'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_owners_statistic',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+
+
+@app.post('/reportServiceTaxReports')
+async def report_client_statistic(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'Fin_Service_Tax_Paid_By_Vendor'
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'report_service_tax_reports',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
 logger.info("program_started")
