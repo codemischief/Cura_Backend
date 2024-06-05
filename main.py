@@ -563,7 +563,7 @@ async def validate_credentials(payload : dict,request:Request, conn: psycopg2.ex
     logging.info(f'validate_credentials: received payload <{payload}>')
     try:
         with conn[0].cursor() as cursor:
-            query = 'SELECT password,id,roleid FROM usertable where username = %s'
+            query = 'SELECT password,id,roleid FROM usertable where username = %s and isdeleted=false'
             query2 = "SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = %s)"
 
             msg = logMessage(cursor,query,(payload['username'],))
@@ -2034,7 +2034,7 @@ async def get_users_admin(payload: dict, conn : psycopg2.extensions.connection =
         role_access_status = check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = "SELECT firstname,lastname,id,username from usertable order by firstname"
+                query = "SELECT firstname,lastname,id,username from usertable order by firstname where isdeleted=false"
                 msg = logMessage(cursor,query)
                 logging.info(msg)
                 arr = []
