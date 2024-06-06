@@ -1895,7 +1895,7 @@ SELECT DISTINCT
     a.address,
     a.localitiesdealing,
     a.nameofpartners,
-    a.registered,
+    CASE a.registered WHEN true THEN 'Yes' ELSE 'No' END,
     a.isdeleted,
     a.dated,
     a.createdby
