@@ -6061,7 +6061,7 @@ async def delete_research_architect(payload:dict,conn:psycopg2.extensions.connec
         logging.info(f"Exception encountered:{traceback.format_exc()}")
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
-def send_email(subject, body, to_email):
+def send_email(subject, body,to_email,html=None):
     # SMTP server configuration
     smtp_server = 'smtpout.secureserver.net'  # Example: 'smtp.gmail.com'
     smtp_port = 587  # For SSL, use 465; for TLS/StartTLS, use 587
@@ -6076,7 +6076,8 @@ def send_email(subject, body, to_email):
 
     # Add body to the email
     msg.attach(MIMEText(body, 'plain'))
-
+    if html is not None:
+        msg.attach(MIMEText(html, 'html'))
     # Connect to the SMTP server
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
@@ -6087,6 +6088,7 @@ def send_email(subject, body, to_email):
         server.quit()
         print("Email sent successfully!")
     except Exception as e:
+        logging.info(traceback.format_exc())
         print(f"Failed to send email: {e}")
 
 def create_token(payload: dict,expires:timedelta|None = None):
@@ -7222,6 +7224,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             SELECT
             ClientID,
             ClientName,
+            dated,
             Date,
             Type,
             Amount,
@@ -7246,20 +7249,68 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
                 formatData=True,
                 isdeleted=False
             )
-            query = f"SELECT opening_balance,closing_balance from {table}"
-            with conn[0].cursor() as cursor:
-                cursor.execute(query)
-                result = cursor.fetchall()
-                data['opening_balance'] = result[0][0]
-                data['closing_balance'] = result[-1][-1]
+            queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
+            queryclosing = f"SELECT closing_balance,date from {table}"
+            cursor.execute(queryopening)
+            opening = cursor.fetchone()
+            cursor.execute(queryclosing)
+            closing = cursor.fetchone()
+            data['opening_balance'] = opening if opening else 0
+            data['closing_balance'] = closing if closing else 0
 
-                cursor.execute(f'DROP VIEW {table}')
+            cursor.execute(f'DROP VIEW {table}')
             conn[0].commit()
+            if not payload['sendEmail']: return data
+            html = f'''
+<html>
+    <body style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 18px;">
+        <p>
+            Hi,<br>Please find attached Statement of Account from {payload['startdate']} to {payload['enddate']} for your property/ies.
+        </p>
+        <p>
+            <ul style="color: purple;">
+                <li>Balance due till date is Rs. {data['closing_balance']}/- including 18% taxes (GST).</li>
+                <li>You can transfer the dues to our usual ICICI bank account given below.</li>
+                <li>Let us know when you transfer the dues so that we can confirm receipt.</li>
+            </ul>
+        </p>
+        <p>Important Notes:</p>
+        <p>
+            <ol style="color: blue;">
+                <li>Please make sure to check your bank account each month for receipt of rent if we have rented your property. Let us know if you do not receive your rent on time.</li>
+                <li>Ensure that your bank account does not become inactive or dormant by making at least 1 payment from your account every 1-2 months and updating your KYC as per the Bank policies from time to time, else you will not be able to receive rent in your bank account. Activating an inactive bank account is a very lengthy and cumbersome process.</li>
+            </ol>
+        </p>
+        <p style="color: purple;">
+            Cura bank account details:<br>
+            Account name: DAP Consultants Pvt Ltd<br>
+            Bank: ICICI Bank<br>
+            Branch: Baner Road, Pune<br>
+            Account Number: 098505001242<br>
+            Type of Account: Current Account<br>
+            IFSC code: ICIC0000985
+        </p>
+        <p>
+            Thanks and Regards<br>
+            Property Management Team<br>
+            Cura Property Services
+        </p>
+    </body>
+</html>
+'''
 
+# Fetch the client's email address from the database
+            with conn[0].cursor() as cursor:
+                query = f"SELECT email1 from client where id={payload['clientid']}"
+                cursor.execute(query)
+                emailid = cursor.fetchone()[0]
+            send_email("Cura Statement of Account for your Pune property/ies.",'',emailid,html)
             return data
     except psycopg2.Error as e:
+        logging.info(traceback.format_exc())
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
     except Exception as e:
+        logging.info(traceback.format_exc())
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
 @app.post('/reportClientReceiptBankMode')
@@ -8112,4 +8163,6 @@ async def report_client_phone_nos(payload: dict, conn: psycopg2.extensions.conne
         formatData=True,
         isdeleted=False
     )
+
+
 logger.info("program_started")
