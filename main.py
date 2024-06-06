@@ -1699,8 +1699,8 @@ async def edit_research_prospect(payload: dict, conn : psycopg2.extensions.conne
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                query = 'UPDATE research_prospect SET personname=%s,phoneno=%s,email1=%s,suburb=%s,city=%s,state=%s,country=%s,propertylocation=%s,possibleservices=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
-                msg =logMessage(cursor,query,(payload['personname'],payload['phoneno'],payload['email1'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],givenowtime(),payload['user_id'],False,payload['id']))
+                query = 'UPDATE research_prospect SET personname=%s,suburb=%s,city=%s,state=%s,country=%s,propertylocation=%s,possibleservices=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
+                msg =logMessage(cursor,query,(payload['personname'],payload['suburb'],payload['city'],payload['state'],payload['country'],payload['propertylocation'],payload['possibleservices'],givenowtime(),payload['user_id'],False,payload['id']))
                 logging.info(msg)
                 if cursor.statusmessage == "UPDATE 0":
                     raise HTTPException(status_code=404,detail="Record not found")
