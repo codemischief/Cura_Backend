@@ -1884,6 +1884,8 @@ CREATE SEQUENCE IF NOT EXISTS research_employer_id_seq OWNED BY research_employe
 SELECT setval('research_employer_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_employer;
 ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_employer_id_seq');
 
+ alter table realestateagents alter column registered type bool using registered::boolean;
+
 CREATE VIEW get_research_realestate_agents_view AS
 SELECT DISTINCT
     a.id,
