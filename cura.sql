@@ -2214,8 +2214,8 @@ SELECT
     a.country as countryid,
     b.name as country,
     a.zip,
-    a.agencytype as agencytypeid,
-    c.name as agencytype,
+    a.departmenttype as departmenttypeid,
+    c.name as departmenttype,
     a.details,
     a.contactname,
     a.contactmail,
@@ -2230,7 +2230,7 @@ FROM
 LEFT JOIN
     country b ON a.country = b.id
 LEFT JOIN
-    agencytype c ON a.agencytype = c.id
+    departmenttype c ON a.departmenttype = c.id
 LEFT JOIN
     usertable d ON a.createdby = d.id;
 
@@ -3045,14 +3045,11 @@ SELECT
     cplld.clientpropertyorderid,
     cplld.signedby,
     cplld.active,
-    cplld.tenantsearchmode AS tenantsearchmodeid,
     cplld.llscancopy,
     cplld.pvscancopy,
     cplld.dated,
     cplld.createdby AS expr2,
     cplld.isdeleted,
-    zmp.name AS modeofrentpayment,
-    tsm.name AS tenantsearchmode,
     cplld.id,
     cplld.comments,
     pv.clientname,
@@ -3071,10 +3068,6 @@ FROM
     client_property_leave_license_details cplld
 INNER JOIN
     propertiesview pv ON cplld.clientpropertyid = pv.id
-LEFT OUTER JOIN
-    z_modeofrentpayment zmp ON cplld.modeofrentpaymentid = zmp.id
-LEFT OUTER JOIN
-    z_tenant_search_mode tsm ON cplld.tenantsearchmode = tsm.id
 LEFT OUTER JOIN
     ordersview ov ON cplld.orderid = ov.id
 WHERE 
@@ -3902,13 +3895,11 @@ SELECT
     OrdersView.ClientName,
     Vendor.VendorName,
     Order_VendorEstimate.Notes,
-    z_VendorEstimateStatus.Status,
     Order_VendorEstimate.InvoiceNumber,
     Order_VendorEstimate.Vat1,
     Order_VendorEstimate.Vat2,
     Order_VendorEstimate.ServiceTax,
     OrdersView.ClientID,
-    z_VendorEstimateStatus.ID AS StatusID,
     Order_VendorEstimate.CreatedBy AS CreatedById,
     UserView.FullName AS CreatedBy,
     Order_VendorEstimate.EntityId,
@@ -3925,8 +3916,6 @@ INNER JOIN
     UserView ON Order_VendorEstimate.CreatedBy = UserView.UserId
 LEFT OUTER JOIN
     Entity ON Order_VendorEstimate.EntityId = Entity.ID
-LEFT OUTER JOIN
-    z_VendorEstimateStatus ON Order_VendorEstimate.StatusId = z_VendorEstimateStatus.ID
 LEFT OUTER JOIN
     Vendor ON Vendor.ID = Order_VendorEstimate.VendorID;
 
