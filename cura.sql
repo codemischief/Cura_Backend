@@ -1842,7 +1842,7 @@ LEFT JOIN
     tallyledger d ON a.tallyledgerid = d.id;
  
 
-CREATE VIEW get_employer_view AS
+CREATE VIEW get_research_employer_view AS
 SELECT DISTINCT
     a.id,
     a.employername,
@@ -1857,6 +1857,7 @@ SELECT DISTINCT
     a.zip,
     a.hc,
     a.website,
+    CASE a.onsiteopportunity WHEN true THEN 'Yes' ELSE 'No' END AS onsiteopportunitytext,
     a.onsiteopportunity,
     a.contactname1,
     a.contactname2,
@@ -3020,12 +3021,13 @@ LEFT OUTER JOIN
     orders o ON cpca.orderid = o.id
 LEFT OUTER JOIN
     client_property_leave_license_detailsview lnl ON lnl.clientpropertyid = cpca.clientpropertyid AND lnl.active = TRUE;
+
 CREATE VIEW client_property_leave_license_detailsview AS
-SELECT
-        CASE
-            WHEN cplld.active = true THEN 'Active'::text
-            ELSE 'Inactive'::text
-        END AS status,
+SELECT 
+    CASE 
+        WHEN cplld.active = 'true' THEN 'Active' 
+        ELSE 'Inactive' 
+    END AS status,
     cplld.clientpropertyid,
     cplld.orderid,
     cplld.startdate,
@@ -3049,29 +3051,34 @@ SELECT
     cplld.dated,
     cplld.createdby AS expr2,
     cplld.isdeleted,
+    zmp.name AS modeofrentpayment,
+    tsm.name AS tenantsearchmode,
     cplld.id,
     cplld.comments,
     pv.clientname,
     pv.propertydescription,
     ov.propertydescription AS expr1,
-    ( SELECT getmonthyear(cplld.startdate::timestamp without time zone) AS getmonthyear) AS startdatemonthyear,
-    ( SELECT getmonthyear(cplld.actualenddate::timestamp without time zone) AS getmonthyear) AS enddatemonthyear,
+    getmonthyear(cplld.startdate) AS startdatemonthyear,
+    getmonthyear(cplld.actualenddate) AS enddatemonthyear,
     ov.orderstatus,
     ov.status AS orderstatusid,
     pv.clientid,
     pv.propertytaxnumber,
     pv.property_status,
     pv.electricitybillingunit,
-    pv.electricityconsumernumber,
-    ov.service,
-    ov.lobname,
-    ov.entityname,
-    cv.clienttype,
-    cv.clienttypename
-   FROM client_property_leave_license_details cplld
-     JOIN propertiesview pv ON cplld.clientpropertyid = pv.id
-     JOIN clientview cv ON pv.clientid = cv.id
-     LEFT JOIN ordersview ov ON cplld.orderid = ov.id;
+    pv.electricityconsumernumber
+FROM 
+    client_property_leave_license_details cplld
+INNER JOIN
+    propertiesview pv ON cplld.clientpropertyid = pv.id
+LEFT OUTER JOIN
+    z_modeofrentpayment zmp ON cplld.modeofrentpaymentid = zmp.id
+LEFT OUTER JOIN
+    z_tenant_search_mode tsm ON cplld.tenantsearchmode = tsm.id
+LEFT OUTER JOIN
+    ordersview ov ON cplld.orderid = ov.id
+WHERE 
+    cplld.isdeleted = 0;
 
 
 
@@ -3882,38 +3889,46 @@ INNER JOIN OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
 --13.2
 
 CREATE VIEW OrderVendorEstimateView AS
-SELECT order_vendorestimate.estimatedate,
-    order_vendorestimate.amount,
-    order_vendorestimate.id,
-    order_vendorestimate.estimatedesc,
-    order_vendorestimate.orderid,
-    order_vendorestimate.vendorid,
-    order_vendorestimate.invoicedate,
-    order_vendorestimate.invoiceamount,
-    ordersview.briefdescription,
-    ordersview.clientname,
-    vendor.vendorname,
-    order_vendorestimate.notes,
-    order_vendorestimate.invoicenumber,
-    order_vendorestimate.vat1,
-    order_vendorestimate.vat2,
-    order_vendorestimate.servicetax,
-    ordersview.clientid,
-    order_vendorestimate.createdby AS createdbyid,
-    userview.fullname AS createdby,
-    order_vendorestimate.entityid,
-    entity.name AS entityname,
-    order_vendorestimate.officeid,
-    office.name AS officename
-   FROM order_vendorestimate
-     JOIN ordersview ON order_vendorestimate.orderid = ordersview.id
-     JOIN office ON office.id = order_vendorestimate.officeid
-     JOIN userview ON order_vendorestimate.createdby = userview.userid
-     LEFT JOIN entity ON order_vendorestimate.entityid = entity.id
-     LEFT JOIN vendor ON vendor.id = order_vendorestimate.vendorid;
-
-
-
+SELECT
+    Order_VendorEstimate.EstimateDate,
+    Order_VendorEstimate.Amount,
+    Order_VendorEstimate.ID,
+    Order_VendorEstimate.EstimateDesc,
+    Order_VendorEstimate.OrderID,
+    Order_VendorEstimate.VendorID,
+    Order_VendorEstimate.InvoiceDate,
+    Order_VendorEstimate.InvoiceAmount,
+    OrdersView.BriefDescription,
+    OrdersView.ClientName,
+    Vendor.VendorName,
+    Order_VendorEstimate.Notes,
+    z_VendorEstimateStatus.Status,
+    Order_VendorEstimate.InvoiceNumber,
+    Order_VendorEstimate.Vat1,
+    Order_VendorEstimate.Vat2,
+    Order_VendorEstimate.ServiceTax,
+    OrdersView.ClientID,
+    z_VendorEstimateStatus.ID AS StatusID,
+    Order_VendorEstimate.CreatedBy AS CreatedById,
+    UserView.FullName AS CreatedBy,
+    Order_VendorEstimate.EntityId,
+    Entity.Name AS EntityName,
+    Order_VendorEstimate.OfficeId,
+    Office.Name AS OfficeName
+FROM
+    Order_VendorEstimate
+INNER JOIN
+    OrdersView ON Order_VendorEstimate.OrderID = OrdersView.ID
+INNER JOIN
+    Office ON Office.ID = Order_VendorEstimate.OfficeId
+INNER JOIN
+    UserView ON Order_VendorEstimate.CreatedBy = UserView.UserId
+LEFT OUTER JOIN
+    Entity ON Order_VendorEstimate.EntityId = Entity.ID
+LEFT OUTER JOIN
+    z_VendorEstimateStatus ON Order_VendorEstimate.StatusId = z_VendorEstimateStatus.ID
+LEFT OUTER JOIN
+    Vendor ON Vendor.ID = Order_VendorEstimate.VendorID;
 
 CREATE VIEW vendorstatementview AS
 SELECT
@@ -4067,3 +4082,5 @@ SELECT
      JOIN orders ON order_payment.orderid = orders.id
      JOIN vendor ON order_payment.vendorid = vendor.id
   WHERE orders.id = ANY (ARRAY[31648::bigint, 10770::bigint, 31649::bigint, 353444::bigint, 122525::bigint])
+
+alter table agencytype rename to departmenttype;

@@ -62,6 +62,10 @@ load_dotenv()
 # Get the value of DATABASE_URL
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+async def addLogsForAction(data: dict,conn):
+    with conn[0].cursor() as cursor:
+        query = "INSERT INTO logs (user_id,action,timestamp) VALUES (%s,%s,%s)"
+
 def getdata(conn: psycopg2.extensions.connection):
     return [
         usernames(conn),
@@ -5433,7 +5437,7 @@ async def add_research_govt_agencies(payload: dict, conn: psycopg2.extensions.co
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''INSERT INTO research_government_agencies (agencyname,addressline1,addressline2,suburb,
-                            city,state,country,zip,agencytype,details,contactname,contactmail,contactphone,
+                            city,state,country,zip,departmenttype,details,contactname,contactmail,contactphone,
                             maplink,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'''
                 msg = logMessage(cursor,query,[
                                     payload['agencyname'],
@@ -5477,7 +5481,7 @@ async def edit_research_govt_agencies(payload: dict, conn: psycopg2.extensions.c
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''UPDATE research_government_agencies SET agencyname=%s,addressline1=%s,addressline2=%s,suburb=%s,
-                            city=%s,state=%s,country=%s,zip=%s,agencytype=%s,details=%s,contactname=%s,contactmail=%s,contactphone=%s,
+                            city=%s,state=%s,country=%s,zip=%s,departmenttype=%s,details=%s,contactname=%s,contactmail=%s,contactphone=%s,
                             maplink=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
                 msg = logMessage(cursor,query,[
                                     payload['agencyname'],
@@ -5488,7 +5492,7 @@ async def edit_research_govt_agencies(payload: dict, conn: psycopg2.extensions.c
                                     payload['state'],
                                     payload['country'],
                                     payload['zip'],
-                                    payload['agencytype'],
+                                    payload['departmenttype'],
                                     payload['details'],
                                     payload['contactname'],
                                     payload['contactmail'],
@@ -5540,13 +5544,13 @@ async def delete_research_govt_agencies(payload: dict, conn: psycopg2.extensions
         logging.info(f"Exception encountered:{traceback.format_exc()}")
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
-@app.post('/getAgencyTypeAdmin')
+@app.post('/getDepartmentTypeAdmin')
 async def get_agency_type_admin(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT id,name from agencytype order by name'
+                query = 'SELECT id,name from departmenttype order by name'
                 msg = logMessage(cursor,query)
                 _data = cursor.fetchall()
                 logging.info(msg)
