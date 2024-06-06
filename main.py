@@ -7247,16 +7247,14 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
                 formatData=True,
                 isdeleted=False
             )
-            queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
-            queryclosing = f"SELECT closing_balance,date from {table}"
-            cursor.execute(queryopening)
-            opening = cursor.fetchone()
-            cursor.execute(queryclosing)
-            closing = cursor.fetchone()
-            data['opening_balance'] = opening
-            data['closing_balance'] = closing
+            query = f"SELECT opening_balance,closing_balance from {table}"
+            with conn[0].cursor() as cursor:
+                cursor.execute(query)
+                result = cursor.fetchall()
+                data['opening_balance'] = result[0][0]
+                data['closing_balance'] = result[-1][-1]
 
-            cursor.execute(f'DROP VIEW {table}')
+                cursor.execute(f'DROP VIEW {table}')
             conn[0].commit()
 
             return data
