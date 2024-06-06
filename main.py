@@ -7662,9 +7662,30 @@ async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connectio
 
 @app.post('/reportVendorPaymentSummary')
 async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'VendorSummaryForFinancialYearView'
-    payload['filters'].append(['paymentdate','between',[payload['startdate'],payload['enddate']],'Date'])
-    return await runInTryCatch(
+    payload['table_name'] = f'VendorSummaryForFinancialYearView_{uuid.uuid4().hex}'
+    query = f"""CREATE VIEW {payload['table_name']} AS select 
+            vendorname, 
+            mode_of_payment, 
+            registered, 
+            vattinno, 
+            panno, 
+            gstservicetaxno, 
+            sum(amount) as amount, 
+            sum(tds) as tds, 
+            sum(servicetaxamount) as servicetaxamount  
+            from VendorSummaryForFinancialYearView
+            where paymentdate  between '{payload['startdate']}' and '{payload['enddate']}'
+            group  by 
+            vendorname, 
+            mode_of_payment, 
+            registered, 
+            vattinno, 
+            panno, 
+            gstservicetaxno"""
+    with conn[0].cursor() as cursor:
+        cursor.execute(query)
+        conn[0].commit()
+    data = await runInTryCatch(
         conn = conn,
         fname = 'vendor_payment_summary_for_period',
         payload=payload,
@@ -7673,6 +7694,10 @@ async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connectio
         formatData=True,
         isdeleted=False
     )
+    with conn[0].cursor() as cursor:
+        cursor.execute(f"DROP VIEW {payload['table_name']}")
+        conn[0].commit()
+    return data
 
 @app.post('/reportTDStoGovernment')
 async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
