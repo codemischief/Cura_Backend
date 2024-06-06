@@ -5048,7 +5048,7 @@ async def add_research_agents(payload: dict, conn: psycopg2.extensions.connectio
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
                 msg = logMessage(cursor,query,[
                     payload["nameofagent"],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
-                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_no'],payload["registered"],givenowtime(),payload['user_id'],False
+                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_number'],payload["registered"],givenowtime(),payload['user_id'],False
                 ])
                 logging.info(msg)
                 id = cursor.fetchone()[0]
@@ -5075,7 +5075,7 @@ async def edit_research_agents(payload: dict, conn: psycopg2.extensions.connecti
                 query = """UPDATE realestateagents SET nameofagent=%s,rera_registered_no=%s,agencyname=%s,emailid=%s,phoneno=%s,phoneno2=%s,localitiesdealing=%s,nameofpartners=%s,registered=%s,dated=%s,createdby=%s,isdeleted=%s 
                            WHERE id=%s"""
                 msg = logMessage(cursor,query,[
-                    payload["nameofagent"],payload['rera_registered_no'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
+                    payload["nameofagent"],payload['rera_registered_number'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
                     payload["localitiesdealing"],payload["nameofpartners"],payload["registered"],givenowtime(),payload['user_id'],
                     False,payload['id']
                 ])
