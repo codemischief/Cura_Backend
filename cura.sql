@@ -1866,6 +1866,8 @@ SELECT DISTINCT
     a.contactphone2,
     a.contactmail1,
     a.contactmail2,
+    a.hrcontactname,
+    a.hrcontactmail,
     a.hrcontactphone,
     a.admincontactname,
     a.admincontactmail,
