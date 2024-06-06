@@ -7222,7 +7222,6 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             SELECT
             ClientID,
             ClientName,
-            dated,
             Date,
             Type,
             Amount,
