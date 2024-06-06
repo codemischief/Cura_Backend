@@ -5448,7 +5448,7 @@ async def add_research_govt_agencies(payload: dict, conn: psycopg2.extensions.co
                                     payload['state'],
                                     payload['country'],
                                     payload['zip'],
-                                    payload['agencytype'],
+                                    payload['departmenttype'],
                                     payload['details'],
                                     payload['contactname'],
                                     payload['contactmail'],
