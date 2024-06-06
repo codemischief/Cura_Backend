@@ -4981,6 +4981,8 @@ async def edit_research_employer(payload:dict, conn: psycopg2.extensions.connect
                 conn[0].commit()
             if cursor.statusmessage == "UPDATE 0":
                 raise HTTPException(status_code=403,detail='No Record Available')
+            else:
+                return giveSuccess(payload['user_id'],role_access_status,{"Edited Employer":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
     except KeyError as ke:
