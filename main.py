@@ -62,9 +62,7 @@ load_dotenv()
 # Get the value of DATABASE_URL
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-async def addLogsForAction(data: dict,conn):
-    with conn[0].cursor() as cursor:
-        query = "INSERT INTO logs (user_id,action,timestamp) VALUES (%s,%s,%s)"
+
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -488,6 +486,12 @@ def givenowtime():
     s = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     return s
 
+async def addLogsForAction(data: dict,conn):
+    with conn[0].cursor() as cursor:
+        query = """INSERT INTO useractionmessage (modulename,actionname,parameters,userid,dated,sessionid
+        ) VALUES (%s,%s,%s,%s,%s,%s)"""
+        cursor.execute(query, [data['modulename'],data['actionname'],f'{data["modulename"]} - {data["userid"]}',data['userid'],givenowtime(),data['authorization'][7:]])
+        conn[0].commit()
 def get_db_connection():
     try:
         conn = psycopg2.connect(DATABASE_URL)
@@ -865,9 +869,9 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
 async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_builder_info: received payload <{payload}>')
     try:
-        # role = await getrole(payload,conn,request)
-        # role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
-        role_access_status=check_role_access(conn,payload)
+        role = await getrole(payload,conn,request)
+        role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
+        # role_access_status=check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = '''
@@ -899,6 +903,7 @@ async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensi
                 ))
                 logging.info(msg)
                 id = cursor.fetchone()[0]
+                await addLogsForAction(request.headers,conn)
                  # Commit the transaction
                 conn[0].commit()
                 data= {
