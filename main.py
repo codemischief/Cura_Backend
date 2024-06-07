@@ -1692,7 +1692,7 @@ async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connect
     )
         
 @app.post('/addResearchProspect')
-async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+async def add_research_prospect(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_research_prospect: received payload <{payload}>')
     try:
         # role = await getrole(payload,conn,request)
@@ -1718,7 +1718,7 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
-                # await addLogsForAction(request.headers,conn)
+                await addLogsForAction(request.headers,conn)
             data = {
                 "added_prospect":id
             }
@@ -8133,10 +8133,16 @@ async def report_all_tenant_mail_ids(payload: dict, conn: psycopg2.extensions.co
 @app.post('/reportClientContacts')
 async def report_client_contacts(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'ClientView'
+    query = """ SELECT id,employername,localcontact1name,localcontact1address,
+    localcontact1details,localcontact2name,localcontact2address,localcontact2details
+      FROM ClientView where employername != '' or localcontact1name != '' 
+      or localcontact1address != '' or localcontact1details != '' or localcontact2name != ''
+        or localcontact2address != '' or localcontact2details!='' """
     return await runInTryCatch(
         conn = conn,
         fname = 'report_client_contacts',
         payload = payload,
+        query = query,
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
