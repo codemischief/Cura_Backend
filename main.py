@@ -6376,17 +6376,38 @@ async def report_monthly_margin_entity_receipt_payments(payload: dict, conn: psy
 
 @app.post('/reportMonthlyMarginLOBReceiptPaymentsConsolidated')
 async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'datewiselobserviceview'
-    payload['static'] = True
-    query = """ select zz.lobname, zz.total_orderreceiptamount, zz.total_paymentamount, zz.total_diff from
+    payload['table_name'] = f'datewiselobserviceview_{uuid.uuid4().hex}'
+    query = f'''create or replace view {payload['table_name']} AS SELECT tempdata.lobname,
+    tempdata.service,
+    sum(COALESCE(tempdata.orderreceiptamount, 0::numeric)) AS orderreceiptamount,
+    sum(COALESCE(tempdata.paymentamount, 0::numeric)) AS paymentamount,
+    sum(COALESCE(tempdata.orderreceiptamount, 0::numeric)) - sum(COALESCE(tempdata.paymentamount, 0::numeric)) AS diff
+   FROM ( SELECT orderreceiptlobview.lobname,
+            orderreceiptlobview.service,
+            orderreceiptlobview.orderreceiptamount,
+            0 AS paymentamount,
+            orderreceiptlobview.serviceid
+           FROM orderreceiptlobview WHERE orderreceiptlobview.date > '{payload['startdate']}' AND orderreceiptlobview.date < '{payload['enddate']}'
+        UNION ALL
+         SELECT orderpaymentlobview.lobname,
+            orderpaymentlobview.service,
+            0 AS orderreceiptamount,
+            orderpaymentlobview.paymentamount,
+            orderpaymentlobview.serviceid
+            FROM orderpaymentlobview WHERE orderpaymentlobview.date > '{payload['startdate']}' AND orderpaymentlobview.date < '{payload['enddate']}'
+           ) tempdata 
+  GROUP BY tempdata.lobname, tempdata.service'''
+    with conn[0].cursor() as cursor:
+        cursor.execute(query)
+    query = f""" select zz.lobname, zz.total_orderreceiptamount, zz.total_paymentamount, zz.total_diff from
 (SELECT
     lobname,
     SUM(orderreceiptamount) AS total_orderreceiptamount,
     SUM(paymentamount) AS total_paymentamount,
-    SUM(orderreceiptamount - paymentamount) AS total_diff,
-    max(date) AS date
-        FROM     datewiselobserviceview group by lobname
+    SUM(orderreceiptamount - paymentamount) AS total_diff
+        FROM     {payload['table_name']} group by lobname
 ) as zz"""
+
     payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
@@ -6404,8 +6425,7 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict,
     lobname,
     SUM(orderreceiptamount) AS total_orderreceiptamount,
     SUM(paymentamount) AS total_paymentamount,
-    SUM(orderreceiptamount - paymentamount) AS total_diff,
-    max(date) AS date
+    SUM(orderreceiptamount - paymentamount) AS total_diff
         FROM     datewiselobserviceview group by lobname
 ) as zz"""
     payload['pg_size'] = 0
@@ -8174,4 +8194,5 @@ async def report_client_phone_nos(payload: dict, conn: psycopg2.extensions.conne
         formatData=True,
         isdeleted=False
     )
+
 logger.info("program_started")
