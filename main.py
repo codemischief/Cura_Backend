@@ -1718,7 +1718,7 @@ async def add_research_prospect(payload: dict, request: Request,conn : psycopg2.
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
-                await addLogsForAction(request.headers,conn)
+                # await addLogsForAction(request.headers,conn)
             data = {
                 "added_prospect":id
             }
