@@ -5091,7 +5091,7 @@ async def add_research_agents(payload: dict, conn: psycopg2.extensions.connectio
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
  
                 arr = [
-                    payload["nameofagent"],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
+                    payload["nameofagent"],payload['address'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
                     payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_number'],payload["registered"],givenowtime(),payload['user_id'],False
                 ]
                 logging.info([query.count('%s'),len(arr)])
