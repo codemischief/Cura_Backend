@@ -1884,7 +1884,7 @@ SELECT setval('research_employer_id_seq', COALESCE(max(id), 0) + 1, false) FROM 
 ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_employer_id_seq');
 
 alter table realestateagents alter column registered type bool using registered::boolean;
-alter table realestateagents add column rera_registered_no text;
+alter table realestateagents add column rera_registration_number text;
 
 CREATE VIEW get_research_realestate_agents_view AS
 SELECT DISTINCT

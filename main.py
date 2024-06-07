@@ -5087,17 +5087,17 @@ async def add_research_agents(payload: dict, conn: psycopg2.extensions.connectio
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """INSERT INTO realestateagents (nameofagent,address,agencyname,emailid,phoneno,phoneno2,localitiesdealing,nameofpartners,rera_registered_no,registered,dated,createdby,isdeleted) 
+                query = """INSERT INTO realestateagents (nameofagent,address,agencyname,emailid,phoneno,phoneno2,localitiesdealing,nameofpartners,rera_registration_number,registered,dated,createdby,isdeleted) 
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
  
                 arr = [
                     payload["nameofagent"],payload['address'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
-                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_number'],payload["registered"],givenowtime(),payload['user_id'],False
+                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registration_number'],payload["registered"],givenowtime(),payload['user_id'],False
                 ]
                 logging.info([query.count('%s'),len(arr)])
                 msg = logMessage(cursor,query,[
                     payload["nameofagent"],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
-                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_number'],payload["registered"],givenowtime(),payload['user_id'],False
+                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registration_number'],payload["registered"],givenowtime(),payload['user_id'],False
                 ])
                 id = cursor.fetchone()[0]
                 conn[0].commit()
@@ -5120,10 +5120,10 @@ async def edit_research_agents(payload: dict, conn: psycopg2.extensions.connecti
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """UPDATE realestateagents SET nameofagent=%s,address=%s,rera_registered_no=%s,agencyname=%s,emailid=%s,phoneno=%s,phoneno2=%s,localitiesdealing=%s,nameofpartners=%s,registered=%s,dated=%s,createdby=%s,isdeleted=%s 
+                query = """UPDATE realestateagents SET nameofagent=%s,address=%s,rera_registration_number=%s,agencyname=%s,emailid=%s,phoneno=%s,phoneno2=%s,localitiesdealing=%s,nameofpartners=%s,registered=%s,dated=%s,createdby=%s,isdeleted=%s 
                            WHERE id=%s"""
                 msg = logMessage(cursor,query,[
-                    payload["nameofagent"],payload['address'],payload['rera_registered_number'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
+                    payload["nameofagent"],payload['address'],payload['rera_registration_number'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
                     payload["localitiesdealing"],payload["nameofpartners"],payload["registered"],givenowtime(),payload['user_id'],
                     False,payload['id']
                 ])
