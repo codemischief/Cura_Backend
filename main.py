@@ -14,6 +14,8 @@ import traceback
 import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 import smtplib
 from datetime import timedelta,timezone
 import jwt
@@ -6061,7 +6063,7 @@ async def delete_research_architect(payload:dict,conn:psycopg2.extensions.connec
         logging.info(f"Exception encountered:{traceback.format_exc()}")
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
-def send_email(subject, body,to_email,html=None):
+def send_email(subject, body,to_email,html=None,filename=None):
     # SMTP server configuration
     smtp_server = 'smtpout.secureserver.net'  # Example: 'smtp.gmail.com'
     smtp_port = 587  # For SSL, use 465; for TLS/StartTLS, use 587
@@ -6078,6 +6080,20 @@ def send_email(subject, body,to_email,html=None):
     msg.attach(MIMEText(body, 'plain'))
     if html is not None:
         msg.attach(MIMEText(html, 'html'))
+    if filename is not None:
+        with open(FILE_DIRECTORY+'/'+filename, 'rb') as attachment:
+            part = MIMEBase(filename, 'pdf')
+            part.set_payload(attachment.read())
+        encoders.encode_base64(part)
+
+        # Add header to the attachment
+        part.add_header(
+            'Content-Disposition',
+            f'attachment; filename=ClientStatement.pdf'
+        )
+
+        # Attach the file to the email
+        msg.attach(part)
     # Connect to the SMTP server
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
@@ -7240,15 +7256,25 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             cursor.execute(query)
             conn[0].commit()
             payload['table_name'] = table
-            data = await runInTryCatch(
-                conn = conn,
-                fname = 'report_project_contacts_view',
-                payload = payload,
-                isPaginationRequired=True,
+            data = filterAndPaginate_v2(
+                db_config=DATABASE_URL,
+                required_columns=payload['rows'],
+                table_name=payload['table_name'],
+                filters=payload['filters'],
+                sort_column=payload['sort_by'],
+                sort_order=payload['order'],
+                page_number=0,
+                page_size=0,
                 whereinquery=False,
-                formatData=True,
-                isdeleted=False
+                search_key=payload['search_key'] if 'search_key' in payload else '',
+                isdeleted=False,
+                downloadType='pdf',
+                mapping = payload['mapping'] if 'mapping' in payload else '',
+                group_by=None
             )
+            logging.info("")
+            filename = data['filename']
+
             queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
             queryclosing = f"SELECT closing_balance,date from {table}"
             cursor.execute(queryopening)
@@ -7304,8 +7330,8 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
                 query = f"SELECT email1 from client where id={payload['clientid']}"
                 cursor.execute(query)
                 emailid = cursor.fetchone()[0]
-            send_email("Cura Statement of Account for your Pune property/ies.",'',emailid,html)
-            return data
+            send_email("Cura Statement of Account for your Pune property/ies.",'',emailid,html,filename)
+            return {"sent email to":emailid}
     except psycopg2.Error as e:
         logging.info(traceback.format_exc())
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
