@@ -5045,12 +5045,17 @@ async def add_research_agents(payload: dict, conn: psycopg2.extensions.connectio
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = """INSERT INTO realestateagents (nameofagent,agencyname,emailid,phoneno,phoneno2,localitiesdealing,nameofpartners,rera_registered_no,registered,dated,createdby,isdeleted) 
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+ 
+                arr = [
+                    payload["nameofagent"],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
+                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_number'],payload["registered"],givenowtime(),payload['user_id'],False
+                ]
+                logging.info([query.count('%s'),len(arr)])
                 msg = logMessage(cursor,query,[
                     payload["nameofagent"],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
                     payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_number'],payload["registered"],givenowtime(),payload['user_id'],False
                 ])
-                logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"Inserted Agent":id})
