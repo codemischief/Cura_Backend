@@ -903,9 +903,9 @@ async def delete_country(payload: dict, conn: psycopg2.extensions.connection = D
 async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_builder_info: received payload <{payload}>')
     try:
-        role = await getrole(payload,conn,request)
-        role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
-        # role_access_status=check_role_access(conn,payload)
+        # role = await getrole(payload,conn,request)
+        # role_access_status = await check_role_access_new(conn, payload,request=request,method='addBuilderInfo')
+        role_access_status=check_role_access(conn,payload)
         if role_access_status==1:
             with conn[0].cursor() as cursor:
                 query = '''
@@ -937,7 +937,7 @@ async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensi
                 ))
                 logging.info(msg)
                 id = cursor.fetchone()[0]
-                await addLogsForAction(request.headers,conn)
+                # await addLogsForAction(request.headers,conn)
                  # Commit the transaction
                 conn[0].commit()
                 data= {
