@@ -5096,7 +5096,7 @@ async def add_research_agents(payload: dict, conn: psycopg2.extensions.connectio
                 ]
                 logging.info([query.count('%s'),len(arr)])
                 msg = logMessage(cursor,query,[
-                    payload["nameofagent"],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
+                    payload["nameofagent"],payload['address'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
                     payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registration_number'],payload["registered"],givenowtime(),payload['user_id'],False
                 ])
                 id = cursor.fetchone()[0]
