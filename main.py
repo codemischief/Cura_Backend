@@ -6428,7 +6428,6 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict,
 ) as zz"""
     payload['pg_size'] = 0
     payload['pg_no'] = 0
-    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
     dt = await runInTryCatch(
