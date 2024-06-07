@@ -6106,7 +6106,7 @@ def send_email(subject, body, to_email):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
-def create_token(payload: dict,expires:timedelta|None = None):
+def create_token(payload: dict,expires:timedelta = None):
     key = secrets.token_hex(4)
     to_encode = payload.copy()
     if expires:
