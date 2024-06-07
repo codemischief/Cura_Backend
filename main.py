@@ -62,9 +62,7 @@ load_dotenv()
 # Get the value of DATABASE_URL
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-async def addLogsForAction(data: dict,conn):
-    with conn[0].cursor() as cursor:
-        query = "INSERT INTO logs (user_id,action,timestamp) VALUES (%s,%s,%s)"
+
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -488,6 +486,12 @@ def givenowtime():
     s = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     return s
 
+async def addLogsForAction(data: dict,conn):
+    with conn[0].cursor() as cursor:
+        query = """INSERT INTO useractionmessage (modulename,actionname,parameters,userid,dated,sessionid
+        ) VALUES (%s,%s,%s,%s,%s,%s)"""
+        cursor.execute(query, [data['modulename'],data['actionname'],f'{data["modulename"]} - {data["userid"]}',data['userid'],givenowtime(),data['authorization'][7:]])
+        conn[0].commit()
 def get_db_connection():
     try:
         conn = psycopg2.connect(DATABASE_URL)
@@ -1656,6 +1660,7 @@ async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connect
 async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_research_prospect: received payload <{payload}>')
     try:
+        # role = await getrole(payload,conn,request)
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
@@ -1678,6 +1683,7 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
+                # await addLogsForAction(request.headers,conn)
             data = {
                 "added_prospect":id
             }
@@ -7737,6 +7743,7 @@ async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connec
     payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
+    payload['search_key'] = ''
     query = 'SELECT COALESCE(SUM(invoiceamount_orderpaymentamount),0) AS invoiceamount_orderpaymentamount FROM VendorStatementView'
     total_data = await runInTryCatch(
         conn = conn,
