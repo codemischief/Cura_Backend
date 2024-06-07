@@ -23,6 +23,11 @@ import pandas as pd
 import uuid
 from dotenv import load_dotenv
 import os
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib.units import mm, inch
+
 
 # Load the .env file
 
@@ -284,6 +289,15 @@ def filterAndPaginate(db_config,
         msg = str(e).replace("\n","")
         return {'data':None, 'message':f'exception due to <{msg}>'}
 
+# Function to calculate column widths (for pdf generation)
+def get_column_widths(data):
+    col_widths = []
+    for col in data.columns:
+        max_len = max(data[col].astype(str).map(len).max(), len(col)) + 5  # Add padding
+        col_widths.append(max_len * 5)  # Adjust this multiplier as needed
+    return col_widths
+
+
 def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = None):
     try:
         logging.info("Here")
@@ -294,10 +308,30 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         df.reset_index(inplace=True)
         df['index'] += 1
         df.rename(columns={"index":"Sr No."},inplace=True)
-        filename = f'{uuid.uuid4()}.xlsx'
-        fname = f'./downloads/{filename}'
-        df.to_excel(fname, engine='openpyxl',index=False)
-        logging.info(f'generated excel file <{fname}>')
+        #---------------------------------------------------
+        filename = None
+        if downloadType == 'excel':
+            filename = f'{uuid.uuid4()}.xlsx'
+            fname = f'./downloads/{filename}'
+            df.to_excel(fname, engine='openpyxl',index=False)
+            logging.info(f'generated excel file <{fname}>')
+        else:
+            data_list = [df.columns.values.tolist()] + df.values.tolist()
+            filename = f'{uuid.uuid4()}.pdf'
+            fname = f'./downloads/{filename}'
+            # we may need to vary the pagesize based on each report
+            pagesize = (55 * inch, 28 * inch)
+            pdf = SimpleDocTemplate(fname, pagesize=pagesize)
+            table = Table(data_list, colWidths=get_column_widths(df))
+            style = TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ])
+            table.setStyle(style)
+            elements = [table]
+            pdf.build(elements)
         return filename
     except Exception as e:
         msg = str(e).replace("\n","")
@@ -1661,6 +1695,7 @@ async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connect
 async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_research_prospect: received payload <{payload}>')
     try:
+        # role = await getrole(payload,conn,request)
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
@@ -1683,6 +1718,7 @@ async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connec
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
+                # await addLogsForAction(request.headers,conn)
             data = {
                 "added_prospect":id
             }
@@ -5050,12 +5086,17 @@ async def add_research_agents(payload: dict, conn: psycopg2.extensions.connectio
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = """INSERT INTO realestateagents (nameofagent,agencyname,emailid,phoneno,phoneno2,localitiesdealing,nameofpartners,rera_registered_no,registered,dated,createdby,isdeleted) 
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+ 
+                arr = [
+                    payload["nameofagent"],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
+                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_number'],payload["registered"],givenowtime(),payload['user_id'],False
+                ]
+                logging.info([query.count('%s'),len(arr)])
                 msg = logMessage(cursor,query,[
                     payload["nameofagent"],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
-                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_no'],payload["registered"],givenowtime(),payload['user_id'],False
+                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_number'],payload["registered"],givenowtime(),payload['user_id'],False
                 ])
-                logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"Inserted Agent":id})
@@ -5080,7 +5121,7 @@ async def edit_research_agents(payload: dict, conn: psycopg2.extensions.connecti
                 query = """UPDATE realestateagents SET nameofagent=%s,rera_registered_no=%s,agencyname=%s,emailid=%s,phoneno=%s,phoneno2=%s,localitiesdealing=%s,nameofpartners=%s,registered=%s,dated=%s,createdby=%s,isdeleted=%s 
                            WHERE id=%s"""
                 msg = logMessage(cursor,query,[
-                    payload["nameofagent"],payload['rera_registered_no'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
+                    payload["nameofagent"],payload['rera_registered_number'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
                     payload["localitiesdealing"],payload["nameofpartners"],payload["registered"],givenowtime(),payload['user_id'],
                     False,payload['id']
                 ])
@@ -5453,7 +5494,7 @@ async def add_research_govt_agencies(payload: dict, conn: psycopg2.extensions.co
                                     payload['state'],
                                     payload['country'],
                                     payload['zip'],
-                                    payload['agencytype'],
+                                    payload['departmenttype'],
                                     payload['details'],
                                     payload['contactname'],
                                     payload['contactmail'],
@@ -6100,7 +6141,7 @@ def send_email(subject, body, to_email):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
-def create_token(payload: dict,expires:timedelta|None = None):
+def create_token(payload: dict,expires:timedelta = None):
     key = secrets.token_hex(4)
     to_encode = payload.copy()
     if expires:
@@ -7742,6 +7783,7 @@ async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connec
     payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
+    payload['search_key'] = ''
     query = 'SELECT COALESCE(SUM(invoiceamount_orderpaymentamount),0) AS invoiceamount_orderpaymentamount FROM VendorStatementView'
     total_data = await runInTryCatch(
         conn = conn,
