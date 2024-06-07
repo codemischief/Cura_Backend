@@ -23,6 +23,11 @@ import pandas as pd
 import uuid
 from dotenv import load_dotenv
 import os
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib.units import mm, inch
+
 
 # Load the .env file
 
@@ -284,6 +289,15 @@ def filterAndPaginate(db_config,
         msg = str(e).replace("\n","")
         return {'data':None, 'message':f'exception due to <{msg}>'}
 
+# Function to calculate column widths (for pdf generation)
+def get_column_widths(data):
+    col_widths = []
+    for col in data.columns:
+        max_len = max(data[col].astype(str).map(len).max(), len(col)) + 5  # Add padding
+        col_widths.append(max_len * 5)  # Adjust this multiplier as needed
+    return col_widths
+
+
 def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = None):
     try:
         logging.info("Here")
@@ -294,10 +308,30 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         df.reset_index(inplace=True)
         df['index'] += 1
         df.rename(columns={"index":"Sr No."},inplace=True)
-        filename = f'{uuid.uuid4()}.xlsx'
-        fname = f'./downloads/{filename}'
-        df.to_excel(fname, engine='openpyxl',index=False)
-        logging.info(f'generated excel file <{fname}>')
+        #---------------------------------------------------
+        filename = None
+        if downloadType == 'excel':
+            filename = f'{uuid.uuid4()}.xlsx'
+            fname = f'./downloads/{filename}'
+            df.to_excel(fname, engine='openpyxl',index=False)
+            logging.info(f'generated excel file <{fname}>')
+        else:
+            data_list = [df.columns.values.tolist()] + df.values.tolist()
+            filename = f'{uuid.uuid4()}.pdf'
+            fname = f'./downloads/{filename}'
+            # we may need to vary the pagesize based on each report
+            pagesize = (55 * inch, 28 * inch)
+            pdf = SimpleDocTemplate(fname, pagesize=pagesize)
+            table = Table(data_list, colWidths=get_column_widths(df))
+            style = TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ])
+            table.setStyle(style)
+            elements = [table]
+            pdf.build(elements)
         return filename
     except Exception as e:
         msg = str(e).replace("\n","")
@@ -6106,7 +6140,7 @@ def send_email(subject, body, to_email):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
-def create_token(payload: dict,expires:timedelta|None = None):
+def create_token(payload: dict,expires:timedelta = None):
     key = secrets.token_hex(4)
     to_encode = payload.copy()
     if expires:
