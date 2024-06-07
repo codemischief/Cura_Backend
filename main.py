@@ -6399,6 +6399,7 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict,
   GROUP BY tempdata.lobname, tempdata.service'''
     with conn[0].cursor() as cursor:
         cursor.execute(query)
+        conn[0].commit()
     query = f""" select zz.lobname, zz.total_orderreceiptamount, zz.total_paymentamount, zz.total_diff from
 (SELECT
     lobname,
@@ -6450,6 +6451,9 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict,
     total['total_orderreceiptamount'] = total_orderreceiptamount
     total['total_paymentamount'] = total_paymentamount
     total['total_diff'] = total_diff
+    with conn[0].cursor() as cursor:
+        cursor.execute(f"drop view {payload['table_name']}")
+        conn[0].commit()
 #     query = f'''SELECT SUM(zz.total_orderreceiptamount) AS total_orderreceiptamount,SUM(zz.total_paymentamount) AS total_paymentamount,SUM(zz.total_diff) as total_diff,max(zz.date) FROM (SELECT
 #     lobname,
 #     SUM(orderreceiptamount) AS total_orderreceiptamount,
