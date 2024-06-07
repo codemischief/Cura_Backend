@@ -1886,7 +1886,7 @@ ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_empl
 alter table realestateagents alter column registered type bool using registered::boolean;
 alter table realestateagents add column rera_registration_number text;
 
-CREATE VIEW get_research_realestate_agents_view AS
+CREATE OR REPLACE VIEW get_research_realestate_agents_view AS
 SELECT DISTINCT
     a.id,
     a.nameofagent,
@@ -1900,7 +1900,8 @@ SELECT DISTINCT
     CASE a.registered WHEN true THEN 'Yes' ELSE 'No' END as registered,
     a.isdeleted,
     a.dated,
-    a.createdby
+    a.createdby,
+    a.rera_registration_number
 FROM
     realestateagents a;
 
