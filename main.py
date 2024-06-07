@@ -6407,8 +6407,6 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict,
     SUM(orderreceiptamount - paymentamount) AS total_diff
         FROM     {payload['table_name']} group by lobname
 ) as zz"""
-
-    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
     data = await runInTryCatch(
