@@ -7399,8 +7399,6 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
     </body>
 </html>
 '''
-            with open('test.html','w') as files:
-                files.write(html)
             if not payload['sendEmail']: return data
 # Fetch the client's email address from the database
             with conn[0].cursor() as cursor:
@@ -7866,7 +7864,7 @@ async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connectio
 @app.post('/reportVendorStatement')
 async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'VendorStatementView'
-    if 'vendorid' in payload and payload['vendorid'] != 'all':
+    if 'vendorID' in payload and payload['vendorID'] != 'all':
         payload['filters'].append(['vendorid','equalTo',payload['vendorID'],'Numeric'])
     payload['filters'].append(['invoicedate_orderpaymentdate','between',[payload['startdate'],payload['enddate']],'Date'])
     data = await runInTryCatch(
