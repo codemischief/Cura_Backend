@@ -7087,18 +7087,19 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
     payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
-    query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
     total_amount = await runInTryCatch(
         conn = conn,
         fname = 'get_total_amount',
-        query = query,
         payload=payload,
         isPaginationRequired=True,
         formatData=True,
         whereinquery=False,
         isdeleted=False
     )
-    data['total_amount'] = total_amount['data']
+    sum = 0
+    for i in total_amount['data']:
+        sum += i['amount']
+    data['total_amount'] = [{"sumamount":sum}]
     return data
 
 @app.post('/reportClientOrderReceiptMismatchDetails')
