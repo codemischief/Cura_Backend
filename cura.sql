@@ -1884,9 +1884,9 @@ SELECT setval('research_employer_id_seq', COALESCE(max(id), 0) + 1, false) FROM 
 ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_employer_id_seq');
 
 alter table realestateagents alter column registered type bool using registered::boolean;
-alter table realestateagents add column rera_registered_no text;
+alter table realestateagents add column rera_registration_number text;
 
-CREATE VIEW get_research_realestate_agents_view AS
+CREATE OR REPLACE VIEW get_research_realestate_agents_view AS
 SELECT DISTINCT
     a.id,
     a.nameofagent,
@@ -1900,7 +1900,8 @@ SELECT DISTINCT
     CASE a.registered WHEN true THEN 'Yes' ELSE 'No' END as registered,
     a.isdeleted,
     a.dated,
-    a.createdby
+    a.createdby,
+    a.rera_registration_number
 FROM
     realestateagents a;
 
@@ -4074,3 +4075,5 @@ SELECT
   WHERE orders.id = ANY (ARRAY[31648::bigint, 10770::bigint, 31649::bigint, 353444::bigint, 122525::bigint])
 
 alter table agencytype rename to departmenttype;
+
+alter table banksandbranches add column address text;

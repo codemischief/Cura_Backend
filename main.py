@@ -14,6 +14,8 @@ import traceback
 import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 import smtplib
 from datetime import timedelta,timezone
 import jwt
@@ -23,6 +25,11 @@ import pandas as pd
 import uuid
 from dotenv import load_dotenv
 import os
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib.units import mm, inch
+
 
 # Load the .env file
 
@@ -284,6 +291,15 @@ def filterAndPaginate(db_config,
         msg = str(e).replace("\n","")
         return {'data':None, 'message':f'exception due to <{msg}>'}
 
+# Function to calculate column widths (for pdf generation)
+def get_column_widths(data):
+    col_widths = []
+    for col in data.columns:
+        max_len = max(data[col].astype(str).map(len).max(), len(col)) + 5  # Add padding
+        col_widths.append(max_len * 5)  # Adjust this multiplier as needed
+    return col_widths
+
+
 def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = None):
     try:
         logging.info("Here")
@@ -294,10 +310,30 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         df.reset_index(inplace=True)
         df['index'] += 1
         df.rename(columns={"index":"Sr No."},inplace=True)
-        filename = f'{uuid.uuid4()}.xlsx'
-        fname = f'./downloads/{filename}'
-        df.to_excel(fname, engine='openpyxl',index=False)
-        logging.info(f'generated excel file <{fname}>')
+        #---------------------------------------------------
+        filename = None
+        if downloadType == 'excel':
+            filename = f'{uuid.uuid4()}.xlsx'
+            fname = f'./downloads/{filename}'
+            df.to_excel(fname, engine='openpyxl',index=False)
+            logging.info(f'generated excel file <{fname}>')
+        else:
+            data_list = [df.columns.values.tolist()] + df.values.tolist()
+            filename = f'{uuid.uuid4()}.pdf'
+            fname = f'./downloads/{filename}'
+            # we may need to vary the pagesize based on each report
+            pagesize = (55 * inch, 28 * inch)
+            pdf = SimpleDocTemplate(fname, pagesize=pagesize)
+            table = Table(data_list, colWidths=get_column_widths(df))
+            style = TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ])
+            table.setStyle(style)
+            elements = [table]
+            pdf.build(elements)
         return filename
     except Exception as e:
         msg = str(e).replace("\n","")
@@ -490,7 +526,7 @@ async def addLogsForAction(data: dict,conn):
     with conn[0].cursor() as cursor:
         query = """INSERT INTO useractionmessage (modulename,actionname,parameters,userid,dated,sessionid
         ) VALUES (%s,%s,%s,%s,%s,%s)"""
-        cursor.execute(query, [data['modulename'],data['actionname'],f'{data["modulename"]} - {data["userid"]}',data['userid'],givenowtime(),data['authorization'][7:]])
+        cursor.execute(query, [data['modulename'],data['actionname'],f'{data["modulename"]} - {data["user_id"]}',data['user_id'],givenowtime(),data['authorization'][7:]])
         conn[0].commit()
 def get_db_connection():
     try:
@@ -903,6 +939,7 @@ async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensi
                 ))
                 logging.info(msg)
                 id = cursor.fetchone()[0]
+                # await addLogsForAction(request.headers,conn)
                  # Commit the transaction
                 conn[0].commit()
                 data= {
@@ -1657,7 +1694,7 @@ async def get_research_prospect(payload: dict, conn: psycopg2.extensions.connect
     )
         
 @app.post('/addResearchProspect')
-async def add_research_prospect(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+async def add_research_prospect(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_research_prospect: received payload <{payload}>')
     try:
         # role = await getrole(payload,conn,request)
@@ -5050,13 +5087,18 @@ async def add_research_agents(payload: dict, conn: psycopg2.extensions.connectio
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """INSERT INTO realestateagents (nameofagent,agencyname,emailid,phoneno,phoneno2,localitiesdealing,nameofpartners,rera_registered_no,registered,dated,createdby,isdeleted) 
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                query = """INSERT INTO realestateagents (nameofagent,address,agencyname,emailid,phoneno,phoneno2,localitiesdealing,nameofpartners,rera_registration_number,registered,dated,createdby,isdeleted) 
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+ 
+                arr = [
+                    payload["nameofagent"],payload['address'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
+                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registration_number'],payload["registered"],givenowtime(),payload['user_id'],False
+                ]
+                logging.info([query.count('%s'),len(arr)])
                 msg = logMessage(cursor,query,[
-                    payload["nameofagent"],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
-                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registered_no'],payload["registered"],givenowtime(),payload['user_id'],False
+                    payload["nameofagent"],payload['address'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
+                    payload["localitiesdealing"],payload["nameofpartners"],payload['rera_registration_number'],payload["registered"],givenowtime(),payload['user_id'],False
                 ])
-                logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"Inserted Agent":id})
@@ -5078,10 +5120,10 @@ async def edit_research_agents(payload: dict, conn: psycopg2.extensions.connecti
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """UPDATE realestateagents SET nameofagent=%s,rera_registered_no=%s,agencyname=%s,emailid=%s,phoneno=%s,phoneno2=%s,localitiesdealing=%s,nameofpartners=%s,registered=%s,dated=%s,createdby=%s,isdeleted=%s 
+                query = """UPDATE realestateagents SET nameofagent=%s,address=%s,rera_registration_number=%s,agencyname=%s,emailid=%s,phoneno=%s,phoneno2=%s,localitiesdealing=%s,nameofpartners=%s,registered=%s,dated=%s,createdby=%s,isdeleted=%s 
                            WHERE id=%s"""
                 msg = logMessage(cursor,query,[
-                    payload["nameofagent"],payload['rera_registered_no'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
+                    payload["nameofagent"],payload['address'],payload['rera_registration_number'],payload["agencyname"],payload["emailid"],payload["phoneno"],payload["phoneno2"],
                     payload["localitiesdealing"],payload["nameofpartners"],payload["registered"],givenowtime(),payload['user_id'],
                     False,payload['id']
                 ])
@@ -5454,7 +5496,7 @@ async def add_research_govt_agencies(payload: dict, conn: psycopg2.extensions.co
                                     payload['state'],
                                     payload['country'],
                                     payload['zip'],
-                                    payload['agencytype'],
+                                    payload['departmenttype'],
                                     payload['details'],
                                     payload['contactname'],
                                     payload['contactmail'],
@@ -5686,11 +5728,12 @@ async def add_research_banks_and_branches(payload: dict,conn: psycopg2.extension
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """INSERT INTO banksandbranches (name,emailid,phoneno,website,
+                query = """INSERT INTO banksandbranches (name,address,emailid,phoneno,website,
                     contact,dated,createdby,isdeleted,excludefrommailinglist) VALUES (%s,
-                    %s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
+                    payload['address'],
                     payload['emailid'],
                     payload['phoneno'],
                     payload['website'],
@@ -5722,10 +5765,11 @@ async def edit_research_banks_and_branches(payload: dict,conn: psycopg2.extensio
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """UPDATE banksandbranches SET name=%s,emailid=%s,phoneno=%s,website=%s,
+                query = """UPDATE banksandbranches SET name=%s,address=%s,emailid=%s,phoneno=%s,website=%s,
                     contact=%s,dated=%s,createdby=%s,isdeleted=%s,excludefrommailinglist=%s WHERE id=%s"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
+                    payload['address'],
                     payload['emailid'],
                     payload['phoneno'],
                     payload['website'],
@@ -6073,7 +6117,7 @@ async def delete_research_architect(payload:dict,conn:psycopg2.extensions.connec
         logging.info(f"Exception encountered:{traceback.format_exc()}")
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
-def send_email(subject, body, to_email):
+def send_email(subject, body,to_email,html=None,filename=None):
     # SMTP server configuration
     smtp_server = 'smtpout.secureserver.net'  # Example: 'smtp.gmail.com'
     smtp_port = 587  # For SSL, use 465; for TLS/StartTLS, use 587
@@ -6088,7 +6132,22 @@ def send_email(subject, body, to_email):
 
     # Add body to the email
     msg.attach(MIMEText(body, 'plain'))
+    if html is not None:
+        msg.attach(MIMEText(html, 'html'))
+    if filename is not None:
+        with open(f"{FILE_DIRECTORY}/{filename}", 'rb') as attachment:
+            part = MIMEBase(filename, 'pdf')
+            part.set_payload(attachment.read())
+        encoders.encode_base64(part)
 
+        # Add header to the attachment
+        part.add_header(
+            'Content-Disposition',
+            f'attachment; filename=ClientStatement.pdf'
+        )
+
+        # Attach the file to the email
+        msg.attach(part)
     # Connect to the SMTP server
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
@@ -6099,9 +6158,10 @@ def send_email(subject, body, to_email):
         server.quit()
         print("Email sent successfully!")
     except Exception as e:
+        logging.info(traceback.format_exc())
         print(f"Failed to send email: {e}")
 
-def create_token(payload: dict,expires:timedelta|None = None):
+def create_token(payload: dict,expires:timedelta = None):
     key = secrets.token_hex(4)
     to_encode = payload.copy()
     if expires:
@@ -6915,8 +6975,9 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
 @app.post('/reportClientStatement')
 async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'clientstatementview'
+    payload['filters'].append(['type','doesNotContain','payment','String'])
     payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
-    return await runInTryCatch(
+    data = await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
@@ -6925,6 +6986,24 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         formatData=True,
         isdeleted=False
     )
+    payload['sort_by'] = []
+    payload['order']=''
+    payload['pg_no']=0
+    payload['pg_size']=0
+    total =  await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    sum = 0
+    for i in total['data']:
+        sum+= i['amount'] if i['amount'] is not None else 0
+    data['total'] = {"totalamount":sum}
+    return data
 
 @app.post('/reportDuplicateClients')
 async def report_duplicate_clients(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6994,7 +7073,7 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
     if 'entityName' in payload and payload['entityName'] != 'all':
-        payload['filters'].append(['entityname','equalTo',payload['entityName'],'String'])  
+        payload['filters'].append(['entity','equalTo',payload['entityName'],'String'])  
     data = await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
@@ -7008,18 +7087,19 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
     payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
-    query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
     total_amount = await runInTryCatch(
         conn = conn,
         fname = 'get_total_amount',
-        query = query,
         payload=payload,
         isPaginationRequired=True,
         formatData=True,
         whereinquery=False,
         isdeleted=False
     )
-    data['total_amount'] = total_amount['data']
+    sum = 0
+    for i in total_amount['data']:
+        sum += i['amount']
+    data['total_amount'] = [{"sumamount":sum}]
     return data
 
 @app.post('/reportClientOrderReceiptMismatchDetails')
@@ -7250,31 +7330,88 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             cursor.execute(query)
             conn[0].commit()
             payload['table_name'] = table
-            data = await runInTryCatch(
-                conn = conn,
-                fname = 'report_project_contacts_view',
-                payload = payload,
-                isPaginationRequired=True,
+            data = filterAndPaginate_v2(
+                db_config=DATABASE_URL,
+                required_columns=payload['rows'],
+                table_name=payload['table_name'],
+                filters=payload['filters'],
+                sort_column=payload['sort_by'],
+                sort_order=payload['order'],
+                page_number=0,
+                page_size=0,
                 whereinquery=False,
-                formatData=True,
-                isdeleted=False
+                search_key=payload['search_key'] if 'search_key' in payload else '',
+                isdeleted=False,
+                downloadType='pdf',
+                mapping = payload['mapping'] if 'mapping' in payload else '',
+                group_by=None
             )
+            logging.info("")
+            filename = data['filename']
+
             queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
             queryclosing = f"SELECT closing_balance,date from {table}"
             cursor.execute(queryopening)
             opening = cursor.fetchone()
             cursor.execute(queryclosing)
             closing = cursor.fetchone()
-            data['opening_balance'] = opening
-            data['closing_balance'] = closing
-
+            data['opening_balance'] = opening if opening else 0
+            data['closing_balance'] = closing if closing else 0
+            logging.info(f"data is {data['data']}")
             cursor.execute(f'DROP VIEW {table}')
             conn[0].commit()
-
-            return data
+            vardata='<p style="color: purple;">No statement could be generated</p>'
+            html = f'''
+<html>
+    <body style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 18px;">
+        <p>
+            Hi,<br>Please find attached Statement of Account from {payload['startdate']} to {payload['enddate']} for your property/ies.
+        </p>
+        <p>
+            <ul style="color: purple;">
+                <li>Balance due till date is Rs. {data['closing_balance']}/- including 18% taxes (GST).</li>
+                <li>You can transfer the dues to our usual ICICI bank account given below.</li>
+                <li>Let us know when you transfer the dues so that we can confirm receipt.</li>
+            </ul>
+        </p>
+        <p>Important Notes:</p>
+        <p>
+            <ol style="color: blue;">
+                <li>Please make sure to check your bank account each month for receipt of rent if we have rented your property. Let us know if you do not receive your rent on time.</li>
+                <li>Ensure that your bank account does not become inactive or dormant by making at least 1 payment from your account every 1-2 months and updating your KYC as per the Bank policies from time to time, else you will not be able to receive rent in your bank account. Activating an inactive bank account is a very lengthy and cumbersome process.</li>
+            </ol>
+            {vardata if data['data']==[] else ''}
+        </p>
+        <p style="color: purple;">
+            Cura bank account details:<br>
+            Account name: DAP Consultants Pvt Ltd<br>
+            Bank: ICICI Bank<br>
+            Branch: Baner Road, Pune<br>
+            Account Number: 098505001242<br>
+            Type of Account: Current Account<br>
+            IFSC code: ICIC0000985
+        </p>
+        <p>
+            Thanks and Regards<br>
+            Property Management Team<br>
+            Cura Property Services
+        </p>
+    </body>
+</html>
+'''
+            if not payload['sendEmail']: return data
+# Fetch the client's email address from the database
+            with conn[0].cursor() as cursor:
+                query = f"SELECT email1 from client where id={payload['clientid']}"
+                cursor.execute(query)
+                emailid = cursor.fetchone()[0]
+            send_email("Cura Statement of Account for your Pune property/ies.",'',emailid,html,filename if filename else None)
+            return {"sent email to":emailid}
     except psycopg2.Error as e:
+        logging.info(traceback.format_exc())
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
     except Exception as e:
+        logging.info(traceback.format_exc())
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
 @app.post('/reportClientReceiptBankMode')
@@ -7727,7 +7864,7 @@ async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connectio
 @app.post('/reportVendorStatement')
 async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'VendorStatementView'
-    if 'vendorid' in payload and payload['vendorid'] != 'all':
+    if 'vendorID' in payload and payload['vendorID'] != 'all':
         payload['filters'].append(['vendorid','equalTo',payload['vendorID'],'Numeric'])
     payload['filters'].append(['invoicedate_orderpaymentdate','between',[payload['startdate'],payload['enddate']],'Date'])
     data = await runInTryCatch(
@@ -8015,7 +8152,7 @@ async def report_exception_bank_st_wrong_names(payload: dict, conn: psycopg2.ext
 @app.post('/reportExceptionEntityBlank')
 async def report_exception_entity_blank(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'Rpt_EntityblankView'
-    return await runInTryCatch(
+    data = await runInTryCatch(
         conn = conn,
         fname = 'report_exception_entity_blank',
         payload = payload,
@@ -8024,7 +8161,26 @@ async def report_exception_entity_blank(payload: dict, conn: psycopg2.extensions
         formatData=True,
         isdeleted=False
     )
-
+    payload['pg_size'] = 0
+    payload['pg_no'] = 0
+    total = await runInTryCatch(
+        conn = conn,
+        fname = 'report_exception_entity_blank',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    try:
+        sum = 0
+        for i in total['data']:
+            sum += i['amount'] if i['amount']else 0
+        data['total'] = {'totalamount':sum}
+        return data
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
 @app.post('/reportExceptionOwnerNoProperties')
 async def report_exception_owner_no_properties(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'noPropertyOwnersView'
@@ -8093,10 +8249,16 @@ async def report_all_tenant_mail_ids(payload: dict, conn: psycopg2.extensions.co
 @app.post('/reportClientContacts')
 async def report_client_contacts(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'ClientView'
+    query = """ SELECT id,employername,localcontact1name,localcontact1address,
+    localcontact1details,localcontact2name,localcontact2address,localcontact2details
+      FROM ClientView where employername != '' or localcontact1name != '' 
+      or localcontact1address != '' or localcontact1details != '' or localcontact2name != ''
+        or localcontact2address != '' or localcontact2details!='' """
     return await runInTryCatch(
         conn = conn,
         fname = 'report_client_contacts',
         payload = payload,
+        query = query,
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
@@ -8128,6 +8290,7 @@ async def report_client_phone_nos(payload: dict, conn: psycopg2.extensions.conne
         formatData=True,
         isdeleted=False
     )
+
 
 @app.post('/reportVendorSummary')
 async def report_vendor_summary(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -8166,4 +8329,5 @@ async def report_vendor_summary(payload: dict, conn: psycopg2.extensions.connect
             d['computedpending'] += i['computedpending']
     data['total'] = d
     return data
+
 logger.info("program_started")
