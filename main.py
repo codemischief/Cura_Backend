@@ -8128,4 +8128,42 @@ async def report_client_phone_nos(payload: dict, conn: psycopg2.extensions.conne
         formatData=True,
         isdeleted=False
     )
+
+@app.post('/reportVendorSummary')
+async def report_vendor_summary(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'vendorsummary'
+    data = await runInTryCatch(
+        conn=conn,
+        fname = 'report_vendor_summary',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    payload['pg_no'] = 0
+    payload['pg_size'] = 0
+    total = await runInTryCatch(
+        conn=conn,
+        fname = 'report_vendor_summary',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    d = {       
+        "estimateamount":0,
+        "paymentamount":0,
+        "invoiceamount":0,
+        "computedpending":0
+    }
+    for i in total['data']:
+        for j in d:
+            d['estimateamount'] += i['estimateamount']
+            d['paymentamount'] += i['paymentamount']
+            d['invoiceamount'] += i['invoiceamount']
+            d['computedpending'] += i['computedpending']
+    data['total'] = d
+    return data
 logger.info("program_started")
