@@ -2569,58 +2569,53 @@ LEFT OUTER JOIN howreceived ON client_receipt.howreceivedid = howreceived.id
 LEFT OUTER JOIN entity ON client_receipt.entityid = entity.id
 LEFT OUTER JOIN payment_source ON client_receipt.paymentsource = payment_source.id;
 
-CREATE OR REPLACE VIEW rpt_pmaclient AS
-SELECT
-    'Invoice' AS type,
+create or replace view rpt_pmaclient as 
+
+ SELECT 'Invoice'::text AS type,
     ordersview.clientname,
     order_invoice.id,
     order_invoice.invoicedate AS date,
     order_invoice.invoiceamount AS amount,
-    NULL AS tds,
-    REPLACE(REPLACE(ordersview.briefdescription, CHR(10), ''), CHR(13), '') AS orderdetails,
+    NULL::numeric AS tds,
+    replace(replace(ordersview.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
     entity.name AS entity,
     services.service,
-    REPLACE(REPLACE(order_invoice.quotedescription, CHR(10), ''), CHR(13), '') AS details,
-    '' AS mode,
+    replace(replace(order_invoice.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
+    ''::text AS mode,
     ordersview.clienttypename AS clienttype,
     ordersview.id AS orderid,
-    ordersview.clientid AS clientid,
-    getmonthyear(order_invoice.invoicedate) AS monthyear,
+    ordersview.clientid,
+    getmonthyear(order_invoice.invoicedate::timestamp without time zone) AS monthyear,
     getfinancialyear(order_invoice.invoicedate) AS fy,
     ordersview.lobname
-FROM
-    order_invoice
-LEFT OUTER JOIN ordersview ON ordersview.id = order_invoice.orderid
-LEFT OUTER JOIN entity ON entity.id = order_invoice.entityid
-LEFT OUTER JOIN services ON services.id = ordersview.serviceid
-WHERE
-    ordersview.clienttypename ilike '%PMA%'
+   FROM order_invoice
+     LEFT JOIN ordersview ON ordersview.id = order_invoice.orderid
+     LEFT JOIN entity ON entity.id = order_invoice.entityid
+     LEFT JOIN services ON services.id = ordersview.serviceid
+  WHERE ordersview.clienttypename ilike '%PMA%'::text
 UNION ALL
-SELECT
-    'Payment' AS type,
-    clientview.fullname,
+ SELECT 'Payment'::text AS type,
+    clientview.fullname AS clientname,
     clientreceiptview.id,
     clientreceiptview.recddate AS date,
-    -1 * clientreceiptview.amount,
+    '-1'::integer::numeric * clientreceiptview.amount AS amount,
     clientreceiptview.tds,
-    NULL AS orderdetails,
+    NULL::text AS orderdetails,
     entity.name AS entity,
-    NULL AS service,
+    NULL::text AS service,
     howreceived.name AS details,
     clientreceiptview.paymentmode AS mode,
-    clientview.clienttypename,
-    NULL AS orderid,
+    clientview.clienttypename AS clienttype,
+    NULL::bigint AS orderid,
     clientview.id AS clientid,
-    getmonthyear(clientreceiptview.recddate) AS monthyear,
+    getmonthyear(clientreceiptview.recddate::timestamp without time zone) AS monthyear,
     getfinancialyear(clientreceiptview.recddate) AS fy,
-    NULL AS lobname
-FROM
-    clientview
-INNER JOIN clientreceiptview ON clientview.id = clientreceiptview.clientid
-LEFT OUTER JOIN entity ON clientreceiptview.entityid = entity.id
-LEFT OUTER JOIN howreceived ON clientreceiptview.howreceivedid = howreceived.id
-WHERE
-    lower(clientview.clienttypename) LIKE '%pma%';
+    NULL::text AS lobname
+   FROM clientview
+     JOIN clientreceiptview ON clientview.id = clientreceiptview.clientid
+     LEFT JOIN entity ON clientreceiptview.entityid = entity.id
+     LEFT JOIN howreceived ON clientreceiptview.howreceivedid = howreceived.id
+  WHERE clientview.clienttypename ilike '%PMA%'::text;
 
 
 
@@ -4077,3 +4072,5 @@ SELECT
 alter table agencytype rename to departmenttype;
 
 alter table banksandbranches add column address text;
+
+alter table z_cocbusinessgroup rename to cocbusinessgrouptype;
