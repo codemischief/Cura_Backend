@@ -526,7 +526,7 @@ async def addLogsForAction(data: dict,conn):
     with conn[0].cursor() as cursor:
         query = """INSERT INTO useractionmessage (modulename,actionname,parameters,userid,dated,sessionid
         ) VALUES (%s,%s,%s,%s,%s,%s)"""
-        cursor.execute(query, [data['modulename'],data['actionname'],f'{data["modulename"]} - {data["userid"]}',data['userid'],givenowtime(),data['authorization'][7:]])
+        cursor.execute(query, [data['modulename'],data['actionname'],f'{data["modulename"]} - {data["user_id"]}',data['user_id'],givenowtime(),data['authorization'][7:]])
         conn[0].commit()
 def get_db_connection():
     try:
@@ -6135,7 +6135,7 @@ def send_email(subject, body,to_email,html=None,filename=None):
     if html is not None:
         msg.attach(MIMEText(html, 'html'))
     if filename is not None:
-        with open(FILE_DIRECTORY+'/'+filename, 'rb') as attachment:
+        with open(f"{FILE_DIRECTORY}/{filename}", 'rb') as attachment:
             part = MIMEBase(filename, 'pdf')
             part.set_payload(attachment.read())
         encoders.encode_base64(part)
@@ -7073,7 +7073,7 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
     if 'entityName' in payload and payload['entityName'] != 'all':
-        payload['filters'].append(['entityname','equalTo',payload['entityName'],'String'])  
+        payload['filters'].append(['entity','equalTo',payload['entityName'],'String'])  
     data = await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
@@ -7087,18 +7087,19 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
     payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
-    query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
     total_amount = await runInTryCatch(
         conn = conn,
         fname = 'get_total_amount',
-        query = query,
         payload=payload,
         isPaginationRequired=True,
         formatData=True,
         whereinquery=False,
         isdeleted=False
     )
-    data['total_amount'] = total_amount['data']
+    sum = 0
+    for i in total_amount['data']:
+        sum += i['amount']
+    data['total_amount'] = [{"sumamount":sum}]
     return data
 
 @app.post('/reportClientOrderReceiptMismatchDetails')
@@ -7356,10 +7357,10 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             closing = cursor.fetchone()
             data['opening_balance'] = opening if opening else 0
             data['closing_balance'] = closing if closing else 0
-
+            logging.info(f"data is {data['data']}")
             cursor.execute(f'DROP VIEW {table}')
             conn[0].commit()
-            if not payload['sendEmail']: return data
+            vardata='<p style="color: purple;">No statement could be generated</p>'
             html = f'''
 <html>
     <body style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 18px;">
@@ -7379,6 +7380,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
                 <li>Please make sure to check your bank account each month for receipt of rent if we have rented your property. Let us know if you do not receive your rent on time.</li>
                 <li>Ensure that your bank account does not become inactive or dormant by making at least 1 payment from your account every 1-2 months and updating your KYC as per the Bank policies from time to time, else you will not be able to receive rent in your bank account. Activating an inactive bank account is a very lengthy and cumbersome process.</li>
             </ol>
+            {vardata if data['data']==[] else ''}
         </p>
         <p style="color: purple;">
             Cura bank account details:<br>
@@ -7397,13 +7399,13 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
     </body>
 </html>
 '''
-
+            if not payload['sendEmail']: return data
 # Fetch the client's email address from the database
             with conn[0].cursor() as cursor:
                 query = f"SELECT email1 from client where id={payload['clientid']}"
                 cursor.execute(query)
                 emailid = cursor.fetchone()[0]
-            send_email("Cura Statement of Account for your Pune property/ies.",'',emailid,html,filename)
+            send_email("Cura Statement of Account for your Pune property/ies.",'',emailid,html,filename if filename else None)
             return {"sent email to":emailid}
     except psycopg2.Error as e:
         logging.info(traceback.format_exc())
@@ -7862,7 +7864,7 @@ async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connectio
 @app.post('/reportVendorStatement')
 async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'VendorStatementView'
-    if 'vendorid' in payload and payload['vendorid'] != 'all':
+    if 'vendorID' in payload and payload['vendorID'] != 'all':
         payload['filters'].append(['vendorid','equalTo',payload['vendorID'],'Numeric'])
     payload['filters'].append(['invoicedate_orderpaymentdate','between',[payload['startdate'],payload['enddate']],'Date'])
     data = await runInTryCatch(
