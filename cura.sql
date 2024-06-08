@@ -4075,3 +4075,5 @@ SELECT
   WHERE orders.id = ANY (ARRAY[31648::bigint, 10770::bigint, 31649::bigint, 353444::bigint, 122525::bigint])
 
 alter table agencytype rename to departmenttype;
+
+alter table banksandbranches add column address text;
