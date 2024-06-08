@@ -1986,7 +1986,7 @@ LEFT JOIN
 LEFT JOIN
     country d ON a.country = d.id
 LEFT JOIN
-    z_cocbusinessgroup e ON a.groupid = e.id;
+    cocbusinessgrouptype e ON a.groupid = e.id;
 
 CREATE SEQUENCE IF NOT EXISTS cocandbusinessgroup_id_seq OWNED BY cocandbusinessgroup.id;
 SELECT setval('cocandbusinessgroup_id_seq', COALESCE(max(id), 0) + 1, false) FROM cocandbusinessgroup;
