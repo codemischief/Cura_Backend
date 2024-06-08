@@ -7977,7 +7977,7 @@ async def report_exception_bank_st_wrong_names(payload: dict, conn: psycopg2.ext
 @app.post('/reportExceptionEntityBlank')
 async def report_exception_entity_blank(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'Rpt_EntityblankView'
-    return await runInTryCatch(
+    data = await runInTryCatch(
         conn = conn,
         fname = 'report_exception_entity_blank',
         payload = payload,
@@ -7986,7 +7986,26 @@ async def report_exception_entity_blank(payload: dict, conn: psycopg2.extensions
         formatData=True,
         isdeleted=False
     )
-
+    payload['pg_size'] = 0
+    payload['pg_no'] = 0
+    total = await runInTryCatch(
+        conn = conn,
+        fname = 'report_exception_entity_blank',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    try:
+        sum = 0
+        for i in total['data']:
+            sum += i['amount'] if i['amount']else 0
+        data['total'] = {'totalamount':sum}
+        return data
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        return giveFailure("Invalid Credentials",0,0)
 @app.post('/reportExceptionOwnerNoProperties')
 async def report_exception_owner_no_properties(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'noPropertyOwnersView'
