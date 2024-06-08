@@ -6975,8 +6975,9 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
 @app.post('/reportClientStatement')
 async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'clientstatementview'
+    payload['filters'].append(['type','doesNotContain','payment','String'])
     payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
-    return await runInTryCatch(
+    data = await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
@@ -6985,6 +6986,24 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         formatData=True,
         isdeleted=False
     )
+    payload['sort_by'] = []
+    payload['order']=''
+    payload['pg_no']=0
+    payload['pg_size']=0
+    total =  await runInTryCatch(
+        conn = conn,
+        fname = 'report_project_contacts_view',
+        payload = payload,
+        isPaginationRequired=True,
+        whereinquery=False,
+        formatData=True,
+        isdeleted=False
+    )
+    sum = 0
+    for i in total['data']:
+        sum+= i['amount'] if i['amount'] is not None else 0
+    data['total'] = {"totalamount":sum}
+    return data
 
 @app.post('/reportDuplicateClients')
 async def report_duplicate_clients(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
