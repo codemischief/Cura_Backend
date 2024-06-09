@@ -37,7 +37,6 @@ SELECT DISTINCT
     a.amount,
     a.paidon,
     d.name AS paymentmode,
-    f.status AS paymentstatus,
     a.description,
     a.banktransactionid,
     e.name AS paymentfor,
@@ -57,7 +56,6 @@ LEFT JOIN usertable b ON a.paymentto = b.id
 LEFT JOIN usertable c ON a.paymentby = c.id
 LEFT JOIN mode_of_payment d ON a.paymentmode = d.id
 LEFT JOIN payment_for e ON a.paymentfor = e.id
-LEFT JOIN z_paymentrequeststatus f ON a.paymentstatus = f.id
 LEFT JOIN entity g ON a.entityid = g.id;
 
 --FROM ref_contractual_payments a,
@@ -1844,7 +1842,7 @@ LEFT JOIN
     tallyledger d ON a.tallyledgerid = d.id;
  
 
-CREATE VIEW get_employer_view AS
+CREATE VIEW get_research_employer_view AS
 SELECT DISTINCT
     a.id,
     a.employername,
@@ -1859,6 +1857,7 @@ SELECT DISTINCT
     a.zip,
     a.hc,
     a.website,
+    CASE a.onsiteopportunity WHEN true THEN 'Yes' ELSE 'No' END AS onsiteopportunitytext,
     a.onsiteopportunity,
     a.contactname1,
     a.contactname2,
@@ -1866,6 +1865,8 @@ SELECT DISTINCT
     a.contactphone2,
     a.contactmail1,
     a.contactmail2,
+    a.hrcontactname,
+    a.hrcontactmail,
     a.hrcontactphone,
     a.admincontactname,
     a.admincontactmail,
@@ -1882,7 +1883,10 @@ CREATE SEQUENCE IF NOT EXISTS research_employer_id_seq OWNED BY research_employe
 SELECT setval('research_employer_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_employer;
 ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_employer_id_seq');
 
-CREATE VIEW get_research_realestate_agents_view AS
+alter table realestateagents alter column registered type bool using registered::boolean;
+alter table realestateagents add column rera_registration_number text;
+
+CREATE OR REPLACE VIEW get_research_realestate_agents_view AS
 SELECT DISTINCT
     a.id,
     a.nameofagent,
@@ -1893,10 +1897,11 @@ SELECT DISTINCT
     a.address,
     a.localitiesdealing,
     a.nameofpartners,
-    a.registered,
+    CASE a.registered WHEN true THEN 'Yes' ELSE 'No' END as registered,
     a.isdeleted,
     a.dated,
-    a.createdby
+    a.createdby,
+    a.rera_registration_number
 FROM
     realestateagents a;
 
@@ -2211,8 +2216,8 @@ SELECT
     a.country as countryid,
     b.name as country,
     a.zip,
-    a.agencytype as agencytypeid,
-    c.name as agencytype,
+    a.departmenttype as departmenttypeid,
+    c.name as departmenttype,
     a.details,
     a.contactname,
     a.contactmail,
@@ -2227,7 +2232,7 @@ FROM
 LEFT JOIN
     country b ON a.country = b.id
 LEFT JOIN
-    agencytype c ON a.agencytype = c.id
+    departmenttype c ON a.departmenttype = c.id
 LEFT JOIN
     usertable d ON a.createdby = d.id;
 
@@ -3042,14 +3047,11 @@ SELECT
     cplld.clientpropertyorderid,
     cplld.signedby,
     cplld.active,
-    cplld.tenantsearchmode AS tenantsearchmodeid,
     cplld.llscancopy,
     cplld.pvscancopy,
     cplld.dated,
     cplld.createdby AS expr2,
     cplld.isdeleted,
-    zmp.name AS modeofrentpayment,
-    tsm.name AS tenantsearchmode,
     cplld.id,
     cplld.comments,
     pv.clientname,
@@ -3068,10 +3070,6 @@ FROM
     client_property_leave_license_details cplld
 INNER JOIN
     propertiesview pv ON cplld.clientpropertyid = pv.id
-LEFT OUTER JOIN
-    z_modeofrentpayment zmp ON cplld.modeofrentpaymentid = zmp.id
-LEFT OUTER JOIN
-    z_tenant_search_mode tsm ON cplld.tenantsearchmode = tsm.id
 LEFT OUTER JOIN
     ordersview ov ON cplld.orderid = ov.id
 WHERE 
@@ -3899,13 +3897,11 @@ SELECT
     OrdersView.ClientName,
     Vendor.VendorName,
     Order_VendorEstimate.Notes,
-    z_VendorEstimateStatus.Status,
     Order_VendorEstimate.InvoiceNumber,
     Order_VendorEstimate.Vat1,
     Order_VendorEstimate.Vat2,
     Order_VendorEstimate.ServiceTax,
     OrdersView.ClientID,
-    z_VendorEstimateStatus.ID AS StatusID,
     Order_VendorEstimate.CreatedBy AS CreatedById,
     UserView.FullName AS CreatedBy,
     Order_VendorEstimate.EntityId,
@@ -3922,8 +3918,6 @@ INNER JOIN
     UserView ON Order_VendorEstimate.CreatedBy = UserView.UserId
 LEFT OUTER JOIN
     Entity ON Order_VendorEstimate.EntityId = Entity.ID
-LEFT OUTER JOIN
-    z_VendorEstimateStatus ON Order_VendorEstimate.StatusId = z_VendorEstimateStatus.ID
 LEFT OUTER JOIN
     Vendor ON Vendor.ID = Order_VendorEstimate.VendorID;
 
@@ -4079,3 +4073,7 @@ SELECT
      JOIN orders ON order_payment.orderid = orders.id
      JOIN vendor ON order_payment.vendorid = vendor.id
   WHERE orders.id = ANY (ARRAY[31648::bigint, 10770::bigint, 31649::bigint, 353444::bigint, 122525::bigint])
+
+alter table agencytype rename to departmenttype;
+
+alter table banksandbranches add column address text;

@@ -7,3 +7,5 @@ nohup.out
 # Ignore the downloads folder
 downloads/
 __pycache__/
+test.html
+test.txt
