@@ -3680,6 +3680,28 @@ WHERE
     name LIKE '%DAP-ICICI-42%' 
     AND date <= '2024-03-31';
 
+create view bank_pmt_rcpts as SELECT
+'Payment' as Type,
+- 1 * Order_Payment.amount AS AMOUNT, PaymentDate AS DATE, Mode_Of_payment.Name AS BankName
+FROM            Order_Payment, Mode_Of_payment
+WHERE        order_payment.Mode = mode_of_payment.ID AND (mode_of_payment.name NOT IN ('Cash'))
+AND order_payment.IsDeleted <> true
+UNION ALL
+
+SELECT
+'Receipt' as Type,
+order_receipt.amount AS AMOUNT, order_receipt.RecdDate AS DATE, Mode_Of_payment.Name AS BankName
+FROM            Order_Receipt, Mode_Of_payment
+WHERE        Order_Receipt.PaymentMode = mode_of_payment.ID AND (mode_of_payment.name NOT IN ('Cash'))
+AND Order_Receipt.IsDeleted <> true
+UNION ALL
+
+SELECT
+'Payment' as Type,
+- 1 * REF_Contractual_Payments.amount AS AMOUNT, PaidOn AS DATE, Mode_Of_payment.Name AS BankName
+FROM            REF_Contractual_Payments, Mode_Of_payment
+WHERE        REF_Contractual_Payments.PaymentMode = mode_of_payment.ID AND (mode_of_payment.name NOT IN ('Cash'))
+AND REF_Contractual_Payments.IsDeleted <> true;
 
 SELECT
     SUM(amount)
