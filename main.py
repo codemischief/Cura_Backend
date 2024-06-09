@@ -522,12 +522,21 @@ def givenowtime():
     s = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     return s
 
-async def addLogsForAction(data: dict,conn):
-    with conn[0].cursor() as cursor:
-        query = """INSERT INTO useractionmessage (modulename,actionname,parameters,userid,dated,sessionid
-        ) VALUES (%s,%s,%s,%s,%s,%s)"""
-        cursor.execute(query, [data['modulename'],data['actionname'],f'{data["modulename"]} - {data["user_id"]}',data['user_id'],givenowtime(),data['authorization'][7:]])
-        conn[0].commit()
+async def addLogsForAction(data: dict,conn,id:int = None):
+    try:
+        with conn[0].cursor() as cursor:
+            query = """INSERT INTO useractionmessage (modulename,actionname,parameters,userid,dated,sessionid
+            ) VALUES (%s,%s,%s,%s,%s,%s)"""
+            cursor.execute(query, [data['modulename'] if 'modulename' in data else 'module missing',
+                                    data['actionname'] if 'actionname' in data else 'method missing',
+                                    f'{data["modulename"]} - {data["user_id"]}' if 'modulename' in data and 'user_id' in data else 'action missing',
+                                    data['user_id'] if 'user_id' in data else 'user missing',
+                                    givenowtime(),
+                                    data['token'][7:]] if 'modulename' in data else 'module missing')
+            conn[0].commit()
+    except Exception as e:
+        logging.info(traceback.format_exc())
+        return None
 def get_db_connection():
     try:
         conn = psycopg2.connect(DATABASE_URL)
@@ -1720,7 +1729,7 @@ async def add_research_prospect(payload: dict, request: Request,conn : psycopg2.
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
-                # await addLogsForAction(request.headers,conn)
+                await addLogsForAction(payload,conn)
             data = {
                 "added_prospect":id
             }
@@ -5276,7 +5285,7 @@ async def get_payment_status_admin(payload: dict, conn: psycopg2.extensions.conn
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT DISTINCT id,name from z_cocbusinessgroup order by name'
+                query = 'SELECT DISTINCT id,name from cocbusinessgrouptype order by name'
                 msg = logMessage(cursor,query)
                 _data = cursor.fetchall()
                 logging.info(msg)
@@ -8014,7 +8023,7 @@ async def report_acitve_ll_agreement(payload: dict, conn: psycopg2.extensions.co
 async def report_ll_agreement(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'Client_Property_Leave_License_DetailsListView'
     if 'clientPropertyID' in payload and payload['clientPropertyID'] != 'all':
-        payload['filters'].append(['clientpropertyid','equalTo',payload['clientPropertyID'],'String'])
+        payload['filters'].append(['clientpropertyid','equalTo',payload['clientPropertyID'],'Numeric'])
     if 'statusName' in payload and payload['statusName'] != 'all':
         payload['filters'].append(['orderstatus','equalTo',payload['statusName'],'String'])
     if 'typeName' in payload and payload['typeName'] != 'all':
