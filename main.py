@@ -7131,8 +7131,6 @@ async def report_client_order_receipt_mismatch_details(payload:dict,conn:psycopg
 @app.post('/reportBankBalanceReconciliation')
 async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payloadforapplication = payload.copy()
-    payloadforapplication.pop('filterPassbook')
-    payloadforapplication['filters'] = payloadforapplication['filterApplication']
     payloadforapplication['table_name'] = 'BankSTBalanceView'
     if 'bankName' in payloadforapplication and payloadforapplication['bankName'] != 'all':
         payloadforapplication['filters'].append(['name','equalTo',payloadforapplication['bankName'],"String"])
@@ -7148,8 +7146,6 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
         isdeleted=False
     )
     payloadforpassbook = payload.copy()
-    payloadforpassbook.pop('filterApplication')
-    payloadforpassbook['filters'] = payloadforpassbook['filterPassbook']
     payloadforpassbook['table_name'] = 'Bank_Pmt_Rcpts'
     if 'bankName' in payloadforpassbook and payloadforpassbook['bankName'] != 'all':
         payloadforpassbook['filters'].append(['bankname','equalTo',payloadforpassbook['bankName'],"String"])
