@@ -7136,8 +7136,8 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
 
     query = f'''SELECT 
         name AS bankname, 
-        SUM(receipts) AS receipts,  
-        SUM(payments) AS payments,  
+        SUM(receipts) AS receipt,  
+        SUM(payments) AS payment,  
         (SUM(receipts) - SUM(payments)) AS balance
         FROM bankstbalanceview
         WHERE Name ILIKE '%{payload['bankName']}%' AND date <= '{payload['startdate']}'
