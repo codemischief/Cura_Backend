@@ -640,7 +640,7 @@ async def validate_credentials(payload : dict,request:Request, conn: psycopg2.ex
             database_pw = bytes(userdata[0],'ascii')
             if bcrypt.checkpw(encoded_pw,database_pw) and company_key[0]:
             # if userdata and payload=userdata[0],userdata[0]) and key[0]:
-                query = "SELECT * FROM token_access_config"
+                query = "SELECT * FROM token_access_config where type='Login'"
                 msg = logMessage(cursor,query)
                 timedata = cursor.fetchone()[0]
                 logging.info(f"The time assigned is {timedata}")
@@ -649,12 +649,15 @@ async def validate_credentials(payload : dict,request:Request, conn: psycopg2.ex
                 access_token,key = create_token(payload,access_token_expires)
                 cursor.execute(f"""INSERT INTO tokens (token,key,active) VALUES ('{access_token}','{key}',true)""")
                 conn[0].commit()
+                cursor.execute("SELECT * FROM token_access_config where type='IdleTimeOut'")
+                timeout = cursor.fetchone()[0]
                 resp = {
                     "result": "success",
                     "user_id":userdata[1],
                     "role_id":userdata[2],
                     "token": access_token,
-                    "access_rights": await get_role_access(payload,access_token,request,conn)
+                    "access_rights": await get_role_access(payload,access_token,request,conn),
+                    "idleTimeOut":timeout
                 }
                 return resp
             else:
@@ -7172,7 +7175,8 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
         return giveSuccess(payload['user_id'],
                            databankstbalance['role_id'],
                            {'bankstbalance':databankstbalance['data'][0] if databankstbalance['data'] else {},
-                            'bankpmtrcps':databankpmtrcpts['data'][0] if databankpmtrcpts['data'] else {}},
+                            'bankpmtrcps':databankpmtrcpts['data'][0] if databankpmtrcpts['data'] else {}
+                           },
                             [databankstbalance['total_count'],databankpmtrcpts['total_count']]
                         )
     except KeyError as e:
