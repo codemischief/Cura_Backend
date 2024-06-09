@@ -7171,8 +7171,8 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
     try:
         return giveSuccess(payload['user_id'],
                            databankstbalance['role_id'],
-                           {'bankstbalance':databankstbalance['data'][0] if databankstbalance else [],
-                            'bankpmtrcps':databankpmtrcpts['data'][0] if databankpmtrcpts else []},
+                           {'bankstbalance':databankstbalance['data'][0] if databankstbalance['data'] else [],
+                            'bankpmtrcps':databankpmtrcpts['data'][0] if databankpmtrcpts['data'] else []},
                             [databankstbalance['total_count'],databankpmtrcpts['total_count']]
                         )
     except KeyError as e:
