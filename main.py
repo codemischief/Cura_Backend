@@ -219,6 +219,10 @@ def filterAndPaginate(db_config,
             if value != '':
                 if filter_type == 'startsWith':
                     where_clauses.append(f"lower({column}) LIKE '{value.lower()}%'")
+                elif filter_type == 'rawLike':
+                    where_clauses.append(f"lower({column}) ~ '{value}'")
+                elif filter_type == 'notRawLike':
+                    where_clauses.append(f"lower({column}) !~ '{value}'")
                 elif filter_type == 'endsWith':
                     where_clauses.append(f"lower({column}) LIKE '%{value.lower()}'")
                 elif filter_type == 'contains':
@@ -7213,13 +7217,21 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         conn = conn,
         fname = 'report_project_contacts_view',
         payload = payload,
-        query = 'SELECT SUM(bankst_cr) as bankst_cr,SUM(client_receipt) AS client_receipt,SUM(order_receipt) AS order_receipt FROM RPT_Daily_Bank_Receipts_Reco',
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    data['total'] = sumdata['data']
+    total = {
+        'bankst_cr':0,
+        'client_receipt':0,
+        'order_receipt' :0
+    }
+    for i in sumdata['data']:
+        total['bankst_cr'] += i['bankst_cr'] if i['bankst_cr'] else 0
+        total['client_receipt'] += i['client_receipt'] if i['client_receipt'] else 0
+        total['order_receipt'] += i['order_receipt'] if i['order_receipt'] else 0
+    data['total'] = total
     return data
 
 @app.post('/reportDailyBankPaymentsReconciliation')
@@ -7259,12 +7271,21 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
             conn = conn,
             fname = 'report_project_contacts_view',
             payload = payload,
-            query = f'SELECT SUM(bankst_dr) as bankst_dr,SUM(order_payments) as order_payments,SUM(contractual_payments) AS contractual_payments,SUM(contorderpayments) AS contorderpayments FROM {table}',
             isPaginationRequired=True,
             whereinquery=False,
             formatData=True,
             isdeleted=False
         )
+        total = {
+            'bankst_dr':0,
+            'order_payments':0,
+            'contractual_payments' :0
+        }
+        for i in sumdata['data']:
+            total['bankst_dr'] += i['bankst_dr'] if i['bankst_dr'] else 0
+            total['order_payments'] += i['order_payments'] if i['order_payments'] else 0
+            total['contractual_payments'] += i['contractual_payments'] if i['contractual_payments'] else 0
+        data['total'] = total
         cursor.execute(f'DROP VIEW {table}')
         conn[0].commit()
         data['total'] = sumdata['data']
@@ -7890,17 +7911,20 @@ async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connec
     payload['sort_by'] = []
     payload['order'] = ''
     payload['search_key'] = ''
-    query = 'SELECT COALESCE(SUM(invoiceamount_orderpaymentamount),0) AS invoiceamount_orderpaymentamount FROM VendorStatementView'
     total_data = await runInTryCatch(
         conn = conn,
         fname = 'vendor_payment_statement',
         payload=payload,
-        query = query,
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
+    d = {
+        'invoiceamount_orderpaymentamount':0
+    }
+    for i in total_data['data']:
+        d['invoiceamount_orderpaymentamount'] += i['invoiceamount_orderpaymentamount'] if i['invoiceamount_orderpaymentamount'] else 0
     data['total'] = total_data['data'][0] if total_data['data'] else []
     return data
 
@@ -8277,6 +8301,14 @@ async def report_client_contacts(payload: dict, conn: psycopg2.extensions.connec
 @app.post('/reportOwnerPhoneNos')
 async def report_owner_phone_nos(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'OwnersPhonenoView'
+    if payload['type'] == 'int':
+        payload['filters'].append(['phoneno','contains','+','String'])
+    else:
+        if payload['type'] == 'mobile':
+            payload['filters'].extend([['length(phoneno)','equalTo',10,'Numeric'],['phoneno','rawLike','^([0-9]+[.]?[0-9]*|[.][0-9]+)$','String']])
+        elif payload['type'] == 'phone':
+            payload['filters'].append(['phoneno','notRawLike','^([0-9]+[.]?[0-9]*|[.][0-9]+)$','String'])
+
     return await runInTryCatch(
         conn = conn,
         fname = 'report_owner_phone_nos',
@@ -8290,6 +8322,13 @@ async def report_owner_phone_nos(payload: dict, conn: psycopg2.extensions.connec
 @app.post('/reportClientPhoneNos')
 async def report_client_phone_nos(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'ClientPhonenoView'
+    if payload['type'] == 'int':
+        payload['filters'].append(['homephone','contains','+','String'])
+    else:
+        if payload['type'] == 'mobile':
+            payload['filters'].extend([['length(homephone)','equalTo',10,'Numeric'],['homephone','rawLike','^([0-9]+[.]?[0-9]*|[.][0-9]+)$','String']])
+        elif payload['type'] == 'phone':
+            payload['filters'].append(['homephone','notRawLike','^([0-9]+[.]?[0-9]*|[.][0-9]+)$','String'])
     return await runInTryCatch(
         conn = conn,
         fname = 'report_client_phone_nos',
@@ -8331,7 +8370,6 @@ async def report_vendor_summary(payload: dict, conn: psycopg2.extensions.connect
         "computedpending":0
     }
     for i in total['data']:
-        for j in d:
             d['estimateamount'] += i['estimateamount']
             d['paymentamount'] += i['paymentamount']
             d['invoiceamount'] += i['invoiceamount']
