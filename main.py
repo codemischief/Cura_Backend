@@ -219,6 +219,10 @@ def filterAndPaginate(db_config,
             if value != '':
                 if filter_type == 'startsWith':
                     where_clauses.append(f"lower({column}) LIKE '{value.lower()}%'")
+                elif filter_type == 'rawLike':
+                    where_clauses.append(f"lower({column}) ~ '{value}'")
+                elif filter_type == 'notRawLike':
+                    where_clauses.append(f"lower({column}) !~ '{value}'")
                 elif filter_type == 'endsWith':
                     where_clauses.append(f"lower({column}) LIKE '%{value.lower()}'")
                 elif filter_type == 'contains':
@@ -8271,10 +8275,10 @@ async def report_owner_phone_nos(payload: dict, conn: psycopg2.extensions.connec
     if payload['type'] == 'int':
         payload['filters'].append(['phoneno','contains','+','String'])
     else:
-        if payload['type'] == 'phone':
-            payload['filters'].append(['length(phoneno)','equalTo',10,'Numeric'])
-        else:
-            payload['filters'].append(['phoneno','doesNotContain','+','String'])
+        if payload['type'] == 'mobile':
+            payload['filters'].extend([['length(phoneno)','equalTo',10,'Numeric'],['phoneno','rawLike','^([0-9]+[.]?[0-9]*|[.][0-9]+)$','String']])
+        elif payload['type'] == 'phone':
+            payload['filters'].append(['phoneno','notRawLike','^([0-9]+[.]?[0-9]*|[.][0-9]+)$','String'])
 
     return await runInTryCatch(
         conn = conn,
@@ -8289,6 +8293,13 @@ async def report_owner_phone_nos(payload: dict, conn: psycopg2.extensions.connec
 @app.post('/reportClientPhoneNos')
 async def report_client_phone_nos(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'ClientPhonenoView'
+    if payload['type'] == 'int':
+        payload['filters'].append(['homephone','contains','+','String'])
+    else:
+        if payload['type'] == 'mobile':
+            payload['filters'].extend([['length(homephone)','equalTo',10,'Numeric'],['homephone','rawLike','^([0-9]+[.]?[0-9]*|[.][0-9]+)$','String']])
+        elif payload['type'] == 'phone':
+            payload['filters'].append(['homephone','notRawLike','^([0-9]+[.]?[0-9]*|[.][0-9]+)$','String'])
     return await runInTryCatch(
         conn = conn,
         fname = 'report_client_phone_nos',
