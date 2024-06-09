@@ -8268,6 +8268,14 @@ async def report_client_contacts(payload: dict, conn: psycopg2.extensions.connec
 @app.post('/reportOwnerPhoneNos')
 async def report_owner_phone_nos(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'OwnersPhonenoView'
+    if payload['type'] == 'int':
+        payload['filters'].append(['phoneno','contains','+','String'])
+    else:
+        if payload['type'] == 'phone':
+            payload['filters'].append(['length(phoneno)','equalTo',10,'Numeric'])
+        else:
+            payload['filters'].append(['phoneno','doesNotContain','+','String'])
+
     return await runInTryCatch(
         conn = conn,
         fname = 'report_owner_phone_nos',
@@ -8322,7 +8330,6 @@ async def report_vendor_summary(payload: dict, conn: psycopg2.extensions.connect
         "computedpending":0
     }
     for i in total['data']:
-        for j in d:
             d['estimateamount'] += i['estimateamount']
             d['paymentamount'] += i['paymentamount']
             d['invoiceamount'] += i['invoiceamount']
