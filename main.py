@@ -7130,43 +7130,51 @@ async def report_client_order_receipt_mismatch_details(payload:dict,conn:psycopg
 
 @app.post('/reportBankBalanceReconciliation')
 async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
-    payloadforapplication = payload.copy()
-    payloadforapplication.pop('filterPassbook')
-    payloadforapplication['filters'] = payloadforapplication['filterApplication']
-    payloadforapplication['table_name'] = 'BankSTBalanceView'
-    if 'bankName' in payloadforapplication and payloadforapplication['bankName'] != 'all':
-        payloadforapplication['filters'].append(['name','equalTo',payloadforapplication['bankName'],"String"])
-    if 'startdate' in payload:
-        payloadforapplication['filters'].append(['date','greaterThanOrEqualTo',payloadforapplication['startdate'],"Date"])
+
+    query = f'''SELECT 
+        name AS bankname, 
+        SUM(receipts) AS receipts,  
+        SUM(payments) AS payments,  
+        (SUM(receipts) - SUM(payments)) AS balance
+        FROM bankstbalanceview
+        WHERE Name ILIKE '%{payload['bankName']}%' AND date <= '{payload['startdate']}'
+        GROUP BY name
+    '''
     databankstbalance = await runInTryCatch(
         conn = conn,
         fname = 'report_bank_balance_reconciliation',
-        payload = payloadforapplication,
+        payload = payload,
+        query=query,
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
-    payloadforpassbook = payload.copy()
-    payloadforpassbook.pop('filterApplication')
-    payloadforpassbook['filters'] = payloadforpassbook['filterPassbook']
-    payloadforpassbook['table_name'] = 'Bank_Pmt_Rcpts'
-    if 'bankName' in payloadforpassbook and payloadforpassbook['bankName'] != 'all':
-        payloadforpassbook['filters'].append(['bankname','equalTo',payloadforpassbook['bankName'],"String"])
-    if 'startdate' in payload:
-        payloadforpassbook['filters'].append(['date','greaterThanOrEqualTo',payload['startdate'],"Date"])
-    payloadforpassbook['table_name'] = 'Bank_Pmt_Rcpts'
+    query = f'''SELECT 
+                    BankName, 
+                    SUM(CASE WHEN Type <> 'Payment' THEN Amount ELSE 0 END) AS Receipt,
+                    SUM(CASE WHEN Type = 'Payment' THEN Amount ELSE 0 END) AS Payment,
+                    SUM(Amount) As Balance
+                FROM Bank_Pmt_Rcpts
+                WHERE BankName ILIKE '%{payload['bankName']}%' AND date <= '{payload['startdate']}'
+                GROUP BY BankName'''
     databankpmtrcpts = await runInTryCatch(
         conn = conn,
         fname = 'report_bank_balance_reconciliation',
-        payload = payloadforpassbook,
+        payload = payload,
+        query = query,
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
         isdeleted=False
     )
     try:
-        return giveSuccess(payload['user_id'],databankstbalance['role_id'],{'bankstbalance':databankstbalance['data'],'bankpmtrcps':databankpmtrcpts['data']},[databankstbalance['total_count'],databankpmtrcpts['total_count']])
+        return giveSuccess(payload['user_id'],
+                           databankstbalance['role_id'],
+                           {'bankstbalance':databankstbalance['data'][0] if databankstbalance else [],
+                            'bankpmtrcps':databankpmtrcpts['data'][0] if databankpmtrcpts else []},
+                            [databankstbalance['total_count'],databankpmtrcpts['total_count']]
+                        )
     except KeyError as e:
         logging.info(traceback.format_exc())
         return giveFailure("Access Denied",0,None)
