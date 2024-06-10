@@ -7171,6 +7171,7 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
         formatData=True,
         isdeleted=False
     )
+    filename = None
     if 'downloadType' in payload:
         logging.info(databankpmtrcpts['data'])
         rows1 = [databankpmtrcpts['data'][0][i] for i in databankpmtrcpts['data'][0]]
