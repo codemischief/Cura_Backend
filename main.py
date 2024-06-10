@@ -5746,7 +5746,7 @@ async def add_research_banks_and_branches(payload: dict,conn: psycopg2.extension
             with conn[0].cursor() as cursor:
                 query = """INSERT INTO banksandbranches (name,branchaddress,contactperson,emailid,phoneno,website,
                     dated,createdby,isdeleted,excludefrommailinglist,notes) VALUES (%s,
-                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
                     payload['branchaddress'],
