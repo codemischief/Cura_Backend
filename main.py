@@ -7171,13 +7171,30 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
         formatData=True,
         isdeleted=False
     )
+    filename = None
+    if 'downloadType' in payload:
+        logging.info(databankpmtrcpts['data'])
+        rows1 = [databankpmtrcpts['data'][0][i] for i in databankpmtrcpts['data'][0]]
+        rows2 = [databankstbalance['data'][0][i] for i in databankstbalance['data'][0]]
+        rows = [rows1,rows2]
+        rows[0].insert(0,'Application Balance')
+        rows[1].insert(0,'PassBook Balance')
+        cols = ['Balance']
+        cols.extend(list(databankstbalance['data'][0].keys()))
+        df = pd.DataFrame(rows,columns=cols)
+        if payload['downloadType'] == 'excel':
+            filename = f'{uuid.uuid4()}.xlsx'
+            fname = f'./downloads/{filename}'
+            df.to_excel(fname, engine='openpyxl',index=False)
+            logging.info(f'generated excel file <{fname}>')
     try:
         return giveSuccess(payload['user_id'],
                            databankstbalance['role_id'],
                            {'bankstbalance':databankstbalance['data'][0] if databankstbalance['data'] else {},
                             'bankpmtrcps':databankpmtrcpts['data'][0] if databankpmtrcpts['data'] else {}
                            },
-                            [databankstbalance['total_count'],databankpmtrcpts['total_count']]
+                            [databankstbalance['total_count'],databankpmtrcpts['total_count']],
+                            filename = filename if filename else None
                         )
     except KeyError as e:
         logging.info(traceback.format_exc())
