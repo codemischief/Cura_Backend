@@ -5745,8 +5745,8 @@ async def add_research_banks_and_branches(payload: dict,conn: psycopg2.extension
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = """INSERT INTO banksandbranches (name,branchaddress,contactperson,emailid,phoneno,website,
-                    dated,createdby,isdeleted,excludefrommailinglist) VALUES (%s,
-                    %s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                    dated,createdby,isdeleted,excludefrommailinglist,notes) VALUES (%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
                     payload['branchaddress'],
@@ -5757,7 +5757,8 @@ async def add_research_banks_and_branches(payload: dict,conn: psycopg2.extension
                     givenowtime(),
                     payload['user_id'],
                     False,
-                    payload['excludefrommailinglist']
+                    payload['excludefrommailinglist'],
+                    payload['notes']
                 ])
                 id = cursor.fetchone()[0]
                 logging.info(msg)
@@ -5782,7 +5783,7 @@ async def edit_research_banks_and_branches(payload: dict,conn: psycopg2.extensio
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = """UPDATE banksandbranches SET name=%s,branchaddress=%s,contactperson=%s,emailid=%s,phoneno=%s,website=%s,
-                    dated=%s,createdby=%s,isdeleted=%s,excludefrommailinglist=%s WHERE id=%s"""
+                    dated=%s,createdby=%s,isdeleted=%s,excludefrommailinglist=%s,notes=%s WHERE id=%s"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
                     payload['branchaddress'],
@@ -5794,6 +5795,7 @@ async def edit_research_banks_and_branches(payload: dict,conn: psycopg2.extensio
                     payload['user_id'],
                     False,
                     payload['excludefrommailinglist'],
+                    payload['notes'],
                     payload['id']
                 ])
                 logging.info(msg)
