@@ -8079,8 +8079,8 @@ async def report_ll_agreement(payload: dict, conn: psycopg2.extensions.connectio
     payload['table_name'] = 'Client_Property_Leave_License_DetailsListView'
     if 'clientPropertyID' in payload and payload['clientPropertyID'] != 'all':
         payload['filters'].append(['clientpropertyid','equalTo',payload['clientPropertyID'],'Numeric'])
-    if 'statusName' in payload and payload['statusName'] != 'all':
-        payload['filters'].append(['orderstatus','equalTo',payload['statusName'],'String'])
+    if 'statusName' in payload and payload['statusID'] != 'all':
+        payload['filters'].append(['status','equalTo',payload['statusName'],'String'])
     if 'typeName' in payload and payload['typeName'] != 'all':
         payload['filters'].append(['clienttypename','equalTo',payload['typeName'],'String'])
     if 'clientName' in payload and payload['clientName'] != 'all':
