@@ -5745,7 +5745,7 @@ async def add_research_banks_and_branches(payload: dict,conn: psycopg2.extension
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = """INSERT INTO banksandbranches (name,branchaddress,contactperson,emailid,phoneno,website,
-                    contact,dated,createdby,isdeleted,excludefrommailinglist) VALUES (%s,
+                    dated,createdby,isdeleted,excludefrommailinglist) VALUES (%s,
                     %s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
@@ -5754,7 +5754,6 @@ async def add_research_banks_and_branches(payload: dict,conn: psycopg2.extension
                     payload['emailid'],
                     payload['phoneno'],
                     payload['website'],
-                    payload['contact'],
                     givenowtime(),
                     payload['user_id'],
                     False,
@@ -5783,7 +5782,7 @@ async def edit_research_banks_and_branches(payload: dict,conn: psycopg2.extensio
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = """UPDATE banksandbranches SET name=%s,branchaddress=%s,contactperson=%s,emailid=%s,phoneno=%s,website=%s,
-                    contact=%s,dated=%s,createdby=%s,isdeleted=%s,excludefrommailinglist=%s WHERE id=%s"""
+                    dated=%s,createdby=%s,isdeleted=%s,excludefrommailinglist=%s WHERE id=%s"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
                     payload['branchaddress'],
@@ -5791,7 +5790,6 @@ async def edit_research_banks_and_branches(payload: dict,conn: psycopg2.extensio
                     payload['contactperson'],
                     payload['phoneno'],
                     payload['website'],
-                    payload['contact'],
                     givenowtime(),
                     payload['user_id'],
                     False,
