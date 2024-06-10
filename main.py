@@ -5330,7 +5330,7 @@ async def add_research_professional(payload: dict, conn: psycopg2.extensions.con
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''INSERT INTO professionals (typeid,dated,createdby,isdeleted,city,country,excludefrommailinglist,name,
-                suburb,emailid,phoneno,website,state,phoneno1) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'''
+                suburb,emailid,professionalid,website,state,phonenumber) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'''
                 msg = logMessage(cursor,query,[
                                     payload['typeid'],
                                     givenowtime(),
@@ -5342,10 +5342,10 @@ async def add_research_professional(payload: dict, conn: psycopg2.extensions.con
                                     payload['name'],
                                     payload['suburb'],
                                     payload['emailid'],
-                                    payload['phoneno'],
+                                    payload['professionalid'],
                                     payload['website'],
                                     payload['state'],
-                                    payload['phoneno1']
+                                    payload['phonenumber']
                                     ]
                                  )
                 logging.info(msg)
@@ -5371,7 +5371,7 @@ async def edit_research_professional(payload: dict, conn: psycopg2.extensions.co
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''UPDATE professionals SET typeid=%s,dated=%s,createdby=%s,isdeleted=%s,city=%s,country=%s,excludefrommailinglist=%s,name=%s,
-                suburb=%s,emailid=%s,phoneno=%s,website=%s,state=%s,phoneno1=%s WHERe id=%s'''
+                suburb=%s,emailid=%s,professionalid=%s,website=%s,state=%s,phonenumber=%s WHERe id=%s'''
                 msg = logMessage(cursor,query,[
                                     payload['typeid'],
                                     givenowtime(),
@@ -5383,10 +5383,10 @@ async def edit_research_professional(payload: dict, conn: psycopg2.extensions.co
                                     payload['name'],
                                     payload['suburb'],
                                     payload['emailid'],
-                                    payload['phoneno'],
+                                    payload['professionalid'],
                                     payload['website'],
                                     payload['state'],
-                                    payload['phoneno1'],
+                                    payload['phonenumber'],
                                     payload['id']
                                     ]
                                  )
@@ -5744,12 +5744,13 @@ async def add_research_banks_and_branches(payload: dict,conn: psycopg2.extension
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """INSERT INTO banksandbranches (name,address,emailid,phoneno,website,
+                query = """INSERT INTO banksandbranches (name,branchaddress,contactperson,emailid,phoneno,website,
                     contact,dated,createdby,isdeleted,excludefrommailinglist) VALUES (%s,
                     %s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
-                    payload['address'],
+                    payload['branchaddress'],
+                    payload['contactperson'],
                     payload['emailid'],
                     payload['phoneno'],
                     payload['website'],
@@ -5781,12 +5782,13 @@ async def edit_research_banks_and_branches(payload: dict,conn: psycopg2.extensio
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """UPDATE banksandbranches SET name=%s,address=%s,emailid=%s,phoneno=%s,website=%s,
+                query = """UPDATE banksandbranches SET name=%s,branchaddress=%s,contactperson=%s,emailid=%s,phoneno=%s,website=%s,
                     contact=%s,dated=%s,createdby=%s,isdeleted=%s,excludefrommailinglist=%s WHERE id=%s"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
-                    payload['address'],
+                    payload['branchaddress'],
                     payload['emailid'],
+                    payload['contactperson'],
                     payload['phoneno'],
                     payload['website'],
                     payload['contact'],

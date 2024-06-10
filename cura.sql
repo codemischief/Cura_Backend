@@ -2125,7 +2125,7 @@ SELECT DISTINCT
     a.typeid,
     b.name as type,
     a.emailid,
-    a.phoneno,
+    a.professionalid,
     a.dated,
     a.createdby,
     concat_ws(' ',c.firstname,c.lastname) as createdbyname,
@@ -2138,7 +2138,7 @@ SELECT DISTINCT
     e.name as country,
     a.website,
     a.excludefrommailinglist,
-    a.phoneno1
+    a.phonenumber
 FROM
     professionals a
 LEFT JOIN
@@ -4093,6 +4093,13 @@ SELECT
 
 alter table agencytype rename to departmenttype;
 
-alter table banksandbranches add column address text;
+alter table banksandbranches add column branchaddress text;
+alter table banksandbranches add column contactperson text;
+alter table banksandbranches add column notes text;
 
 alter table z_cocbusinessgroup rename to cocbusinessgrouptype;
+
+alter table professionals rename column phoneno to professionid;
+
+alter table professionals rename column phoneno1 to phonenumber;
+
