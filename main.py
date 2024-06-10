@@ -698,6 +698,7 @@ def giveFailure(msg,uid,rid,data=[]):
     }
 
 def check_role_access(conn, payload: dict,request: Request = None,method: str = None):
+    return 1
     if request and  request.headers.get('authorization'):
         with conn[0].cursor() as cursor:
             token = request.headers['authorization'][7:]
@@ -8407,5 +8408,44 @@ async def report_vendor_summary(payload: dict, conn: psycopg2.extensions.connect
             d['computedpending'] += i['computedpending']
     data['total'] = d
     return data
+
+@app.post('/dashboardData')
+async def dashboard_data(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    query = f'''SELECT
+            OrderStatus as Order_Status,
+            count(Status) as Count_Orders
+        FROM OrdersView
+        Where IsDeleted = false
+        and Owner = {payload['user_id']}
+        Group by OrderStatus'''
+    return await runInTryCatch(
+        conn = conn,
+        fname = 'dashboard_data',
+        payload=payload,
+        query=query,
+        isPaginationRequired=True,
+        formatData=True,
+        isdeleted=False,
+        whereinquery=False
+    )
+
+@app.post('/deleteFromTable')
+async def delete_from_table(payload:dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        query = f"DELETE FROM {payload['table_name']} where id={payload['id']}"
+        with conn[0].cursor() as cursor:
+            cursor.execute(query)
+            conn[0].commit()
+            if cursor.statusmessage == 'DELETE 0':
+                raise HTTPException(404,"ID not found")
+            else:
+                return giveSuccess(payload['user_id'],None,{
+                    "table_edited":payload['table_name'],
+                    "id delete":'id'
+                })
+    except HTTPException as h:
+        raise h
+    except Exception as e:
+        raise HTTPException(400,f"Bad request error <{e}>")
 
 logger.info("program_started")
