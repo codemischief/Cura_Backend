@@ -8441,7 +8441,7 @@ async def delete_from_table(payload:dict,conn: psycopg2.extensions.connection = 
             else:
                 return giveSuccess(payload['user_id'],None,{
                     "table_edited":payload['table_name'],
-                    "id delete":'id'
+                    "id delete":payload['id']
                 })
     except HTTPException as h:
         raise h
