@@ -1266,7 +1266,7 @@ async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.conne
                         addressline2, suburb, city, state, country,
                         zip, notes, dated, createdby, isdeleted
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                '''
+                RETURNING id'''
                 msg = logMessage(cursor,query, (
                     payload['builderid'],
                     payload['contactname'],
@@ -1288,10 +1288,11 @@ async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.conne
                     False
                 ))
                 logging.info(msg)
+                id = cursor.fetchone()[0]
                 # Commit changes to the database
                 conn[0].commit()
             data= {
-                    "entered": payload['contactname']
+                    "entered": id
                 } 
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
