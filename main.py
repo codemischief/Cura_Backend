@@ -5865,7 +5865,7 @@ def download_file(payload: dict,conn: psycopg2.extensions.connection = Depends(g
         return giveFailure(f"Invalid Credentials",0,0)
 
 @app.post('/getMandalAdmin')
-async def get_order_status_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+async def get_mandal_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f"get_order_status_admin:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload)
