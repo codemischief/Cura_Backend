@@ -5918,7 +5918,7 @@ async def add_research_mandals(payload: dict,conn: psycopg2.extensions.connectio
             with conn[0].cursor() as cursor:
                 query = """INSERT INTO banksandbranches (name,typeid,emailid,phoneno,
                     suburb,city,state,country,website,email,email2,
-                     contactname1,contactname2,phoneno1,phoneno2,dated
+                     contactname1,contactname2,phoneno1,phoneno2,dated,
                     createdby,isdeleted,excludefrommailinglist) VALUES (%s,
                     %s,%s,%s,%s,%s,%s,%s,%s,%s,
                     %s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
@@ -5967,7 +5967,7 @@ async def edit_research_mandals(payload: dict,conn: psycopg2.extensions.connecti
             with conn[0].cursor() as cursor:
                 query = """UPDATE mandalas SET name=%s,typeid=%s,emailid=%s,phoneno=%s,
                     suburb=%s,city=%s,state=%s,country=%s,website=%s,email1=%s,email2=%s,
-                     contactname1=%s,contactname2=%s,phoneno1=%s,phoneno2=%s,dated=%s
+                     contactname1=%s,contactname2=%s,phoneno1=%s,phoneno2=%s,dated=%s,
                     createdby=%s,isdeleted=%s,excludefrommailinglist=%s WHERE id=%s"""
                 msg = logMessage(cursor,query,[
                     payload['name'],
