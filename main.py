@@ -5922,7 +5922,7 @@ async def add_research_mandals(payload: dict,conn: psycopg2.extensions.connectio
         role_access_status = check_role_access(conn,payload)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """INSERT INTO mandals (name,typeid,emailid,phoneno,
+                query = """INSERT INTO mandalas (name,typeid,emailid,phoneno,
                     suburb,city,state,country,website,email,email2,
                      contactname1,contactname2,phoneno1,phoneno2,dated,
                     createdby,isdeleted,excludefrommailinglist) VALUES (%s,
