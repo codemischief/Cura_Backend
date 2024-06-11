@@ -7421,13 +7421,15 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
                 whereinquery=False,
                 search_key=payload['search_key'] if 'search_key' in payload else '',
                 isdeleted=False,
-                downloadType='pdf',
+                downloadType=payload['downloadType'] if 'downloadType' in payload else None,
                 mapping = payload['mapping'] if 'mapping' in payload else '',
                 group_by=None
             )
-            logging.info("")
-            filename = data['filename']
-
+            res = []
+            for row in data['data']:
+                dic = {colname:val for (colname,val) in zip(data['colnames'],row)}
+                res.append(dic)
+            filename = data['filenam'] if 'filename' in data else None
             queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
             queryclosing = f"SELECT closing_balance,date from {table}"
             cursor.execute(queryopening)
@@ -7436,7 +7438,6 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             closing = cursor.fetchone()
             data['opening_balance'] = opening if opening else 0
             data['closing_balance'] = closing if closing else 0
-            logging.info(f"data is {data['data']}")
             cursor.execute(f'DROP VIEW {table}')
             conn[0].commit()
             vardata='<p style="color: purple;">No statement could be generated</p>'
@@ -7478,7 +7479,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
     </body>
 </html>
 '''
-            if not payload['sendEmail']: return data
+            if not payload['sendEmail']: return giveSuccess(payload['user_id'],None,res,total_count=data['total_count'],filename=None)
 # Fetch the client's email address from the database
             with conn[0].cursor() as cursor:
                 query = f"SELECT email1 from client where id={payload['clientid']}"
