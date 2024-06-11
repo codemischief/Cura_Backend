@@ -3549,28 +3549,36 @@ WHERE clientid = 15284
 
 --10.06
 
-CREATE VIEW tally_orderpayments_no_tds AS
+CREATE VIEW Tally_OrderPayments_Vendors AS
 SELECT 
- '' AS uniqueid,
- CAST(paymentdate AS DATE) AS date,
- 'Payment' AS voucher,
- 'Payment' AS vouchertype,
- '' AS vouchernumber,
- vendorname AS drledger,
- mode_of_payment AS crledger,
- amount AS ledgeramount,
- clientname || '- ' || orderdescription || '- ' || description AS narration,
- '' AS instrumentno,
- '' AS instrumentdate,
- mode,
- entityid,
- tds,
- serviceid,
- clientid
+
+    ''::text AS uniqueid,
+    orderpaymentview.paymentdate AS date,
+    'Payment'::text AS voucher,
+    'Payment'::text AS vouchertype,
+    ''::text AS vouchernumber,
+    orderpaymentview.vendorname AS drledger,
+    orderpaymentview.mode_of_payment AS crledger,
+    orderpaymentview.amount AS ledgeramount,
+    (orderpaymentview.clientname || '- ' || 
+     orderpaymentview.orderdescription || '- ' || 
+     orderpaymentview.description || 
+     CASE 
+         WHEN orderpaymentview.tds > 0.01
+         THEN '- TDS-' || orderpaymentview.tds
+         ELSE ''
+     END) AS narration,
+    ''::text AS instrumentno,
+    ''::text AS instrumentdate,
+    orderpaymentview.mode,
+    orderpaymentview.entityid,
+    orderpaymentview.tds,
+    orderpaymentview.serviceid,
+    orderpaymentview.clientid
 FROM orderpaymentview
-WHERE clientid NOT IN (15284, 15285)
-  AND isdeleted = false
-  AND (tds < 0.01 OR tds IS NULL);
+WHERE 
+    orderpaymentview.clientid <> ALL (ARRAY[15284, 15285]) 
+    AND orderpaymentview.isdeleted = false;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 

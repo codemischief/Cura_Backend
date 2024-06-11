@@ -6560,14 +6560,6 @@ async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.
         formatData=True,
         isPaginationRequired=True
     )
-    data['total'] = {i:0 for i in total['data'][0]}
-    for i in total['data']:
-        for j in i:
-            if j != 'clientname' and j!= 'fy':
-                data['total'][j]+=i[j]
-    data['total'] = [data['total']]
-                
-    return data#['total']
 
 @app.post('/reportPMAClientPortalReport')
 async def report_PMA_Client_Portal_Report(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -8462,21 +8454,5 @@ async def delete_from_table(payload:dict,conn: psycopg2.extensions.connection = 
     except Exception as e:
         raise HTTPException(400,f"Bad request error <{e}>")
 
-@app.post('/reportAgedOrders')
-async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'AgedOrders'
-    if 'lobName' in payload and payload['lobName'] != 'all':
-        payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
-    if 'status' in payload and payload['status'] != 'all':
-        payload['filters'].append(['status','equalTo',payload['status'],''])
-    return await runInTryCatch(
-        conn = conn,
-        fname = 'aged_orders',
-        payload=payload,
-        isPaginationRequired=True,
-        whereinquery=False,
-        formatData=True,
-        isdeleted=False
-    )
 
 logger.info("program_started")
