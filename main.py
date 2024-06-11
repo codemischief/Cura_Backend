@@ -6386,9 +6386,9 @@ async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycop
         formatData=True
     )
     for i in forSum['data']:
-        total['totalreceipt'] += i['orderreceiptamount']
-        total['totalpayment'] += i['paymentamount']
-        total['total_diff'] += i['diff']
+        total['totalreceipt'] += i['orderreceiptamount'] if i['orderreceiptamount'] else 0
+        total['totalpayment'] += i['paymentamount'] if i['paymentamount'] else 0
+        total['total_diff'] += i['diff'] if i['diff'] else 0
     data['total'] = total
     logging.info(total)
     with conn[0].cursor() as cursor:
@@ -6412,26 +6412,27 @@ async def report_monthly_margin_entity_receipt_payments(payload: dict, conn: psy
         whereinquery=False,
         formatData=True
     )
-    query = f'''SELECT SUM(orderreceiptamount) AS totalreceipt,SUM(paymentamount) AS totalpayment,SUM(orderreceiptamount - paymentamount)
-      AS total_diff FROM datewiselobentityview'''
     payload['sort_by'] = []
-    payload['search_key'] = ''
     payload['pg_no'] = 0
     payload['pg_size'] = 0
     res = await runInTryCatch(
         conn = conn,
         fname='total_calc',
-        query = query,
         payload=payload,
         whereinquery=False,
         formatData=True,
         isdeleted=False,
         isPaginationRequired=True
     )
-    if not res['data']:
-        data['total'] = res['data']
-    data['total'] = res['data'][0]
-    logging.info(res['data'][0])
+    data['total'] = {
+        'totalreceipt':0,
+        'totalpayment':0,
+        'total_diff':0,
+    }
+    for i in res['data']:
+        data['total']['totalreceipt'] += i['orderreceiptamount'] if i['orderreceiptamount'] else 0
+        data['total']['totalpayment'] += i['paymentamount'] if i['paymentamount'] else 0
+        data['total']['total_diff'] += i['orderreceiptamount'] -i['paymentamount'] if i['orderreceiptamount'] and i['paymentamount'] else 0
     return data
 
 @app.post('/reportMonthlyMarginLOBReceiptPaymentsConsolidated')
@@ -6546,25 +6547,34 @@ async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.
         isPaginationRequired=True
     )
     query = f"""SELECT
-    SUM(COALESCE(jan, 0)) AS jan_sum,
-    SUM(COALESCE(feb, 0)) AS feb_sum,
-    SUM(COALESCE(mar, 0)) AS mar_sum,
-    SUM(COALESCE(apr, 0)) AS apr_sum,
-    SUM(COALESCE(may, 0)) AS may_sum,
-    SUM(COALESCE(jun, 0)) AS jun_sum,
-    SUM(COALESCE(jul, 0)) AS jul_sum,
-    SUM(COALESCE(aug, 0)) AS aug_sum,
-    SUM(COALESCE(sep, 0)) AS sep_sum,
-    SUM(COALESCE(oct, 0)) AS oct_sum,
-    SUM(COALESCE(nov, 0)) AS nov_sum,
-    SUM(COALESCE(dec, 0)) AS dec_sum
+    COALESCE(jan, 0) AS jan_sum,
+    COALESCE(feb, 0) AS feb_sum,
+    COALESCE(mar, 0) AS mar_sum,
+    COALESCE(apr, 0) AS apr_sum,
+    COALESCE(may, 0) AS may_sum,
+    COALESCE(jun, 0) AS jun_sum,
+    COALESCE(jul, 0) AS jul_sum,
+    COALESCE(aug, 0) AS aug_sum,
+    COALESCE(sep, 0) AS sep_sum,
+    COALESCE(oct, 0) AS oct_sum,
+    COALESCE(nov, 0) AS nov_sum,
+    COALESCE(dec, 0) AS dec_sum
 FROM pmabillingtrendview
 WHERE fy = '{payload['fy']}';"""
-    with conn[0].cursor() as cursor:
-        msg = logMessage(cursor,query)
-        logging.info(msg)
-        colnames = [col[0] for col in cursor.description]
-        data['total'] = dict(zip(colnames, cursor.fetchone()))
+    total = await runInTryCatch(
+        conn = conn,
+        fname = 'trends',\
+        payload=payload,
+        query=query,
+        whereinquery=False,
+        isdeleted=False,
+        formatData=True,
+        isPaginationRequired=False
+    )
+    data['total'] = {i:0 for i in total['data'][0]}
+    for i in total['data']:
+        for j in i:
+            data['total'][j]+=i[j]
     return data
 
 @app.post('/reportPMAClientPortalReport')
@@ -6996,19 +7006,20 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
     payload['pg_no'] = 0
     payload['pg_size'] = 0
     payload['sort_by'] = []
-    payload['order'] = ''
-    query = '''SELECT SUM(amount) AS sumamount FROM  rpt_Pmaclient'''
     total_amount = await runInTryCatch(
         conn = conn,
         fname = 'get_total_amount',
-        query = query,
         payload=payload,
         isPaginationRequired=True,
         formatData=True,
         whereinquery=False,
         isdeleted=False
     )
-    data['total'] = total_amount['data'][0] if total_amount['data'] else []
+    data['total'] = {
+        "sumamount":0
+    }
+    for i in total_amount['data']:
+        data['total']['sumamount'] += i['amount']
     return data
 
 
@@ -7090,20 +7101,21 @@ async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psy
     payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
-    query = '''SELECT SUM(zz.amount) AS sumamount FROM (SELECT clientname,date,type,
-                orderdetails,details,amount FROM Rpt_NonPMAClient) as zz'''
     total_amount = await runInTryCatch(
         conn = conn,
         fname = 'get_total_amount',
-        query = query,
         payload=payload,
         isPaginationRequired=True,
         formatData=True,
         whereinquery=False,
         isdeleted=False
     )
+    data['total'] = {
+        "sumamount":0
+    }
+    for i in total_amount['data']:
+        data['total']['sumamount'] += i['amount']
     logging.info(total_amount)
-    data['total'] = total_amount['data'][0] if total_amount['data'] else []
     return data
 
 
@@ -7138,7 +7150,7 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
     )
     sum = 0
     for i in total_amount['data']:
-        sum += i['amount']
+        sum += i['amount'] if i['amount'] else 0
     data['total_amount'] = [{"sumamount":sum}]
     return data
 
@@ -7963,7 +7975,6 @@ async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connec
     payload['pg_size'] = 0
     payload['sort_by'] = []
     payload['order'] = ''
-    payload['search_key'] = ''
     total_data = await runInTryCatch(
         conn = conn,
         fname = 'vendor_payment_statement',
