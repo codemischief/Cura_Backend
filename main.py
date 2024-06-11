@@ -6562,7 +6562,8 @@ WHERE fy = '{payload['fy']}';"""
     data['total'] = {i:0 for i in total['data'][0]}
     for i in total['data']:
         for j in i:
-            data['total'][j]+=i[j]
+            if j != 'clientname':
+                data['total'][j]+=i[j]
     return data
 
 @app.post('/reportPMAClientPortalReport')
