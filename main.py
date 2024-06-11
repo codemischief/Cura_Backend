@@ -5874,7 +5874,13 @@ async def get_order_status_admin(payload: dict, conn : psycopg2.extensions.conne
                 query = "SELECT mandalid,name FROM mandaltypes order by name"
                 msg = logMessage(cursor,query)
                 logging.info(msg)
-                data = cursor.fetchall()
+                _data = cursor.fetchall()
+                colnames = [desc[0] for desc in cursor.description]
+                res = []
+                for data in _data:
+                    res.append({colname:val for colname,val in zip(colnames,data)})
+                if not data:
+                    res = {colname:None for colname in colnames}
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
