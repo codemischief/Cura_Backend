@@ -6560,15 +6560,6 @@ async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.
         formatData=True,
         isPaginationRequired=True
     )
-    
-    data['total'] = {i:0 for i in total['data'][0]}
-    for i in total['data']:
-        for j in i:
-            if j != 'clientname' and j!= 'fy':
-                data['total'][j]+=i[j]
-    data['total'] = [data['total']]
-                
-    return data#['total']
 
 @app.post('/reportPMAClientPortalReport')
 async def report_PMA_Client_Portal_Report(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -8027,7 +8018,7 @@ async def report_order_statistics(payload: dict, conn: psycopg2.extensions.conne
 
 @app.post('/reportAgedOrders')
 async def report_aged_orders(payload: dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'OrderStatisticsView'
+    payload['table_name'] = 'agedorders'
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
     if 'statusName' in payload and payload['statusName'] != 'all':
@@ -8054,16 +8045,6 @@ async def report_aged_orders(payload: dict, conn: psycopg2.extensions.connection
         formatData=True,
         isdeleted=False
     )
-    result = {}
-    for i in total_data['data']:
-        for key in i:
-            if key=='service' or key=='lobname':
-                pass
-            elif key in result:
-                result[key]+=i[key]
-            else:
-                result[key]=i[key]
-    data['total'] = result
     return data
 
 @app.post('/reportOrderAnalysis')
@@ -8472,5 +8453,6 @@ async def delete_from_table(payload:dict,conn: psycopg2.extensions.connection = 
         raise h
     except Exception as e:
         raise HTTPException(400,f"Bad request error <{e}>")
+
 
 logger.info("program_started")

@@ -4111,3 +4111,15 @@ alter table professionals rename column phoneno to professionid;
 
 alter table professionals rename column phoneno1 to phonenumber;
 
+CREATE VIEW agedorders AS
+SELECT 
+  lobname,
+  orderstatus,
+  service,
+  clientname,
+  briefdescription,
+  propertydescription,
+  COALESCE(DATE_PART('day', NOW() - orderdate), 9999) AS agingdays
+FROM ordersview
+WHERE isdeleted = false;
+
