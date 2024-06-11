@@ -6546,24 +6546,12 @@ async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.
         formatData=True,
         isPaginationRequired=True
     )
-    query = f"""SELECT
-    COALESCE(jan, 0) AS jan_sum,
-    COALESCE(feb, 0) AS feb_sum,
-    COALESCE(mar, 0) AS mar_sum,
-    COALESCE(apr, 0) AS apr_sum,
-    COALESCE(may, 0) AS may_sum,
-    COALESCE(jun, 0) AS jun_sum,
-    COALESCE(jul, 0) AS jul_sum,
-    COALESCE(aug, 0) AS aug_sum,
-    COALESCE(sep, 0) AS sep_sum,
-    COALESCE(oct, 0) AS oct_sum,
-    COALESCE(nov, 0) AS nov_sum,
-    COALESCE(dec, 0) AS dec_sum
+    query = f"""SELECT *
 FROM pmabillingtrendview
 WHERE fy = '{payload['fy']}';"""
     total = await runInTryCatch(
         conn = conn,
-        fname = 'trends',\
+        fname = 'trends',
         payload=payload,
         query=query,
         whereinquery=False,
