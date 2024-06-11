@@ -7019,7 +7019,7 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         "sumamount":0
     }
     for i in total_amount['data']:
-        data['total']['sumamount'] += i['amount']
+        data['total']['sumamount'] += i['amount'] if i['amount'] else 0
     return data
 
 
