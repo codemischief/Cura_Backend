@@ -365,9 +365,10 @@ def filterAndPaginate_v2(db_config,
     try:
         # Base query
         query_frontend = False
-
+        logging.info("in fap2")
         if query is None:
             query = f"SELECT {','.join(required_columns)} FROM {table_name}"
+            logging.info('query is none and join')
             if isdeleted:
                 query += ' WHERE isdeleted = false '
             query_frontend = True
@@ -6546,19 +6547,20 @@ async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.
         formatData=True,
         isPaginationRequired=True
     )
-    query = f"""SELECT *
-FROM pmabillingtrendview
-WHERE fy = '{payload['fy']}';"""
+    logging.info(f"<{payload['rows']}><{payload['filters']}")
+    payload['pg_size'] = 0
+    payload['pg_no'] = 0
+    payload['sort_by'] = []
     total = await runInTryCatch(
         conn = conn,
         fname = 'trends',
         payload=payload,
-        query=query,
         whereinquery=False,
         isdeleted=False,
         formatData=True,
-        isPaginationRequired=False
+        isPaginationRequired=True
     )
+    
     data['total'] = {i:0 for i in total['data'][0]}
     for i in total['data']:
         for j in i:
@@ -6566,7 +6568,7 @@ WHERE fy = '{payload['fy']}';"""
                 data['total'][j]+=i[j]
     data['total'] = [data['total']]
                 
-    return data
+    return data#['total']
 
 @app.post('/reportPMAClientPortalReport')
 async def report_PMA_Client_Portal_Report(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
