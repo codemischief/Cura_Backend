@@ -7669,7 +7669,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
 
 @app.post('/reportOrderPaymentNoTDS')
 async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'Tally_OrderPayments_No_TDS'
+    payload['table_name'] = 'Tally_OrderPayments_Vendors'
     payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
     if 'paymentMode' in payload and payload['paymentMode'] != 'all':
         payload['filters'].append(['mode','equalTo',payload['paymentMode'],'Numeric'])
