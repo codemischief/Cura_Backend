@@ -7210,7 +7210,7 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
         rows = [rows1,rows2]
         rows[0].insert(0,'Application Balance')
         rows[1].insert(0,'PassBook Balance')
-        cols = ['Type','Bank Name','Payment','Receipt','Balance']
+        cols = ['Type','Bank Name','Receipt','Payment','Balance']
         df = pd.DataFrame(rows,columns=cols)
         if payload['downloadType'] == 'excel':
             filename = f'{uuid.uuid4()}.xlsx'
