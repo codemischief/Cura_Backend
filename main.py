@@ -7352,7 +7352,6 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         data['total'] = total
         cursor.execute(f'DROP VIEW {table}')
         conn[0].commit()
-        data['total'] = sumdata['data']
         return data
 
 
