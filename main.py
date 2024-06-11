@@ -7989,7 +7989,7 @@ async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connec
     }
     for i in total_data['data']:
         d['invoiceamount_orderpaymentamount'] += i['invoiceamount_orderpaymentamount'] if i['invoiceamount_orderpaymentamount'] else 0
-    data['total'] = total_data['data'][0] if total_data['data'] else []
+    data['total'] = d 
     return data
 
 
