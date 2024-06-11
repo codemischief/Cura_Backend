@@ -407,6 +407,7 @@ INSTEAD OF DELETE ON get_builder_contact_view
 FOR EACH ROW
 EXECUTE FUNCTION delete_from_get_builder_contacts_view();
 
+ alter table client_property add column indexiicollected boolean;
 
 CREATE VIEW get_client_info_view AS
 SELECT 
@@ -699,7 +700,7 @@ SELECT setval('client_property_owner_id_seq', COALESCE(max(id), 0) + 1, false) F
 ALTER TABLE client_property_owner ALTER COLUMN id SET DEFAULT nextval('client_property_owner_id_seq');
 
 
-alter table client_property alter column initialpossessiondate date;
+alter table client_property alter column initialpossessiondate type date;
 
 alter table client_property add column website text;
 alter table client_property add column email text;
@@ -1883,7 +1884,15 @@ CREATE SEQUENCE IF NOT EXISTS research_employer_id_seq OWNED BY research_employe
 SELECT setval('research_employer_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_employer;
 ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_employer_id_seq');
 
-alter table realestateagents alter column registered type bool using registered::boolean;
+ALTER TABLE realestateagents 
+ALTER COLUMN registered 
+TYPE boolean 
+USING 
+  CASE 
+    WHEN registered IS NOT NULL AND registered <> '' THEN true
+    ELSE false
+  END;
+
 alter table realestateagents add column rera_registration_number text;
 
 CREATE OR REPLACE VIEW get_research_realestate_agents_view AS
@@ -3456,6 +3465,11 @@ WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%';
 SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
 ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
 
+ CREATE SEQUENCE IF NOT EXISTS builder_contacts_id_seq OWNED BY builder_contacts.id;
+SELECT setval('builder_contacts_id_seq', COALESCE(max(id), 0) + 1, false) FROM builder_contacts;
+ALTER TABLE builder_contacts ALTER COLUMN id SET DEFAULT nextval('builder_contacts_id_seq');
+
+
 CREATE TABLE token_access_config(
     timedata int
 );
@@ -4100,13 +4114,13 @@ SELECT
   WHERE orders.id = ANY (ARRAY[31648::bigint, 10770::bigint, 31649::bigint, 353444::bigint, 122525::bigint])
 
 alter table agencytype rename to departmenttype;
-
+alter table bankst rename column "Cr/Dr" to crdr;
 alter table banksandbranches add column branchaddress text;
-alter table banksandbranches add column contactperson text;
+alter table banksandbranches rename column contact to contactperson;
 alter table banksandbranches add column notes text;
-
+alter table bankst rename column "AvailableBalance(INR)" to availablebalance;
 alter table z_cocbusinessgroup rename to cocbusinessgrouptype;
-
+alter table bankst rename column receivedby to receivedhow;
 alter table professionals rename column phoneno to professionid;
 
 alter table professionals rename column phoneno1 to phonenumber;

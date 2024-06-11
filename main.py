@@ -7428,6 +7428,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
                 group_by=None
             )
             res = []
+            ans = giveSuccess(payload['user_id'],None,res,total_count=data['total_count'],filename=None)
             for row in data['data']:
                 dic = {colname:val for (colname,val) in zip(data['colnames'],row)}
                 res.append(dic)
@@ -7438,10 +7439,11 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             opening = cursor.fetchone()
             cursor.execute(queryclosing)
             closing = cursor.fetchone()
-            res['opening_balance'] = opening if opening else 0
-            res['closing_balance'] = closing if closing else 0
+            ans['opening_balance'] = opening[0] if opening else 0
+            ans['closing_balance'] = closing[0] if closing else 0
             cursor.execute(f'DROP VIEW {table}')
             conn[0].commit()
+            ans['data'] = res
             vardata='<p style="color: purple;">No statement could be generated</p>'
             html = f'''
 <html>
@@ -7451,7 +7453,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
         </p>
         <p>
             <ul style="color: purple;">
-                <li>Balance due till date is Rs. {data['closing_balance']}/- including 18% taxes (GST).</li>
+                <li>Balance due till date is Rs. {ans['closing_balance']}/- including 18% taxes (GST).</li>
                 <li>You can transfer the dues to our usual ICICI bank account given below.</li>
                 <li>Let us know when you transfer the dues so that we can confirm receipt.</li>
             </ul>
@@ -7481,7 +7483,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
     </body>
 </html>
 '''
-            if not payload['sendEmail']: return giveSuccess(payload['user_id'],None,res,total_count=data['total_count'],filename=None)
+            if not payload['sendEmail']: return ans
 # Fetch the client's email address from the database
             with conn[0].cursor() as cursor:
                 query = f"SELECT email1 from client where id={payload['clientid']}"
