@@ -7349,7 +7349,7 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
             total['bankst_dr'] += i['bankst_dr'] if i['bankst_dr'] else 0
             total['order_payments'] += i['order_payments'] if i['order_payments'] else 0
             total['contractual_payments'] += i['contractual_payments'] if i['contractual_payments'] else 0
-        data['total'] = total
+        data['total'] = [total]
         cursor.execute(f'DROP VIEW {table}')
         conn[0].commit()
         return data
