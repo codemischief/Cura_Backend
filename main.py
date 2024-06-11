@@ -5881,7 +5881,7 @@ async def get_mandal_admin(payload: dict, conn : psycopg2.extensions.connection 
                     res.append({colname:val for colname,val in zip(colnames,data)})
                 if not data:
                     res = {colname:None for colname in colnames}
-                return giveSuccess(payload['user_id'],role_access_status,data)
+                return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
