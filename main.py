@@ -6562,7 +6562,7 @@ WHERE fy = '{payload['fy']}';"""
     data['total'] = {i:0 for i in total['data'][0]}
     for i in total['data']:
         for j in i:
-            if j != 'clientname':
+            if j != 'clientname' and j!= 'fy':
                 logging.info([data['total'][j],i])
                 data['total'][j]+=i[j]
             
