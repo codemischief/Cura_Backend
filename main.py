@@ -7194,13 +7194,23 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
     filename = None
     if 'downloadType' in payload:
         logging.info(databankpmtrcpts['data'])
-        rows1 = [databankpmtrcpts['data'][0][i] for i in databankpmtrcpts['data'][0]]
-        rows2 = [databankstbalance['data'][0][i] for i in databankstbalance['data'][0]]
+        logging.info(databankstbalance['data'])
+        if databankpmtrcpts['data'] != [] and databankstbalance['data'] != []:
+            rows1 = [databankpmtrcpts['data'][0][i] for i in databankpmtrcpts['data'][0]]
+            rows2 = [databankstbalance['data'][0][i] for i in databankstbalance['data'][0]]
+        elif databankstbalance['data'] != []:
+            rows1 = [payload['bankName'],'0','0','0']
+            rows2 = [databankstbalance['data'][0][i] for i in databankstbalance['data'][0]]
+        elif databankpmtrcpts['data'] != []:
+            rows1 = [databankpmtrcpts['data'][0][i] for i in databankpmtrcpts['data'][0]]
+            rows2 = [payload['bankName'],'0','0','0']
+        else:
+            rows1 = [payload['bankName'],'0','0','0']
+            rows2 = [payload['bankName'],'0','0','0']
         rows = [rows1,rows2]
         rows[0].insert(0,'Application Balance')
         rows[1].insert(0,'PassBook Balance')
-        cols = ['Balance']
-        cols.extend(list(databankstbalance['data'][0].keys()))
+        cols = ['Type','Bank Name','Payment','Receipt','Balance']
         df = pd.DataFrame(rows,columns=cols)
         if payload['downloadType'] == 'excel':
             filename = f'{uuid.uuid4()}.xlsx'
