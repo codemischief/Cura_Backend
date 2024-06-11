@@ -7115,7 +7115,6 @@ async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psy
     }
     for i in total_amount['data']:
         data['total']['sumamount'] += i['amount'] if i['amount'] else 0
-    logging.info(total_amount)
     return data
 
 
