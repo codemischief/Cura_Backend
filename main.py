@@ -7393,6 +7393,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             SELECT
             ClientID,
             ClientName,
+            Description,
             dated,
             Date,
             Type,
@@ -7436,8 +7437,8 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             opening = cursor.fetchone()
             cursor.execute(queryclosing)
             closing = cursor.fetchone()
-            data['opening_balance'] = opening if opening else 0
-            data['closing_balance'] = closing if closing else 0
+            res['opening_balance'] = opening if opening else 0
+            res['closing_balance'] = closing if closing else 0
             cursor.execute(f'DROP VIEW {table}')
             conn[0].commit()
             vardata='<p style="color: purple;">No statement could be generated</p>'
