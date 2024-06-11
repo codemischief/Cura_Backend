@@ -5864,8 +5864,23 @@ def download_file(payload: dict,conn: psycopg2.extensions.connection = Depends(g
         logging.info(traceback.print_exc())
         return giveFailure(f"Invalid Credentials",0,0)
 
-
-logger.info("program_started")
+@app.post('/getMandalAdmin')
+async def get_order_status_admin(payload: dict, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"get_order_status_admin:received payload <{payload}>")
+    try:
+        role_access_status = check_role_access(conn,payload)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT mandalid,name FROM mandaltypes order by name"
+                msg = logMessage(cursor,query)
+                logging.info(msg)
+                data = cursor.fetchall()
+                return giveSuccess(payload['user_id'],role_access_status,data)
+        else:
+            giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        giveFailure('Invalid Credentials',payload['user_id'],0)   
 
 
 @app.post('/getResearchMandals')
