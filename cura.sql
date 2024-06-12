@@ -4119,11 +4119,13 @@ alter table banksandbranches add column branchaddress text;
 alter table banksandbranches rename column contact to contactperson;
 alter table banksandbranches add column notes text;
 alter table bankst rename column "AvailableBalance(INR)" to availablebalance;
-alter table z_cocbusinessgroup rename to cocbusinessgrouptype;
+alter table cocbusinessgroup rename to cocbusinessgrouptype;
 alter table bankst rename column receivedby to receivedhow;
 alter table professionals rename column phoneno to professionid;
-
+alter table collegeous rename to colleges;
 alter table professionals rename column phoneno1 to phonenumber;
+alter table collegeoustypes rename to collegetypes;
+
 
 CREATE VIEW agedorders AS
 SELECT 
