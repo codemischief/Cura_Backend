@@ -56,6 +56,7 @@ month_map = {
 }
 
 def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: list = None):
+    logging.info(f'QUERY IS : <{cursor.mogrify(query,arr).decode("utf-8")}>')
     cursor.execute(query,arr)
     if arr is not None:
         return f'QUERY IS : <{cursor.mogrify(query,arr).decode("utf-8")}>'
@@ -547,7 +548,7 @@ async def addLogsForAction(data: dict,conn,id:int = None):
         logging.info(traceback.format_exc())
         return None
 def get_db_connection():
-    global DATABASE_URL
+    # global DATABASE_URL
     try:
 #         db_config =  {
 #     'dbname': DATABASE_NAME,
@@ -7470,7 +7471,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             for row in data['data']:
                 dic = {colname:val for (colname,val) in zip(data['colnames'],row)}
                 res.append(dic)
-            filename = data['filenam'] if 'filename' in data else None
+            filename = data['filename'] if 'filename' in data else None
             queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
             queryclosing = f"SELECT closing_balance,date from {table}"
             cursor.execute(queryopening)
