@@ -56,6 +56,7 @@ month_map = {
 }
 
 def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: list = None):
+    logging.info(f'QUERY IS : <{cursor.mogrify(query,arr).decode("utf-8")}>')
     cursor.execute(query,arr)
     if arr is not None:
         return f'QUERY IS : <{cursor.mogrify(query,arr).decode("utf-8")}>'
@@ -67,9 +68,13 @@ def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: l
 load_dotenv()
 
 # Get the value of DATABASE_URL
+# DATABASE_USER =os.getenv("DATABASE_USER")
+# DATABASE_PASS=os.getenv("DATABASE_PASS")
+# DATABASE_HOST=os.getenv("DATABASE_HOST")
+# DATABASE_PORT=os.getenv("DATABASE_PORT")
+# DATABASE_NAME=os.getenv("DATABASE_NAME")
+# DATABSE_SCHEMA=os.getenv("DATABSE_SCHEMA")
 DATABASE_URL = os.getenv("DATABASE_URL")
-
-
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -543,7 +548,24 @@ async def addLogsForAction(data: dict,conn,id:int = None):
         logging.info(traceback.format_exc())
         return None
 def get_db_connection():
+    # global DATABASE_URL
     try:
+#         db_config =  {
+#     'dbname': DATABASE_NAME,
+#     'user': DATABASE_USER,
+#     'password': DATABASE_PASS,
+#     'host': DATABASE_HOST,
+#     'port':DATABASE_PORT,
+#     'options': f'-c search_path={DATABSE_SCHEMA}'
+# }
+#         DATABASE_URL = (
+#     f"dbname={db_config['dbname']} "
+#     f"user={db_config['user']} "
+#     f"password={db_config['password']} "
+#     f"host={db_config['host']} "
+#     f"port={db_config['port']} "
+#     f"options='{db_config['options']}'"
+# )
         conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
         yield conn, cursor
@@ -1266,7 +1288,7 @@ async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.conne
                         addressline2, suburb, city, state, country,
                         zip, notes, dated, createdby, isdeleted
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                '''
+                RETURNING id'''
                 msg = logMessage(cursor,query, (
                     payload['builderid'],
                     payload['contactname'],
@@ -1288,10 +1310,11 @@ async def add_new_builder_contact(payload: dict, conn: psycopg2.extensions.conne
                     False
                 ))
                 logging.info(msg)
+                id = cursor.fetchone()[0]
                 # Commit changes to the database
                 conn[0].commit()
             data= {
-                    "entered": payload['contactname']
+                    "entered": id
                 } 
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
@@ -2373,7 +2396,8 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
             data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name,payload['filters'], payload['sort_by'],
                                         payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None )
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping = payload['colmap'] if 'colmap' else None)
+            
             total_count = data['total_count']
             colnames = payload['rows']
             res = []
@@ -2382,7 +2406,7 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
                 for i,colname in enumerate(colnames):
                     row_dict[colname] = row[i]
                 res.append(row_dict)
-            return giveSuccess(payload["user_id"],role_access_status,res, data['total_count'])
+            return giveSuccess(payload["user_id"],role_access_status,res, total_count,data['filename'])
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
     except Exception as e:
@@ -7193,13 +7217,29 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
     filename = None
     if 'downloadType' in payload:
         logging.info(databankpmtrcpts['data'])
-        rows1 = [databankpmtrcpts['data'][0][i] for i in databankpmtrcpts['data'][0]]
-        rows2 = [databankstbalance['data'][0][i] for i in databankstbalance['data'][0]]
+        databankpmtrcpts['data'] = [{
+            'type':'Passbook Balance',
+            'bankname':databankpmtrcpts['data'][0]['bankname'] if 'bankname' in databankpmtrcpts['data'][0] else payload['bankName'],
+            'payment':databankpmtrcpts['data'][0]['payment']  if 'payment' in databankpmtrcpts['data'][0] else 0,
+            'receipt':databankpmtrcpts['data'][0]['receipt'] if 'receipt' in databankpmtrcpts['data'][0] else 0,
+            'balance':databankpmtrcpts['data'][0]['balance'] if 'receipt' in databankpmtrcpts['data'][0] else 0,
+
+        }]
+        databankstbalance['data'] = [{
+            'type':'Application Balance',
+            'bankname':databankstbalance['data'][0]['bankname'] if 'bankname' in databankstbalance['data'][0] else payload['bankName'],
+            'payment':databankstbalance['data'][0]['payment']  if 'payment' in databankstbalance['data'][0] else 0,
+            'receipt':databankstbalance['data'][0]['receipt'] if 'receipt' in databankstbalance['data'][0] else 0,
+            'balance':databankstbalance['data'][0]['balance'] if 'receipt' in databankstbalance['data'][0] else 0,
+            
+
+        }]
+        logging.info(databankstbalance['data'])
+        if databankpmtrcpts['data'] != [] and databankstbalance['data'] != []:
+            rows1 = [databankpmtrcpts['data'][0][i] for i in databankpmtrcpts['data'][0]]
+            cols = [i for i in databankstbalance['data'][0]]
+            rows2 = [databankstbalance['data'][0][i] for i in databankstbalance['data'][0]]
         rows = [rows1,rows2]
-        rows[0].insert(0,'Application Balance')
-        rows[1].insert(0,'PassBook Balance')
-        cols = ['Balance']
-        cols.extend(list(databankstbalance['data'][0].keys()))
         df = pd.DataFrame(rows,columns=cols)
         if payload['downloadType'] == 'excel':
             filename = f'{uuid.uuid4()}.xlsx'
@@ -7393,6 +7433,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             SELECT
             ClientID,
             ClientName,
+            Description,
             dated,
             Date,
             Type,
@@ -7421,24 +7462,27 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
                 whereinquery=False,
                 search_key=payload['search_key'] if 'search_key' in payload else '',
                 isdeleted=False,
-                downloadType='pdf',
+                downloadType=payload['downloadType'] if 'downloadType' in payload else None,
                 mapping = payload['mapping'] if 'mapping' in payload else '',
                 group_by=None
             )
-            logging.info("")
-            filename = data['filename']
-
+            res = []
+            ans = giveSuccess(payload['user_id'],None,res,total_count=data['total_count'],filename=None)
+            for row in data['data']:
+                dic = {colname:val for (colname,val) in zip(data['colnames'],row)}
+                res.append(dic)
+            filename = data['filename'] if 'filename' in data else None
             queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
             queryclosing = f"SELECT closing_balance,date from {table}"
             cursor.execute(queryopening)
             opening = cursor.fetchone()
             cursor.execute(queryclosing)
             closing = cursor.fetchone()
-            data['opening_balance'] = opening if opening else 0
-            data['closing_balance'] = closing if closing else 0
-            logging.info(f"data is {data['data']}")
+            ans['opening_balance'] = opening[0] if opening else 0
+            ans['closing_balance'] = closing[0] if closing else 0
             cursor.execute(f'DROP VIEW {table}')
             conn[0].commit()
+            ans['data'] = res
             vardata='<p style="color: purple;">No statement could be generated</p>'
             html = f'''
 <html>
@@ -7448,7 +7492,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
         </p>
         <p>
             <ul style="color: purple;">
-                <li>Balance due till date is Rs. {data['closing_balance']}/- including 18% taxes (GST).</li>
+                <li>Balance due till date is Rs. {ans['closing_balance']}/- including 18% taxes (GST).</li>
                 <li>You can transfer the dues to our usual ICICI bank account given below.</li>
                 <li>Let us know when you transfer the dues so that we can confirm receipt.</li>
             </ul>
@@ -7478,7 +7522,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
     </body>
 </html>
 '''
-            if not payload['sendEmail']: return data
+            if not payload['sendEmail']: return ans
 # Fetch the client's email address from the database
             with conn[0].cursor() as cursor:
                 query = f"SELECT email1 from client where id={payload['clientid']}"
