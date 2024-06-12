@@ -67,13 +67,13 @@ def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: l
 load_dotenv()
 
 # Get the value of DATABASE_URL
-DATABASE_USER =os.getenv("DATABASE_USER")
-DATABASE_PASS=os.getenv("DATABASE_PASS")
-DATABASE_HOST=os.getenv("DATABASE_HOST")
-DATABASE_PORT=os.getenv("DATABASE_PORT")
-DATABASE_NAME=os.getenv("DATABASE_NAME")
-DATABSE_SCHEMA=os.getenv("DATABSE_SCHEMA")
-
+# DATABASE_USER =os.getenv("DATABASE_USER")
+# DATABASE_PASS=os.getenv("DATABASE_PASS")
+# DATABASE_HOST=os.getenv("DATABASE_HOST")
+# DATABASE_PORT=os.getenv("DATABASE_PORT")
+# DATABASE_NAME=os.getenv("DATABASE_NAME")
+# DATABSE_SCHEMA=os.getenv("DATABSE_SCHEMA")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -549,22 +549,22 @@ async def addLogsForAction(data: dict,conn,id:int = None):
 def get_db_connection():
     global DATABASE_URL
     try:
-        db_config =  {
-    'dbname': DATABASE_NAME,
-    'user': DATABASE_USER,
-    'password': DATABASE_PASS,
-    'host': DATABASE_HOST,
-    'port':DATABASE_PORT,
-    'options': f'-c search_path={DATABSE_SCHEMA}'
-}
-        DATABASE_URL = (
-    f"dbname={db_config['dbname']} "
-    f"user={db_config['user']} "
-    f"password={db_config['password']} "
-    f"host={db_config['host']} "
-    f"port={db_config['port']} "
-    f"options='{db_config['options']}'"
-)
+#         db_config =  {
+#     'dbname': DATABASE_NAME,
+#     'user': DATABASE_USER,
+#     'password': DATABASE_PASS,
+#     'host': DATABASE_HOST,
+#     'port':DATABASE_PORT,
+#     'options': f'-c search_path={DATABSE_SCHEMA}'
+# }
+#         DATABASE_URL = (
+#     f"dbname={db_config['dbname']} "
+#     f"user={db_config['user']} "
+#     f"password={db_config['password']} "
+#     f"host={db_config['host']} "
+#     f"port={db_config['port']} "
+#     f"options='{db_config['options']}'"
+# )
         conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
         yield conn, cursor
