@@ -2374,7 +2374,8 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
             data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name,payload['filters'], payload['sort_by'],
                                         payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None )
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping = payload['colmap'] if 'colmap' else None)
+            
             total_count = data['total_count']
             colnames = payload['rows']
             res = []
@@ -2383,7 +2384,7 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
                 for i,colname in enumerate(colnames):
                     row_dict[colname] = row[i]
                 res.append(row_dict)
-            return giveSuccess(payload["user_id"],role_access_status,res, data['total_count'])
+            return giveSuccess(payload["user_id"],role_access_status,res, total_count,data['filename'])
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
     except Exception as e:
@@ -7194,23 +7195,29 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
     filename = None
     if 'downloadType' in payload:
         logging.info(databankpmtrcpts['data'])
+        databankpmtrcpts['data'] = [{
+            'type':'Passbook Balance',
+            'bankname':databankpmtrcpts['data'][0]['bankname'] if 'bankname' in databankpmtrcpts['data'][0] else payload['bankName'],
+            'payment':databankpmtrcpts['data'][0]['payment']  if 'payment' in databankpmtrcpts['data'][0] else 0,
+            'receipt':databankpmtrcpts['data'][0]['receipt'] if 'receipt' in databankpmtrcpts['data'][0] else 0,
+            'balance':databankpmtrcpts['data'][0]['balance'] if 'receipt' in databankpmtrcpts['data'][0] else 0,
+
+        }]
+        databankstbalance['data'] = [{
+            'type':'Application Balance',
+            'bankname':databankstbalance['data'][0]['bankname'] if 'bankname' in databankstbalance['data'][0] else payload['bankName'],
+            'payment':databankstbalance['data'][0]['payment']  if 'payment' in databankstbalance['data'][0] else 0,
+            'receipt':databankstbalance['data'][0]['receipt'] if 'receipt' in databankstbalance['data'][0] else 0,
+            'balance':databankstbalance['data'][0]['balance'] if 'receipt' in databankstbalance['data'][0] else 0,
+            
+
+        }]
         logging.info(databankstbalance['data'])
         if databankpmtrcpts['data'] != [] and databankstbalance['data'] != []:
             rows1 = [databankpmtrcpts['data'][0][i] for i in databankpmtrcpts['data'][0]]
             rows2 = [databankstbalance['data'][0][i] for i in databankstbalance['data'][0]]
-        elif databankstbalance['data'] != []:
-            rows2 = [payload['bankName'],'0','0','0']
-            rows1 = [databankstbalance['data'][0][i] for i in databankstbalance['data'][0]]
-        elif databankpmtrcpts['data'] != []:
-            rows2 = [databankpmtrcpts['data'][0][i] for i in databankpmtrcpts['data'][0]]
-            rows1 = [payload['bankName'],'0','0','0']
-        else:
-            rows1 = [payload['bankName'],'0','0','0']
-            rows2 = [payload['bankName'],'0','0','0']
         rows = [rows1,rows2]
-        rows[0].insert(0,'Application Balance')
-        rows[1].insert(0,'PassBook Balance')
-        cols = ['Type','Bank Name','Receipt','Payment','Balance']
+        cols = [i for i in databankstbalance['data'][0]]
         df = pd.DataFrame(rows,columns=cols)
         if payload['downloadType'] == 'excel':
             filename = f'{uuid.uuid4()}.xlsx'
