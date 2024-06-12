@@ -30,7 +30,10 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.units import mm, inch
 
-
+pdfSizeMap = {
+    "routename":(55,28),
+    "route2":()
+}
 # Load the .env file
 
 # from dotenv import load_dotenv,find_Dotenv
@@ -309,7 +312,7 @@ def get_column_widths(data):
     return col_widths
 
 
-def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = None):
+def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = None,routename = None):
     try:
         logging.info("Here")
         if mapping:
@@ -331,7 +334,12 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
             filename = f'{uuid.uuid4()}.pdf'
             fname = f'./downloads/{filename}'
             # we may need to vary the pagesize based on each report
-            pagesize = (55 * inch, 28 * inch)
+            # pagesize = (55 * inch, 28 * inch)
+            if routename in pdfSizeMap:
+                pagesize = (pdfSizeMap[routename][0]*inch,pdfSizeMap[routename][1]*inch)
+            else:
+                pagesize = (55 * inch, 28 * inch)
+
             pdf = SimpleDocTemplate(fname, pagesize=pagesize)
             table = Table(data_list, colWidths=get_column_widths(df))
             style = TableStyle([
@@ -366,7 +374,8 @@ def filterAndPaginate_v2(db_config,
                          downloadType=None,
                          mapping = None,
                          group_by = None,
-                         static = True):
+                         static = True,
+                         routename=None):
     try:
         # Base query
         query_frontend = False
@@ -515,7 +524,7 @@ def filterAndPaginate_v2(db_config,
         resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames}
         # generate downloadable file
         if page_number == 0 and page_size == 0 and (downloadType == 'excel' or downloadType == 'pdf'):
-            filename = generateExcelOrPDF(downloadType, rows, colnames,mapping)
+            filename = generateExcelOrPDF(downloadType, rows, colnames,mapping,routename)
             resp_payload['filename'] = filename
         elif page_number == 0 and page_size == 0 and downloadType == None:
             logging.info(f'downloadType is <None>')
@@ -1996,7 +2005,8 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                                             downloadType=payload['downloadType'] if 'downloadType' in payload else None,
                                             mapping=payload['colmap'] if 'colmap' in payload else None,
                                             group_by=payload['group_by'] if 'group_by' in payload else None,
-                                            static=True if 'static' not in payload else False)
+                                            static=True if 'static' not in payload else False,
+                                            routename=payload['routename'] if 'routename' in payload else None)
                     logging.info(data.keys())
                     if 'total_count' not in data:
                         return giveFailure(data['message'],payload['user_id'],role_access_status)
@@ -7463,7 +7473,6 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
                 search_key=payload['search_key'] if 'search_key' in payload else '',
                 isdeleted=False,
                 downloadType=payload['downloadType'] if 'downloadType' in payload else None,
-                mapping = payload['mapping'] if 'mapping' in payload else '',
                 group_by=None
             )
             res = []
@@ -7471,7 +7480,6 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             for row in data['data']:
                 dic = {colname:val for (colname,val) in zip(data['colnames'],row)}
                 res.append(dic)
-            filename = data['filename'] if 'filename' in data else None
             queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
             queryclosing = f"SELECT closing_balance,date from {table}"
             cursor.execute(queryopening)
@@ -7522,6 +7530,8 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
     </body>
 </html>
 '''
+            filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None)
+            ans['filename'] = filename
             if not payload['sendEmail']: return ans
 # Fetch the client's email address from the database
             with conn[0].cursor() as cursor:
