@@ -45,6 +45,8 @@ pdfSizeMap = {
   "/admin/entityReceiptPayments" : (10,10),
   "/admin/lobReceiptPaymentsConsolidated" : (10,10),
   "/manage/bankstatement" : (30,15),
+  "/manage/manageBuilder":(15,10),
+  "/manage/manageprojectinfo":(15,10),
   "/manage/manageclientinfo" : (45,15),
   "/manage/manageclientproperty" : (45,20),
   "/manage/manageclientreceipt" : (20,10),
@@ -390,7 +392,7 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
             else:
                 logging.info('Route Name not found')
                 pagesize = (55 * inch, 28 * inch)
-
+            logging.info(pagesize)
             pdf = SimpleDocTemplate(fname, pagesize=pagesize)
             table = Table(data_list, colWidths=get_column_widths(df))
             style = TableStyle([
@@ -1077,7 +1079,7 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,whereinquery=True,
-                                            downloadType=payload['downloadType'] if 'downloadType' in payload else None )
+                                            downloadType=payload['downloadType'] if 'downloadType' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
 
                 colnames = data['colnames']
                 total_count = data['total_count']
