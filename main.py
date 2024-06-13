@@ -32,7 +32,7 @@ from reportlab.lib.units import mm, inch
 
 pdfSizeMap = {
     "/admin/manageuser" : (10,10),
-  "/admin/manageemployees" : (16,8),
+  "/admin/manageemployees" : (20,10),
   "/admin/country" : (10,10),
   "/admin/state" : (10,10),
   "/admin/city" : (10,10),
@@ -52,9 +52,9 @@ pdfSizeMap = {
   "/manage/managepmaagreement" : (10,10),
   "/manage/manageorderreceipt" : (40,10),
   "/manage/manageclientinvoice" : (25,10),
-  "/manage/managevendor" : (10,10),
-  "/manage/managevendorinvoice" : (10,10),
-  "/manage/managevendorpayment" : (10,10),
+  "/manage/managevendor" : (16,10),
+  "/manage/managevendorinvoice" : (30,10),
+  "/manage/managevendorpayment" : (30,10),
   "/manage/sendclientstatement" : (10,10),
   "/manage/managebuilder/projects/:buildername" : (10,10),
   "/manage/managebuilder/contacts/:buildername" : (10,10),
