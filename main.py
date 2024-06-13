@@ -575,7 +575,7 @@ def filterAndPaginate_v2(db_config,
                 logging.info([start_index,end_index])
             else:
                 rows = search_results
-        resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames}
+        resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames,'filename':None}
         # generate downloadable file
         if page_number == 0 and page_size == 0 and (downloadType == 'excel' or downloadType == 'pdf'):
             
