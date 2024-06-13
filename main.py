@@ -2459,7 +2459,7 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
             data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name,payload['filters'], payload['sort_by'],
                                         payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping = payload['colmap'] if 'colmap' else None)
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping = payload['colmap'] if 'colmap' in payload else None)
             
             total_count = data['total_count']
             colnames = payload['rows']
@@ -2469,7 +2469,7 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
                 for i,colname in enumerate(colnames):
                     row_dict[colname] = row[i]
                 res.append(row_dict)
-            return giveSuccess(payload["user_id"],role_access_status,res, total_count,data['filename'])
+            return giveSuccess(payload["user_id"],role_access_status,res, total_count,data['filename'] if 'filename' in data else None)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
     except Exception as e:
