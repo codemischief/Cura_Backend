@@ -31,8 +31,42 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.units import mm, inch
 
 pdfSizeMap = {
-    "routename":(55,28),
-    "route2":()
+    "/admin/manageuser" : (10,10),
+  "/admin/manageemployees" : (16,8),
+  "/admin/country" : (10,10),
+  "/admin/state" : (10,10),
+  "/admin/city" : (10,10),
+  "/admin/locality" : (12,6),
+  "/admin/LOB" : (8,10),
+  "/admin/service" : (10,10),
+  "/admin/payments" : (15,10),
+  "/admin/temp" : (10,10),
+  "/admin/lobReceiptPayments" : (10,10),
+  "/admin/entityReceiptPayments" : (10,10),
+  "/admin/lobReceiptPaymentsConsolidated" : (10,10),
+  "/manage/bankstatement" : (10,10),
+  "/manage/manageclientinfo" : (10,10),
+  "/manage/manageclientproperty" : (10,10),
+  "/manage/manageclientreceipt" : (10,10),
+  "/manage/managellagreement" : (10,10),
+  "/manage/managepmaagreement" : (10,10),
+  "/manage/manageorderreceipt" : (10,10),
+  "/manage/manageclientinvoice" : (10,10),
+  "/manage/managevendor" : (10,10),
+  "/manage/managevendorinvoice" : (10,10),
+  "/manage/managevendorpayment" : (10,10),
+  "/manage/sendclientstatement" : (10,10),
+  "/manage/managebuilder/projects/:buildername" : (10,10),
+  "/manage/managebuilder/contacts/:buildername" : (10,10),
+  "/manage/managevendorpayment/:orderid" : (10,10),
+  "/manage/manageclientinvoice/:orderid" : (10,10),
+  "/manage/manageorderreceipt/:orderid" : (10,10),
+  "/manage/manageclientinfo/orders/showall/:orderid" : (10,10),
+  "/manage/manageclientinfo/properties/:clientname" : (10,10),
+  "/manage/manageclientinfo/orders/:clientname" : (10,10),
+  "/manage/manageclientproperty/pmaagreement/:clientname" : (10,10),
+  "/manage/manageclientproperty/llagreement/:clientname" : (10,10),
+  "/manage/pmaBilling" : (10,10)
 }
 # Load the .env file
 
@@ -314,7 +348,8 @@ def get_column_widths(data):
 
 def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = None,routename = None):
     try:
-        logging.info("Here")
+        logging.info(f"Download type is {downloadType}")
+        logging.info(f"Route Name is {routename}")
         if mapping:
             colnames = [mapping[i] for i in colnames]
         df = pd.DataFrame(rows, columns=colnames)
@@ -336,8 +371,10 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
             # we may need to vary the pagesize based on each report
             # pagesize = (55 * inch, 28 * inch)
             if routename in pdfSizeMap:
+                logging.info(f'Route name {routename} found')
                 pagesize = (pdfSizeMap[routename][0]*inch,pdfSizeMap[routename][1]*inch)
             else:
+                logging.info('Route Name not found')
                 pagesize = (55 * inch, 28 * inch)
 
             pdf = SimpleDocTemplate(fname, pagesize=pagesize)
@@ -351,6 +388,7 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
             table.setStyle(style)
             elements = [table]
             pdf.build(elements)
+            logging.info(f'generated pdf file <{fname}>')
         return filename
     except Exception as e:
         msg = str(e).replace("\n","")
@@ -524,6 +562,7 @@ def filterAndPaginate_v2(db_config,
         resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames}
         # generate downloadable file
         if page_number == 0 and page_size == 0 and (downloadType == 'excel' or downloadType == 'pdf'):
+            
             filename = generateExcelOrPDF(downloadType, rows, colnames,mapping,routename)
             resp_payload['filename'] = filename
         elif page_number == 0 and page_size == 0 and downloadType == None:
@@ -6594,6 +6633,17 @@ async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.
         formatData=True,
         isPaginationRequired=True
     )
+    total_data = {}
+    for i in total['data']:
+        for j in i:
+            if j == 'clientname' or j=='fy':
+                continue
+            if j in total_data:
+                total_data[j] += i[j]
+            else:
+                total_data[j] = i[j]
+    data['total'] = total_data
+    return data
 
 @app.post('/reportPMAClientPortalReport')
 async def report_PMA_Client_Portal_Report(payload:dict, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -7228,19 +7278,19 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
     if 'downloadType' in payload:
         logging.info(databankpmtrcpts['data'])
         databankpmtrcpts['data'] = [{
-            'type':'Passbook Balance',
-            'bankname':databankpmtrcpts['data'][0]['bankname'] if 'bankname' in databankpmtrcpts['data'][0] else payload['bankName'],
-            'payment':databankpmtrcpts['data'][0]['payment']  if 'payment' in databankpmtrcpts['data'][0] else 0,
-            'receipt':databankpmtrcpts['data'][0]['receipt'] if 'receipt' in databankpmtrcpts['data'][0] else 0,
-            'balance':databankpmtrcpts['data'][0]['balance'] if 'receipt' in databankpmtrcpts['data'][0] else 0,
+            'TYPE':'Passbook Balance',
+            'Bank Name':databankpmtrcpts['data'][0]['bankname'] if 'bankname' in databankpmtrcpts['data'][0] else payload['bankName'],
+            'Payment':databankpmtrcpts['data'][0]['payment']  if 'payment' in databankpmtrcpts['data'][0] else 0,
+            'Receipt':databankpmtrcpts['data'][0]['receipt'] if 'receipt' in databankpmtrcpts['data'][0] else 0,
+            'Balance':databankpmtrcpts['data'][0]['balance'] if 'receipt' in databankpmtrcpts['data'][0] else 0,
 
         }]
         databankstbalance['data'] = [{
-            'type':'Application Balance',
-            'bankname':databankstbalance['data'][0]['bankname'] if 'bankname' in databankstbalance['data'][0] else payload['bankName'],
-            'payment':databankstbalance['data'][0]['payment']  if 'payment' in databankstbalance['data'][0] else 0,
-            'receipt':databankstbalance['data'][0]['receipt'] if 'receipt' in databankstbalance['data'][0] else 0,
-            'balance':databankstbalance['data'][0]['balance'] if 'receipt' in databankstbalance['data'][0] else 0,
+            'Type':'Application Balance',
+            'Bank Name':databankstbalance['data'][0]['bankname'] if 'bankname' in databankstbalance['data'][0] else payload['bankName'],
+            'Payment':databankstbalance['data'][0]['payment']  if 'payment' in databankstbalance['data'][0] else 0,
+            'Receipt':databankstbalance['data'][0]['receipt'] if 'receipt' in databankstbalance['data'][0] else 0,
+            'Balance':databankstbalance['data'][0]['balance'] if 'receipt' in databankstbalance['data'][0] else 0,
             
 
         }]
@@ -7443,6 +7493,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             SELECT
             ClientID,
             ClientName,
+            Property,
             Description,
             dated,
             Date,
@@ -7459,6 +7510,10 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
         with conn[0].cursor() as cursor:
             cursor.execute(query)
             conn[0].commit()
+            if 'sendEmail' in payload and not payload['sendEmail']:
+                payload['rows'] = ['date','type','description','property','amount']
+            else:
+                payload['rows'] = ['date','clientname','property','description','type','amount','opening_balance','closing_balance']
             payload['table_name'] = table
             data = filterAndPaginate_v2(
                 db_config=DATABASE_URL,
@@ -7532,7 +7587,8 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
 '''
             filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None)
             ans['filename'] = filename
-            if not payload['sendEmail']: return ans
+            if not payload['sendEmail']:
+                return ans
 # Fetch the client's email address from the database
             with conn[0].cursor() as cursor:
                 query = f"SELECT email1 from client where id={payload['clientid']}"
