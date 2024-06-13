@@ -785,7 +785,6 @@ def giveFailure(msg,uid,rid,data=[]):
     }
 
 def check_role_access(conn, payload: dict,request: Request = None,method: str = None):
-    return 1
     if request and  request.headers.get('authorization'):
         with conn[0].cursor() as cursor:
             token = request.headers['authorization'][7:]
