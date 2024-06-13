@@ -45,17 +45,19 @@ pdfSizeMap = {
   "/admin/entityReceiptPayments" : (10,10),
   "/admin/lobReceiptPaymentsConsolidated" : (10,10),
   "/manage/bankstatement" : (30,15),
+  "/manage/manageBuilder":(15,10),
+  "/manage/manageprojectinfo":(15,10),
   "/manage/manageclientinfo" : (45,15),
   "/manage/manageclientproperty" : (45,20),
   "/manage/manageclientreceipt" : (20,10),
-  "/manage/managellagreement" : (10,10),
-  "/manage/managepmaagreement" : (10,10),
+  "/manage/managellagreement" : (20,10),
+  "/manage/managepmaagreement" : (30,10),
   "/manage/manageorderreceipt" : (40,10),
   "/manage/manageclientinvoice" : (25,10),
   "/manage/managevendor" : (16,10),
   "/manage/managevendorinvoice" : (30,10),
   "/manage/managevendorpayment" : (30,10),
-  "/manage/sendclientstatement" : (10,10),
+  "/manage/sendclientstatement" : (20,10),
   "/manage/managebuilder/projects/:buildername" : (10,10),
   "/manage/managebuilder/contacts/:buildername" : (10,10),
   "/manage/managevendorpayment/:orderid" : (10,10),
@@ -390,7 +392,7 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
             else:
                 logging.info('Route Name not found')
                 pagesize = (55 * inch, 28 * inch)
-
+            logging.info(pagesize)
             pdf = SimpleDocTemplate(fname, pagesize=pagesize)
             table = Table(data_list, colWidths=get_column_widths(df))
             style = TableStyle([
@@ -1077,7 +1079,7 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,whereinquery=True,
-                                            downloadType=payload['downloadType'] if 'downloadType' in payload else None )
+                                            downloadType=payload['downloadType'] if 'downloadType' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
 
                 colnames = data['colnames']
                 total_count = data['total_count']
@@ -1476,16 +1478,25 @@ async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
         formatData=True,
         isdeleted=True
     )
-    with conn[0].cursor() as cursor:
-        query = '''SELECT
-    COALESCE(SUM(CASE WHEN lower(crdr) = 'cr' THEN amount ELSE 0 END), 0) - 
-    COALESCE(SUM(CASE WHEN lower(crdr) = 'dr' THEN amount ELSE 0 END), 0) AS difference
-FROM
-    get_bankst_view
-'''
-        cursor.execute(query)
-        data['total_amount'] = cursor.fetchone()[0]
-        return data
+    payload['pg_size'] = 0
+    payload['pg_no'] = 0
+    total =  await runInTryCatch(
+        conn = conn,
+        fname = 'get_bank_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+    sum = 0
+    for i in total['data']:
+        if i['crdr'].lower() == 'cr':
+            sum += i['amount']
+        if i['crdr'].lower() =='dr' :
+            sum -= i['amount']
+    data['total_amount'] = sum
+    return data
 
 
 @app.post('/addBankSt')
@@ -3583,7 +3594,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                 if _data:
                     project_bank_details = [{col:val for col,val in zip(colnames,data)} for data in _data]
                 else:
-                    project_bank_details = [{col:None for col in colnames}]
+                    project_bank_details = []
                 
                 #==============Project_Contacts===================
                 query = 'SELECT * FROM project_contacts where projectid=%s order by id'
@@ -3594,7 +3605,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                 if _data:
                     project_contacts = [{col:val for col,val in zip(colnames,data)} for data in _data]
                 else:
-                    project_contacts = [{col:None for col in colnames}]
+                    project_contacts = []
 
                 #=============Project_Photos======================
                 query = 'SELECT * FROM project_photos where projectid=%s order by id'
@@ -3605,7 +3616,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                 if _data:
                     project_photos = [{col:val for col,val in zip(colnames,data)} for data in _data]
                 else:
-                    project_photos = [{col:None for col in colnames}]
+                    project_photos = []
 
                 data = {
                     'project_info':project_info,
@@ -7599,7 +7610,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
     </body>
 </html>
 '''
-            filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None)
+            filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
             ans['filename'] = filename
             if not payload['sendEmail']:
                 return ans
