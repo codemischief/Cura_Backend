@@ -55,7 +55,7 @@ pdfSizeMap = {
   "/manage/managevendor" : (16,10),
   "/manage/managevendorinvoice" : (30,10),
   "/manage/managevendorpayment" : (30,10),
-  "/manage/sendclientstatement" : (10,10),
+  "/manage/sendclientstatement" : (20,10),
   "/manage/managebuilder/projects/:buildername" : (10,10),
   "/manage/managebuilder/contacts/:buildername" : (10,10),
   "/manage/managevendorpayment/:orderid" : (10,10),
@@ -2459,7 +2459,7 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
             data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name,payload['filters'], payload['sort_by'],
                                         payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping = payload['colmap'] if 'colmap' else None)
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping = payload['colmap'] if 'colmap' in payload else None)
             
             total_count = data['total_count']
             colnames = payload['rows']
@@ -7599,7 +7599,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
     </body>
 </html>
 '''
-            filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None)
+            filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
             ans['filename'] = filename
             if not payload['sendEmail']:
                 return ans
