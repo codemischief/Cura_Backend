@@ -29,6 +29,62 @@ INSERT INTO order_status (id, name) VALUES
 (8, 'Work Done - Pending Collection');
 
 
+ALTER TABLE client_property_caretaking_agreement
+ALTER COLUMN startdate TYPE date;
+
+ALTER TABLE client_property_caretaking_agreement
+ALTER COLUMN poastartdate TYPE date;
+
+ALTER TABLE client_property_caretaking_agreement
+ALTER COLUMN actualenddate TYPE date;
+
+ALTER TABLE client_property_caretaking_agreement
+ALTER COLUMN enddate TYPE date;
+
+ALTER TABLE client_property_caretaking_agreement
+ALTER COLUMN poaenddate TYPE date;
+
+ALTER TABLE client_property_caretaking_agreement
+ALTER COLUMN societyduespaidtilldate TYPE date;
+
+ALTER TABLE client_poa
+ALTER COLUMN poaeffectivedate TYPE date;
+
+ALTER TABLE client_poa
+ALTER COLUMN poaenddate TYPE date;
+
+ALTER TABLE client_property_photos
+ALTER COLUMN phototakenwhen TYPE date;
+
+CREATE VIEW get_research_mandalas_view AS
+ SELECT DISTINCT a.id,
+    a.name,
+    a.typeid,
+    b.name AS typename,
+    a.emailid,
+    a.phoneno,
+    a.dated,
+    a.createdby,
+    a.isdeleted,
+    a.suburb,
+    a.city AS cityid,
+    c.city,
+    a.state,
+    a.country AS countryid,
+    d.name AS country,
+    a.website,
+    a.email1,
+    a.email2,
+    a.contactname1,
+    a.contactname2,
+    a.phoneno1,
+    a.phoneno2,
+    a.excludefrommailinglist
+   FROM mandalas a
+     LEFT JOIN mandaltypes b ON a.typeid = b.mandalid
+     LEFT JOIN cities c ON a.city = c.id
+     LEFT JOIN country d ON a.country = d.id;
+
 CREATE VIEW get_payments_view AS
 SELECT DISTINCT
     a.id,
@@ -141,7 +197,7 @@ SELECT DISTINCT
     a.dateofjoining,
     a.dob,
     a.panno,
-    a.status,
+    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
     a.phoneno,
     a.email,
     a.addressline1,
@@ -817,7 +873,7 @@ SELECT DISTINCT
     d.status as propertystatusname,
     d.client as clientname,
     d.clientid,
-    d.status,
+    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
     a.startdate,
     a.enddate,
     a.actualenddate,
@@ -1776,18 +1832,18 @@ BEGIN
     input_year := EXTRACT(YEAR FROM _date);
 
     -- Determine the start year of the financial year based on the month of the input date
-    IF EXTRACT(MONTH FROM input_date) > 3 THEN
+    IF EXTRACT(MONTH FROM _date) > 3 THEN
         start_year := input_year::TEXT;
     ELSE
-        start_year := (input_year - 1)::TEXT;
+        start_year := (input_year::INT - 1)::TEXT;
     END IF;
 
-    RETURN start_year || '-' || RIGHT((start_year + 1)::TEXT, 2);
+    RETURN start_year || '-' || RIGHT((start_year::INT + 1)::TEXT, 2);
 END;
 $$
 LANGUAGE PLPGSQL;
 
-CREATE OR REPLACE FUNCTION getMonthYear(_Date TIMESTAMP) 
+CREATE OR REPLACE FUNCTION getMonthYear(_Date DATE) 
 RETURNS TEXT AS 
 $$
 DECLARE
@@ -1818,7 +1874,7 @@ SELECT DISTINCT
     a.firstname,
     a.lastname,
     concat_ws(' ',a.firstname,a.lastname) as fullname,
-    a.status,
+    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
     a.effectivedate,
     a.homephone,
     a.workphone,
@@ -3277,7 +3333,7 @@ INNER JOIN
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 
-CREATE VIEW rpt_clientswithadvanceholdingamounts AS
+CREATE OR REPLACE VIEW rpt_clientswithadvanceholdingamounts AS
  SELECT clientsummaryview.clientname,
     COALESCE(sum(clientsummaryview.sumpayment), 0::numeric) AS payments,
     COALESCE(sum(clientsummaryview.sumreceipt), 0::numeric) AS receipts,
@@ -5127,39 +5183,6 @@ GROUP BY
     MonthYear
 LIMIT 100;
 
-CREATE OR REPLACE VIEW Bank_Pmt_Rcpts AS
-SELECT
-    -1 * Order_Payment.amount AS Amount,
-    PaymentDate AS date,
-    Mode_Of_payment.Name AS BankName
-FROM
-    Order_Payment,
-    Mode_Of_payment
-WHERE
-    Order_Payment.Mode = Mode_Of_payment.ID
-    AND Mode_Of_payment.Name NOT IN ('Cash')
-UNION ALL
-SELECT
-    Order_Receipt.amount AS Amount,
-    Order_Receipt.RecdDate AS date,
-    Mode_Of_payment.Name AS BankName
-FROM
-    Order_Receipt,
-    Mode_Of_payment
-WHERE
-    Order_Receipt.PaymentMode = Mode_Of_payment.ID
-    AND Mode_Of_payment.Name NOT IN ('Cash')
-UNION ALL
-SELECT
-    -1 * REF_Contractual_Payments.amount AS Amount,
-    PaidOn AS date,
-    Mode_Of_payment.Name AS BankName
-FROM
-    REF_Contractual_Payments,
-    Mode_Of_payment
-WHERE
-    REF_Contractual_Payments.PaymentMode = Mode_Of_payment.ID
-    AND Mode_Of_payment.Name NOT IN ('Cash');
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
