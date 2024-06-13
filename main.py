@@ -44,6 +44,7 @@ pdfSizeMap = {
   "/admin/lobReceiptPayments" : (10,10),
   "/admin/entityReceiptPayments" : (10,10),
   "/admin/lobReceiptPaymentsConsolidated" : (10,10),
+
   "/manage/bankstatement" : (30,15),
   "/manage/manageclientinfo" : (45,15),
   "/manage/manageclientproperty" : (45,20),
@@ -355,7 +356,6 @@ def get_column_widths(data):
         col_widths.append(max_len * 5)  # Adjust this multiplier as needed
         logging.info(f"<{col}> length is {max_len}")
     return col_widths
-
 
 
 def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = None,routename = None):
