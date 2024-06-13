@@ -55,7 +55,7 @@ pdfSizeMap = {
   "/manage/managevendor" : (10,10),
   "/manage/managevendorinvoice" : (10,10),
   "/manage/managevendorpayment" : (10,10),
-  "/manage/sendclientstatement" : (10,10),
+  "/manage/sendclientstatement" : (18,9),
   "/manage/managebuilder/projects/:buildername" : (10,10),
   "/manage/managebuilder/contacts/:buildername" : (10,10),
   "/manage/managevendorpayment/:orderid" : (10,10),
@@ -7599,7 +7599,8 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
     </body>
 </html>
 '''
-            filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None)
+            filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],
+                                          colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
             ans['filename'] = filename
             if not payload['sendEmail']:
                 return ans
