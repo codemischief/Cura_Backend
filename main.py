@@ -2480,7 +2480,7 @@ async def get_builder_contacts(payload: dict,conn : psycopg2.extensions.connecti
                 for i,colname in enumerate(colnames):
                     row_dict[colname] = row[i]
                 res.append(row_dict)
-            return giveSuccess(payload["user_id"],role_access_status,res, total_count,data['filename'])
+            return giveSuccess(payload["user_id"],role_access_status,res, total_count,data['filename'] if 'filename' in data else None)
         else:
             return giveFailure("Access Denied",payload['user_id'],role_access_status)        
     except Exception as e:
