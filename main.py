@@ -1079,6 +1079,7 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,whereinquery=True,
+                                        mapping=payload['colmap'] if 'colmap' in payload else None,
                                             downloadType=payload['downloadType'] if 'downloadType' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
 
                 colnames = data['colnames']
