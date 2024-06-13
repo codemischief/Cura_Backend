@@ -44,7 +44,6 @@ pdfSizeMap = {
   "/admin/lobReceiptPayments" : (10,10),
   "/admin/entityReceiptPayments" : (10,10),
   "/admin/lobReceiptPaymentsConsolidated" : (10,10),
-
   "/manage/bankstatement" : (30,15),
   "/manage/manageclientinfo" : (45,15),
   "/manage/manageclientproperty" : (45,20),
@@ -7525,7 +7524,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
         with conn[0].cursor() as cursor:
             cursor.execute(query)
             conn[0].commit()
-            if 'sendEmail' in payload and not payload['sendEmail']:
+            if 'sendEmail' in payload and not payload['sendEmail'] and 'downloadType' not in payload:
                 payload['rows'] = ['date','type','description','property','amount']
             else:
                 payload['rows'] = ['date','clientname','property','description','type','amount','opening_balance','closing_balance']
@@ -7604,6 +7603,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
             ans['filename'] = filename
             if not payload['sendEmail']:
                 return ans
+
 # Fetch the client's email address from the database
             with conn[0].cursor() as cursor:
                 query = f"SELECT email1 from client where id={payload['clientid']}"
