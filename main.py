@@ -1476,16 +1476,25 @@ async def get_bank_statement(payload : dict, conn : psycopg2.extensions.connecti
         formatData=True,
         isdeleted=True
     )
-    with conn[0].cursor() as cursor:
-        query = '''SELECT
-    COALESCE(SUM(CASE WHEN lower(crdr) = 'cr' THEN amount ELSE 0 END), 0) - 
-    COALESCE(SUM(CASE WHEN lower(crdr) = 'dr' THEN amount ELSE 0 END), 0) AS difference
-FROM
-    get_bankst_view
-'''
-        cursor.execute(query)
-        data['total_amount'] = cursor.fetchone()[0]
-        return data
+    payload['pg_size'] = 0
+    payload['pg_no'] = 0
+    total =  await runInTryCatch(
+        conn = conn,
+        fname = 'get_bank_statement',
+        payload=payload,
+        isPaginationRequired=True,
+        whereinquery=True,
+        formatData=True,
+        isdeleted=True
+    )
+    sum = 0
+    for i in total['data']:
+        if i['crdr'].lower() == 'cr':
+            sum += i['amount']
+        if i['crdr'].lower() =='dr' :
+            sum -= i['amount']
+    data['total_amount'] = sum
+    return data
 
 
 @app.post('/addBankSt')
@@ -3583,7 +3592,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                 if _data:
                     project_bank_details = [{col:val for col,val in zip(colnames,data)} for data in _data]
                 else:
-                    project_bank_details = [{col:None for col in colnames}]
+                    project_bank_details = []
                 
                 #==============Project_Contacts===================
                 query = 'SELECT * FROM project_contacts where projectid=%s order by id'
@@ -3594,7 +3603,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                 if _data:
                     project_contacts = [{col:val for col,val in zip(colnames,data)} for data in _data]
                 else:
-                    project_contacts = [{col:None for col in colnames}]
+                    project_contacts = []
 
                 #=============Project_Photos======================
                 query = 'SELECT * FROM project_photos where projectid=%s order by id'
@@ -3605,7 +3614,7 @@ async def getprojectbyid(payload: dict, conn: psycopg2.extensions.connection = D
                 if _data:
                     project_photos = [{col:val for col,val in zip(colnames,data)} for data in _data]
                 else:
-                    project_photos = [{col:None for col in colnames}]
+                    project_photos = []
 
                 data = {
                     'project_info':project_info,
