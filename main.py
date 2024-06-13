@@ -44,14 +44,15 @@ pdfSizeMap = {
   "/admin/lobReceiptPayments" : (10,10),
   "/admin/entityReceiptPayments" : (10,10),
   "/admin/lobReceiptPaymentsConsolidated" : (10,10),
-  "/manage/bankstatement" : (10,10),
-  "/manage/manageclientinfo" : (10,10),
-  "/manage/manageclientproperty" : (10,10),
-  "/manage/manageclientreceipt" : (10,10),
+
+  "/manage/bankstatement" : (30,15),
+  "/manage/manageclientinfo" : (45,15),
+  "/manage/manageclientproperty" : (45,20),
+  "/manage/manageclientreceipt" : (20,10),
   "/manage/managellagreement" : (10,10),
   "/manage/managepmaagreement" : (10,10),
-  "/manage/manageorderreceipt" : (10,10),
-  "/manage/manageclientinvoice" : (10,10),
+  "/manage/manageorderreceipt" : (40,10),
+  "/manage/manageclientinvoice" : (25,10),
   "/manage/managevendor" : (10,10),
   "/manage/managevendorinvoice" : (10,10),
   "/manage/managevendorpayment" : (10,10),
@@ -337,12 +338,23 @@ def filterAndPaginate(db_config,
         msg = str(e).replace("\n","")
         return {'data':None, 'message':f'exception due to <{msg}>'}
 
+def max_len_without_escape_chars(data, col):
+    max_len = 0
+    for value in data[col].astype(str):
+        segments = value.split('\r\n')
+        segments = [segment.strip() for segment in segments]  # Split by common newline sequence
+        max_segment_length = max(len(segment) for segment in segments)
+        max_len = max(max_len, max_segment_length)
+    return max_len + 5  # Add padding
+
 # Function to calculate column widths (for pdf generation)
 def get_column_widths(data):
     col_widths = []
     for col in data.columns:
-        max_len = max(data[col].astype(str).map(len).max(), len(col)) + 5  # Add padding
+        # max_len = max(data[col].astype(str).map(len).max(), len(col)) + 5  # Add padding
+        max_len = max_len_without_escape_chars(data,col) + 5
         col_widths.append(max_len * 5)  # Adjust this multiplier as needed
+        logging.info(f"<{col}> length is {max_len}")
     return col_widths
 
 
@@ -358,6 +370,9 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         df['index'] += 1
         df.rename(columns={"index":"Sr No."},inplace=True)
         #---------------------------------------------------
+        # if routename == "/manage/bankstatement":
+        #     df['Particulars'] = df['Particulars'].str.replace(r'\r\n','\n') 
+        #     # df['Particulars'] = df['Particulars'].str.replace(r'\\n',' ') 
         filename = None
         if downloadType == 'excel':
             filename = f'{uuid.uuid4()}.xlsx'
