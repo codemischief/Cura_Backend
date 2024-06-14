@@ -30,6 +30,8 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.units import mm, inch
 
+#logs
+
 pdfSizeMap = {
     "/admin/manageuser" : (10,10),
   "/admin/manageemployees" : (20,10),
@@ -51,7 +53,7 @@ pdfSizeMap = {
   "/manage/manageclientproperty" : (45,20),
   "/manage/manageclientreceipt" : (20,10),
   "/manage/managellagreement" : (20,10),
-  "/manage/managepmaagreement" : (30,10),
+  "/manage/managepmaagreement" : (35,10),
   "/manage/manageorderreceipt" : (40,10),
   "/manage/manageclientinvoice" : (25,10),
   "/manage/managevendor" : (16,10),
@@ -1079,6 +1081,7 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,whereinquery=True,
+                                        mapping=payload['colmap'] if 'colmap' in payload else None,
                                             downloadType=payload['downloadType'] if 'downloadType' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
 
                 colnames = data['colnames']
@@ -7610,7 +7613,7 @@ async def send_client_statement(payload: dict,conn: psycopg2.extensions.connecti
     </body>
 </html>
 '''
-            filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
+            filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['colmap'] if 'colmap' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
             ans['filename'] = filename
             if not payload['sendEmail']:
                 return ans

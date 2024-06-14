@@ -437,7 +437,12 @@ SELECT DISTINCT
     a.dated,
     a.createdby,
     a.isdeleted,
-    a.id
+    a.id,
+    TRIM(TRAILING ', ' FROM CONCAT(
+        CASE WHEN a.tenantworkingbachelorsallowed THEN 'Tenant Working Bachelors Allowed, ' ELSE '' END,
+        CASE WHEN a.tenantforeignersallowed THEN 'Tenant Foreigners Allowed, ' ELSE '' END,
+        CASE WHEN a.tenantstudentsallowed THEN 'Tenant Students Allowed, ' ELSE '' END
+    )) AS tenant
 FROM
     project a
 LEFT JOIN
