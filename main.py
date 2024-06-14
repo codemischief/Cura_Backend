@@ -30,6 +30,8 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.units import mm, inch
 
+#logs
+
 pdfSizeMap = {
     "/admin/manageuser" : (10,10),
   "/admin/manageemployees" : (20,10),
