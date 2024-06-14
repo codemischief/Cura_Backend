@@ -4897,7 +4897,7 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
                 conn[0].commit()
                 payload['rows'] = ['*']
                 payload['table_name'] = tbl
-                data = await runInTryCatch(conn,fname='pma_billing',payload=payload,isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False)
+                data = await runInTryCatch(conn,fname='pma_billing',payload=payload,isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False,isUtilityRoute=True)
                 for row in data['data']:
                     row['invoicedate'] = f"01-{month_map[payload['month']]}-{payload['year']}"
                 if not payload['insertIntoDB'] or not role_access_for_add:
