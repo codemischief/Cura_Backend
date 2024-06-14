@@ -1314,7 +1314,7 @@ async def get_cities_admin(payload:dict,conn: psycopg2.extensions.connection = D
         whereinquery=False,
         formatData=True,
         isdeleted=False,
-        methodname="getCitiesAdmin"
+        methodname="getCities"
     )
 
 
