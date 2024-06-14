@@ -4935,7 +4935,7 @@ async def get_pma_billing(payload: dict, conn: psycopg2.extensions.connection = 
 @app.post("/getOrderPending")
 async def get_order_pending(payload: dict, conn :psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
-        role_access_status = check_role_access(conn,payload)
+        role_access_status = check_role_access(conn,payload,isUtilityRoute=True)
         if role_access_status:
             with conn[0].cursor() as cursor:
                 logMessage(cursor,f"SELECT sum(a.invoiceamount)-sum(b.amount) FROM order_invoice a LEFT JOIN order_receipt b ON a.orderid = b.orderid WHERE a.orderid = {payload['orderid']}")
@@ -5133,7 +5133,8 @@ async def get_report_order_payment(payload: dict, conn: psycopg2.extensions.conn
             isPaginationRequired=True,
             whereinquery=True,
             formatData=True,
-            isdeleted=True
+            isdeleted=True,
+            isUtilityRoute=True
         )
         return res
     except KeyError as ke:
@@ -5638,7 +5639,8 @@ async def get_report_order_receipt(payload: dict, conn: psycopg2.extensions.conn
             isPaginationRequired=True,
             whereinquery=True,
             formatData=True,
-            isdeleted=True
+            isdeleted=True,
+            isUtilityRoute=True
         )
         return res
     except KeyError as ke:
@@ -6076,7 +6078,8 @@ async def get_report_order_invoice(payload: dict,conn: psycopg2.extensions.conne
         isPaginationRequired=True,
         whereinquery=True,
         formatData=True,
-        isdeleted=True
+        isdeleted=True,
+        isUtilityRoute=True
     )
 
 @app.post('/addResearchMandals')
@@ -6468,7 +6471,8 @@ async def report_client_receipt(payload: dict,conn: psycopg2.extensions.connecti
         isPaginationRequired=True,
         whereinquery=True,
         isdeleted=True,
-        formatData=True
+        formatData=True,
+        isUtilityRoute=True
     )
 
 @app.post('/getReportVendorInvoice')
@@ -6482,7 +6486,8 @@ async def report_vendor_invoice(payload:dict, conn: psycopg2.extensions.connecti
         isPaginationRequired=True,
         whereinquery=True,
         isdeleted=True,
-        formatData=True
+        formatData=True,
+        isUtilityRoute=True
     )
 
 @app.post('/getItemIDBySearch')
@@ -6496,7 +6501,8 @@ async def get_client_id_by_search(payload: dict, conn: psycopg2.extensions.conne
         query = query,
         isPaginationRequired=True,
         formatData=True,
-        isdeleted=True
+        isdeleted=True,
+        isUtilityRoute=True
     )
 
 @app.post('/reportMonthlyMarginLOBReceiptPayments')
@@ -6537,7 +6543,8 @@ async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycop
         payload=payload,
         isPaginationRequired=True,
         whereinquery=False,
-        formatData=True
+        formatData=True,
+        isUtilityRoute=True
     )
     total = {'totalreceipt':0,'totalpayment':0,'total_diff':0}
     payload['pg_no'] = 0
@@ -6548,7 +6555,8 @@ async def report_monthly_margin_lob_receipt_payments(payload: dict, conn: psycop
         payload=payload,
         isPaginationRequired=True,
         whereinquery=False,
-        formatData=True
+        formatData=True,
+        isUtilityRoute=True
     )
     for i in forSum['data']:
         total['totalreceipt'] += i['orderreceiptamount'] if i['orderreceiptamount'] else 0
@@ -6575,7 +6583,8 @@ async def report_monthly_margin_entity_receipt_payments(payload: dict, conn: psy
         payload=payload,
         isPaginationRequired=True,
         whereinquery=False,
-        formatData=True
+        formatData=True,
+        isUtilityRoute=True
     )
     payload['sort_by'] = []
     payload['pg_no'] = 0
@@ -6587,7 +6596,8 @@ async def report_monthly_margin_entity_receipt_payments(payload: dict, conn: psy
         whereinquery=False,
         formatData=True,
         isdeleted=False,
-        isPaginationRequired=True
+        isPaginationRequired=True,
+        isUtilityRoute=True
     )
     data['total'] = {
         'totalreceipt':0,
@@ -6623,7 +6633,8 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict,
         isPaginationRequired=True,
         payload=payload,
         whereinquery=False,
-        formatData=True
+        formatData=True,
+        isUtilityRoute=True
     )
     query = """ select zz.lobname, zz.total_orderreceiptamount, zz.total_paymentamount, zz.total_diff from
 (SELECT
@@ -6646,7 +6657,8 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload: dict,
         isPaginationRequired=True,
         payload=payload,
         whereinquery=False,
-        formatData=True
+        formatData=True,
+        isUtilityRoute=True
     )
     total = {}
     total_orderreceiptamount = 0
@@ -6695,7 +6707,8 @@ async def report_PMA_Billing_List_View(payload:dict, conn: psycopg2.extensions.c
         whereinquery=True,
         isdeleted=True,
         formatData=True,
-        isPaginationRequired=True
+        isPaginationRequired=True,
+        isUtilityRoute=True
     )
 
 @app.post('/reportPMABillingTrendView')
@@ -6709,7 +6722,8 @@ async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.
         whereinquery=False,
         isdeleted=False,
         formatData=True,
-        isPaginationRequired=True
+        isPaginationRequired=True,
+        isUtilityRoute=True
     )
     logging.info(f"<{payload['rows']}><{payload['filters']}")
     payload['pg_size'] = 0
@@ -6722,7 +6736,8 @@ async def report_PMA_Billing_Trend_View(payload:dict, conn: psycopg2.extensions.
         whereinquery=False,
         isdeleted=False,
         formatData=True,
-        isPaginationRequired=True
+        isPaginationRequired=True,
+        isUtilityRoute=True
     )
     total_data = {}
     for i in total['data']:
@@ -6746,7 +6761,8 @@ async def report_PMA_Client_Portal_Report(payload:dict, conn: psycopg2.extension
         whereinquery=False,
         isdeleted=False,
         formatData=True,
-        isPaginationRequired=True
+        isPaginationRequired=True,
+        isUtilityRoute=True
     )
 
 @app.post('/reportPMAClientReceivable')
@@ -6759,7 +6775,8 @@ async def report_PMA_Client_Receivables(payload:dict, conn: psycopg2.extensions.
         whereinquery=False,
         isdeleted=False,
         formatData=True,
-        isPaginationRequired=True
+        isPaginationRequired=True,
+        isUtilityRoute=True
     )
     payload['pg_size'] = 0
     payload['pg_no'] = 0
@@ -6770,7 +6787,8 @@ async def report_PMA_Client_Receivables(payload:dict, conn: psycopg2.extensions.
         isPaginationRequired=True,
         formatData=True,
         whereinquery=False,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     total = {'total_amount':0}
     if dt['data']:
@@ -7120,7 +7138,8 @@ async def report_project_contacts(payload:dict,conn:psycopg2.extensions.connecti
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportAdvanceHoldingAmount')
@@ -7133,7 +7152,8 @@ async def report_advance_holding_amount(payload:dict,conn:psycopg2.extensions.co
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportPMAClientAll')
@@ -7146,7 +7166,8 @@ async def report_pma_client_all(payload:dict,conn:psycopg2.extensions.connection
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportPMAClientStatements')
@@ -7160,7 +7181,8 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     payload['pg_no'] = 0
     payload['pg_size'] = 0
@@ -7172,7 +7194,8 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         isPaginationRequired=True,
         formatData=True,
         whereinquery=False,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     data['total'] = {
         "sumamount":0
@@ -7194,7 +7217,8 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     payload['sort_by'] = []
     payload['order']=''
@@ -7207,7 +7231,8 @@ async def report_pma_client_statements(payload:dict,conn:psycopg2.extensions.con
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     sum = 0
     for i in total['data']:
@@ -7225,7 +7250,8 @@ async def report_duplicate_clients(payload:dict,conn:psycopg2.extensions.connect
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 
@@ -7240,7 +7266,8 @@ async def report_client_bank_details(payload:dict,conn:psycopg2.extensions.conne
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportNonPMAClientStatementsAndReceivables')
@@ -7253,7 +7280,8 @@ async def report_non_pma_client_statements_and_receivables(payload:dict,conn:psy
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     #need to do pg_no and pg_size 0 as total has only one element. slicing gives no values in pages after 1
     payload['pg_no'] = 0
@@ -7291,7 +7319,8 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     payload['pg_no'] = 0
     payload['pg_size'] = 0
@@ -7304,7 +7333,8 @@ async def report_pma_client_statement_margins(payload:dict,conn:psycopg2.extensi
         isPaginationRequired=True,
         formatData=True,
         whereinquery=False,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     sum = 0
     for i in total_amount['data']:
@@ -7322,7 +7352,8 @@ async def report_client_order_receipt_mismatch_details(payload:dict,conn:psycopg
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportBankBalanceReconciliation')
@@ -7345,7 +7376,8 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     query = f'''SELECT 
                     BankName, 
@@ -7363,7 +7395,8 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     filename = None
     if 'downloadType' in payload:
@@ -7420,7 +7453,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportBankTransferReconciliation')
@@ -7433,7 +7467,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportDailyBankReceiptsReconciliation')
@@ -7446,7 +7481,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )    
     payload['pg_no'] = 0
     payload['pg_size'] = 0
@@ -7459,7 +7495,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     total = {
         'bankst_cr':0,
@@ -7499,7 +7536,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
             isPaginationRequired=True,
             whereinquery=False,
             formatData=True,
-            isdeleted=False
+            isdeleted=False,
+            isUtilityRoute=True
         )
 
         payload['pg_no'] = 0
@@ -7513,7 +7551,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
             isPaginationRequired=True,
             whereinquery=False,
             formatData=True,
-            isdeleted=False
+            isdeleted=False,
+            isUtilityRoute=True
         )
         total = {
             'bankst_dr':0,
@@ -7710,7 +7749,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 
@@ -7748,7 +7788,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
     payload['pg_no'] = 0
@@ -7762,7 +7803,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     sum = 0
     for i in range(len(sumdata['data'])):
@@ -7785,7 +7827,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
     payload['pg_no'] = 0
@@ -7799,7 +7842,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     sum = 0
     for i in range(len(sumdata['data'])):
@@ -7822,7 +7866,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
     payload['pg_no'] = 0
@@ -7836,7 +7881,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     sum = 0
     for i in range(len(sumdata['data'])):
@@ -7859,7 +7905,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportOrderPaymentNoTDS')
@@ -7877,7 +7924,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
     payload['pg_no'] = 0
@@ -7891,7 +7939,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     sum = 0
     for i in range(len(sumdata['data'])):
@@ -7914,7 +7963,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
     payload['pg_no'] = 0
@@ -7928,7 +7978,8 @@ async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.conn
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     sum = 0
     for i in range(len(sumdata['data'])):
@@ -7946,7 +7997,8 @@ async def get_research_colleges(payload: dict, conn: psycopg2.extensions.connect
         isPaginationRequired=True,
         whereinquery=True,
         formatData=True,
-        isdeleted=True
+        isdeleted=True,
+        isUtilityRoute=True
     )
         
 @app.post('/addResearchApartments')
@@ -8046,7 +8098,8 @@ async def report_client_trace(payload: dict,conn: psycopg2.extensions.connection
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportOrderTrace')
@@ -8060,7 +8113,8 @@ async def report_order_trace(payload: dict,conn: psycopg2.extensions.connection 
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportVendorTrace')
@@ -8074,7 +8128,8 @@ async def report_vendor_trace(payload: dict,conn: psycopg2.extensions.connection
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportTDSByVendor')
@@ -8087,7 +8142,8 @@ async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connectio
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportVendorPaymentSummary')
@@ -8122,7 +8178,8 @@ async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connectio
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     with conn[0].cursor() as cursor:
         cursor.execute(f"DROP VIEW {payload['table_name']}")
@@ -8139,7 +8196,8 @@ async def report_tds_by_vendor(payload: dict,conn: psycopg2.extensions.connectio
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportVendorStatement')
@@ -8155,7 +8213,8 @@ async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connec
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     payload['pg_no'] = 0
     payload['pg_size'] = 0
@@ -8168,7 +8227,8 @@ async def report_vendor_statement(payload: dict,conn: psycopg2.extensions.connec
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     d = {
         'invoiceamount_orderpaymentamount':0
@@ -8191,7 +8251,8 @@ async def report_order_statistics(payload: dict, conn: psycopg2.extensions.conne
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     payload['pg_no'] = 0
     payload['pg_size'] = 0
@@ -8204,7 +8265,8 @@ async def report_order_statistics(payload: dict, conn: psycopg2.extensions.conne
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     result = {}
     for i in total_data['data']:
@@ -8232,7 +8294,8 @@ async def report_aged_orders(payload: dict, conn: psycopg2.extensions.connection
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     payload['pg_no'] = 0
     payload['pg_size'] = 0
@@ -8245,7 +8308,8 @@ async def report_aged_orders(payload: dict, conn: psycopg2.extensions.connection
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     return data
 
@@ -8267,7 +8331,8 @@ async def report_order_analysis(payload: dict, conn: psycopg2.extensions.connect
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportActiveLLAgreement')
@@ -8280,7 +8345,8 @@ async def report_acitve_ll_agreement(payload: dict, conn: psycopg2.extensions.co
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportLLAgreement')
@@ -8301,7 +8367,8 @@ async def report_ll_agreement(payload: dict, conn: psycopg2.extensions.connectio
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportClientStatistics')
@@ -8314,7 +8381,8 @@ async def report_client_statistic(payload: dict, conn: psycopg2.extensions.conne
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportStatisticsReport')
@@ -8327,7 +8395,8 @@ async def report_statistic_report(payload: dict, conn: psycopg2.extensions.conne
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportOwnersStatistics')
@@ -8340,7 +8409,8 @@ async def report_client_statistic(payload: dict, conn: psycopg2.extensions.conne
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 
@@ -8354,7 +8424,8 @@ async def report_client_statistic(payload: dict, conn: psycopg2.extensions.conne
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportExceptionPaymentUnderSuspeseOrder')
@@ -8367,7 +8438,8 @@ async def report_exception_payment_under_suspense_order(payload: dict, conn: psy
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportExceptionReceiptUnderSuspeseOrder')
@@ -8380,7 +8452,8 @@ async def report_exception_payment_under_receipt_order(payload: dict, conn: psyc
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportExceptionClientWithOrderButEmailMissing')
@@ -8393,7 +8466,8 @@ async def report_exception_payment_under_suspense_order(payload: dict, conn: psy
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportExceptionEmployeeWithoutVendor')
@@ -8406,7 +8480,8 @@ async def report_exception_employee_without_vendor(payload: dict, conn: psycopg2
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportExceptionBankStWrongNames')
@@ -8419,7 +8494,8 @@ async def report_exception_bank_st_wrong_names(payload: dict, conn: psycopg2.ext
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportExceptionEntityBlank')
@@ -8432,7 +8508,8 @@ async def report_exception_entity_blank(payload: dict, conn: psycopg2.extensions
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     payload['pg_size'] = 0
     payload['pg_no'] = 0
@@ -8443,7 +8520,8 @@ async def report_exception_entity_blank(payload: dict, conn: psycopg2.extensions
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     try:
         sum = 0
@@ -8464,7 +8542,8 @@ async def report_exception_owner_no_properties(payload: dict, conn: psycopg2.ext
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportServicesAgencyRepairServices')
@@ -8477,7 +8556,8 @@ async def report_services_agency_repair_services(payload: dict, conn: psycopg2.e
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportExceptionPropertiesNoProjects')
@@ -8490,7 +8570,8 @@ async def report_exception_properties_no_projects(payload: dict, conn: psycopg2.
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportOwnerAllMailIDs')
@@ -8503,7 +8584,8 @@ async def report_all_owner_mail_ids(payload: dict, conn: psycopg2.extensions.con
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportAllTenantsMailIDs')
@@ -8516,7 +8598,8 @@ async def report_all_tenant_mail_ids(payload: dict, conn: psycopg2.extensions.co
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportClientContacts')
@@ -8535,7 +8618,8 @@ async def report_client_contacts(payload: dict, conn: psycopg2.extensions.connec
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportOwnerPhoneNos')
@@ -8556,7 +8640,8 @@ async def report_owner_phone_nos(payload: dict, conn: psycopg2.extensions.connec
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 @app.post('/reportClientPhoneNos')
@@ -8576,7 +8661,8 @@ async def report_client_phone_nos(payload: dict, conn: psycopg2.extensions.conne
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
 
 
@@ -8590,7 +8676,8 @@ async def report_vendor_summary(payload: dict, conn: psycopg2.extensions.connect
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     payload['pg_no'] = 0
     payload['pg_size'] = 0
@@ -8601,7 +8688,8 @@ async def report_vendor_summary(payload: dict, conn: psycopg2.extensions.connect
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
-        isdeleted=False
+        isdeleted=False,
+        isUtilityRoute=True
     )
     d = {       
         "estimateamount":0,
