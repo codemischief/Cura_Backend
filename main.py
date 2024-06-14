@@ -51,7 +51,7 @@ pdfSizeMap = {
   "/manage/manageclientproperty" : (45,20),
   "/manage/manageclientreceipt" : (20,10),
   "/manage/managellagreement" : (20,10),
-  "/manage/managepmaagreement" : (30,10),
+  "/manage/managepmaagreement" : (35,10),
   "/manage/manageorderreceipt" : (40,10),
   "/manage/manageclientinvoice" : (25,10),
   "/manage/managevendor" : (16,10),
