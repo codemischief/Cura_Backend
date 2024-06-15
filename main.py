@@ -6064,6 +6064,7 @@ async def delete_research_banks_and_branches(payload:dict, request:Request, conn
 @app.post("/download/{file_name}")
 def download_file(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'got download file request with payload <{payload}>')
+    logging.info(f"File directory is {FILE_DIRECTORY}")
     try:
         file_name = payload['filename']
         role_access_status = check_role_access(conn,payload,request=request,isUtilityRoute=True)
