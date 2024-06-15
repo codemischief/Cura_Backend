@@ -971,16 +971,7 @@ CREATE SEQUENCE IF NOT EXISTS order_status_change_id_seq OWNED BY order_status_c
 SELECT setval('order_status_change_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_status_change;
 ALTER TABLE order_status_change ALTER COLUMN id SET DEFAULT nextval('order_status_change_id_seq');
 
-CREATE TABLE order_photos (
-    id int,
-    orderid int,
-    photolink text,
-    description text,
-    phototakenwhen timestamp,
-    dated timestamp,
-    createdby int,
-    isdeleted boolean
-);
+ alter table order_photos rename COLUMN "desc" to description;
 
 CREATE SEQUENCE IF NOT EXISTS order_photos_id_seq OWNED BY order_photos.id;
 SELECT setval('order_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_photos;
@@ -1182,6 +1173,7 @@ alter table project_amenities add column other bool;
 alter table project_amenities add column "RK" bool;
 alter table project_amenities add column other bool;
 alter table project_amenities add column duplex bool;
+alter table project_amenities add column penthouse bool;
 
 alter table order_payment alter column paymentdate type date;
 
@@ -2740,51 +2732,73 @@ LEFT OUTER JOIN entity ON client_receipt.entityid = entity.id
 LEFT OUTER JOIN payment_source ON client_receipt.paymentsource = payment_source.id;
 
 create or replace view rpt_pmaclient as 
- SELECT 'Invoice'::text AS type,
-    ordersview.clientname,
-    order_invoice.id,
-    order_invoice.invoicedate AS date,
-    order_invoice.invoiceamount AS amount,
+SELECT 'Invoice'::text AS type,
+    ov.clientname,
+    oi.id,
+    oi.invoicedate AS date,
+    oi.invoiceamount AS amount,
     NULL::numeric AS tds,
-    replace(replace(ordersview.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
-    entity.name AS entity,
-    services.service,
-    replace(replace(order_invoice.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
+    replace(replace(ov.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
+    e.name AS entity,
+    s.service,
+    replace(replace(oi.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
     ''::text AS mode,
-    ordersview.clienttypename AS clienttype,
-    ordersview.id AS orderid,
-    ordersview.clientid,
-    getmonthyear(order_invoice.invoicedate::timestamp without time zone) AS monthyear,
-    getfinancialyear(order_invoice.invoicedate) AS fy,
-    ordersview.lobname
-   FROM order_invoice
-     LEFT JOIN ordersview ON ordersview.id = order_invoice.orderid
-     LEFT JOIN entity ON entity.id = order_invoice.entityid
-     LEFT JOIN services ON services.id = ordersview.serviceid
-  WHERE ordersview.clienttypename ilike '%PMA%'::text
+    ov.clienttypename AS client_type,
+    ov.id AS order_id,
+    ov.clientid,
+    getmonthyear(oi.invoicedate::timestamp without time zone) AS monthyear,
+    getfinancialyear(oi.invoicedate) AS fy,
+    ov.lobname
+   FROM order_invoice oi
+     LEFT JOIN ordersview ov ON ov.id = oi.orderid
+     LEFT JOIN entity e ON e.id = oi.entityid
+     LEFT JOIN services s ON s.id = ov.serviceid
+  WHERE ov.clienttypename !~~ '%PMA%'::text AND ov.clientname !~~ '%1-%'::text
 UNION ALL
  SELECT 'Payment'::text AS type,
-    clientview.fullname AS clientname,
-    clientreceiptview.id,
-    clientreceiptview.recddate AS date,
-    '-1'::integer::numeric * clientreceiptview.amount AS amount,
-    clientreceiptview.tds,
+    cv.fullname AS clientname,
+    crv.id,
+    crv.recddate AS date,
+    '-1'::integer::numeric * crv.amount AS amount,
+    crv.tds,
     NULL::text AS orderdetails,
-    entity.name AS entity,
+    e.name AS entity,
     NULL::text AS service,
-    howreceived.name AS details,
-    clientreceiptview.paymentmode AS mode,
-    clientview.clienttypename AS clienttype,
-    NULL::bigint AS orderid,
-    clientview.id AS clientid,
-    getmonthyear(clientreceiptview.recddate::timestamp without time zone) AS monthyear,
-    getfinancialyear(clientreceiptview.recddate) AS fy,
+    hr.name AS details,
+    crv.paymentmode AS mode,
+    cv.clienttypename AS client_type,
+    NULL::bigint AS order_id,
+    cv.id AS clientid,
+    getmonthyear(crv.recddate::timestamp without time zone) AS monthyear,
+    getfinancialyear(crv.recddate) AS fy,
     NULL::text AS lobname
-   FROM clientview
-     JOIN clientreceiptview ON clientview.id = clientreceiptview.clientid
-     LEFT JOIN entity ON clientreceiptview.entityid = entity.id
-     LEFT JOIN howreceived ON clientreceiptview.howreceivedid = howreceived.id
-  WHERE clientview.clienttypename ilike '%PMA%'::text;
+   FROM clientview cv
+     JOIN clientreceiptview crv ON cv.id = crv.clientid
+     LEFT JOIN entity e ON crv.entityid = e.id
+     LEFT JOIN howreceived hr ON crv.howreceivedid = hr.id
+  WHERE cv.clienttypename !~~ '%PMA%'::text AND cv.firstname !~~ '%1-%'::text
+UNION ALL
+ SELECT 'OrderRec'::text AS type,
+    cv.fullname AS clientname,
+    orv.id,
+    orv.recddate AS date,
+    '-1'::integer::numeric * orv.amount AS amount,
+    orv.tds,
+    orv.orderdescription AS orderdetails,
+    e.name AS entity,
+    orv.service,
+    orv.receiptdesc AS details,
+    orv.paymentmode AS mode,
+    cv.clienttypename AS client_type,
+    orv.orderid AS order_id,
+    cv.id AS clientid,
+    getmonthyear(orv.recddate::timestamp without time zone) AS monthyear,
+    getfinancialyear(orv.recddate) AS fy,
+    orv.lobname
+   FROM clientview cv
+     JOIN orderreceiptview orv ON cv.id = orv.clientid
+     LEFT JOIN entity e ON orv.entityid = e.id
+  WHERE cv.clienttypename !~~ '%PMA%'::text AND cv.firstname !~~ '%1-%'::text;
 
 
 
@@ -3190,56 +3204,56 @@ LEFT OUTER JOIN
 
 
 
-CREATE VIEW client_property_leave_license_detailsview AS
-SELECT 
-    CASE 
-        WHEN cplld.active = 'true' THEN 'Active' 
-        ELSE 'Inactive' 
-    END AS status,
-    cplld.clientpropertyid,
-    cplld.orderid,
-    cplld.startdate,
-    cplld.vacatingdate,
-    cplld.durationinmonth,
-    cplld.actualenddate,
-    cplld.depositamount,
-    cplld.rentamount,
-    cplld.registrationtype,
-    cplld.rentpaymentdate,
-    cplld.paymentcycle,
-    cplld.reasonforclosure,
-    cplld.noticeperiodindays,
-    cplld.modeofrentpaymentid,
-    cplld.clientpropertyorderid,
-    cplld.signedby,
-    cplld.active,
-    cplld.llscancopy,
-    cplld.pvscancopy,
-    cplld.dated,
-    cplld.createdby AS expr2,
-    cplld.isdeleted,
-    cplld.id,
-    cplld.comments,
-    pv.clientname,
-    pv.propertydescription,
-    ov.propertydescription AS expr1,
-    getmonthyear(cplld.startdate) AS startdatemonthyear,
-    getmonthyear(cplld.actualenddate) AS enddatemonthyear,
-    ov.orderstatus,
-    ov.status AS orderstatusid,
-    pv.clientid,
-    pv.propertytaxnumber,
-    pv.property_status,
-    pv.electricitybillingunit,
-    pv.electricityconsumernumber
-FROM 
-    client_property_leave_license_details cplld
-INNER JOIN
-    propertiesview pv ON cplld.clientpropertyid = pv.id
-LEFT OUTER JOIN
-    ordersview ov ON cplld.orderid = ov.id
-WHERE 
-    cplld.isdeleted = false;
+-- CREATE VIEW client_property_leave_license_detailsview AS
+-- SELECT 
+--     CASE 
+--         WHEN cplld.active = 'true' THEN 'Active' 
+--         ELSE 'Inactive' 
+--     END AS status,
+--     cplld.clientpropertyid,
+--     cplld.orderid,
+--     cplld.startdate,
+--     cplld.vacatingdate,
+--     cplld.durationinmonth,
+--     cplld.actualenddate,
+--     cplld.depositamount,
+--     cplld.rentamount,
+--     cplld.registrationtype,
+--     cplld.rentpaymentdate,
+--     cplld.paymentcycle,
+--     cplld.reasonforclosure,
+--     cplld.noticeperiodindays,
+--     cplld.modeofrentpaymentid,
+--     cplld.clientpropertyorderid,
+--     cplld.signedby,
+--     cplld.active,
+--     cplld.llscancopy,
+--     cplld.pvscancopy,
+--     cplld.dated,
+--     cplld.createdby AS expr2,
+--     cplld.isdeleted,
+--     cplld.id,
+--     cplld.comments,
+--     pv.clientname,
+--     pv.propertydescription,
+--     ov.propertydescription AS expr1,
+--     getmonthyear(cplld.startdate) AS startdatemonthyear,
+--     getmonthyear(cplld.actualenddate) AS enddatemonthyear,
+--     ov.orderstatus,
+--     ov.status AS orderstatusid,
+--     pv.clientid,
+--     pv.propertytaxnumber,
+--     pv.property_status,
+--     pv.electricitybillingunit,
+--     pv.electricityconsumernumber
+-- FROM 
+--     client_property_leave_license_details cplld
+-- INNER JOIN
+--     propertiesview pv ON cplld.clientpropertyid = pv.id
+-- LEFT OUTER JOIN
+--     ordersview ov ON cplld.orderid = ov.id
+-- WHERE 
+--     cplld.isdeleted = false;
 
 
 
@@ -3810,50 +3824,45 @@ WHERE isdeleted = false;
 --10.05
 
 CREATE OR REPLACE VIEW tally_cr_to_salesinvoice AS
-SELECT
-' ' AS uniqueid,
-'Sales' AS base_vch_type,
-'GST Invoice' AS vch_type,
-' ' AS vch_no,
-CAST(client_receipt.recddate AS DATE) AS vch_date,
-' ' AS ref_no,
-' ' AS ref_date,
-client.firstname || ' ' || client.lastname AS party,
-' ' AS gstin,
-'Maharashtra' AS state,
-'Property Services' AS item_name,
-' ' AS item_hsn_code,
-' ' AS item_units,
-' ' AS item_qty,
-' ' AS item_rate,
-' ' AS item_discountpercentage,
-ROUND(client_receipt.amount / 1.18, 2) AS item_amount,
-' ' AS igst_percentage,
-' ' AS igst_amount,
-'9' AS cgst_percentage,
-ROUND(client_receipt.amount * 0.076271, 2) AS cgst_amount,
-'9' AS sgst_percentage,
-ROUND(client_receipt.amount * 0.076271, 2) AS sgst_amount,
-'GST Sale B2C' AS sales_purchase_ledger,
-' ' AS igst_ledger,
-'Output CGST' AS cgst_ledger,
-'Output SGST' AS sgst_ledger,
-'Real estate service fees (HSN 9972)' AS narration,
-'Yes' AS auto_round_off_yes_no,
-client_receipt.tds,
-client_receipt.serviceamount,
-client_receipt.reimbursementamount
-FROM client_receipt
-INNER JOIN client ON client_receipt.clientid = client.id
-INNER JOIN entity ON client_receipt.entityid = entity.id
-WHERE
-entity.name ILIKE '%CURA%'
-AND
-client_receipt.isdeleted = false
-AND
-client_receipt.recddate > '2023-12-31'
-LIMIT 100;
-
+ SELECT ' '::text AS uniqueid,
+    'Sales'::text AS base_vch_type,
+    'GST Invoice'::text AS vch_type,
+    ' '::text AS vch_no,
+    client_receipt.recddate AS vch_date,
+    ' '::text AS ref_no,
+    ' '::text AS ref_date,
+    (client.firstname || ' '::text) || client.lastname AS party,
+    ' '::text AS gstin,
+    'Maharashtra'::text AS state,
+    'Property Services'::text AS item_name,
+    ' '::text AS item_hsn_code,
+    ' '::text AS item_units,
+    ' '::text AS item_qty,
+    ' '::text AS item_rate,
+    ' '::text AS item_discountpercentage,
+    round(client_receipt.amount / 1.18, 2) AS item_amount,
+    ' '::text AS igst_percentage,
+    ' '::text AS igst_amount,
+    '9'::text AS cgst_percentage,
+    round(client_receipt.amount * 0.076271, 2) AS cgst_amount,
+    '9'::text AS sgst_percentage,
+    round(client_receipt.amount * 0.076271, 2) AS sgst_amount,
+    'GST Sale B2C'::text AS sales_purchase_ledger,
+    ' '::text AS igst_ledger,
+    'Output CGST'::text AS cgst_ledger,
+    'Output SGST'::text AS sgst_ledger,
+    'Real estate service fees (HSN 9972)'::text AS narration,
+    'Yes'::text AS auto_round_off_yes_no,
+    client_receipt.tds,
+    client_receipt.serviceamount,
+    client_receipt.reimbursementamount,
+    client_receipt.entityid,
+    client_receipt.paymentmode AS paymentmodeid
+   FROM client_receipt
+     JOIN client ON client_receipt.clientid = client.id
+     JOIN entity ON client_receipt.entityid = entity.id
+  WHERE entity.name ~~* '%CURA%'::text AND client_receipt.isdeleted = false AND client_receipt.recddate > '2023-12-31'::date
+ LIMIT 100;
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 SELECT 
@@ -4029,55 +4038,55 @@ INNER JOIN BankSt ON Vendor.ID = BankSt.VendorID;
 
 --13.1
 
-CREATE VIEW VendorSummaryForFinancialYearView AS
-SELECT
-    Vendor.VendorName,
-    Vendor.AddressLine1,
-    Vendor.AddressLine2,
-    Vendor.Suburb,
-    Vendor.PANNo,
-    Vendor.TANNo,
-    Vendor.VATTinNo,
-    Vendor.GSTServiceTaxNo,  -- Changed column name
-    Vendor.LBTNo,
-    Vendor.TDSSection,
-    CASE WHEN Vendor.Registered = 'true' THEN 'Yes' ELSE 'No' END AS Registered,
-    Vendor.BankName,
-    Vendor.BankBranch,
-    Vendor.BankCity,
-    Vendor.BankAcctHolderName,
-    Vendor.BankAcctNo,
-    Vendor.BankIFSCCode,
-    Vendor.BankMICRCode,
-    Vendor.BankAcctType,
-    Vendor.VendorDealerStatus,
-    OrderPaymentView.ID,
-    OrderPaymentView.PaymentById,
-    OrderPaymentView.Amount,
-    OrderPaymentView.PaymentDate,
-    OrderPaymentView.OrderID,
-    OrderPaymentView.VendorID,
-    OrderPaymentView.Mode,
-    OrderPaymentView.Description,
-    OrderPaymentView.ServiceTaxAmount,
-    OrderPaymentView.Dated,
-    OrderPaymentView.CreatedById,
-    OrderPaymentView.IsDeleted,
-    OrderPaymentView.Mode_Of_payment,
-    OrderPaymentView.CreatedBy,
-    OrderPaymentView.PaymentBy,
-    OrderPaymentView.ClientName,
-    OrderPaymentView.OrderDescription,
-    OrderPaymentView.TDS,
-    OrderPaymentView.PropertyDescription,
-    OrderPaymentView.VendorName AS Expr1,
-    OrderPaymentView.LOBName,
-    OrderPaymentView.ServiceType,
-    OrderPaymentView.ServiceId,
-    OrderPaymentView.MonthYear,
-    OrderPaymentView.FY
-FROM Vendor
-INNER JOIN OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
+-- CREATE VIEW VendorSummaryForFinancialYearView AS
+-- SELECT
+--     Vendor.VendorName,
+--     Vendor.AddressLine1,
+--     Vendor.AddressLine2,
+--     Vendor.Suburb,
+--     Vendor.PANNo,
+--     Vendor.TANNo,
+--     Vendor.VATTinNo,
+--     Vendor.GSTServiceTaxNo,  -- Changed column name
+--     Vendor.LBTNo,
+--     Vendor.TDSSection,
+--     CASE WHEN Vendor.Registered = 'true' THEN 'Yes' ELSE 'No' END AS Registered,
+--     Vendor.BankName,
+--     Vendor.BankBranch,
+--     Vendor.BankCity,
+--     Vendor.BankAcctHolderName,
+--     Vendor.BankAcctNo,
+--     Vendor.BankIFSCCode,
+--     Vendor.BankMICRCode,
+--     Vendor.BankAcctType,
+--     Vendor.VendorDealerStatus,
+--     OrderPaymentView.ID,
+--     OrderPaymentView.PaymentById,
+--     OrderPaymentView.Amount,
+--     OrderPaymentView.PaymentDate,
+--     OrderPaymentView.OrderID,
+--     OrderPaymentView.VendorID,
+--     OrderPaymentView.Mode,
+--     OrderPaymentView.Description,
+--     OrderPaymentView.ServiceTaxAmount,
+--     OrderPaymentView.Dated,
+--     OrderPaymentView.CreatedById,
+--     OrderPaymentView.IsDeleted,
+--     OrderPaymentView.Mode_Of_payment,
+--     OrderPaymentView.CreatedBy,
+--     OrderPaymentView.PaymentBy,
+--     OrderPaymentView.ClientName,
+--     OrderPaymentView.OrderDescription,
+--     OrderPaymentView.TDS,
+--     OrderPaymentView.PropertyDescription,
+--     OrderPaymentView.VendorName AS Expr1,
+--     OrderPaymentView.LOBName,
+--     OrderPaymentView.ServiceType,
+--     OrderPaymentView.ServiceId,
+--     OrderPaymentView.MonthYear,
+--     OrderPaymentView.FY
+-- FROM Vendor
+-- INNER JOIN OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------
@@ -5716,166 +5725,167 @@ LIMIT 100;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-SELECT 
-    SUM(receipts) - SUM(payments) AS diff
-FROM 
-    bankstbalanceview
-WHERE 
-    name LIKE '%DAP-ICICI-42%' 
-    AND date <= '2024-03-31';
+-- SELECT 
+--     SUM(receipts) - SUM(payments) AS diff
+-- FROM 
+--     bankstbalanceview
+-- WHERE 
+--     name LIKE '%DAP-ICICI-42%' 
+--     AND date <= '2024-03-31';
 
 
-SELECT
-    SUM(amount)
-FROM
-    bank_pmt_rcpts
-WHERE
-    bankname LIKE '%DAP-ICICI-42%'
-    AND date <= '2024-03-31';
+-- SELECT
+--     SUM(amount)
+-- FROM
+--     bank_pmt_rcpts
+-- WHERE
+--     bankname LIKE '%DAP-ICICI-42%'
+    -- AND date <= '2024-03-31';
 
 --11.1
 
-CREATE VIEW TotalClientIDsView AS
-SELECT 'Property ID' AS Type, Client.ID AS ClientID, Client_Property.ID AS RelatedID
-FROM Client
-INNER JOIN Client_Property ON Client.ID = Client_Property.ClientID
+-- CREATE VIEW TotalClientIDsView AS
+-- SELECT 'Property ID' AS Type, Client.ID AS ClientID, Client_Property.ID AS RelatedID
+-- FROM Client
+-- INNER JOIN Client_Property ON Client.ID = Client_Property.ClientID
 
-UNION
+-- UNION
 
-SELECT 'ClientReceipt ID' AS Type, Client.ID AS ClientID, Client_Receipt.ID AS RelatedID
-FROM Client
-INNER JOIN Client_Receipt ON Client.ID = Client_Receipt.ClientID
+-- SELECT 'ClientReceipt ID' AS Type, Client.ID AS ClientID, Client_Receipt.ID AS RelatedID
+-- FROM Client
+-- INNER JOIN Client_Receipt ON Client.ID = Client_Receipt.ClientID
 
-UNION
+-- UNION
 
-SELECT 'Order ID' AS Type, Client.ID AS ClientID, Orders.ID AS RelatedID
-FROM Client
-INNER JOIN Orders ON Client.ID = Orders.ClientID
+-- SELECT 'Order ID' AS Type, Client.ID AS ClientID, Orders.ID AS RelatedID
+-- FROM Client
+-- INNER JOIN Orders ON Client.ID = Orders.ClientID
 
-UNION
+-- UNION
 
-SELECT 'ClientPOA ID' AS Type, Client.ID AS ClientID, Client_POA.ID AS RelatedID
-FROM Client
-INNER JOIN Client_POA ON Client.ID = Client_POA.ClientID
+-- SELECT 'ClientPOA ID' AS Type, Client.ID AS ClientID, Client_POA.ID AS RelatedID
+-- FROM Client
+-- INNER JOIN Client_POA ON Client.ID = Client_POA.ClientID
 
-UNION
+-- UNION
 
-SELECT 'BankSt ID' AS Type, Client.ID AS ClientID, BankSt.ID AS RelatedID
-FROM Client
-INNER JOIN BankSt ON Client.ID = BankSt.ClientID;
+-- SELECT 'BankSt ID' AS Type, Client.ID AS ClientID, BankSt.ID AS RelatedID
+-- FROM Client
+-- INNER JOIN BankSt ON Client.ID = BankSt.ClientID;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 --11.2
 
-CREATE VIEW TotalOrderIDsView AS
-SELECT 'Order Receipt ID' AS Type, Orders.ID, Order_Receipt.ID AS OrderID
-FROM Orders
-INNER JOIN Order_Receipt ON Orders.ID = Order_Receipt.OrderID
+-- CREATE VIEW TotalOrderIDsView AS
+-- SELECT 'Order Receipt ID' AS Type, Orders.ID, Order_Receipt.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_Receipt ON Orders.ID = Order_Receipt.OrderID
 
-UNION 
+-- UNION 
 
-SELECT 'Order Payment ID' AS Type, Orders.ID, Order_Payment.ID AS OrderID
-FROM Orders
-INNER JOIN Order_Payment ON Orders.ID = Order_Payment.OrderID
+-- SELECT 'Order Payment ID' AS Type, Orders.ID, Order_Payment.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_Payment ON Orders.ID = Order_Payment.OrderID
 
-UNION
+-- UNION
 
-SELECT 'Order Invoice ID' AS Type, Orders.ID, Order_Invoice.ID AS OrderID
-FROM Orders
-INNER JOIN Order_Invoice ON Orders.ID = Order_Invoice.OrderID
+-- SELECT 'Order Invoice ID' AS Type, Orders.ID, Order_Invoice.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_Invoice ON Orders.ID = Order_Invoice.OrderID
 
-UNION
+-- UNION
 
-SELECT 'Vendor Invoice ID' AS Type, Orders.ID, Order_VendorEstimate.ID AS OrderID
-FROM Orders
-INNER JOIN Order_VendorEstimate ON Orders.ID = Order_VendorEstimate.OrderID
+-- SELECT 'Vendor Invoice ID' AS Type, Orders.ID, Order_VendorEstimate.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_VendorEstimate ON Orders.ID = Order_VendorEstimate.OrderID
 
-UNION
+-- UNION
 
-SELECT 'Order Task ID' AS Type, Orders.ID, Order_Task.ID AS OrderID
-FROM Orders
-INNER JOIN Order_Task ON Orders.ID = Order_Task.OrderID
+-- SELECT 'Order Task ID' AS Type, Orders.ID, Order_Task.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_Task ON Orders.ID = Order_Task.OrderID
 
-UNION
+-- UNION
 
-SELECT 'Order Status Change ID' AS Type, Orders.ID, Order_Status_Change.ID AS OrderID
-FROM Orders
-INNER JOIN Order_Status_Change ON Orders.ID = Order_Status_Change.OrderID;
+-- SELECT 'Order Status Change ID' AS Type, Orders.ID, Order_Status_Change.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_Status_Change ON Orders.ID = Order_Status_Change.OrderID;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 --11.3
 
-CREATE VIEW TotalVendorIDsView AS
-SELECT 'Order Payment ID' AS Type, Vendor.ID, Order_Payment.ID AS VendorID
-FROM Vendor
-INNER JOIN Order_Payment ON Vendor.ID = Order_Payment.VendorID
+-- CREATE VIEW TotalVendorIDsView AS
+-- SELECT 'Order Payment ID' AS Type, Vendor.ID, Order_Payment.ID AS VendorID
+-- FROM Vendor
+-- INNER JOIN Order_Payment ON Vendor.ID = Order_Payment.VendorID
 
-UNION
+-- UNION
 
-SELECT 'Vendor Invoice ID' AS Type, Vendor.ID, Order_VendorEstimate.ID AS VendorID
-FROM Vendor
-INNER JOIN Order_VendorEstimate ON Vendor.ID = Order_VendorEstimate.VendorID
+-- SELECT 'Vendor Invoice ID' AS Type, Vendor.ID, Order_VendorEstimate.ID AS VendorID
+-- FROM Vendor
+-- INNER JOIN Order_VendorEstimate ON Vendor.ID = Order_VendorEstimate.VendorID
 
-UNION
+-- UNION
 
-SELECT 'BankSt ID' AS Type, Vendor.ID, BankSt.ID AS VendorID
-FROM Vendor
-INNER JOIN BankSt ON Vendor.ID = BankSt.VendorID;
+-- SELECT 'BankSt ID' AS Type, Vendor.ID, BankSt.ID AS VendorID
+-- FROM Vendor
+-- INNER JOIN BankSt ON Vendor.ID = BankSt.VendorID;
 
 --13.1
 
 CREATE VIEW VendorSummaryForFinancialYearView AS
-SELECT
-    Vendor.VendorName,
-    Vendor.AddressLine1,
-    Vendor.AddressLine2,
-    Vendor.Suburb,
-    Vendor.PANNo,
-    Vendor.TANNo,
-    Vendor.VATTinNo,
-    Vendor.GSTServiceTaxNo,  -- Changed column name
-    Vendor.LBTNo,
-    Vendor.TDSSection,
-    CASE WHEN Vendor.Registered = 'true' THEN 'Yes' ELSE 'No' END AS Registered,
-    Vendor.BankName,
-    Vendor.BankBranch,
-    Vendor.BankCity,
-    Vendor.BankAcctHolderName,
-    Vendor.BankAcctNo,
-    Vendor.BankIFSCCode,
-    Vendor.BankMICRCode,
-    Vendor.BankAcctType,
-    Vendor.VendorDealerStatus,
-    OrderPaymentView.ID,
-    OrderPaymentView.PaymentById,
-    OrderPaymentView.Amount,
-    OrderPaymentView.PaymentDate,
-    OrderPaymentView.OrderID,
-    OrderPaymentView.VendorID,
-    OrderPaymentView.Mode,
-    OrderPaymentView.Description,
-    OrderPaymentView.ServiceTaxAmount,
-    OrderPaymentView.Dated,
-    OrderPaymentView.CreatedById,
-    OrderPaymentView.IsDeleted,
-    OrderPaymentView.Mode_Of_payment,
-    OrderPaymentView.CreatedBy,
-    OrderPaymentView.PaymentBy,
-    OrderPaymentView.ClientName,
-    OrderPaymentView.OrderDescription,
-    OrderPaymentView.TDS,
-    OrderPaymentView.PropertyDescription,
-    OrderPaymentView.VendorName AS Expr1,
-    OrderPaymentView.LOBName,
-    OrderPaymentView.ServiceType,
-    OrderPaymentView.ServiceId,
-    OrderPaymentView.MonthYear,
-    OrderPaymentView.FY
-FROM Vendor
-INNER JOIN OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
-
+ SELECT vendor.vendorname,
+    vendor.addressline1,
+    vendor.addressline2,
+    vendor.suburb,
+    vendor.panno,
+    vendor.tanno,
+    vendor.vattinno,
+    vendor.lbtno,
+    vendor.tdssection,
+    vendor.gstservicetaxno,
+        CASE
+            WHEN vendor.registered = true THEN 'Yes'::text
+            ELSE 'No'::text
+        END AS registered,
+    vendor.bankname,
+    vendor.bankbranch,
+    vendor.bankcity,
+    vendor.bankacctholdername,
+    vendor.bankacctno,
+    vendor.bankifsccode,
+    vendor.bankmicrcode,
+    vendor.bankaccttype,
+    vendor.vendordealerstatus,
+    orderpaymentview.id,
+    orderpaymentview.paymentbyid,
+    orderpaymentview.amount,
+    orderpaymentview.paymentdate,
+    orderpaymentview.orderid,
+    orderpaymentview.vendorid,
+    orderpaymentview.mode,
+    orderpaymentview.description,
+    orderpaymentview.servicetaxamount,
+    orderpaymentview.dated,
+    orderpaymentview.createdbyid,
+    orderpaymentview.isdeleted,
+    orderpaymentview.mode_of_payment,
+    orderpaymentview.createdby,
+    orderpaymentview.paymentby,
+    orderpaymentview.clientname,
+    orderpaymentview.orderdescription,
+    orderpaymentview.tds,
+    orderpaymentview.propertydescription,
+    orderpaymentview.vendorname AS expr1,
+    orderpaymentview.lobname,
+    orderpaymentview.servicetype,
+    orderpaymentview.serviceid,
+    orderpaymentview.monthyear,
+    orderpaymentview.fy
+   FROM vendor
+     JOIN orderpaymentview ON vendor.id = orderpaymentview.vendorid;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -6122,58 +6132,58 @@ create or replace view ordersummary as SELECT
 
 --6
 
-CREATE OR REPLACE VIEW client_property_leave_license_detailsview AS
-SELECT
-        CASE
-            WHEN cplld.active = true THEN 'Active'::text
-            ELSE 'Inactive'::text
-        END AS status,
-    cplld.clientpropertyid,
-    cplld.orderid,
-    cplld.startdate,
-    cplld.vacatingdate,
-    cplld.durationinmonth,
-    cplld.actualenddate,
-    cplld.depositamount,
-    cplld.rentamount,
-    cplld.registrationtype,
-    cplld.rentpaymentdate,
-    cplld.paymentcycle,
-    cplld.reasonforclosure,
-    cplld.noticeperiodindays,
-    cplld.modeofrentpaymentid,
-    cplld.clientpropertyorderid,
-    cplld.signedby,
-    cplld.active,
-    cplld.llscancopy,
-    cplld.pvscancopy,
-    cplld.dated,
-    cplld.createdby AS expr2,
-    cplld.isdeleted,
-    cplld.id,
-    cplld.comments,
-    pv.clientname,
-    pv.propertydescription,
-    ov.propertydescription AS expr1,
-    ( SELECT getmonthyear(cplld.startdate::timestamp without time zone) AS getmonthyear) AS startdatemonthyear,
-    ( SELECT getmonthyear(cplld.actualenddate::timestamp without time zone) AS getmonthyear) AS enddatemonthyear,
-    ov.orderstatus,
-    ov.status AS orderstatusid,
-    pv.clientid,
-    pv.propertytaxnumber,
-    pv.property_status,
-    pv.electricitybillingunit,
-    pv.electricityconsumernumber,
-    ov.service,
-    ov.lobname,
-    ov.entityname,
-    cv.clienttype,
-    cv.clienttypename
-   FROM client_property_leave_license_details cplld
-     JOIN propertiesview pv ON cplld.clientpropertyid = pv.id
-     JOIN clientview cv ON pv.clientid = cv.id
-     LEFT JOIN ordersview ov ON cplld.orderid = ov.id;
-------------------------------------------------------------------------------------------------------------------------------------------
+-- CREATE OR REPLACE VIEW client_property_leave_license_detailsview AS
+-- SELECT
+--         CASE
+--             WHEN cplld.active = true THEN 'Active'::text
+--             ELSE 'Inactive'::text
+--         END AS status,
+--     cplld.clientpropertyid,
+--     cplld.orderid,
+--     cplld.startdate,
+--     cplld.vacatingdate,
+--     cplld.durationinmonth,
+--     cplld.actualenddate,
+--     cplld.depositamount,
+--     cplld.rentamount,
+--     cplld.registrationtype,
+--     cplld.rentpaymentdate,
+--     cplld.paymentcycle,
+--     cplld.reasonforclosure,
+--     cplld.noticeperiodindays,
+--     cplld.modeofrentpaymentid,
+--     cplld.clientpropertyorderid,
+--     cplld.signedby,
+--     cplld.active,
+--     cplld.llscancopy,
+--     cplld.pvscancopy,
+--     cplld.dated,
+--     cplld.createdby AS expr2,
+--     cplld.isdeleted,
+--     cplld.id,
+--     cplld.comments,
+--     pv.clientname,
+--     pv.propertydescription,
+--     ov.propertydescription AS expr1,
+--     ( SELECT getmonthyear(cplld.startdate::timestamp without time zone) AS getmonthyear) AS startdatemonthyear,
+--     ( SELECT getmonthyear(cplld.actualenddate::timestamp without time zone) AS getmonthyear) AS enddatemonthyear,
+--     ov.orderstatus,
+--     ov.status AS orderstatusid,
+--     pv.clientid,
+--     pv.propertytaxnumber,
+--     pv.property_status,
+--     pv.electricitybillingunit,
+--     pv.electricityconsumernumber,
+--     ov.service,
+--     ov.lobname,
+--     ov.entityname,
+--     cv.clienttype,
+--     cv.clienttypename
+--    FROM client_property_leave_license_details cplld
+--      JOIN propertiesview pv ON cplld.clientpropertyid = pv.id
+--      JOIN clientview cv ON pv.clientid = cv.id
+--      LEFT JOIN ordersview ov ON cplld.orderid = ov.id;
+-- ------------------------------------------------------------------------------------------------------------------------------------------
 
 --7.6
 
@@ -6337,7 +6347,7 @@ SELECT
     COUNT(*) AS count,
     SUM(0) AS amount
 FROM 
-    owners;
+    client_property;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -6376,9 +6386,9 @@ WHERE
 
 CREATE VIEW ownersstatisticsview AS
 SELECT
-    COUNT(CASE WHEN source = 'Corporation' THEN 1 END) AS "Corporation",
-    COUNT(CASE WHEN source = 'RBS-Rentals' THEN 1 END) AS "RBSRentals",
-    COUNT(CASE WHEN source = 'RBS-Sales' THEN 1 END) AS "RBSSales",
+    COUNT(CASE WHEN source = 'Corporation' THEN 1 END) AS Corporation,
+    COUNT(CASE WHEN source = 'RBS-Rentals' THEN 1 END) AS RBSRentals,
+    COUNT(CASE WHEN source = 'RBS-Sales' THEN 1 END) AS RBSSales,
     COALESCE(SUM(CASE WHEN source = 'ID' THEN 1 END), -1) AS "ID"
 FROM
     ownersview;
@@ -6784,13 +6794,22 @@ WHERE PhoneNo ~ '^[7-9]' OR PhoneNo != 'NA' OR PhoneNo != '';
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE VIEW ClientPhonenoView AS
-WITH ue(id1) AS (
-    SELECT MAX(ID) AS id1
-    FROM Client
-    GROUP BY WorkPhone, MobilePhone, HomePhone
-)
-SELECT t.ID, t.FirstName, t.WorkPhone, t.MobilePhone, t.HomePhone, t.ClientType, t.LastName, Client_Type.Name AS ClientTypeName
-FROM Client AS t
-INNER JOIN ue AS ue_1 ON ue_1.id1 = t.ID
-INNER JOIN Client_Type ON t.ClientType = Client_Type.ID
-WHERE t.MobilePhone ~ '^[7-9]' OR t.MobilePhone != 'NA' OR t.MobilePhone != '';
+ WITH ue(id1) AS (
+         SELECT max(client.id) AS id1
+           FROM client
+          GROUP BY client.workphone, client.mobilephone, client.homephone
+        )
+ SELECT t.id,
+    t.firstname,
+    t.workphone,
+    t.mobilephone,
+    t.homephone,
+    t.clienttype,
+    t.lastname,
+    (t.firstname || ' '::text) || t.lastname AS clientname,
+    client_type.name AS clienttypename
+   FROM client t
+     JOIN ue ue_1 ON ue_1.id1 = t.id
+     JOIN client_type ON t.clienttype = client_type.id
+  WHERE t.mobilephone ~ '^[7-9]'::text OR t.mobilephone <> 'NA'::text OR t.mobilephone <> ''::text;
+
