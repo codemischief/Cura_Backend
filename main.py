@@ -8921,7 +8921,7 @@ async def delete_from_table(payload:dict, request:Request, conn: psycopg2.extens
 @app.post('/changeCompanyKey')
 async def change_company_key(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
-        role_access_status = check_role_access(conn,payload,request,method="changeKey")
+        role_access_status = check_role_access(conn,payload,request,method="editCompanyKey")
         if role_access_status == 1:
             query = "UPDATE companykey SET companykey=%s"
             with conn[0].cursor() as cursor:
