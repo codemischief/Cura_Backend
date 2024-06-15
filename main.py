@@ -781,26 +781,26 @@ def check_role_access(conn, payload: dict,request: Request = None,method = None,
     logging.info(f"Method is {method}")
     if isUtilityRoute:
         return True
-    if request and  request.headers.get('authorization'):
-        with conn[0].cursor() as cursor:
-            token = request.headers['authorization'][7:]
-            logging.info(f"Token is <{token}>")
-            cursor.execute("SELECT key FROM tokens WHERE token = %s", (token,))
-            key = cursor.fetchone()
-            logging.info(key)
-        if key:
-            try:
-                payload = jwt.decode(token,key[0],algorithms=ALG)
-            except Exception as e:
-                query = f"DELETE FROM tokens WHERE token='{token}'"
-                with conn[0].cursor() as cursor:
-                    cursor.execute(query)
-                    logging.info(cursor.statusmessage)
-                    conn[0].commit()
-                    logging.info(f"DELETEd TOKEN {token}")
-                raise HTTPException(498,"Badly expired token")
-        else:
-            raise HTTPException(status_code=498,detail="Invalid Token")
+    # if request and  request.headers.get('authorization'):
+    #     with conn[0].cursor() as cursor:
+    #         token = request.headers['authorization'][7:]
+    #         logging.info(f"Token is <{token}>")
+    #         cursor.execute("SELECT key FROM tokens WHERE token = %s", (token,))
+    #         key = cursor.fetchone()
+    #         logging.info(key)
+    #     if key:
+    #         try:
+    #             payload = jwt.decode(token,key[0],algorithms=ALG)
+    #         except Exception as e:
+    #             query = f"DELETE FROM tokens WHERE token='{token}'"
+    #             with conn[0].cursor() as cursor:
+    #                 cursor.execute(query)
+    #                 logging.info(cursor.statusmessage)
+    #                 conn[0].commit()
+    #                 logging.info(f"DELETEd TOKEN {token}")
+    #             raise HTTPException(498,"Badly expired token")
+    #     else:
+    #         raise HTTPException(status_code=498,detail="Invalid Token")
     if 'user_id' in payload:
         identifier_id = payload['user_id']
         identifier_name = None
