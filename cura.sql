@@ -197,7 +197,8 @@ SELECT DISTINCT
     a.dateofjoining,
     a.dob,
     a.panno,
-    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
+    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS statusmap,
+    a.status,
     a.phoneno,
     a.email,
     a.addressline1,
@@ -697,6 +698,10 @@ CREATE SEQUENCE IF NOT EXISTS payments_id_seq OWNED BY ref_contractual_payments.
 SELECT setval('payments_id_seq', COALESCE(max(id), 0) + 1, false) FROM ref_contractual_payments;
 ALTER TABLE ref_contractual_payments ALTER COLUMN id SET DEFAULT nextval('payments_id_seq');
 
+CREATE SEQUENCE IF NOT EXISTS locality_id_seq OWNED BY locality.id;
+SELECT setval('locality_id_seq', COALESCE(max(id), 0) + 1, false) FROM locality;
+ALTER TABLE locality ALTER COLUMN id SET DEFAULT nextval('locality_id_seq');
+
 CREATE SEQUENCE IF NOT EXISTS orders_id_seq OWNED BY orders.id;
 SELECT setval('orders_id_seq', COALESCE(max(id), 0) + 1, false) FROM orders;
 ALTER TABLE orders ALTER COLUMN id SET DEFAULT nextval('orders_id_seq');
@@ -873,11 +878,11 @@ SELECT DISTINCT
     d.status as propertystatusname,
     d.client as clientname,
     d.clientid,
-    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
+    CASE a.active WHEN true THEN 'Active' ELSE 'Inactive' END AS activemap,
+    a.active,
     a.startdate,
     a.enddate,
     a.actualenddate,
-    a.active,
     a.scancopy,
     a.reasonforearlyterminationifapplicable,
     a.dated,
@@ -901,20 +906,6 @@ LEFT JOIN
     get_client_property_view d ON a.clientpropertyid = d.id;
 
 
-CREATE OR REPLACE FUNCTION get_client_property_pma_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client_property_caretaking_agreement WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER get_client_property_pma_view
-INSTEAD OF DELETE ON get_client_property_pma_view
-FOR EACH ROW
-EXECUTE FUNCTION get_client_property_pma_view();
 
 CREATE VIEW get_client_property_lla_view AS
 SELECT DISTINCT
@@ -935,6 +926,7 @@ SELECT DISTINCT
     a.registrationtype,
     a.rentpaymentdate,
     a.noticeperiodindays,
+    CASE a.active WHEN true THEN 'Active' ELSE 'Inactive' END AS activemap,
     a.active,
     a.llscancopy,
     a.dated,
@@ -1874,7 +1866,8 @@ SELECT DISTINCT
     a.firstname,
     a.lastname,
     concat_ws(' ',a.firstname,a.lastname) as fullname,
-    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
+    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS statusmap,
+    a.status,
     a.effectivedate,
     a.homephone,
     a.workphone,
