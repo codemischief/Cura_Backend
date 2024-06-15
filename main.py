@@ -2821,6 +2821,7 @@ async def add_project(payload:dict, request:Request, conn: psycopg2.extensions.c
         # else:
         #     raise giveFailure("Already Exists",payload['user_id'],role_access_status)
     except Exception as e:
+        logging.info(traceback.format_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
 @app.post('/addClientProperty')
 async def add_client_property(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
