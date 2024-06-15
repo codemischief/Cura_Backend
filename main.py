@@ -7788,8 +7788,8 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             for row in data['data']:
                 dic = {colname:val for (colname,val) in zip(data['colnames'],row)}
                 res.append(dic)
-            queryopening = f"SELECT opg_balance,date from {table} ORDER BY dated asc"
-            queryclosing = f"SELECT Clsgbalance,date from {table}"
+            queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
+            queryclosing = f"SELECT Closing_balance,date from {table}"
             cursor.execute(queryopening)
             opening = cursor.fetchone()
             cursor.execute(queryclosing)
