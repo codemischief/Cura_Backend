@@ -6389,7 +6389,7 @@ SELECT
     COUNT(CASE WHEN source = 'Corporation' THEN 1 END) AS Corporation,
     COUNT(CASE WHEN source = 'RBS-Rentals' THEN 1 END) AS RBSRentals,
     COUNT(CASE WHEN source = 'RBS-Sales' THEN 1 END) AS RBSSales,
-    COALESCE(SUM(CASE WHEN source = 'ID' THEN 1 END), -1) AS "ID"
+    COALESCE(SUM(CASE WHEN source = 'ID' THEN 1 END), -1) AS ID
 FROM
     ownersview;
 

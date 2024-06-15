@@ -75,7 +75,6 @@ pdfSizeMap = {
 # from dotenv import load_dotenv,find_Dotenv
 logger = logging.getLogger(__name__)
 
-hostURL = 'http://localhost:8000'
 ALG = 'HS256'
 FILE_DIRECTORY = './downloads'
 
@@ -105,14 +104,13 @@ def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: l
 #todo : need to source user, password and ip port from variables
 load_dotenv()
 
-# Get the value of DATABASE_URL
-# DATABASE_USER =os.getenv("DATABASE_USER")
-# DATABASE_PASS=os.getenv("DATABASE_PASS")
-# DATABASE_HOST=os.getenv("DATABASE_HOST")
-# DATABASE_PORT=os.getenv("DATABASE_PORT")
-# DATABASE_NAME=os.getenv("DATABASE_NAME")
-# DATABSE_SCHEMA=os.getenv("DATABSE_SCHEMA")
 DATABASE_URL = os.getenv("DATABASE_URL")
+CLIENT_STATEMENT_ID = os.getenv("CLIENT_STATEMENT_ID")
+CLIENT_STATEMENT_PASS = os.getenv("CLIENT_STATEMENT_PASS")
+PASSWORD_RESET_ID = os.getenv("PASSWORD_RESET_ID")
+PASSWORD_RESET_PASS = os.getenv("PASSWORD_RESET_PASS")
+hostURL = os.getenv("HOSTURL")
+FILE_DIRECTORY = os.getenv("FILE_DIRECTORY")
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -2024,7 +2022,7 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not data:
+                if not _data:
                     res = {colname:None for colname in colnames}
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
@@ -6387,13 +6385,13 @@ async def delete_research_architect(payload:dict, request:Request, conn:psycopg2
         logging.info(f"Exception encountered:{traceback.format_exc()}")
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
-def send_email(subject, body,to_email,html=None,filename=None):
+def send_email(email,password,subject, body,to_email,html=None,filename=None):
     # SMTP server configuration
     smtp_server = 'smtpout.secureserver.net'  # Example: 'smtp.gmail.com'
     smtp_port = 587  # For SSL, use 465; for TLS/StartTLS, use 587
-    smtp_username = 'admin@mycuraservices.com'
-    smtp_password = 'Cura@123456'
-
+    smtp_username = email
+    smtp_password = password
+    logging.info(f"Credentials are {email} {password}")
     # Create MIME message
     msg = MIMEMultipart()
     msg['From'] = smtp_username
@@ -6470,7 +6468,7 @@ async def login_for_token(payload:dict, request:Request, conn: psycopg2.extensio
                 cursor.execute(f"""INSERT INTO tokens (token,key,active,userid) VALUES 
                                ('{access_token}','{key}',true,{userid})""")
                 if email:
-                    send_email("Reset Password",f"""Reset password at localhost:5173/reset/{access_token}""",email[0])
+                    send_email(PASSWORD_RESET_ID,PASSWORD_RESET_PASS,"Reset Password",f"""Reset password at localhost:5173/reset/{access_token}""",email[0])
                     logging.info(f"""Reset password at localhost:5173/reset/{access_token}""")
                     # print(access_token)
                     conn[0].commit()
@@ -7848,7 +7846,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 query = f"SELECT email1 from client where id={payload['clientid']}"
                 cursor.execute(query)
                 emailid = cursor.fetchone()[0]
-            send_email("Cura Statement of Account for your Pune property/ies.",'',emailid,html,filename if filename else None)
+            send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html,filename if filename else None)
             return {"sent email to":emailid}
     except psycopg2.Error as e:
         logging.info(traceback.format_exc())
@@ -8920,16 +8918,21 @@ async def delete_from_table(payload:dict, request:Request, conn: psycopg2.extens
     except Exception as e:
         raise HTTPException(400,f"Bad request error <{e}>")
 
-# @app.post('/changeCompanyKey')
-# async def change_company_key(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
-#     try:
-#         role_access_status = check_role_access(conn,payload,request,method="changeKey")
-#         if role_access_status == 1:
-#             query = "UPDATE companykey SET companykey=%s where keyid = %s"
-#             with conn[0].cursor() as cursor:
-#                 cursor.execute(query,(payload['companykey'],payload['keyid']))
-#                 conn[0].commit()
-#             return 
+@app.post('/changeCompanyKey')
+async def change_company_key(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload,request,method="changeKey")
+        if role_access_status == 1:
+            query = "UPDATE companykey SET companykey=%s"
+            with conn[0].cursor() as cursor:
+                cursor.execute(query,(payload['companykey']))
+                conn[0].commit()
+            return giveSuccess(payload['user_id'],role_access_status,{
+                "New company key":payload['companykey']
+            })
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        raise HTTPException(400,f"Bad request {e}")
 
 @app.post('/changePassword')
 async def change_password(payload: dict, request: Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -8954,4 +8957,31 @@ async def change_password(payload: dict, request: Request,conn: psycopg2.extensi
     except Exception as e:
         logging.info(traceback.format_exc())
         raise giveFailure("Invalid Credentials",0,0)
+    
+@app.post("/refreshToken")
+async def refresh_token(payload: dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+                token = request.headers.get("authorization")
+                token = token[7:]
+                query = "SELECT * FROM token_access_config where type='Login'"
+                cursor.execute("SELECT key FROM tokens WHERE token = %s",(token,))
+                msg = logMessage(cursor,query)
+                timedata = cursor.fetchone()
+                if timedata:
+                    timedata = timedata[0]
+                else:
+                    raise HTTPException(404,"Time not configured")
+                access_token_expires = timedelta(seconds=timedata)
+                access_token,key = create_token({"user_id":payload['user_id']},access_token_expires)
+                cursor.execute(f"""INSERT INTO tokens (token,key,active,userid) 
+                               VALUES ('{access_token}','{key}',true,{payload['user_id']})""")
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],0,{"token":access_token})
+    except HTTPException as h:
+        raise h
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        raise HTTPException(400,"Bad Request")
+
 logger.info("program_started")
