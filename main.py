@@ -2600,7 +2600,7 @@ async def get_builders_and_projects_list(payload:dict, request:Request, conn: ps
 async def add_client_info(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f"add_client_info:received payload <{payload}>")
     try:
-        role_access_status =check_role_access(conn,payload,request=request,getBuilderInfo="addClientInfo")
+        role_access_status =check_role_access(conn,payload,request=request,method="addClientInfo")
         client_info = payload['client_info']
         if role_access_status == 1:
             # tempdata = {
