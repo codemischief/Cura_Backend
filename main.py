@@ -7880,7 +7880,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             """
 
             # Add table headers
-            for key in data[0].keys():
+            for key in data['data'][0].keys():
                 html2 += f"<th>{key.capitalize()}</th>"
 
             html2 += """
