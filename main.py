@@ -6388,7 +6388,7 @@ async def delete_research_architect(payload:dict, request:Request, conn:psycopg2
         logging.info(f"Exception encountered:{traceback.format_exc()}")
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
-def send_email(email,password,subject, body,to_email,html=None,filename=None):
+def send_email(email,password,subject, body,to_email,html=None,html2=None,filename=None):
     # SMTP server configuration
     smtp_server = 'smtpout.secureserver.net'  # Example: 'smtp.gmail.com'
     smtp_port = 587  # For SSL, use 465; for TLS/StartTLS, use 587
@@ -6405,6 +6405,8 @@ def send_email(email,password,subject, body,to_email,html=None,filename=None):
     msg.attach(MIMEText(body, 'plain'))
     if html is not None:
         msg.attach(MIMEText(html, 'html'))
+    if html2 is not None:
+        msg.attach(MIMEText(html2, 'html'))
     if filename is not None:
         with open(f"{FILE_DIRECTORY}/{filename}", 'rb') as attachment:
             part = MIMEBase(filename, 'pdf')
@@ -7839,6 +7841,68 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
     </body>
 </html>
 '''
+            html2 = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Dynamic HTML Table</title>
+                <style>
+                    body{
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh; /* Full viewport height */
+                        margin: 0;
+                        flex-direction: column;
+                    }
+                    table {
+                        width: 50%;
+                        border-collapse: collapse;
+                        margin: 25px 25px;
+                        font-size: 12px; /* Reduce font size */
+                        text-align: left;
+                    }
+                    th, td {
+                        padding: 6px; /* Reduce padding to half */
+                        border-bottom: 1px solid #ddd;
+                    }
+                    th {
+                        background-color: #1d4ed8;
+                        color: white;
+                    }
+                </style>
+            </head>
+            <body>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sr.No</th>
+            """
+
+            # Add table headers
+            for key in data[0].keys():
+                html2 += f"<th>{key.capitalize()}</th>"
+
+            html2 += """
+                        </tr>
+                    </thead>
+                    <tbody>
+            """
+
+            # Add table rows
+            for index, item in enumerate(data, start=1):
+                html2 += f"<tr><td>{index}</td>"
+                for value in item.values():
+                    html2 += f"<td>{value}</td>"
+                html2 += "</tr>"
+
+            html2 += """
+                    </tbody>
+                </table>
+            </body>
+            </html>
+            """
+
             filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
             ans['filename'] = filename
             if not payload['sendEmail']:
@@ -7849,7 +7913,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 query = f"SELECT email1 from client where id={payload['clientid']}"
                 cursor.execute(query)
                 emailid = cursor.fetchone()[0]
-            send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html,filename if filename else None)
+            send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html,html2)
             return {"sent email to":emailid}
     except psycopg2.Error as e:
         logging.info(traceback.format_exc())
