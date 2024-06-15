@@ -7346,7 +7346,7 @@ async def report_bank_balance_reconciliation(payload:dict,conn:psycopg2.extensio
     
 @app.post('/reportMonthlyBankSummary')
 async def report_monthly_bank_summary(payload:dict,conn:psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'MonthlyBalanceView'
+    payload['table_name'] = 'Monthly_Balance_View'
     return await runInTryCatch(
         conn = conn,
         fname = 'report_project_contacts_view',
