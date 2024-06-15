@@ -7890,7 +7890,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             """
 
             # Add table rows
-            for index, item in enumerate(data, start=1):
+            for index, item in enumerate(res, start=1):
                 html2 += f"<tr><td>{index}</td>"
                 for value in item.values():
                     html2 += f"<td>{value}</td>"
