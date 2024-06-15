@@ -6822,7 +6822,7 @@ async def report_PMA_Billing_Trend_View(payload:dict, request:Request, conn: psy
                 total_data[j] += i[j]
             else:
                 total_data[j] = i[j]
-    data['total'] = total_data
+    data['total'] = [total_data]
     return data
 
 @app.post('/reportPMAClientPortalReport')
@@ -6870,7 +6870,7 @@ async def report_PMA_Client_Receivables(payload:dict, request:Request, conn: psy
     total = {'total_amount':0}
     if dt['data']:
         for i in dt['data']:
-            total['total_amount'] += i['amount']
+            total['total_amount'] += i['amount'] if 'amount' in i else 0
     data['total'] = total
     return data
 
