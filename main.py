@@ -6082,6 +6082,8 @@ def download_file(payload:dict, request:Request, conn: psycopg2.extensions.conne
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Invalid Credentials",0,0)
@@ -8918,6 +8920,21 @@ async def delete_from_table(payload:dict, request:Request, conn: psycopg2.extens
     except Exception as e:
         raise HTTPException(400,f"Bad request error <{e}>")
 
+
+@app.post('getCompanyKey')
+async def get_company_key(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload,request,method="getCompanyKey")
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = "SELECT companykey FROM companykey"
+                cursor.execute(query)
+                data = cursor.fetchone()[0]
+        return giveSuccess(payload['user_id'],role_access_status,[{"companykey":data}])
+    except HTTPException as h:
+        raise h
+    except Exception as e:
+        raise HTTPException(400,f"Bad request error <{e}>")
 @app.post('/changeCompanyKey')
 async def change_company_key(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
