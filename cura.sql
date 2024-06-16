@@ -15,9 +15,41 @@ alter table project_photos alter column date_taken type date;
 alter table client_receipt rename column "Visible to client" to visibletoclient;
 alter table collegetypes rename column collegeousid to id;
 
+ALTER TABLE client_property_owner DROP COLUMN owner1addressline1;
+ALTER TABLE client_property_owner DROP COLUMN owner1addressline2;
+ALTER TABLE client_property_owner DROP COLUMN owner1suburb;
+ALTER TABLE client_property_owner DROP COLUMN owner1city;
+ALTER TABLE client_property_owner DROP COLUMN owner1state;
+ALTER TABLE client_property_owner DROP COLUMN owner1country;
+ALTER TABLE client_property_owner DROP COLUMN owner1zip;
+ALTER TABLE client_property_owner DROP COLUMN owner1occupation;
+ALTER TABLE client_property_owner DROP COLUMN owner1employername;
+ALTER TABLE client_property_owner DROP COLUMN owner1birthyear;
+ALTER TABLE client_property_owner DROP COLUMN owner1relation;
+ALTER TABLE client_property_owner DROP COLUMN owner1relationwith;
+ALTER TABLE client_property_owner DROP COLUMN owner2addressline1;
+ALTER TABLE client_property_owner DROP COLUMN owner2addressline2;
+ALTER TABLE client_property_owner DROP COLUMN owner2suburb;
+ALTER TABLE client_property_owner DROP COLUMN owner2city;
+ALTER TABLE client_property_owner DROP COLUMN owner2state;
+ALTER TABLE client_property_owner DROP COLUMN owner2country;
+ALTER TABLE client_property_owner DROP COLUMN owner2zip;
+ALTER TABLE client_property_owner DROP COLUMN owner2birthyr;
+ALTER TABLE client_property_owner DROP COLUMN owner2occupation;
+ALTER TABLE client_property_owner DROP COLUMN owner2employer;
+ALTER TABLE client_property_owner DROP COLUMN owner2relation;
+ALTER TABLE client_property_owner DROP COLUMN owner2relationwith;
+ALTER TABLE client_property_owner DROP COLUMN otherownerdetails;
+
+
+
 CREATE SEQUENCE IF NOT EXISTS cities_id_seq OWNED BY cities.id;
 SELECT setval('cities_id_seq', COALESCE(max(id), 0) + 1, false) FROM cities;
 ALTER TABLE cities ALTER COLUMN id SET DEFAULT nextval('cities_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS orders_id_seq OWNED BY orders.id;
+SELECT setval('orders_id_seq', COALESCE(max(id), 0) + 1, false) FROM orders;
+ALTER TABLE orders ALTER COLUMN id SET DEFAULT nextval('orders_id_seq');
 
 CREATE SEQUENCE IF NOT EXISTS locality_id_seq OWNED BY locality.id;
 SELECT setval('locality_id_seq', COALESCE(max(id), 0) + 1, false) FROM locality;
