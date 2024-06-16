@@ -8993,7 +8993,7 @@ async def get_company_key(payload: dict, request: Request,conn : psycopg2.extens
         role_access_status = check_role_access(conn,payload,request,method="getCompanyKey")
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = "SELECT companykey FROM companykey"
+                query = "SELECT companycode FROM companykey"
                 cursor.execute(query)
                 data = cursor.fetchone()[0]
         return giveSuccess(payload['user_id'],role_access_status,[{"companykey":data}])
