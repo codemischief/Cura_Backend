@@ -9034,7 +9034,7 @@ async def change_password(payload: dict, request: Request,conn: psycopg2.extensi
                 logging.info(msg)
                 return giveSuccess(payload['user_id'],0,{f"Changed PW for {payload['user_id']}"})
             else:
-                raise HTTPException(401,"No access for change pass")
+                raise HTTPException(401,"Old password should be correct")
     except HTTPException as h:
         raise h
     except Exception as e:

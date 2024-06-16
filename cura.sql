@@ -69,7 +69,7 @@ alter table client_property alter column initialpossessiondate type date;
 alter table client_property add column website text;
 alter table client_property add column email text;
 ALTER TABLE client_property_caretaking_agreement RENAME COLUMN pmaholder TO poaholder;
-ALTER TABLE client_receipt ALTER COLUMN recddate set type date;
+ALTER TABLE client_receipt ALTER COLUMN recddate type date;
 
 alter table order_photos rename COLUMN "desc" to description;
 alter table order_receipt alter column recddate type date;
@@ -115,7 +115,7 @@ alter table employee alter column dateofjoining type date;
 alter table employee alter column lastdateofworking type date;
 alter table employee alter column dob type date;
 alter table research_government_agencies rename column agencytype to departmenttype;
-alter table bankst add column isdeleted type boolean;
+alter table bankst add column isdeleted bool;
 update bankst set isdeleted=false;
 alter table client_property alter column propertymanager type text;
 alter table agencytype rename to departmenttype;
