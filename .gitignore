@@ -1,8 +1,6 @@
 # Ignore nohup output file
 nohup.out
 
-# Ignore environment variable files
-.env
 
 # Ignore the downloads folder
 downloads/
