@@ -4285,90 +4285,90 @@ LEFT OUTER JOIN
 
 
 
--- CREATE VIEW projectsview AS
--- SELECT 
---     project.id,
---     project.builderid,
---     project.addressline1,
---     project.addressline2,
---     project.suburb,
---     project.city AS cityid,
---     project.state,
---     project.country,
---     project.zip,
---     project.project_type,
---     project.mailgroup1,
---     project.mailgroup2,
---     project.website,
---     project.project_legal_status,
---     project.rules,
---     project.completionyear,
---     project.jurisdiction,
---     project.taluka,
---     project.corporationward,
---     project.policechowkey,
---     project.policestation,
---     project.maintenance_details,
---     project.numberoffloors,
---     project.numberofbuildings,
---     project.approxtotalunits,
---     project.tenantstudentsallowed,
---     project.tenantworkingbachelorsallowed,
---     project.tenantforeignersallowed,
---     project.otherdetails,
---     project.duespayablemonth,
---     project.dated,
---     project.createdby AS createdbyid,
---     project.isdeleted,
---     cities.city,
---     country.name AS countryname,
---     usertable.firstname || ' ' || usertable.lastname AS createdby,
---     project.projectname,
---     project.nearestlandmark,
---     builder.buildername,
---     project_type.name AS projecttype,
---     CASE 
---         WHEN project.tenantstudentsallowed = '1' THEN 'Tenant Students Allowed,'
---         ELSE '' 
---     END 
---     || CASE 
---         WHEN project.tenantworkingbachelorsallowed = '1' THEN ' Tenant Working Bachelors Allowed,'
---         ELSE '' 
---     END 
---     || CASE 
---         WHEN project.tenantforeignersallowed = '1' THEN ' Tenant Foreigners Allowed' 
---         ELSE '' 
---     END AS tenantallowed
--- FROM     
---     project
--- INNER JOIN
---     cities ON project.city = cities.id
--- INNER JOIN
---     country ON project.country = country.id
--- INNER JOIN
---     usertable ON project.createdby = usertable.id
--- INNER JOIN
---     builder ON project.builderid = builder.id
--- INNER JOIN
---     project_type ON project.project_type = project_type.id;
+CREATE VIEW projectsview AS
+SELECT 
+    project.id,
+    project.builderid,
+    project.addressline1,
+    project.addressline2,
+    project.suburb,
+    project.city AS cityid,
+    project.state,
+    project.country,
+    project.zip,
+    project.project_type,
+    project.mailgroup1,
+    project.mailgroup2,
+    project.website,
+    project.project_legal_status,
+    project.rules,
+    project.completionyear,
+    project.jurisdiction,
+    project.taluka,
+    project.corporationward,
+    project.policechowkey,
+    project.policestation,
+    project.maintenance_details,
+    project.numberoffloors,
+    project.numberofbuildings,
+    project.approxtotalunits,
+    project.tenantstudentsallowed,
+    project.tenantworkingbachelorsallowed,
+    project.tenantforeignersallowed,
+    project.otherdetails,
+    project.duespayablemonth,
+    project.dated,
+    project.createdby AS createdbyid,
+    project.isdeleted,
+    cities.city,
+    country.name AS countryname,
+    usertable.firstname || ' ' || usertable.lastname AS createdby,
+    project.projectname,
+    project.nearestlandmark,
+    builder.buildername,
+    project_type.name AS projecttype,
+    CASE 
+        WHEN project.tenantstudentsallowed = '1' THEN 'Tenant Students Allowed,'
+        ELSE '' 
+    END 
+    || CASE 
+        WHEN project.tenantworkingbachelorsallowed = '1' THEN ' Tenant Working Bachelors Allowed,'
+        ELSE '' 
+    END 
+    || CASE 
+        WHEN project.tenantforeignersallowed = '1' THEN ' Tenant Foreigners Allowed' 
+        ELSE '' 
+    END AS tenantallowed
+FROM     
+    project
+INNER JOIN
+    cities ON project.city = cities.id
+INNER JOIN
+    country ON project.country = country.id
+INNER JOIN
+    usertable ON project.createdby = usertable.id
+INNER JOIN
+    builder ON project.builderid = builder.id
+INNER JOIN
+    project_type ON project.project_type = project_type.id;
 
--- CREATE VIEW projectcontactsview AS
--- SELECT
---     pv.buildername,
---     pv.projectname,
---     pv.city,
---     pv.suburb,
---     pc.contactname,
---     pc.phone,
---     pc.email,
---     pc.effectivedate,
---     pc.role,
---     pc.tenureenddate,
---     pc.details
--- FROM
---     project_contacts pc
--- INNER JOIN
---     projectsview pv ON pc.projectid = pv.id;
+CREATE VIEW projectcontactsview AS
+SELECT
+    pv.buildername,
+    pv.projectname,
+    pv.city,
+    pv.suburb,
+    pc.contactname,
+    pc.phone,
+    pc.email,
+    pc.effectivedate,
+    pc.role,
+    pc.tenureenddate,
+    pc.details
+FROM
+    project_contacts pc
+INNER JOIN
+    projectsview pv ON pc.projectid = pv.id;
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 CREATE VIEW ClientSummaryView AS
@@ -6937,22 +6937,22 @@ LEFT OUTER JOIN
 
 --5.2
 
--- create view ordersummary as SELECT 
---     clientsummaryview.clientname,
---     clientsummaryview.propertydescription,
---     clientsummaryview.briefdescription AS orderdescription,
---     clientsummaryview.orderdate,
---     clientsummaryview.orderstatus,
---     clientsummaryview.entityname,
---     clientsummaryview.service,
---     clientsummaryview.lobname,
---     clientsummaryview.sumpayment AS totalorderpayment,
---     clientsummaryview.invoiceamount AS totalinvoiceamt,
---     clientsummaryview.sumreceipt AS totalorderreceipt,
---     clientsummaryview.computedpending,
---     clientsummaryview.profit,
---     clientsummaryview.orderid
---    FROM clientsummaryview;
+create view ordersummary as SELECT 
+    clientsummaryview.clientname,
+    clientsummaryview.propertydescription,
+    clientsummaryview.briefdescription AS orderdescription,
+    clientsummaryview.orderdate,
+    clientsummaryview.orderstatus,
+    clientsummaryview.entityname,
+    clientsummaryview.service,
+    clientsummaryview.lobname,
+    clientsummaryview.sumpayment AS totalorderpayment,
+    clientsummaryview.invoiceamount AS totalinvoiceamt,
+    clientsummaryview.sumreceipt AS totalorderreceipt,
+    clientsummaryview.computedpending,
+    clientsummaryview.profit,
+    clientsummaryview.orderid
+   FROM clientsummaryview;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
