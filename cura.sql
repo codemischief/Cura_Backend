@@ -6917,21 +6917,21 @@ LEFT OUTER JOIN
 
 --16.1,5.1
 
--- CREATE VIEW orderstatisticsview AS
--- SELECT
---     service,
---     lobname,
---     COUNT(CASE WHEN orderstatus = 'On Hold' THEN 1 END) AS on_hold,
---     COUNT(CASE WHEN orderstatus = 'Estimate Given' THEN 1 END) AS estimate_given,
---     COUNT(CASE WHEN orderstatus = 'Confirmed' THEN 1 END) AS confirmed,
---     COUNT(CASE WHEN orderstatus = 'Cancelled' THEN 1 END) AS cancelled,
---     COUNT(CASE WHEN orderstatus = 'Closed' THEN 1 END) AS closed,
---     COUNT(CASE WHEN orderstatus = 'Billed' THEN 1 END) AS billed,
---     COUNT(CASE WHEN orderstatus = 'Inquiry' THEN 1 END) AS inquiry,
---     COUNT(CASE WHEN orderstatus = 'Completed' THEN 1 END) AS completed,
---     COUNT(CASE WHEN orderstatus = 'In progress' THEN 1 END) AS in_progress
--- FROM ordersview
--- GROUP BY service, lobname;
+CREATE VIEW orderstatisticsview AS
+SELECT
+    service,
+    lobname,
+    COUNT(CASE WHEN orderstatus = 'On Hold' THEN 1 END) AS on_hold,
+    COUNT(CASE WHEN orderstatus = 'Estimate Given' THEN 1 END) AS estimate_given,
+    COUNT(CASE WHEN orderstatus = 'Confirmed' THEN 1 END) AS confirmed,
+    COUNT(CASE WHEN orderstatus = 'Cancelled' THEN 1 END) AS cancelled,
+    COUNT(CASE WHEN orderstatus = 'Closed' THEN 1 END) AS closed,
+    COUNT(CASE WHEN orderstatus = 'Billed' THEN 1 END) AS billed,
+    COUNT(CASE WHEN orderstatus = 'Inquiry' THEN 1 END) AS inquiry,
+    COUNT(CASE WHEN orderstatus = 'Completed' THEN 1 END) AS completed,
+    COUNT(CASE WHEN orderstatus = 'In progress' THEN 1 END) AS in_progress
+FROM ordersview
+GROUP BY service, lobname;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
