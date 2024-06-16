@@ -15,6 +15,13 @@ alter table project_photos alter column date_taken type date;
 alter table client_receipt rename column "Visible to client" to visibletoclient;
 alter table collegetypes rename column collegeousid to id;
 
+CREATE SEQUENCE IF NOT EXISTS cities_id_seq OWNED BY cities.id;
+SELECT setval('cities_id_seq', COALESCE(max(id), 0) + 1, false) FROM cities;
+ALTER TABLE cities ALTER COLUMN id SET DEFAULT nextval('cities_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS locality_id_seq OWNED BY locality.id;
+SELECT setval('locality_id_seq', COALESCE(max(id), 0) + 1, false) FROM locality;
+ALTER TABLE locality ALTER COLUMN id SET DEFAULT nextval('locality_id_seq');
 -- alter table "user" rename to usertable;
 -- alter table "order" rename to orders;
 -- alter table cocbusinessgroup rename to cocbusinessgrouptype;
@@ -903,7 +910,8 @@ SELECT DISTINCT
     a.dateofjoining,
     a.dob,
     a.panno,
-    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
+    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS statusmap,
+    a.status,
     a.phoneno,
     a.email,
     a.addressline1,
@@ -1143,7 +1151,12 @@ SELECT DISTINCT
     a.dated,
     a.createdby,
     a.isdeleted,
-    a.id
+    a.id,
+    TRIM(TRAILING ', ' FROM CONCAT(
+        CASE WHEN a.tenantworkingbachelorsallowed THEN 'Tenant Working Bachelors Allowed, ' ELSE '' END,
+        CASE WHEN a.tenantforeignersallowed THEN 'Tenant Foreigners Allowed, ' ELSE '' END,
+        CASE WHEN a.tenantstudentsallowed THEN 'Tenant Students Allowed, ' ELSE '' END
+    )) AS tenant
 FROM
     project a
 LEFT JOIN
@@ -1633,6 +1646,7 @@ SELECT DISTINCT
     a.durationinmonth,
     a.depositamount,
     a.rentamount,
+    CASE a.active WHEN true THEN 'Active' ELSE 'Inactive' END AS activemap,    
     a.registrationtype,
     a.rentpaymentdate,
     a.noticeperiodindays,
@@ -1813,9 +1827,7 @@ LEFT JOIN vendor_category e ON a.category = e.id; -- Joining with vendor_Categor
 -- SELECT setval('vendor_id_seq', COALESCE(max(id), 0) + 1, false) FROM vendor;
 -- ALTER TABLE vendor ALTER COLUMN id SET DEFAULT nextval('vendor_id_seq');
 
--- CREATE SEQUENCE IF NOT EXISTS cities_id_seq OWNED BY cities.id;
--- SELECT setval('cities_id_seq', COALESCE(max(id), 0) + 1, false) FROM cities;
--- ALTER TABLE cities ALTER COLUMN id SET DEFAULT nextval('cities_id_seq');
+
 
 -- CREATE SEQUENCE IF NOT EXISTS order_vendorestimate_id_seq OWNED BY order_vendorestimate.id;
 -- SELECT setval('order_vendorestimate_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_vendorestimate;
@@ -2564,7 +2576,8 @@ SELECT DISTINCT
     a.firstname,
     a.lastname,
     concat_ws(' ',a.firstname,a.lastname) as fullname,
-    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
+    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS statusmap,
+    a.status,
     a.effectivedate,
     a.homephone,
     a.workphone,
