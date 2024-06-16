@@ -1371,7 +1371,7 @@ async def add_new_builder_contact(payload:dict, request:Request, conn: psycopg2.
                 "data": {}
             }
         
-        role_access_status = check_role_access(conn,payload,request=request,method="addNewBuilderContact")
+        role_access_status = check_role_access(conn,payload,request=request,method="getBuilderInfo")
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''
