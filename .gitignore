@@ -9,3 +9,4 @@ downloads/
 __pycache__/
 test.html
 test.txt
+cura_refined.sql

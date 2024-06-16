@@ -13,20 +13,20 @@ CREATE TABLE z_paymentrequeststatus (
 );
 
 -- Create the table
-CREATE TABLE order_status (
-    id INT,
-    name TEXT
-);
+-- CREATE TABLE order_status (
+--     id INT,
+--     name TEXT
+-- );
 
--- Insert data into the table
-INSERT INTO order_status (id, name) VALUES
-(1, 'On hold'),
-(2, 'Estimate Given'),
-(4, 'Cancelled'),
-(6, 'Billed'),
-(9, 'In progress'),
-(5, 'Closed (Work Done & Collection Completed)'),
-(8, 'Work Done - Pending Collection');
+-- -- Insert data into the table
+-- INSERT INTO order_status (id, name) VALUES
+-- (1, 'On hold'),
+-- (2, 'Estimate Given'),
+-- (4, 'Cancelled'),
+-- (6, 'Billed'),
+-- (9, 'In progress'),
+-- (5, 'Closed (Work Done & Collection Completed)'),
+-- (8, 'Work Done - Pending Collection');
 
 
 ALTER TABLE client_property_caretaking_agreement
@@ -55,6 +55,82 @@ ALTER COLUMN poaenddate TYPE date;
 
 ALTER TABLE client_property_photos
 ALTER COLUMN phototakenwhen TYPE date;
+
+alter table "user" rename to usertable;
+
+alter table client_property alter column clientservicemanager type text;
+alter table client_property alter column propertymanager type text;
+
+alter table client_property add column indexiicollected boolean;
+alter table "order" rename to orders;
+
+alter table client_property alter column initialpossessiondate type date;
+
+alter table client_property add column website text;
+alter table client_property add column email text;
+ALTER TABLE client_property_caretaking_agreement RENAME COLUMN pmaholder TO poaholder;
+ALTER TABLE client_receipt ALTER COLUMN recddate set type date;
+
+alter table order_photos rename COLUMN "desc" to description;
+alter table order_receipt alter column recddate type date;
+
+ALTER TABLE order_invoice ALTER COLUMN invoicedate type date;
+ alter table vendor rename column servicetaxno to gstservicetaxno;
+
+alter table order_vendorestimate alter column invoicedate type date;
+alter table order_vendorestimate alter column estimatedate type date;
+
+
+alter table order_vendorestimate alter column invoicedate type date;
+alter table order_vendorestimate alter column estimatedate type date;
+
+
+alter table order_vendorestimate alter column invoicedate type date;
+alter table order_vendorestimate alter column estimatedate type date;
+
+alter table project_amenities add column "4BHK" bool;
+alter table project_amenities add column other bool;
+alter table project_amenities add column "RK" bool;
+alter table project_amenities add column other bool;
+alter table project_amenities add column duplex bool;
+alter table project_amenities add column penthouse bool;
+
+alter table order_payment alter column paymentdate type date;
+
+update order_status set name='Closed (Work Done & Collection Completed)' where id=5;
+update order_status set name='Work Done - Pending Collection' where id=8;
+
+alter table realestateagents add column rera_registration_number text;
+
+ALTER TABLE realestateagents 
+ALTER COLUMN registered 
+TYPE boolean 
+USING 
+  CASE 
+    WHEN registered IS NOT NULL AND registered <> '' THEN true
+    ELSE false
+  END;
+
+alter table employee alter column dateofjoining type date;
+alter table employee alter column lastdateofworking type date;
+alter table employee alter column dob type date;
+alter table research_government_agencies rename column agencytype to departmenttype;
+alter table bankst add column isdeleted type boolean;
+update bankst set isdeleted=false;
+alter table client_property alter column propertymanager type text;
+alter table agencytype rename to departmenttype;
+alter table bankst rename column "Cr/Dr" to crdr;
+alter table banksandbranches add column branchaddress text;
+alter table banksandbranches rename column contact to contactperson;
+alter table banksandbranches add column notes text;
+alter table bankst rename column "AvailableBalance(INR)" to availablebalance;
+alter table cocbusinessgroup rename to cocbusinessgrouptype;
+alter table bankst rename column receivedby to receivedhow;
+alter table professionals rename column phoneno to professionid;
+alter table collegeous rename to colleges;
+alter table professionals rename column phoneno1 to phonenumber;
+alter table collegeoustypes rename to collegetypes;
+
 
 CREATE VIEW get_research_mandalas_view AS
  SELECT DISTINCT a.id,
@@ -151,7 +227,6 @@ CREATE view contractualpaymentsview AS
      LEFT JOIN userview userview_1 ON ref_contractual_payments.paymentby = userview_1.userid;
 
 
-alter table "user" rename to usertable;
 
 --FROM ref_contractual_payments a,
 --    usertable b,
@@ -170,20 +245,20 @@ alter table "user" rename to usertable;
 
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_payments_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM ref_contractual_payments WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_payments_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM ref_contractual_payments WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_payments_view
-INSTEAD OF DELETE ON get_payments_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_payments_view();
+-- CREATE TRIGGER delete_trigger_for_get_payments_view
+-- INSTEAD OF DELETE ON get_payments_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_payments_view();
 
 --tobedone
 CREATE VIEW get_employee_view AS
@@ -227,20 +302,20 @@ LEFT JOIN
 
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_employee_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM employee WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_employee_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM employee WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_employee_view
-INSTEAD OF DELETE ON get_employee_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_employee_view();
+-- CREATE TRIGGER delete_trigger_for_get_employee_view
+-- INSTEAD OF DELETE ON get_employee_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_employee_view();
 
 --tobedone
 
@@ -277,20 +352,20 @@ LEFT JOIN
 
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_locality_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM locality WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_locality_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM locality WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_locality_view
-INSTEAD OF DELETE ON get_locality_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_locality_view();
+-- CREATE TRIGGER delete_trigger_for_get_locality_view
+-- INSTEAD OF DELETE ON get_locality_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_locality_view();
 
 
 CREATE VIEW get_research_prospect_view AS
@@ -313,20 +388,20 @@ LEFT JOIN
     country c ON a.country = c.id;
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_research_prospect_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM research_prospect WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_research_prospect_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM research_prospect WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_research_prospect_view
-INSTEAD OF DELETE ON get_research_prospect_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_research_prospect_view();
+-- CREATE TRIGGER delete_trigger_for_get_research_prospect_view
+-- INSTEAD OF DELETE ON get_research_prospect_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_research_prospect_view();
 
 
 CREATE VIEW get_builder_view AS
@@ -356,20 +431,20 @@ LEFT JOIN
 LEFT JOIN
     country c ON a.country = c.id;
 
-CREATE OR REPLACE FUNCTION delete_from_get_builder_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM builder WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_builder_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM builder WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_builder_view
-INSTEAD OF DELETE ON get_builder_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_builder_view();
+-- CREATE TRIGGER delete_trigger_for_get_builder_view
+-- INSTEAD OF DELETE ON get_builder_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_builder_view();
 
 CREATE VIEW get_cities_view AS
 SELECT
@@ -383,20 +458,20 @@ FROM
     country b
 WHERE a.countryid = b.id;
 
-CREATE OR REPLACE FUNCTION delete_from_get_cities_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM cities WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_cities_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM cities WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_cities_view
-INSTEAD OF DELETE ON get_cities_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_cities_view();
+-- CREATE TRIGGER delete_trigger_for_get_cities_view
+-- INSTEAD OF DELETE ON get_cities_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_cities_view();
 
 CREATE VIEW get_projects_view AS
 SELECT DISTINCT
@@ -447,20 +522,21 @@ LEFT JOIN
 LEFT JOIN
     project_legal_status d ON a.project_legal_status = d.id;
 
-CREATE OR REPLACE FUNCTION delete_from_get_projects_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM projects WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_projects_view
-INSTEAD OF DELETE ON get_projects_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_projects_view();
+-- CREATE OR REPLACE FUNCTION delete_from_get_projects_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM projects WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
+
+-- CREATE TRIGGER delete_trigger_for_get_projects_view
+-- INSTEAD OF DELETE ON get_projects_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_projects_view();
 
 CREATE VIEW get_builder_contact_view AS
 SELECT
@@ -489,22 +565,21 @@ FROM
 LEFT JOIN
     builder b ON a.builderid = b.id;
 
-CREATE OR REPLACE FUNCTION delete_from_get_builder_contacts_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM builder_contacts WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_builder_contacts_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM builder_contacts WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_builder_contacts_view
-INSTEAD OF DELETE ON get_builder_contact_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_builder_contacts_view();
+-- CREATE TRIGGER delete_trigger_for_get_builder_contacts_view
+-- INSTEAD OF DELETE ON get_builder_contact_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_builder_contacts_view();
 
- alter table client_property add column indexiicollected boolean;
 
 CREATE VIEW get_client_info_view AS
 SELECT 
@@ -560,20 +635,20 @@ LEFT JOIN
 
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_client_info_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_client_info_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM client WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_client_info_view
-INSTEAD OF DELETE ON get_client_info_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_client_info_view();
+-- CREATE TRIGGER delete_trigger_for_get_client_info_view
+-- INSTEAD OF DELETE ON get_client_info_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_client_info_view();
 
 CREATE VIEW get_client_property_view AS
 SELECT DISTINCT
@@ -632,22 +707,21 @@ LEFT JOIN
     builder h ON a.projectid = h.id;
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_client_property_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_client_property_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM client WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_client_property_view
-INSTEAD OF DELETE ON get_client_property_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_client_property_view();
+-- CREATE TRIGGER delete_trigger_for_get_client_property_view
+-- INSTEAD OF DELETE ON get_client_property_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_client_property_view();
 
-alter table "order" rename to orders;
 
 CREATE VIEW get_orders_view AS
  SELECT DISTINCT a.id,
@@ -693,110 +767,105 @@ CREATE VIEW get_orders_view AS
      LEFT JOIN usertable j ON a.createdby = j.id;
 
 
-CREATE SEQUENCE IF NOT EXISTS payments_id_seq OWNED BY ref_contractual_payments.id;
-SELECT setval('payments_id_seq', COALESCE(max(id), 0) + 1, false) FROM ref_contractual_payments;
-ALTER TABLE ref_contractual_payments ALTER COLUMN id SET DEFAULT nextval('payments_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS payments_id_seq OWNED BY ref_contractual_payments.id;
+-- SELECT setval('payments_id_seq', COALESCE(max(id), 0) + 1, false) FROM ref_contractual_payments;
+-- ALTER TABLE ref_contractual_payments ALTER COLUMN id SET DEFAULT nextval('payments_id_seq');
 
-CREATE SEQUENCE IF NOT EXISTS orders_id_seq OWNED BY orders.id;
-SELECT setval('orders_id_seq', COALESCE(max(id), 0) + 1, false) FROM orders;
-ALTER TABLE orders ALTER COLUMN id SET DEFAULT nextval('orders_id_seq');
-
-
--- Create a new sequence if it doesn't exist starting from the maximum value of column id + 1
-CREATE SEQUENCE IF NOT EXISTS builder_id_seq OWNED BY builder.id;
-
--- Set the initial value of the sequence based on the maximum value of column id in the builder table
-SELECT setval('builder_id_seq', COALESCE(max(id), 0) + 1, false) FROM builder;
-
--- Alter the table to set the default value of column id to use the sequence
-ALTER TABLE builder ALTER COLUMN id SET DEFAULT nextval('builder_id_seq');
-
--- For client table
-CREATE SEQUENCE IF NOT EXISTS client_id_seq OWNED BY client.id;
-SELECT setval('client_id_seq', COALESCE(max(id), 0) + 1, false) FROM client;
-ALTER TABLE client ALTER COLUMN id SET DEFAULT nextval('client_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS country_id_seq OWNED BY country.id;
-SELECT setval('country_id_seq', COALESCE(max(id), 0) + 1, false) FROM country;
-ALTER TABLE country ALTER COLUMN id SET DEFAULT nextval('country_id_seq');
-
--- For client_access table
-CREATE SEQUENCE IF NOT EXISTS client_access_id_seq OWNED BY client_access.id;
-SELECT setval('client_access_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_access;
-ALTER TABLE client_access ALTER COLUMN id SET DEFAULT nextval('client_access_id_seq');
-
--- For client_legal_info table
-CREATE SEQUENCE IF NOT EXISTS client_legal_info_id_seq OWNED BY client_legal_info.id;
-SELECT setval('client_legal_info_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_legal_info;
-ALTER TABLE client_legal_info ALTER COLUMN id SET DEFAULT nextval('client_legal_info_id_seq');
-
--- For client_bank_info table
-CREATE SEQUENCE IF NOT EXISTS client_bank_info_id_seq OWNED BY client_bank_info.id;
-SELECT setval('client_bank_info_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_bank_info;
-ALTER TABLE client_bank_info ALTER COLUMN id SET DEFAULT nextval('client_bank_info_id_seq');
-
--- For client_poa table
-CREATE SEQUENCE IF NOT EXISTS client_poa_id_seq OWNED BY client_poa.id;
-SELECT setval('client_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_poa;
-ALTER TABLE client_poa ALTER COLUMN id SET DEFAULT nextval('client_poa_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS project_id_seq OWNED BY project.id;
-SELECT setval('project_id_seq', COALESCE(max(id), 0) + 1, false) FROM project;
-ALTER TABLE project ALTER COLUMN id SET DEFAULT nextval('project_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS project_amenities_id_seq OWNED BY project_amenities.id;
-SELECT setval('project_amenities_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_amenities;
-ALTER TABLE project_amenities ALTER COLUMN id SET DEFAULT nextval('project_amenities_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS project_bank_details_id_seq OWNED BY project_bank_details.id;
-SELECT setval('project_bank_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_bank_details;
-ALTER TABLE project_bank_details ALTER COLUMN id SET DEFAULT nextval('project_bank_details_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS project_contacts_id_seq OWNED BY project_contacts.id;
-SELECT setval('project_contacts_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_contacts;
-ALTER TABLE project_contacts ALTER COLUMN id SET DEFAULT nextval('project_contacts_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS project_photos_id_seq OWNED BY project_photos.id;
-SELECT setval('project_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_photos;
-ALTER TABLE project_photos ALTER COLUMN id SET DEFAULT nextval('project_photos_id_seq');
-
-CREATE TABLE project_photos(
-    id int,
-    projectid int,
-    photo_link text,
-    description text,
-    date_taken date,
-    dated timestamp(3),
-    createdby int,
-    isdeleted boolean
-);
-
-CREATE SEQUENCE IF NOT EXISTS client_property_id_seq OWNED BY client_property.id;
-SELECT setval('client_property_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property;
-ALTER TABLE client_property ALTER COLUMN id SET DEFAULT nextval('client_property_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS client_property_photos_id_seq OWNED BY client_property_photos.id;
-SELECT setval('client_property_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_photos;
-ALTER TABLE client_property_photos ALTER COLUMN id SET DEFAULT nextval('client_property_photos_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS client_property_poa_id_seq OWNED BY client_property_poa.id;
-SELECT setval('client_property_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_poa;
-ALTER TABLE client_property_poa ALTER COLUMN id SET DEFAULT nextval('client_property_poa_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS orders_id_seq OWNED BY orders.id;
+-- SELECT setval('orders_id_seq', COALESCE(max(id), 0) + 1, false) FROM orders;
+-- ALTER TABLE orders ALTER COLUMN id SET DEFAULT nextval('orders_id_seq');
 
 
-CREATE SEQUENCE IF NOT EXISTS client_property_owner_id_seq OWNED BY client_property_owner.id;
-SELECT setval('client_property_owner_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_owner;
-ALTER TABLE client_property_owner ALTER COLUMN id SET DEFAULT nextval('client_property_owner_id_seq');
+-- -- Create a new sequence if it doesn't exist starting from the maximum value of column id + 1
+-- CREATE SEQUENCE IF NOT EXISTS builder_id_seq OWNED BY builder.id;
+
+-- -- Set the initial value of the sequence based on the maximum value of column id in the builder table
+-- SELECT setval('builder_id_seq', COALESCE(max(id), 0) + 1, false) FROM builder;
+
+-- -- Alter the table to set the default value of column id to use the sequence
+-- ALTER TABLE builder ALTER COLUMN id SET DEFAULT nextval('builder_id_seq');
+
+-- -- For client table
+-- CREATE SEQUENCE IF NOT EXISTS client_id_seq OWNED BY client.id;
+-- SELECT setval('client_id_seq', COALESCE(max(id), 0) + 1, false) FROM client;
+-- ALTER TABLE client ALTER COLUMN id SET DEFAULT nextval('client_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS country_id_seq OWNED BY country.id;
+-- SELECT setval('country_id_seq', COALESCE(max(id), 0) + 1, false) FROM country;
+-- ALTER TABLE country ALTER COLUMN id SET DEFAULT nextval('country_id_seq');
+
+-- -- For client_access table
+-- CREATE SEQUENCE IF NOT EXISTS client_access_id_seq OWNED BY client_access.id;
+-- SELECT setval('client_access_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_access;
+-- ALTER TABLE client_access ALTER COLUMN id SET DEFAULT nextval('client_access_id_seq');
+
+-- -- For client_legal_info table
+-- CREATE SEQUENCE IF NOT EXISTS client_legal_info_id_seq OWNED BY client_legal_info.id;
+-- SELECT setval('client_legal_info_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_legal_info;
+-- ALTER TABLE client_legal_info ALTER COLUMN id SET DEFAULT nextval('client_legal_info_id_seq');
+
+-- -- For client_bank_info table
+-- CREATE SEQUENCE IF NOT EXISTS client_bank_info_id_seq OWNED BY client_bank_info.id;
+-- SELECT setval('client_bank_info_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_bank_info;
+-- ALTER TABLE client_bank_info ALTER COLUMN id SET DEFAULT nextval('client_bank_info_id_seq');
+
+-- -- For client_poa table
+-- CREATE SEQUENCE IF NOT EXISTS client_poa_id_seq OWNED BY client_poa.id;
+-- SELECT setval('client_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_poa;
+-- ALTER TABLE client_poa ALTER COLUMN id SET DEFAULT nextval('client_poa_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS project_id_seq OWNED BY project.id;
+-- SELECT setval('project_id_seq', COALESCE(max(id), 0) + 1, false) FROM project;
+-- ALTER TABLE project ALTER COLUMN id SET DEFAULT nextval('project_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS project_amenities_id_seq OWNED BY project_amenities.id;
+-- SELECT setval('project_amenities_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_amenities;
+-- ALTER TABLE project_amenities ALTER COLUMN id SET DEFAULT nextval('project_amenities_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS project_bank_details_id_seq OWNED BY project_bank_details.id;
+-- SELECT setval('project_bank_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_bank_details;
+-- ALTER TABLE project_bank_details ALTER COLUMN id SET DEFAULT nextval('project_bank_details_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS project_contacts_id_seq OWNED BY project_contacts.id;
+-- SELECT setval('project_contacts_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_contacts;
+-- ALTER TABLE project_contacts ALTER COLUMN id SET DEFAULT nextval('project_contacts_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS project_photos_id_seq OWNED BY project_photos.id;
+-- SELECT setval('project_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_photos;
+-- ALTER TABLE project_photos ALTER COLUMN id SET DEFAULT nextval('project_photos_id_seq');
+
+-- CREATE TABLE project_photos(
+--     id int,
+--     projectid int,
+--     photo_link text,
+--     description text,
+--     date_taken date,
+--     dated timestamp(3),
+--     createdby int,
+--     isdeleted boolean
+-- );
+
+-- CREATE SEQUENCE IF NOT EXISTS client_property_id_seq OWNED BY client_property.id;
+-- SELECT setval('client_property_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property;
+-- ALTER TABLE client_property ALTER COLUMN id SET DEFAULT nextval('client_property_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS client_property_photos_id_seq OWNED BY client_property_photos.id;
+-- SELECT setval('client_property_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_photos;
+-- ALTER TABLE client_property_photos ALTER COLUMN id SET DEFAULT nextval('client_property_photos_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS client_property_poa_id_seq OWNED BY client_property_poa.id;
+-- SELECT setval('client_property_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_poa;
+-- ALTER TABLE client_property_poa ALTER COLUMN id SET DEFAULT nextval('client_property_poa_id_seq');
 
 
-alter table client_property alter column initialpossessiondate type date;
+-- CREATE SEQUENCE IF NOT EXISTS client_property_owner_id_seq OWNED BY client_property_owner.id;
+-- SELECT setval('client_property_owner_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_owner;
+-- ALTER TABLE client_property_owner ALTER COLUMN id SET DEFAULT nextval('client_property_owner_id_seq');
 
-alter table client_property add column website text;
-alter table client_property add column email text;
 
-SELECT setval('client_property_id_seq', (SELECT MAX(id) FROM client_property));
 
-ALTER TABLE client_property_caretaking_agreement RENAME COLUMN pmaholder TO poaholder;
+-- SELECT setval('client_property_id_seq', (SELECT MAX(id) FROM client_property));
+
 
 CREATE VIEW get_client_receipt_view AS
 SELECT DISTINCT
@@ -837,30 +906,30 @@ LEFT JOIN
 LEFT JOIN
     mode_of_payment g ON a.paymentmode = g.id;
 
-CREATE OR REPLACE FUNCTION delete_from_get_client_receipt_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client_receipt WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_client_receipt_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM client_receipt WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_client_receipt_view
-INSTEAD OF DELETE ON get_client_receipt_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_client_receipt_view();
+-- CREATE TRIGGER delete_trigger_for_get_client_receipt_view
+-- INSTEAD OF DELETE ON get_client_receipt_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_client_receipt_view();
 
-CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
-SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
-ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
+-- SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
+-- ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
 
-ALTER TABLE client_receipt ALTER COLUMN recddate set type date;
 
-CREATE SEQUENCE IF NOT EXISTS client_property_caretaking_agreement_id_seq OWNED BY client_property_caretaking_agreement.id;
-SELECT setval('client_property_caretaking_agreement_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_caretaking_agreement;
-ALTER TABLE client_property_caretaking_agreement ALTER COLUMN id SET DEFAULT nextval('client_property_caretaking_agreement_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS client_property_caretaking_agreement_id_seq OWNED BY client_property_caretaking_agreement.id;
+-- SELECT setval('client_property_caretaking_agreement_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_caretaking_agreement;
+-- ALTER TABLE client_property_caretaking_agreement ALTER COLUMN id SET DEFAULT nextval('client_property_caretaking_agreement_id_seq');
 
 
 
@@ -902,20 +971,20 @@ LEFT JOIN
     get_client_property_view d ON a.clientpropertyid = d.id;
 
 
-CREATE OR REPLACE FUNCTION get_client_property_pma_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client_property_caretaking_agreement WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION get_client_property_pma_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM client_property_caretaking_agreement WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER get_client_property_pma_view
-INSTEAD OF DELETE ON get_client_property_pma_view
-FOR EACH ROW
-EXECUTE FUNCTION get_client_property_pma_view();
+-- CREATE TRIGGER get_client_property_pma_view
+-- INSTEAD OF DELETE ON get_client_property_pma_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION get_client_property_pma_view();
 
 CREATE VIEW get_client_property_lla_view AS
 SELECT DISTINCT
@@ -948,36 +1017,36 @@ LEFT JOIN
 LEFT JOIN
     get_client_property_view d ON a.clientpropertyid = d.id;
 
-CREATE SEQUENCE IF NOT EXISTS client_property_leave_license_details_id_seq OWNED BY client_property_leave_license_details.id;
-SELECT setval('client_property_leave_license_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_leave_license_details;
-ALTER TABLE client_property_leave_license_details ALTER COLUMN id SET DEFAULT nextval('client_property_leave_license_details_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS client_property_leave_license_details_id_seq OWNED BY client_property_leave_license_details.id;
+-- SELECT setval('client_property_leave_license_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_leave_license_details;
+-- ALTER TABLE client_property_leave_license_details ALTER COLUMN id SET DEFAULT nextval('client_property_leave_license_details_id_seq');
 
-CREATE OR REPLACE FUNCTION get_client_property_lla_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client_property_leave_license_details WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION get_client_property_lla_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM client_property_leave_license_details WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER get_client_property_lla_view
-INSTEAD OF DELETE ON get_client_property_lla_view
-FOR EACH ROW
-EXECUTE FUNCTION get_client_property_lla_view();
+-- CREATE TRIGGER get_client_property_lla_view
+-- INSTEAD OF DELETE ON get_client_property_lla_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION get_client_property_lla_view();
 
-CREATE SEQUENCE IF NOT EXISTS order_status_change_id_seq OWNED BY order_status_change.id;
-SELECT setval('order_status_change_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_status_change;
-ALTER TABLE order_status_change ALTER COLUMN id SET DEFAULT nextval('order_status_change_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS order_status_change_id_seq OWNED BY order_status_change.id;
+-- SELECT setval('order_status_change_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_status_change;
+-- ALTER TABLE order_status_change ALTER COLUMN id SET DEFAULT nextval('order_status_change_id_seq');
 
- alter table order_photos rename COLUMN "desc" to description;
 
-CREATE SEQUENCE IF NOT EXISTS order_photos_id_seq OWNED BY order_photos.id;
-SELECT setval('order_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_photos;
-ALTER TABLE order_photos ALTER COLUMN id SET DEFAULT nextval('order_photos_id_seq');
 
-ALTER TABLE order_invoice ALTER COLUMN invoicedate type date;
+-- CREATE SEQUENCE IF NOT EXISTS order_photos_id_seq OWNED BY order_photos.id;
+-- SELECT setval('order_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_photos;
+-- ALTER TABLE order_photos ALTER COLUMN id SET DEFAULT nextval('order_photos_id_seq');
+
+
 
 CREATE VIEW get_orders_invoice_view AS
 SELECT DISTINCT
@@ -1011,7 +1080,7 @@ LEFT JOIN
 LEFT JOIN
     usertable e ON a.createdby = e.id;
 
- alter table order_receipt alter column recddate type date;
+
 
  CREATE VIEW get_orders_receipt_view AS
  SELECT DISTINCT
@@ -1060,11 +1129,10 @@ LEFT JOIN
 LEFT JOIN
     client_property k ON i.clientpropertyid = k.id;
 
-CREATE SEQUENCE IF NOT EXISTS order_receipt_id_seq OWNED BY order_receipt.id;
-SELECT setval('order_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_receipt;
-ALTER TABLE order_receipt ALTER COLUMN id SET DEFAULT nextval('order_receipt_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS order_receipt_id_seq OWNED BY order_receipt.id;
+-- SELECT setval('order_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_receipt;
+-- ALTER TABLE order_receipt ALTER COLUMN id SET DEFAULT nextval('order_receipt_id_seq');
 
- alter table vendor rename column servicetaxno to gstservicetaxno;
 
 CREATE VIEW get_vendor_view AS
 SELECT DISTINCT
@@ -1110,20 +1178,18 @@ LEFT JOIN country c ON a.country = c.id
 LEFT JOIN tallyledger d ON a.tallyledgerid = d.id
 LEFT JOIN vendor_category e ON a.category = e.id; -- Joining with vendor_Category table using alias e
 
-CREATE SEQUENCE IF NOT EXISTS vendor_id_seq OWNED BY vendor.id;
-SELECT setval('vendor_id_seq', COALESCE(max(id), 0) + 1, false) FROM vendor;
-ALTER TABLE vendor ALTER COLUMN id SET DEFAULT nextval('vendor_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS vendor_id_seq OWNED BY vendor.id;
+-- SELECT setval('vendor_id_seq', COALESCE(max(id), 0) + 1, false) FROM vendor;
+-- ALTER TABLE vendor ALTER COLUMN id SET DEFAULT nextval('vendor_id_seq');
 
-CREATE SEQUENCE IF NOT EXISTS cities_id_seq OWNED BY cities.id;
-SELECT setval('cities_id_seq', COALESCE(max(id), 0) + 1, false) FROM cities;
-ALTER TABLE cities ALTER COLUMN id SET DEFAULT nextval('cities_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS cities_id_seq OWNED BY cities.id;
+-- SELECT setval('cities_id_seq', COALESCE(max(id), 0) + 1, false) FROM cities;
+-- ALTER TABLE cities ALTER COLUMN id SET DEFAULT nextval('cities_id_seq');
 
-CREATE SEQUENCE IF NOT EXISTS order_vendorestimate_id_seq OWNED BY order_vendorestimate.id;
-SELECT setval('order_vendorestimate_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_vendorestimate;
-ALTER TABLE order_vendorestimate ALTER COLUMN id SET DEFAULT nextval('order_vendorestimate_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS order_vendorestimate_id_seq OWNED BY order_vendorestimate.id;
+-- SELECT setval('order_vendorestimate_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_vendorestimate;
+-- ALTER TABLE order_vendorestimate ALTER COLUMN id SET DEFAULT nextval('order_vendorestimate_id_seq');
 
-alter table order_vendorestimate alter column invoicedate type date;
-alter table order_vendorestimate alter column estimatedate type date;
 
 CREATE VIEW get_vendor_invoice_view AS
 SELECT DISTINCT
@@ -1168,14 +1234,7 @@ LEFT JOIN
 LEFT JOIN
     usertable g ON a.createdby = g.id;
 
-alter table project_amenities add column "4BHK" bool;
-alter table project_amenities add column other bool;
-alter table project_amenities add column "RK" bool;
-alter table project_amenities add column other bool;
-alter table project_amenities add column duplex bool;
-alter table project_amenities add column penthouse bool;
 
-alter table order_payment alter column paymentdate type date;
 
 CREATE VIEW get_vendor_payment_view AS
 SELECT DISTINCT
@@ -1227,17 +1286,16 @@ LEFT JOIN
 LEFT JOIN
     client_property j ON c.clientpropertyid = j.id;
 
-CREATE SEQUENCE IF NOT EXISTS order_payment_id_seq OWNED BY order_payment.id;
-SELECT setval('order_payment_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_payment;
-ALTER TABLE order_payment ALTER COLUMN id SET DEFAULT nextval('order_payment_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS order_payment_id_seq OWNED BY order_payment.id;
+-- SELECT setval('order_payment_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_payment;
+-- ALTER TABLE order_payment ALTER COLUMN id SET DEFAULT nextval('order_payment_id_seq');
 
 delete from order_status where id=7;
-update order_status set name='Closed (Work Done & Collection Completed)' where id=5;
-update order_status set name='Work Done - Pending Collection' where id=8;
 
-CREATE SEQUENCE IF NOT EXISTS clientleavelicensetenant_id_seq OWNED BY clientleavelicensetenant.id;
-SELECT setval('clientleavelicensetenant_id_seq', COALESCE(max(id), 0) + 1, false) FROM clientleavelicensetenant;
-ALTER TABLE clientleavelicensetenant ALTER COLUMN id SET DEFAULT nextval('clientleavelicensetenant_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS clientleavelicensetenant_id_seq OWNED BY clientleavelicensetenant.id;
+-- SELECT setval('clientleavelicensetenant_id_seq', COALESCE(max(id), 0) + 1, false) FROM clientleavelicensetenant;
+-- ALTER TABLE clientleavelicensetenant ALTER COLUMN id SET DEFAULT nextval('clientleavelicensetenant_id_seq');
 
 
 --tobedone
@@ -1848,9 +1906,9 @@ END;
 $$
 LANGUAGE PLPGSQL;
 
-CREATE SEQUENCE IF NOT EXISTS usertable_id_seq OWNED BY usertable.id;
-SELECT setval('usertable_id_seq', COALESCE(max(id), 0) + 1, false) FROM usertable;
-ALTER TABLE usertable ALTER COLUMN id SET DEFAULT nextval('usertable_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS usertable_id_seq OWNED BY usertable.id;
+-- SELECT setval('usertable_id_seq', COALESCE(max(id), 0) + 1, false) FROM usertable;
+-- ALTER TABLE usertable ALTER COLUMN id SET DEFAULT nextval('usertable_id_seq');
 
 CREATE VIEW get_users_view AS
 SELECT DISTINCT
@@ -1968,20 +2026,13 @@ FROM
 LEFT JOIN
     country b ON a.country = b.id;
 
-CREATE SEQUENCE IF NOT EXISTS research_employer_id_seq OWNED BY research_employer.id;
-SELECT setval('research_employer_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_employer;
-ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_employer_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS research_employer_id_seq OWNED BY research_employer.id;
+-- SELECT setval('research_employer_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_employer;
+-- ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_employer_id_seq');
 
-ALTER TABLE realestateagents 
-ALTER COLUMN registered 
-TYPE boolean 
-USING 
-  CASE 
-    WHEN registered IS NOT NULL AND registered <> '' THEN true
-    ELSE false
-  END;
 
-alter table realestateagents add column rera_registration_number text;
+
+
 
 CREATE OR REPLACE VIEW get_research_realestate_agents_view AS
 SELECT DISTINCT
@@ -2002,9 +2053,9 @@ SELECT DISTINCT
 FROM
     realestateagents a;
 
-CREATE SEQUENCE IF NOT EXISTS realestateagents_id_seq OWNED BY realestateagents.id;
-SELECT setval('realestateagents_id_seq', COALESCE(max(id), 0) + 1, false) FROM realestateagents;
-ALTER TABLE realestateagents ALTER COLUMN id SET DEFAULT nextval('realestateagents_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS realestateagents_id_seq OWNED BY realestateagents.id;
+-- SELECT setval('realestateagents_id_seq', COALESCE(max(id), 0) + 1, false) FROM realestateagents;
+-- ALTER TABLE realestateagents ALTER COLUMN id SET DEFAULT nextval('realestateagents_id_seq');
 
 CREATE OR REPLACE VIEW get_bankst_view AS
 SELECT
@@ -2085,9 +2136,9 @@ LEFT JOIN
 LEFT JOIN
     cocbusinessgrouptype e ON a.groupid = e.id;
 
-CREATE SEQUENCE IF NOT EXISTS cocandbusinessgroup_id_seq OWNED BY cocandbusinessgroup.id;
-SELECT setval('cocandbusinessgroup_id_seq', COALESCE(max(id), 0) + 1, false) FROM cocandbusinessgroup;
-ALTER TABLE cocandbusinessgroup ALTER COLUMN id SET DEFAULT nextval('cocandbusinessgroup_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS cocandbusinessgroup_id_seq OWNED BY cocandbusinessgroup.id;
+-- SELECT setval('cocandbusinessgroup_id_seq', COALESCE(max(id), 0) + 1, false) FROM cocandbusinessgroup;
+-- ALTER TABLE cocandbusinessgroup ALTER COLUMN id SET DEFAULT nextval('cocandbusinessgroup_id_seq');
 
 CREATE TABLE college (
     id BIGINT,
@@ -2247,9 +2298,9 @@ LEFT JOIN
 LEFT JOIN
     country e ON a.country = e.id;
 
-CREATE SEQUENCE IF NOT EXISTS professionals_id_seq OWNED BY professionals.id;
-SELECT setval('professionals_id_seq', COALESCE(max(id), 0) + 1, false) FROM professionals;
-ALTER TABLE professionals ALTER COLUMN id SET DEFAULT nextval('professionals_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS professionals_id_seq OWNED BY professionals.id;
+-- SELECT setval('professionals_id_seq', COALESCE(max(id), 0) + 1, false) FROM professionals;
+-- ALTER TABLE professionals ALTER COLUMN id SET DEFAULT nextval('professionals_id_seq');
 
 CREATE OR REPLACE VIEW orderreceiptview AS
 SELECT
@@ -2301,7 +2352,6 @@ FROM
 WHERE
   Order_Receipt.IsDeleted = false;
 
-alter table research_government_agencies rename column agencytype to departmenttype;
 
 CREATE VIEW get_research_govt_agencies_view AS
 SELECT
@@ -2336,13 +2386,13 @@ LEFT JOIN
     usertable d ON a.createdby = d.id;
 
 
-CREATE SEQUENCE IF NOT EXISTS research_government_agencies_id_seq OWNED BY research_government_agencies.id;
-SELECT setval('research_government_agencies_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_government_agencies;
-ALTER TABLE research_government_agencies ALTER COLUMN id SET DEFAULT nextval('research_government_agencies_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS research_government_agencies_id_seq OWNED BY research_government_agencies.id;
+-- SELECT setval('research_government_agencies_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_government_agencies;
+-- ALTER TABLE research_government_agencies ALTER COLUMN id SET DEFAULT nextval('research_government_agencies_id_seq');
 
-CREATE SEQUENCE IF NOT EXISTS friends_id_seq OWNED BY friends.id;
-SELECT setval('friends_id_seq', COALESCE(max(id), 0) + 1, false) FROM friends;
-ALTER TABLE friends ALTER COLUMN id SET DEFAULT nextval('friends_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS friends_id_seq OWNED BY friends.id;
+-- SELECT setval('friends_id_seq', COALESCE(max(id), 0) + 1, false) FROM friends;
+-- ALTER TABLE friends ALTER COLUMN id SET DEFAULT nextval('friends_id_seq');
 
 CREATE VIEW get_research_friends_view AS
 SELECT
@@ -2390,13 +2440,12 @@ FROM
 LEFT JOIN
     client b ON a.tenantid = b.id;
 
-CREATE SEQUENCE IF NOT EXISTS banksandbranches_id_seq OWNED BY banksandbranches.id;
-SELECT setval('banksandbranches_id_seq', COALESCE(max(id), 0) + 1, false) FROM banksandbranches;
-ALTER TABLE banksandbranches ALTER COLUMN id SET DEFAULT nextval('banksandbranches_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS banksandbranches_id_seq OWNED BY banksandbranches.id;
+-- SELECT setval('banksandbranches_id_seq', COALESCE(max(id), 0) + 1, false) FROM banksandbranches;
+-- ALTER TABLE banksandbranches ALTER COLUMN id SET DEFAULT nextval('banksandbranches_id_seq');
 
-alter table employee alter column dateofjoining type date;
-alter table employee alter column lastdateofworking type date;
-alter table employee alter column dob type date;
+
+
 
 CREATE OR REPLACE VIEW orderinvoicelistview AS
 SELECT order_invoice.id,
@@ -2811,13 +2860,13 @@ WHERE entity LIKE '%CURA%' AND
       type NOT LIKE '%OrderRec%'
 GROUP BY clientname;
 
-CREATE SEQUENCE IF NOT EXISTS architech_id_seq OWNED BY architech.id;
-SELECT setval('architech_id_seq', COALESCE(max(id), 0) + 1, false) FROM architech;
-ALTER TABLE architech ALTER COLUMN id SET DEFAULT nextval('architech_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS architech_id_seq OWNED BY architech.id;
+-- SELECT setval('architech_id_seq', COALESCE(max(id), 0) + 1, false) FROM architech;
+-- ALTER TABLE architech ALTER COLUMN id SET DEFAULT nextval('architech_id_seq');
 
-CREATE SEQUENCE IF NOT EXISTS colleges_id_seq OWNED BY colleges.id;
-SELECT setval('colleges_id_seq', COALESCE(max(id), 0) + 1, false) FROM colleges;
-ALTER TABLE colleges ALTER COLUMN id SET DEFAULT nextval('colleges_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS colleges_id_seq OWNED BY colleges.id;
+-- SELECT setval('colleges_id_seq', COALESCE(max(id), 0) + 1, false) FROM colleges;
+-- ALTER TABLE colleges ALTER COLUMN id SET DEFAULT nextval('colleges_id_seq');
 
 CREATE VIEW get_research_architect_view AS
 SELECT
@@ -2884,12 +2933,11 @@ LEFT JOIN
 LEFT JOIN
     collegetypes e ON a.typeid = e.id;
 
-alter table bankst add column isdeleted type boolean;
-update bankst set isdeleted=false;
 
-CREATE SEQUENCE IF NOT EXISTS owners_id_seq OWNED BY owners.id;
-SELECT setval('owners_id_seq', COALESCE(max(id), 0) + 1, false) FROM owners;
-ALTER TABLE owners ALTER COLUMN id SET DEFAULT nextval('owners_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS owners_id_seq OWNED BY owners.id;
+-- SELECT setval('owners_id_seq', COALESCE(max(id), 0) + 1, false) FROM owners;
+-- ALTER TABLE owners ALTER COLUMN id SET DEFAULT nextval('owners_id_seq');
 
 CREATE VIEW clientstatementview AS
 SELECT
@@ -3637,17 +3685,18 @@ UNION ALL
      LEFT JOIN entity e ON orv.entityid = e.id
 WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%';
 
- CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
-SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
-ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
+--  CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
+-- SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
+-- ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
 
- CREATE SEQUENCE IF NOT EXISTS builder_contacts_id_seq OWNED BY builder_contacts.id;
-SELECT setval('builder_contacts_id_seq', COALESCE(max(id), 0) + 1, false) FROM builder_contacts;
-ALTER TABLE builder_contacts ALTER COLUMN id SET DEFAULT nextval('builder_contacts_id_seq');
+--  CREATE SEQUENCE IF NOT EXISTS builder_contacts_id_seq OWNED BY builder_contacts.id;
+-- SELECT setval('builder_contacts_id_seq', COALESCE(max(id), 0) + 1, false) FROM builder_contacts;
+-- ALTER TABLE builder_contacts ALTER COLUMN id SET DEFAULT nextval('builder_contacts_id_seq');
 
 
 CREATE TABLE token_access_config(
-    timedata int
+    timedata int,
+    type text
 );
 
 --10.04
@@ -3904,12 +3953,13 @@ WHERE
     bankname LIKE '%DAP-ICICI-42%'
     AND date <= '2024-03-31';
 
-alter table client_property alter column propertyemanager type text;
-alter table client_property alter column propertymanager type text;
 
-CREATE SEQUENCE IF NOT EXISTS serviceapartmentsandguesthouses_id_seq OWNED BY serviceapartmentsandguesthouses.id;
-SELECT setval('serviceapartmentsandguesthouses_id_seq', COALESCE(max(id), 0) + 1, false) FROM serviceapartmentsandguesthouses;
-ALTER TABLE serviceapartmentsandguesthouses ALTER COLUMN id SET DEFAULT nextval('serviceapartmentsandguesthouses_id_seq');
+-- alter table client_property alter column propertyemanager type text;
+
+
+-- CREATE SEQUENCE IF NOT EXISTS serviceapartmentsandguesthouses_id_seq OWNED BY serviceapartmentsandguesthouses.id;
+-- SELECT setval('serviceapartmentsandguesthouses_id_seq', COALESCE(max(id), 0) + 1, false) FROM serviceapartmentsandguesthouses;
+-- ALTER TABLE serviceapartmentsandguesthouses ALTER COLUMN id SET DEFAULT nextval('serviceapartmentsandguesthouses_id_seq');
 
 CREATE VIEW get_apartment_view AS
 SELECT
@@ -4284,18 +4334,7 @@ SELECT
      JOIN vendor ON order_payment.vendorid = vendor.id
   WHERE orders.id = ANY (ARRAY[31648::bigint, 10770::bigint, 31649::bigint, 353444::bigint, 122525::bigint])
 
-alter table agencytype rename to departmenttype;
-alter table bankst rename column "Cr/Dr" to crdr;
-alter table banksandbranches add column branchaddress text;
-alter table banksandbranches rename column contact to contactperson;
-alter table banksandbranches add column notes text;
-alter table bankst rename column "AvailableBalance(INR)" to availablebalance;
-alter table cocbusinessgroup rename to cocbusinessgrouptype;
-alter table bankst rename column receivedby to receivedhow;
-alter table professionals rename column phoneno to professionid;
-alter table collegeous rename to colleges;
-alter table professionals rename column phoneno1 to phonenumber;
-alter table collegeoustypes rename to collegetypes;
+
 
 
 CREATE VIEW agedorders AS
