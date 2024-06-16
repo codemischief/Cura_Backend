@@ -8996,7 +8996,7 @@ async def get_company_key(payload: dict, request: Request,conn : psycopg2.extens
                 query = "SELECT companycode FROM companykey"
                 cursor.execute(query)
                 data = cursor.fetchone()[0]
-        return giveSuccess(payload['user_id'],role_access_status,[{"companykey":data}])
+        return giveSuccess(payload['user_id'],role_access_status,{"companykey":data})
     except HTTPException as h:
         raise h
     except Exception as e:
