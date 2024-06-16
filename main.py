@@ -107,10 +107,11 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 CLIENT_STATEMENT_ID = os.getenv("CLIENT_STATEMENT_ID")
 CLIENT_STATEMENT_PASS = os.getenv("CLIENT_STATEMENT_PASS")
-PASSWORD_RESET_ID = os.getenv("PASSWORD_RESET_ID")
-PASSWORD_RESET_PASS = os.getenv("PASSWORD_RESET_PASS")
-hostURL = os.getenv("HOSTURL")
+PASSWORD_RESET_ID = os.getenv("ADMIN_EMAIL_ID")
+PASSWORD_RESET_PASS = os.getenv("ADMIN_EMAIL_PASS")
 FILE_DIRECTORY = os.getenv("FILE_DIRECTORY")
+SMTP_SERVER = os.getenv("SMTP_SERVER")
+SMTP_PORT = os.getenv("SMTP_PORT")
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -6390,8 +6391,8 @@ async def delete_research_architect(payload:dict, request:Request, conn:psycopg2
 
 def send_email(email,password,subject, body,to_email,html=None,html2=None,filename=None):
     # SMTP server configuration
-    smtp_server = 'smtpout.secureserver.net'  # Example: 'smtp.gmail.com'
-    smtp_port = 587  # For SSL, use 465; for TLS/StartTLS, use 587
+    smtp_server = SMTP_SERVER  # Example: 'smtp.gmail.com'
+    smtp_port = SMTP_PORT  # For SSL, use 465; for TLS/StartTLS, use 587
     smtp_username = email
     smtp_password = password
     logging.info(f"Credentials are {email} {password}")
@@ -7902,9 +7903,9 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             </body>
             </html>
             """
-
-            filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
-            ans['filename'] = filename
+            if 'downloadType' in payload:
+                filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
+                ans['filename'] = filename
             if not payload['sendEmail']:
                 return ans
 
@@ -8986,7 +8987,7 @@ async def delete_from_table(payload:dict, request:Request, conn: psycopg2.extens
         raise HTTPException(400,f"Bad request error <{e}>")
 
 
-@app.post('getCompanyKey')
+@app.post('/getCompanyKey')
 async def get_company_key(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload,request,method="getCompanyKey")
