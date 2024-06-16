@@ -4157,73 +4157,73 @@ SELECT
 
 
 
--- CREATE VIEW rpt_client_property_caretaking_agreementview AS
--- SELECT
---     cpca.id,
---     cpca.clientpropertyid,
---     cpca.startdate,
---     cpca.enddate,
---     cpca.actualenddate,
---     cpca.monthlymaintenancedate,
---     cpca.monthlymaintenanceamount,
---     cpca.active,
---     cpca.scancopy,
---     cpca.reasonforearlyterminationifapplicable,
---     cpca.dated,
---     cpca.createdby AS createdbyid,
---     cpca.isdeleted,
---     ut.firstname || ' ' || ut.lastname AS createdby,
---     CASE
---         WHEN cpca.active = TRUE THEN 'Active'
---         ELSE 'Inactive'
---     END AS status,
---     pv.clientname,
---     pv.propertydescription,
---     pv.property_status AS propertystatus,
---     pv.electricitybillingduedate,
---     pv.electricitybillingunit,
---     pv.electricityconsumernumber,
---     pv.propertytaxnumber,
---     cpca.description,
---     lnl.startdate AS lnlstartdate,
---     lnl.actualenddate AS lnlenddate,
---     lnl.rentamount,
---     cpca.vacant,
---     cpca.rented,
---     cpca.fixed,
---     cpca.vacanttax,
---     cpca.rentedtax,
---     cpca.fixedtax,
---     cpca.electricitybillcreated,
---     cpca.propertytaxbillcreated,
---     cpca.pipedgasbillcreated,
---     cpca.societyduesbillcreated,
---     cpca.advanceforreimbursementcreated,
---     cpca.createclientportalaccount,
---     cpca.orderid,
---     o.briefdescription AS orderdescription,
---     pv.clientid,
---     cli.fulllegalname,
---     cv.clienttypename,
---     cpca.poastartdate,
---     cpca.poaenddate,
---     cpca.ptaxpaidtilldate,
---     cpca.societyduespaidtilldate,
---     cpca.poaholder
--- FROM
---     client_property_caretaking_agreement cpca
--- INNER JOIN
---     usertable ut ON cpca.createdby = ut.id
--- INNER JOIN
---     propertiesview pv ON cpca.clientpropertyid = pv.id
--- LEFT OUTER JOIN
---     clientview cv ON pv.clientid = cv.id
--- LEFT OUTER JOIN
---     client_legal_info cli ON pv.clientid = cli.clientid
--- LEFT OUTER JOIN
---     orders o ON cpca.orderid = o.id
--- LEFT OUTER JOIN
---     client_property_leave_license_detailsview lnl ON lnl.clientpropertyid = cpca.clientpropertyid AND lnl.active = TRUE;
+CREATE VIEW rpt_client_property_caretaking_agreementview AS
+SELECT
+    cpca.id,
+    cpca.clientpropertyid,
+    cpca.startdate,
+    cpca.enddate,
+    cpca.actualenddate,
+    cpca.monthlymaintenancedate,
+    cpca.monthlymaintenanceamount,
+    cpca.active,
+    cpca.scancopy,
+    cpca.reasonforearlyterminationifapplicable,
+    cpca.dated,
+    cpca.createdby AS createdbyid,
+    cpca.isdeleted,
+    ut.firstname || ' ' || ut.lastname AS createdby,
+    CASE
+        WHEN cpca.active = TRUE THEN 'Active'
+        ELSE 'Inactive'
+    END AS status,
+    pv.clientname,
+    pv.propertydescription,
+    pv.property_status AS propertystatus,
+    pv.electricitybillingduedate,
+    pv.electricitybillingunit,
+    pv.electricityconsumernumber,
+    pv.propertytaxnumber,
+    cpca.description,
+    lnl.startdate AS lnlstartdate,
+    lnl.actualenddate AS lnlenddate,
+    lnl.rentamount,
+    cpca.vacant,
+    cpca.rented,
+    cpca.fixed,
+    cpca.vacanttax,
+    cpca.rentedtax,
+    cpca.fixedtax,
+    cpca.electricitybillcreated,
+    cpca.propertytaxbillcreated,
+    cpca.pipedgasbillcreated,
+    cpca.societyduesbillcreated,
+    cpca.advanceforreimbursementcreated,
+    cpca.createclientportalaccount,
+    cpca.orderid,
+    o.briefdescription AS orderdescription,
+    pv.clientid,
+    cli.fulllegalname,
+    cv.clienttypename,
+    cpca.poastartdate,
+    cpca.poaenddate,
+    cpca.ptaxpaidtilldate,
+    cpca.societyduespaidtilldate,
+    cpca.poaholder
+FROM
+    client_property_caretaking_agreement cpca
+INNER JOIN
+    usertable ut ON cpca.createdby = ut.id
+INNER JOIN
+    propertiesview pv ON cpca.clientpropertyid = pv.id
+LEFT OUTER JOIN
+    clientview cv ON pv.clientid = cv.id
+LEFT OUTER JOIN
+    client_legal_info cli ON pv.clientid = cli.clientid
+LEFT OUTER JOIN
+    orders o ON cpca.orderid = o.id
+LEFT OUTER JOIN
+    client_property_leave_license_detailsview lnl ON lnl.clientpropertyid = cpca.clientpropertyid AND lnl.active = TRUE;
 
 
 
