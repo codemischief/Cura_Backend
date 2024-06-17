@@ -531,10 +531,16 @@ def filterAndPaginate_v2(db_config,
             query += " AND " + " AND ".join(where_clauses)
         logging.info(where_clauses)
         if sort_column and static:
-            q = f'SELECT pg_typeof({sort_column[0]}) from {table_name} limit 1'
+            q = f'''SELECT data_type
+                    FROM information_schema.columns
+                    WHERE table_name = '{table_name}'
+                    AND column_name = '{sort_column[0]}';
+'''
             conn = psycopg2.connect(db_config)
+            logging.info(q)
             cursor = conn.cursor()
-            cursor.execute(q)
+            msg = logMessage(cursor,q)
+            logging.info(q)
             datatype = cursor.fetchone()[0]
             if datatype != 'text':
                 query += f" ORDER BY {sort_column[0]} {'asc NULLS FIRST' if sort_order == 'asc' else 'desc  NULLS LAST'}"
@@ -725,7 +731,7 @@ async def validate_credentials(payload: dict, request:Request, conn: psycopg2.ex
     logging.info(f'validate_credentials: received payload <{payload}>')
     try:
         with conn[0].cursor() as cursor:
-            query = 'SELECT password,id,roleid FROM usertable where username = %s and isdeleted=false'
+            query = 'SELECT password,id,roleid FROM usertable where username = %s and isdeleted=false and status=true'
             query2 = "SELECT EXISTS (SELECT 1 FROM companykey WHERE companycode = %s)"
 
             msg = logMessage(cursor,query,(payload['username'],))
