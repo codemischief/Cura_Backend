@@ -9282,6 +9282,7 @@ async def get_company_key(payload: dict, request: Request,conn : psycopg2.extens
         raise HTTPException(400,f"Bad request error <{e}>")
 @app.post('/changeCompanyKey')
 async def change_company_key(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"payload is <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload,request,method="editCompanyKey")
         if role_access_status == 1:
