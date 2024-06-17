@@ -1,32 +1,736 @@
+SET SEARCH_PATH = dbo;
+CREATE EXTENSION tablefunc;
 
-CREATE INDEX ON usertable(id);
-CREATE INDEX ON mode_of_payment(id);
-CREATE INDEX ON payment_for(id);
-CREATE INDEX ON z_paymentrequeststatus(id);
---CREATE INDEX ON paymentrequeststatus(id);
-CREATE INDEX ON entity(id);
+alter table "user" rename to usertable;
+alter table "order" rename to orders;
+alter table cocbusinessgroup rename to cocbusinessgrouptype;
+alter table collegeoustypes rename to collegetypes;
 
--- Create the table
-CREATE TABLE z_paymentrequeststatus (
-    id INT,
-    status TEXT
+alter table client_property drop CONSTRAINT fk_client_property_ref_user2;
+alter table client_property drop CONSTRAINT fk_client_property_ref_user1;
+alter table agencytype rename to departmenttype;
+alter table professionals add column professionalid text;
+alter table project_photos rename column phototakenwhen to date_taken;
+alter table project_photos alter column date_taken type date;
+alter table client_receipt rename column "Visible to client" to visibletoclient;
+alter table collegetypes rename column collegeousid to id;
+
+ALTER TABLE client_property_owner DROP COLUMN owner1addressline1;
+ALTER TABLE client_property_owner DROP COLUMN owner1addressline2;
+ALTER TABLE client_property_owner DROP COLUMN owner1suburb;
+ALTER TABLE client_property_owner DROP COLUMN owner1city;
+ALTER TABLE client_property_owner DROP COLUMN owner1state;
+ALTER TABLE client_property_owner DROP COLUMN owner1country;
+ALTER TABLE client_property_owner DROP COLUMN owner1zip;
+ALTER TABLE client_property_owner DROP COLUMN owner1occupation;
+ALTER TABLE client_property_owner DROP COLUMN owner1employername;
+ALTER TABLE client_property_owner DROP COLUMN owner1birthyear;
+ALTER TABLE client_property_owner DROP COLUMN owner1relation;
+ALTER TABLE client_property_owner DROP COLUMN owner1relationwith;
+ALTER TABLE client_property_owner DROP COLUMN owner2addressline1;
+ALTER TABLE client_property_owner DROP COLUMN owner2addressline2;
+ALTER TABLE client_property_owner DROP COLUMN owner2suburb;
+ALTER TABLE client_property_owner DROP COLUMN owner2city;
+ALTER TABLE client_property_owner DROP COLUMN owner2state;
+ALTER TABLE client_property_owner DROP COLUMN owner2country;
+ALTER TABLE client_property_owner DROP COLUMN owner2zip;
+ALTER TABLE client_property_owner DROP COLUMN owner2birthyr;
+ALTER TABLE client_property_owner DROP COLUMN owner2occupation;
+ALTER TABLE client_property_owner DROP COLUMN owner2employer;
+ALTER TABLE client_property_owner DROP COLUMN owner2relation;
+ALTER TABLE client_property_owner DROP COLUMN owner2relationwith;
+ALTER TABLE client_property_owner DROP COLUMN otherownerdetails;
+
+
+
+CREATE SEQUENCE IF NOT EXISTS cities_id_seq OWNED BY cities.id;
+SELECT setval('cities_id_seq', COALESCE(max(id), 0) + 1, false) FROM cities;
+ALTER TABLE cities ALTER COLUMN id SET DEFAULT nextval('cities_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS orders_id_seq OWNED BY orders.id;
+SELECT setval('orders_id_seq', COALESCE(max(id), 0) + 1, false) FROM orders;
+ALTER TABLE orders ALTER COLUMN id SET DEFAULT nextval('orders_id_seq');
+
+CREATE SEQUENCE IF NOT EXISTS locality_id_seq OWNED BY locality.id;
+SELECT setval('locality_id_seq', COALESCE(max(id), 0) + 1, false) FROM locality;
+ALTER TABLE locality ALTER COLUMN id SET DEFAULT nextval('locality_id_seq');
+-- alter table "user" rename to usertable;
+-- alter table "order" rename to orders;
+-- alter table cocbusinessgroup rename to cocbusinessgrouptype;
+-- alter table collegeoustypes rename to collegetypes;
+alter table collegeous rename to colleges;
+alter table client add column tenantofproperty int;
+alter table orders rename column description to additionalcomments;
+CREATE TABLE roles_to_rules_map (
+    id SERIAL NOT NULL,
+    rule_id integer,
+    role_id integer,
+    PRIMARY KEY (id)
+);
+--Commands to restore table roles
+-- CREATE TABLE roles_to_rules_map (
+--     id INTEGER,
+--     rule_id INTEGER,
+--     role_id INTEGER
+-- );
+
+CREATE TABLE token_access_config (
+    timedata INTEGER,
+    type VARCHAR(20)
 );
 
--- Create the table
-CREATE TABLE order_status (
-    id INT,
-    name TEXT
+
+
+CREATE TABLE rules (
+    id SERIAL NOT NULL,
+    module character varying(255) NOT NULL,
+    method character varying(255) NOT NULL,
+    status boolean NOT NULL,
+    PRIMARY KEY (id)
 );
 
--- Insert data into the table
-INSERT INTO order_status (id, name) VALUES
-(1, 'On hold'),
-(2, 'Estimate Given'),
-(4, 'Cancelled'),
-(6, 'Billed'),
-(9, 'In progress'),
-(5, 'Closed (Work Done & Collection Completed)'),
-(8, 'Work Done - Pending Collection');
+
+INSERT INTO rules (id, module, method, status) VALUES (25, 'BuilderInfo', 'addBuilderInfo', true);
+INSERT INTO rules (id, module, method, status) VALUES (26, 'BuilderInfo', 'getBuilderInfo', true);
+INSERT INTO rules (id, module, method, status) VALUES (27, 'BuilderInfo', 'editBuilder', true);
+INSERT INTO rules (id, module, method, status) VALUES (28, 'BuilderInfo', 'deleteBuilder', true);
+INSERT INTO rules (id, module, method, status) VALUES (29, 'Country', 'getCountries', true);
+INSERT INTO rules (id, module, method, status) VALUES (30, 'Country', 'addCountry', true);
+INSERT INTO rules (id, module, method, status) VALUES (31, 'Country', 'editCountry', true);
+INSERT INTO rules (id, module, method, status) VALUES (32, 'Country', 'deleteCountry', true);
+INSERT INTO rules (id, module, method, status) VALUES (33, 'ProjectInfo', 'getProjects', true);
+INSERT INTO rules (id, module, method, status) VALUES (34, 'ProjectInfo', 'deleteProject', true);
+INSERT INTO rules (id, module, method, status) VALUES (35, 'ProjectInfo', 'addProject', true);
+INSERT INTO rules (id, module, method, status) VALUES (36, 'ProjectInfo', 'editProject', true);
+INSERT INTO rules (id, module, method, status) VALUES (37, 'Locality', 'getLocality', true);
+INSERT INTO rules (id, module, method, status) VALUES (38, 'Locality', 'addLocality', true);
+INSERT INTO rules (id, module, method, status) VALUES (39, 'Locality', 'editLocality', true);
+INSERT INTO rules (id, module, method, status) VALUES (40, 'Locality', 'deleteLocality', true);
+INSERT INTO rules (id, module, method, status) VALUES (41, 'LOB', 'getLob', true);
+INSERT INTO rules (id, module, method, status) VALUES (42, 'LOB', 'addLob', true);
+INSERT INTO rules (id, module, method, status) VALUES (43, 'LOB', 'editLob', true);
+INSERT INTO rules (id, module, method, status) VALUES (44, 'LOB', 'deleteLob', true);
+INSERT INTO rules (id, module, method, status) VALUES (45, 'Service', 'getServices', true);
+INSERT INTO rules (id, module, method, status) VALUES (46, 'Service', 'addService', true);
+INSERT INTO rules (id, module, method, status) VALUES (47, 'Service', 'editService', true);
+INSERT INTO rules (id, module, method, status) VALUES (48, 'Service', 'deleteService', true);
+INSERT INTO rules (id, module, method, status) VALUES (49, 'User', 'getUserInfo', true);
+INSERT INTO rules (id, module, method, status) VALUES (50, 'User', 'addUser', true);
+INSERT INTO rules (id, module, method, status) VALUES (51, 'User', 'editUser', true);
+INSERT INTO rules (id, module, method, status) VALUES (52, 'User', 'deleteUser', true);
+INSERT INTO rules (id, module, method, status) VALUES (53, 'Employee', 'getEmployee', true);
+INSERT INTO rules (id, module, method, status) VALUES (54, 'Employee', 'addEmployee', true);
+INSERT INTO rules (id, module, method, status) VALUES (55, 'Employee', 'editEmployee', true);
+INSERT INTO rules (id, module, method, status) VALUES (56, 'Employee', 'deleteEmployee', true);
+INSERT INTO rules (id, module, method, status) VALUES (57, 'ClientInfo', 'getClientInfo', true);
+INSERT INTO rules (id, module, method, status) VALUES (58, 'ClientInfo', 'addClientInfo', true);
+INSERT INTO rules (id, module, method, status) VALUES (59, 'ClientInfo', 'editClientInfo', true);
+INSERT INTO rules (id, module, method, status) VALUES (60, 'ClientInfo', 'deleteClientInfo', true);
+INSERT INTO rules (id, module, method, status) VALUES (61, 'ClientProperty', 'getClientProperty', true);
+INSERT INTO rules (id, module, method, status) VALUES (62, 'ClientProperty', 'addClientProperty', true);
+INSERT INTO rules (id, module, method, status) VALUES (63, 'ClientProperty', 'editClientProperty', true);
+INSERT INTO rules (id, module, method, status) VALUES (64, 'ClientProperty', 'deleteClientProperty', true);
+INSERT INTO rules (id, module, method, status) VALUES (65, 'Vendor', 'getVendors', true);
+INSERT INTO rules (id, module, method, status) VALUES (66, 'Vendor', 'addVendors', true);
+INSERT INTO rules (id, module, method, status) VALUES (67, 'Vendor', 'editVendors', true);
+INSERT INTO rules (id, module, method, status) VALUES (68, 'Vendor', 'deleteVendors', true);
+INSERT INTO rules (id, module, method, status) VALUES (69, 'Order', 'getOrders', true);
+INSERT INTO rules (id, module, method, status) VALUES (70, 'Order', 'addOrders', true);
+INSERT INTO rules (id, module, method, status) VALUES (71, 'Order', 'editOrders', true);
+INSERT INTO rules (id, module, method, status) VALUES (72, 'Order', 'deleteOrders', true);
+INSERT INTO rules (id, module, method, status) VALUES (73, 'BankStatement', 'getbankst', true);
+INSERT INTO rules (id, module, method, status) VALUES (74, 'BankStatement', 'addbankst', true);
+INSERT INTO rules (id, module, method, status) VALUES (75, 'BankStatement', 'editbankst', true);
+INSERT INTO rules (id, module, method, status) VALUES (76, 'BankStatement', 'deletebankst', true);
+INSERT INTO rules (id, module, method, status) VALUES (82, 'ClientInvoice', 'getOrdersInvoice', true);
+INSERT INTO rules (id, module, method, status) VALUES (83, 'ClientInvoice', 'addOrdersInvoice', true);
+INSERT INTO rules (id, module, method, status) VALUES (84, 'ClientInvoice', 'editOrdersInvoice', true);
+INSERT INTO rules (id, module, method, status) VALUES (85, 'ClientInvoice', 'deleteOrdersInvoice', true);
+INSERT INTO rules (id, module, method, status) VALUES (86, 'VendorInvoice', 'getVendorInvoice', true);
+INSERT INTO rules (id, module, method, status) VALUES (87, 'VendorInvoice', 'addVendorInvoice', true);
+INSERT INTO rules (id, module, method, status) VALUES (88, 'VendorInvoice', 'editVendorInvoice', true);
+INSERT INTO rules (id, module, method, status) VALUES (89, 'VendorInvoice', 'deleteVendorInvoice', true);
+INSERT INTO rules (id, module, method, status) VALUES (90, 'ClientReceipt', 'getClientReceipt', true);
+INSERT INTO rules (id, module, method, status) VALUES (91, 'ClientReceipt', 'editClientReceipt', true);
+INSERT INTO rules (id, module, method, status) VALUES (92, 'ClientReceipt', 'deleteClientReceipt', true);
+INSERT INTO rules (id, module, method, status) VALUES (93, 'ClientReceipt', 'addClientReceipt', true);
+INSERT INTO rules (id, module, method, status) VALUES (94, 'OrderReceipt', 'getOrderReceipt', true);
+INSERT INTO rules (id, module, method, status) VALUES (95, 'OrderReceipt', 'addOrderReceipt', true);
+INSERT INTO rules (id, module, method, status) VALUES (96, 'OrderReceipt', 'editOrdersReceipt', true);
+INSERT INTO rules (id, module, method, status) VALUES (97, 'OrderReceipt', 'deleteOrdersReceipt', true);
+INSERT INTO rules (id, module, method, status) VALUES (98, 'VendorPayment', 'getVendorPayment', true);
+INSERT INTO rules (id, module, method, status) VALUES (99, 'VendorPayment', 'addVendorPayment', true);
+INSERT INTO rules (id, module, method, status) VALUES (100, 'VendorPayment', 'editVendorPayment', true);
+INSERT INTO rules (id, module, method, status) VALUES (101, 'VendorPayment', 'deleteVendorPayment', true);
+INSERT INTO rules (id, module, method, status) VALUES (102, 'PMAAgreement', 'getClientPMAAgreement', true);
+INSERT INTO rules (id, module, method, status) VALUES (103, 'PMAAgreement', 'addClientPMAAgreement', true);
+INSERT INTO rules (id, module, method, status) VALUES (104, 'PMAAgreement', 'editClientPMAAgreement', true);
+INSERT INTO rules (id, module, method, status) VALUES (105, 'PMAAgreement', 'deleteClientPMAAgreement', true);
+INSERT INTO rules (id, module, method, status) VALUES (106, 'LLAgreement', 'getClientLLAgreement', true);
+INSERT INTO rules (id, module, method, status) VALUES (107, 'LLAgreement', 'addClientLLAgreement', true);
+INSERT INTO rules (id, module, method, status) VALUES (108, 'LLAgreement', 'editClientLLAgreement', true);
+INSERT INTO rules (id, module, method, status) VALUES (109, 'LLAgreement', 'deleteClientLLAgreement', true);
+INSERT INTO rules (id, module, method, status) VALUES (110, 'PMABilling', 'getPMABilling', true);
+INSERT INTO rules (id, module, method, status) VALUES (111, 'PMABilling', 'addPMABilling', true);
+INSERT INTO rules (id, module, method, status) VALUES (112, 'City', 'getCities', true);
+INSERT INTO rules (id, module, method, status) VALUES (113, 'City', 'addCities', true);
+INSERT INTO rules (id, module, method, status) VALUES (114, 'City', 'editCities', true);
+INSERT INTO rules (id, module, method, status) VALUES (115, 'City', 'deleteCities', true);
+INSERT INTO rules (id, module, method, status) VALUES (116, 'ResearchProspect', 'getResearchProspect', true);
+INSERT INTO rules (id, module, method, status) VALUES (117, 'ResearchProspect', 'addResearchProspect', true);
+INSERT INTO rules (id, module, method, status) VALUES (118, 'ResearchProspect', 'editResearchProspect', true);
+INSERT INTO rules (id, module, method, status) VALUES (119, 'ResearchProspect', 'deleteResearchProspect', true);
+INSERT INTO rules (id, module, method, status) VALUES (120, 'ResearchEmployer', 'getResearchEmployer', true);
+INSERT INTO rules (id, module, method, status) VALUES (121, 'ResearchEmployer', 'addResearchEmployer', true);
+INSERT INTO rules (id, module, method, status) VALUES (122, 'ResearchEmployer', 'editResearchEmployer', true);
+INSERT INTO rules (id, module, method, status) VALUES (123, 'ResearchEmployer', 'deleteResearchEmployer', true);
+INSERT INTO rules (id, module, method, status) VALUES (124, 'ResearchGovtAgencies', 'getResearchGovtAgencies', true);
+INSERT INTO rules (id, module, method, status) VALUES (125, 'ResearchGovtAgencies', 'addResearchGovtAgencies', true);
+INSERT INTO rules (id, module, method, status) VALUES (126, 'ResearchGovtAgencies', 'editResearchGovtAgencies', true);
+INSERT INTO rules (id, module, method, status) VALUES (127, 'ResearchGovtAgencies', 'deleteResearchGovtAgencies', true);
+INSERT INTO rules (id, module, method, status) VALUES (128, 'ResearchRealEstateAgents', 'getResearchAgents', true);
+INSERT INTO rules (id, module, method, status) VALUES (129, 'ResearchRealEstateAgents', 'addResearchAgents', true);
+INSERT INTO rules (id, module, method, status) VALUES (130, 'ResearchRealEstateAgents', 'editResearchAgents', true);
+INSERT INTO rules (id, module, method, status) VALUES (131, 'ResearchRealEstateAgents', 'deleteResearchAgents', true);
+INSERT INTO rules (id, module, method, status) VALUES (132, 'ResearchOwners', 'getResearchOwners', true);
+INSERT INTO rules (id, module, method, status) VALUES (133, 'ResearchOwners', 'addResearchOwners', true);
+INSERT INTO rules (id, module, method, status) VALUES (134, 'ResearchOwners', 'editResearchOwners', true);
+INSERT INTO rules (id, module, method, status) VALUES (135, 'ResearchOwners', 'deleteResearchOwners', true);
+INSERT INTO rules (id, module, method, status) VALUES (136, 'ResearchApartments', 'getResearchApartments', true);
+INSERT INTO rules (id, module, method, status) VALUES (137, 'ResearchApartments', 'addResearchApartments', true);
+INSERT INTO rules (id, module, method, status) VALUES (138, 'ResearchApartments', 'editResearchApartments', true);
+INSERT INTO rules (id, module, method, status) VALUES (139, 'ResearchApartments', 'deleteResearchApartments', true);
+INSERT INTO rules (id, module, method, status) VALUES (140, 'ResearchFriends', 'getResearchFriends', true);
+INSERT INTO rules (id, module, method, status) VALUES (141, 'ResearchFriends', 'addResearchFriends', true);
+INSERT INTO rules (id, module, method, status) VALUES (142, 'ResearchFriends', 'editResearchFriends', true);
+INSERT INTO rules (id, module, method, status) VALUES (143, 'ResearchFriends', 'deleteResearchFriends', true);
+INSERT INTO rules (id, module, method, status) VALUES (144, 'ResearchBanksAndBranches', 'getResearchBanksAndBranches', true);
+INSERT INTO rules (id, module, method, status) VALUES (145, 'ResearchBanksAndBranches', 'addResearchBanksAndBranches', true);
+INSERT INTO rules (id, module, method, status) VALUES (146, 'ResearchBanksAndBranches', 'editResearchBanksAndBranches', true);
+INSERT INTO rules (id, module, method, status) VALUES (147, 'ResearchBanksAndBranches', 'deleteResearchBanksAndBranches', true);
+INSERT INTO rules (id, module, method, status) VALUES (148, 'ResearchCOCAndBusinessGroup', 'getResearchCOCAndBusinessGroup', true);
+INSERT INTO rules (id, module, method, status) VALUES (79, 'Payment', 'addPayment', true);
+INSERT INTO rules (id, module, method, status) VALUES (80, 'Payment', 'editPayment', true);
+INSERT INTO rules (id, module, method, status) VALUES (81, 'Payment', 'deletePayment', true);
+INSERT INTO rules (id, module, method, status) VALUES (149, 'ResearchCOCAndBusinessGroup', 'addResearchCOCAndBusinessGroup', true);
+INSERT INTO rules (id, module, method, status) VALUES (150, 'ResearchCOCAndBusinessGroup', 'editResearchCOCAndBusinessGroup', true);
+INSERT INTO rules (id, module, method, status) VALUES (151, 'ResearchCOCAndBusinessGroup', 'deleteResearchCOCAndBusinessGroup', true);
+INSERT INTO rules (id, module, method, status) VALUES (152, 'ResearchProfessional', 'getResearchProfessional', true);
+INSERT INTO rules (id, module, method, status) VALUES (153, 'ResearchProfessional', 'addResearchProfessional', true);
+INSERT INTO rules (id, module, method, status) VALUES (154, 'ResearchProfessional', 'editResearchProfessional', true);
+INSERT INTO rules (id, module, method, status) VALUES (155, 'ResearchProfessional', 'deleteResearchProfessional', true);
+INSERT INTO rules (id, module, method, status) VALUES (156, 'ResearchMandals', 'getResearchMandals', true);
+INSERT INTO rules (id, module, method, status) VALUES (157, 'ResearchMandals', 'addResearchMandals', true);
+INSERT INTO rules (id, module, method, status) VALUES (158, 'ResearchMandals', 'editResearchMandals', true);
+INSERT INTO rules (id, module, method, status) VALUES (159, 'ResearchMandals', 'deleteResearchMandals', true);
+INSERT INTO rules (id, module, method, status) VALUES (160, 'ResearchArchitect', 'getResearchArchitect', true);
+INSERT INTO rules (id, module, method, status) VALUES (161, 'ResearchArchitect', 'addResearchArchitect', true);
+INSERT INTO rules (id, module, method, status) VALUES (162, 'ResearchArchitect', 'editResearchArchitect', true);
+INSERT INTO rules (id, module, method, status) VALUES (163, 'ResearchArchitect', 'deleteResearchArchitect', true);
+INSERT INTO rules (id, module, method, status) VALUES (164, 'ResearchColleges', 'getResearchColleges', true);
+INSERT INTO rules (id, module, method, status) VALUES (165, 'ResearchColleges', 'addResearchColleges', true);
+INSERT INTO rules (id, module, method, status) VALUES (166, 'ResearchColleges', 'editResearchColleges', true);
+INSERT INTO rules (id, module, method, status) VALUES (167, 'ResearchColleges', 'deleteResearchColleges', true);
+INSERT INTO rules (id, module, method, status) VALUES (171, 'getLobEntityPayments', 'getLobEntityPayments', true);
+INSERT INTO rules (id, module, method, status) VALUES (170, 'LOBReceiptPayments', 'getLobServicePayments', true);
+INSERT INTO rules (id, module, method, status) VALUES (168, 'EntityReceiptPayments', 'getLobServicePaymentsConsolidated', true);
+INSERT INTO rules (id, module, method, status) VALUES (173, 'deletebyid', 'delete', true);
+INSERT INTO rules (id, module, method, status) VALUES (172, 'deletebyid', 'get', true);
+INSERT INTO rules (id, module, method, status) VALUES (174, 'ClientStatement', 'getClientStatement', true);
+INSERT INTO rules (id, module, method, status) VALUES (175, 'ClientStatement', 'addClientStatement', true);
+INSERT INTO rules (id, module, method, status) VALUES (78, 'Payment', 'getPayments', true);
+INSERT INTO rules (id, module, method, status) VALUES (179, 'editCompanyKey', 'editBuilderContact', true);
+INSERT INTO rules (id, module, method, status) VALUES (178, 'BuilderContact', 'deleteBuilderContact', true);
+INSERT INTO rules (id, module, method, status) VALUES (177, 'BuilderContact', 'getBuilderContactsById', true);
+INSERT INTO rules (id, module, method, status) VALUES (176, 'BuilderContact', 'addNewBuilderContact', true);
+INSERT INTO rules (id, module, method, status) VALUES (180, 'companykey', 'editCompanyKey', true);
+INSERT INTO rules (id, module, method, status) VALUES (181, 'companykey', 'getCompanyKey', true);
+
+
+
+
+
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (1, 25, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (2, 26, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (3, 27, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (4, 28, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (5, 25, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (6, 26, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (7, 27, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (8, 25, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (9, 26, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (10, 27, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (11, 25, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (12, 26, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (13, 27, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (14, 26, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (15, 29, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (16, 30, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (17, 31, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (18, 32, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (19, 33, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (20, 34, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (21, 35, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (22, 36, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (24, 35, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (25, 36, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (26, 33, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (27, 35, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (28, 36, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (23, 33, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (29, 33, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (30, 35, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (31, 36, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (32, 33, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (33, 37, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (34, 38, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (35, 39, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (36, 40, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (37, 41, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (38, 42, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (39, 43, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (40, 44, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (41, 45, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (42, 46, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (43, 47, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (44, 48, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (45, 49, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (46, 50, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (47, 51, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (48, 52, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (49, 53, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (50, 54, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (52, 56, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (51, 55, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (53, 57, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (54, 58, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (55, 59, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (56, 60, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (57, 57, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (58, 58, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (59, 59, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (60, 57, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (61, 58, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (62, 59, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (63, 57, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (64, 58, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (65, 59, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (66, 57, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (67, 61, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (68, 62, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (69, 63, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (70, 64, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (71, 61, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (72, 62, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (73, 63, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (74, 61, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (75, 62, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (76, 63, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (78, 61, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (79, 62, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (80, 64, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (81, 61, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (82, 65, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (83, 66, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (84, 67, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (85, 68, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (86, 65, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (87, 66, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (88, 67, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (89, 65, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (90, 66, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (91, 67, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (93, 65, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (94, 69, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (95, 70, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (96, 71, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (97, 72, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (98, 69, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (99, 70, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (100, 71, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (101, 69, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (102, 70, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (103, 71, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (104, 69, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (105, 70, 34);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (106, 71, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (107, 69, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (108, 73, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (109, 74, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (110, 75, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (111, 76, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (112, 73, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (113, 74, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (114, 75, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (115, 73, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (116, 74, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (117, 75, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (118, 73, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (119, 74, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (120, 75, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (121, 73, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (122, 78, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (123, 79, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (124, 80, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (125, 81, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (136, 82, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (137, 83, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (138, 84, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (139, 85, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (140, 82, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (141, 83, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (142, 84, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (143, 82, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (144, 83, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (145, 84, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (146, 82, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (147, 83, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (148, 84, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (149, 82, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (150, 86, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (151, 87, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (152, 88, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (153, 89, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (154, 86, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (155, 87, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (156, 88, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (157, 86, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (158, 87, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (159, 88, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (160, 86, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (161, 87, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (162, 88, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (163, 86, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (164, 90, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (165, 93, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (166, 91, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (167, 92, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (168, 90, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (169, 93, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (170, 91, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (171, 90, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (172, 93, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (173, 91, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (174, 90, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (175, 93, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (176, 91, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (177, 90, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (178, 94, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (179, 95, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (180, 96, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (181, 97, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (182, 94, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (183, 95, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (184, 96, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (185, 94, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (186, 95, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (187, 96, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (188, 94, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (189, 95, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (190, 96, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (191, 94, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (192, 98, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (193, 99, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (194, 100, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (195, 101, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (196, 98, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (197, 99, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (198, 100, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (199, 98, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (200, 99, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (201, 100, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (202, 98, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (203, 99, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (204, 100, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (205, 98, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (206, 102, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (207, 103, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (208, 104, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (209, 105, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (210, 102, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (211, 102, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (212, 103, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (213, 104, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (214, 102, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (215, 102, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (216, 106, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (217, 107, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (219, 109, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (220, 106, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (221, 107, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (218, 108, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (222, 108, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (223, 106, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (224, 107, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (225, 108, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (226, 106, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (227, 107, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (228, 108, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (229, 106, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (230, 110, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (231, 111, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (232, 110, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (233, 110, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (234, 110, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (235, 110, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (236, 111, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (237, 112, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (238, 113, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (239, 114, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (240, 115, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (241, 116, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (242, 117, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (243, 118, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (244, 119, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (245, 116, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (246, 117, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (247, 118, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (248, 119, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (249, 116, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (250, 117, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (251, 118, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (252, 116, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (253, 117, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (254, 118, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (255, 116, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (256, 120, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (257, 121, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (258, 122, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (259, 123, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (260, 120, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (261, 121, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (262, 122, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (263, 123, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (264, 120, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (265, 121, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (266, 122, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (267, 120, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (268, 121, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (269, 122, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (270, 120, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (271, 124, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (272, 125, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (273, 126, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (274, 127, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (275, 124, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (276, 125, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (277, 126, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (278, 127, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (279, 124, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (280, 125, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (281, 126, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (282, 124, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (283, 125, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (284, 126, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (285, 124, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (286, 128, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (287, 129, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (288, 130, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (289, 131, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (290, 128, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (291, 129, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (292, 130, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (293, 131, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (294, 128, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (295, 129, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (296, 130, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (297, 128, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (298, 129, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (299, 130, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (300, 128, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (301, 132, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (302, 133, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (303, 134, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (304, 135, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (305, 132, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (306, 133, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (307, 134, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (308, 135, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (309, 132, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (310, 133, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (311, 134, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (312, 132, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (313, 133, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (314, 134, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (315, 132, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (316, 136, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (317, 137, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (318, 138, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (319, 139, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (320, 136, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (321, 137, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (322, 138, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (323, 139, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (324, 136, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (325, 137, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (326, 138, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (327, 136, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (328, 137, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (329, 138, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (330, 136, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (331, 140, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (332, 141, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (333, 142, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (334, 143, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (335, 140, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (336, 141, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (337, 142, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (338, 143, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (339, 140, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (340, 141, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (341, 142, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (342, 140, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (343, 141, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (344, 142, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (345, 140, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (346, 144, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (347, 145, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (348, 146, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (349, 147, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (350, 144, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (351, 145, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (352, 146, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (353, 147, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (354, 144, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (355, 145, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (356, 146, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (357, 144, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (358, 145, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (359, 146, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (360, 144, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (361, 148, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (362, 149, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (363, 150, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (364, 151, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (365, 148, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (366, 149, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (367, 150, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (368, 151, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (369, 148, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (370, 149, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (371, 150, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (372, 148, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (373, 149, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (374, 150, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (375, 148, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (376, 152, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (377, 153, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (378, 154, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (379, 155, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (380, 152, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (381, 153, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (382, 154, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (383, 155, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (384, 152, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (385, 153, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (386, 154, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (387, 152, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (388, 153, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (389, 154, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (390, 152, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (391, 156, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (392, 157, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (393, 158, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (394, 159, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (395, 156, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (396, 157, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (397, 158, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (398, 159, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (399, 156, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (400, 157, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (401, 158, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (402, 156, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (403, 157, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (404, 158, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (405, 156, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (406, 160, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (407, 161, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (408, 162, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (409, 163, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (410, 160, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (411, 161, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (412, 162, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (413, 163, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (414, 160, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (415, 161, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (416, 162, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (417, 160, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (418, 161, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (419, 162, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (420, 160, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (421, 164, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (422, 165, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (423, 166, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (424, 167, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (425, 164, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (426, 165, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (427, 166, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (428, 167, 3);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (429, 164, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (430, 165, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (431, 166, 2);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (432, 164, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (433, 165, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (434, 166, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (435, 164, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (436, 168, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (437, 170, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (438, 171, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (439, 172, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (440, 173, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (441, 174, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (442, 175, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (443, 65, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (444, 66, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (445, 67, 4);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (446, 179, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (447, 180, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (448, 181, 1);
+
+
+INSERT INTO token_access_config (timedata, type) VALUES
+(900, 'Login'),
+(900, 'IdleTimeOut');
+
+
+CREATE TABLE tokens (
+    id SERIAL,
+    token text,-- Create the roles table
+    key text,
+    active bool,
+    userid int
+);
+
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    role_name TEXT NOT NULL,
+    status BOOLEAN NOT NULL
+);
+
+-- Insert data into the roles table
+INSERT INTO roles (id, role_name, status) VALUES
+(1, 'Admin', TRUE),
+(2, 'Accounts', TRUE),
+(4, 'Analyst', TRUE),
+(5, 'Guest', TRUE),
+(3, 'Property_Manager', TRUE);
+
+
+-- Create the table
+-- CREATE TABLE order_status (
+--     id INT,
+--     name TEXT
+-- );
+
+-- -- Insert data into the table
+-- INSERT INTO order_status (id, name) VALUES
+-- (1, 'On hold'),
+-- (2, 'Estimate Given'),
+-- (4, 'Cancelled'),
+-- (6, 'Billed'),
+-- (9, 'In progress'),
+-- (5, 'Closed (Work Done & Collection Completed)'),
+-- (8, 'Work Done - Pending Collection');
 
 
 ALTER TABLE client_property_caretaking_agreement
@@ -55,6 +759,83 @@ ALTER COLUMN poaenddate TYPE date;
 
 ALTER TABLE client_property_photos
 ALTER COLUMN phototakenwhen TYPE date;
+
+
+
+alter table client_property alter column clientservicemanager type text;
+alter table client_property alter column propertymanager type text;
+
+alter table client_property add column indexiicollected boolean;
+
+
+alter table client_property alter column initialpossessiondate type date;
+
+alter table client_property add column website text;
+alter table client_property add column email text;
+ALTER TABLE client_property_caretaking_agreement RENAME COLUMN pmaholder TO poaholder;
+ALTER TABLE client_receipt ALTER COLUMN recddate type date;
+
+alter table order_photos rename COLUMN "desc" to description;
+alter table order_receipt alter column recddate type date;
+
+ALTER TABLE order_invoice ALTER COLUMN invoicedate type date;
+ alter table vendor rename column servicetaxno to gstservicetaxno;
+
+alter table order_vendorestimate alter column invoicedate type date;
+alter table order_vendorestimate alter column estimatedate type date;
+
+
+alter table order_vendorestimate alter column invoicedate type date;
+alter table order_vendorestimate alter column estimatedate type date;
+
+
+alter table order_vendorestimate alter column invoicedate type date;
+alter table order_vendorestimate alter column estimatedate type date;
+
+alter table project_amenities add column "4BHK" bool;
+alter table project_amenities add column other bool;
+alter table project_amenities add column "RK" bool;
+alter table project_amenities add column other bool;
+alter table project_amenities add column duplex bool;
+alter table project_amenities add column penthouse bool;
+
+alter table order_payment alter column paymentdate type date;
+
+update order_status set name='Closed (Work Done & Collection Completed)' where id=5;
+update order_status set name='Work Done - Pending Collection' where id=8;
+
+alter table realestateagents add column rera_registration_number text;
+
+ALTER TABLE realestateagents 
+ALTER COLUMN registered 
+TYPE boolean 
+USING 
+  CASE 
+    WHEN registered IS NOT NULL AND registered <> '' THEN true
+    ELSE false
+  END;
+
+alter table employee alter column dateofjoining type date;
+alter table employee alter column lastdateofworking type date;
+alter table employee alter column dob type date;
+alter table research_government_agencies rename column agencytype to departmenttype;
+alter table bankst add column isdeleted bool;
+update bankst set isdeleted=false;
+alter table client_property alter column propertymanager type text;
+alter table bankst alter column date type date;
+alter table bankst rename column "Cr/Dr" to crdr;
+alter table banksandbranches add column branchaddress text;
+alter table banksandbranches rename column contact to contactperson;
+alter table banksandbranches add column notes text;
+alter table bankst rename column "AvailableBalance(INR)" to availablebalance;
+
+alter table bankst rename column receivedby to receivedhow;
+alter table professionals rename column phoneno to professionid;
+
+alter table professionals rename column phoneno1 to phonenumber;
+
+
+
 
 CREATE VIEW get_research_mandalas_view AS
  SELECT DISTINCT a.id,
@@ -115,43 +896,7 @@ LEFT JOIN mode_of_payment d ON a.paymentmode = d.id
 LEFT JOIN payment_for e ON a.paymentfor = e.id
 LEFT JOIN entity g ON a.entityid = g.id;
 
-CREATE view contractualpaymentsview AS
- SELECT ref_contractual_payments.id,
-    ref_contractual_payments.paymentto AS paymenttoid,
-    ref_contractual_payments.paidon,
-    ref_contractual_payments.paymentmode AS paymentmodeid,
-    ref_contractual_payments.description,
-    ref_contractual_payments.banktransactionid,
-    ref_contractual_payments.paymentfor AS paymentforid,
-    ref_contractual_payments.dated,
-    ref_contractual_payments.createdby,
-    ref_contractual_payments.isdeleted,
-    payment_for.name AS paymentfor,
-    userview.fullname AS paymentto,
-    mode_of_payment.name AS paymentmode,
-    ref_contractual_payments.amount,
-    ref_contractual_payments.paymentby AS paymentbyid,
-    userview_1.fullname AS paymentby,
-    getmonthyear(ref_contractual_payments.paidon::timestamp without time zone) AS monthyear,
-    getfinancialyear(ref_contractual_payments.paidon::date) AS fy,
-    ref_contractual_payments.entityid,
-    entity.name AS entityname,
-    ref_contractual_payments.officeid,
-    office.name AS officename,
-    ref_contractual_payments.tds,
-    ref_contractual_payments.professiontax,
-    ref_contractual_payments.month,
-    ref_contractual_payments.deduction
-   FROM ref_contractual_payments
-     JOIN office ON office.id = ref_contractual_payments.officeid
-     JOIN mode_of_payment ON ref_contractual_payments.paymentmode = mode_of_payment.id
-     JOIN payment_for ON ref_contractual_payments.paymentfor = payment_for.id
-     JOIN userview ON ref_contractual_payments.paymentto = userview.userid
-     LEFT JOIN entity ON mode_of_payment.entityid = entity.id AND ref_contractual_payments.entityid = entity.id
-     LEFT JOIN userview userview_1 ON ref_contractual_payments.paymentby = userview_1.userid;
 
-
-alter table "user" rename to usertable;
 
 --FROM ref_contractual_payments a,
 --    usertable b,
@@ -170,20 +915,20 @@ alter table "user" rename to usertable;
 
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_payments_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM ref_contractual_payments WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_payments_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM ref_contractual_payments WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_payments_view
-INSTEAD OF DELETE ON get_payments_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_payments_view();
+-- CREATE TRIGGER delete_trigger_for_get_payments_view
+-- INSTEAD OF DELETE ON get_payments_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_payments_view();
 
 --tobedone
 CREATE VIEW get_employee_view AS
@@ -197,7 +942,8 @@ SELECT DISTINCT
     a.dateofjoining,
     a.dob,
     a.panno,
-    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
+    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS statusmap,
+    a.status,
     a.phoneno,
     a.email,
     a.addressline1,
@@ -227,20 +973,20 @@ LEFT JOIN
 
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_employee_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM employee WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_employee_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM employee WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_employee_view
-INSTEAD OF DELETE ON get_employee_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_employee_view();
+-- CREATE TRIGGER delete_trigger_for_get_employee_view
+-- INSTEAD OF DELETE ON get_employee_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_employee_view();
 
 --tobedone
 
@@ -277,20 +1023,20 @@ LEFT JOIN
 
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_locality_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM locality WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_locality_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM locality WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_locality_view
-INSTEAD OF DELETE ON get_locality_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_locality_view();
+-- CREATE TRIGGER delete_trigger_for_get_locality_view
+-- INSTEAD OF DELETE ON get_locality_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_locality_view();
 
 
 CREATE VIEW get_research_prospect_view AS
@@ -313,20 +1059,20 @@ LEFT JOIN
     country c ON a.country = c.id;
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_research_prospect_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM research_prospect WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_research_prospect_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM research_prospect WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_research_prospect_view
-INSTEAD OF DELETE ON get_research_prospect_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_research_prospect_view();
+-- CREATE TRIGGER delete_trigger_for_get_research_prospect_view
+-- INSTEAD OF DELETE ON get_research_prospect_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_research_prospect_view();
 
 
 CREATE VIEW get_builder_view AS
@@ -356,20 +1102,20 @@ LEFT JOIN
 LEFT JOIN
     country c ON a.country = c.id;
 
-CREATE OR REPLACE FUNCTION delete_from_get_builder_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM builder WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_builder_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM builder WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_builder_view
-INSTEAD OF DELETE ON get_builder_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_builder_view();
+-- CREATE TRIGGER delete_trigger_for_get_builder_view
+-- INSTEAD OF DELETE ON get_builder_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_builder_view();
 
 CREATE VIEW get_cities_view AS
 SELECT
@@ -383,20 +1129,20 @@ FROM
     country b
 WHERE a.countryid = b.id;
 
-CREATE OR REPLACE FUNCTION delete_from_get_cities_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM cities WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_cities_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM cities WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_cities_view
-INSTEAD OF DELETE ON get_cities_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_cities_view();
+-- CREATE TRIGGER delete_trigger_for_get_cities_view
+-- INSTEAD OF DELETE ON get_cities_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_cities_view();
 
 CREATE VIEW get_projects_view AS
 SELECT DISTINCT
@@ -452,20 +1198,21 @@ LEFT JOIN
 LEFT JOIN
     project_legal_status d ON a.project_legal_status = d.id;
 
-CREATE OR REPLACE FUNCTION delete_from_get_projects_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM projects WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_projects_view
-INSTEAD OF DELETE ON get_projects_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_projects_view();
+-- CREATE OR REPLACE FUNCTION delete_from_get_projects_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM projects WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
+
+-- CREATE TRIGGER delete_trigger_for_get_projects_view
+-- INSTEAD OF DELETE ON get_projects_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_projects_view();
 
 CREATE VIEW get_builder_contact_view AS
 SELECT
@@ -494,22 +1241,21 @@ FROM
 LEFT JOIN
     builder b ON a.builderid = b.id;
 
-CREATE OR REPLACE FUNCTION delete_from_get_builder_contacts_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM builder_contacts WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_builder_contacts_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM builder_contacts WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_builder_contacts_view
-INSTEAD OF DELETE ON get_builder_contact_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_builder_contacts_view();
+-- CREATE TRIGGER delete_trigger_for_get_builder_contacts_view
+-- INSTEAD OF DELETE ON get_builder_contact_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_builder_contacts_view();
 
- alter table client_property add column indexiicollected boolean;
 
 CREATE VIEW get_client_info_view AS
 SELECT 
@@ -565,20 +1311,20 @@ LEFT JOIN
 
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_client_info_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_client_info_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM client WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_client_info_view
-INSTEAD OF DELETE ON get_client_info_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_client_info_view();
+-- CREATE TRIGGER delete_trigger_for_get_client_info_view
+-- INSTEAD OF DELETE ON get_client_info_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_client_info_view();
 
 CREATE VIEW get_client_property_view AS
 SELECT DISTINCT
@@ -637,22 +1383,21 @@ LEFT JOIN
     builder h ON a.projectid = h.id;
 
 
-CREATE OR REPLACE FUNCTION delete_from_get_client_property_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_client_property_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM client WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_client_property_view
-INSTEAD OF DELETE ON get_client_property_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_client_property_view();
+-- CREATE TRIGGER delete_trigger_for_get_client_property_view
+-- INSTEAD OF DELETE ON get_client_property_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_client_property_view();
 
-alter table "order" rename to orders;
 
 CREATE VIEW get_orders_view AS
  SELECT DISTINCT a.id,
@@ -698,110 +1443,105 @@ CREATE VIEW get_orders_view AS
      LEFT JOIN usertable j ON a.createdby = j.id;
 
 
-CREATE SEQUENCE IF NOT EXISTS payments_id_seq OWNED BY ref_contractual_payments.id;
-SELECT setval('payments_id_seq', COALESCE(max(id), 0) + 1, false) FROM ref_contractual_payments;
-ALTER TABLE ref_contractual_payments ALTER COLUMN id SET DEFAULT nextval('payments_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS payments_id_seq OWNED BY ref_contractual_payments.id;
+-- SELECT setval('payments_id_seq', COALESCE(max(id), 0) + 1, false) FROM ref_contractual_payments;
+-- ALTER TABLE ref_contractual_payments ALTER COLUMN id SET DEFAULT nextval('payments_id_seq');
 
-CREATE SEQUENCE IF NOT EXISTS orders_id_seq OWNED BY orders.id;
-SELECT setval('orders_id_seq', COALESCE(max(id), 0) + 1, false) FROM orders;
-ALTER TABLE orders ALTER COLUMN id SET DEFAULT nextval('orders_id_seq');
-
-
--- Create a new sequence if it doesn't exist starting from the maximum value of column id + 1
-CREATE SEQUENCE IF NOT EXISTS builder_id_seq OWNED BY builder.id;
-
--- Set the initial value of the sequence based on the maximum value of column id in the builder table
-SELECT setval('builder_id_seq', COALESCE(max(id), 0) + 1, false) FROM builder;
-
--- Alter the table to set the default value of column id to use the sequence
-ALTER TABLE builder ALTER COLUMN id SET DEFAULT nextval('builder_id_seq');
-
--- For client table
-CREATE SEQUENCE IF NOT EXISTS client_id_seq OWNED BY client.id;
-SELECT setval('client_id_seq', COALESCE(max(id), 0) + 1, false) FROM client;
-ALTER TABLE client ALTER COLUMN id SET DEFAULT nextval('client_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS country_id_seq OWNED BY country.id;
-SELECT setval('country_id_seq', COALESCE(max(id), 0) + 1, false) FROM country;
-ALTER TABLE country ALTER COLUMN id SET DEFAULT nextval('country_id_seq');
-
--- For client_access table
-CREATE SEQUENCE IF NOT EXISTS client_access_id_seq OWNED BY client_access.id;
-SELECT setval('client_access_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_access;
-ALTER TABLE client_access ALTER COLUMN id SET DEFAULT nextval('client_access_id_seq');
-
--- For client_legal_info table
-CREATE SEQUENCE IF NOT EXISTS client_legal_info_id_seq OWNED BY client_legal_info.id;
-SELECT setval('client_legal_info_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_legal_info;
-ALTER TABLE client_legal_info ALTER COLUMN id SET DEFAULT nextval('client_legal_info_id_seq');
-
--- For client_bank_info table
-CREATE SEQUENCE IF NOT EXISTS client_bank_info_id_seq OWNED BY client_bank_info.id;
-SELECT setval('client_bank_info_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_bank_info;
-ALTER TABLE client_bank_info ALTER COLUMN id SET DEFAULT nextval('client_bank_info_id_seq');
-
--- For client_poa table
-CREATE SEQUENCE IF NOT EXISTS client_poa_id_seq OWNED BY client_poa.id;
-SELECT setval('client_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_poa;
-ALTER TABLE client_poa ALTER COLUMN id SET DEFAULT nextval('client_poa_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS project_id_seq OWNED BY project.id;
-SELECT setval('project_id_seq', COALESCE(max(id), 0) + 1, false) FROM project;
-ALTER TABLE project ALTER COLUMN id SET DEFAULT nextval('project_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS project_amenities_id_seq OWNED BY project_amenities.id;
-SELECT setval('project_amenities_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_amenities;
-ALTER TABLE project_amenities ALTER COLUMN id SET DEFAULT nextval('project_amenities_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS project_bank_details_id_seq OWNED BY project_bank_details.id;
-SELECT setval('project_bank_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_bank_details;
-ALTER TABLE project_bank_details ALTER COLUMN id SET DEFAULT nextval('project_bank_details_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS project_contacts_id_seq OWNED BY project_contacts.id;
-SELECT setval('project_contacts_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_contacts;
-ALTER TABLE project_contacts ALTER COLUMN id SET DEFAULT nextval('project_contacts_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS project_photos_id_seq OWNED BY project_photos.id;
-SELECT setval('project_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_photos;
-ALTER TABLE project_photos ALTER COLUMN id SET DEFAULT nextval('project_photos_id_seq');
-
-CREATE TABLE project_photos(
-    id int,
-    projectid int,
-    photo_link text,
-    description text,
-    date_taken date,
-    dated timestamp(3),
-    createdby int,
-    isdeleted boolean
-);
-
-CREATE SEQUENCE IF NOT EXISTS client_property_id_seq OWNED BY client_property.id;
-SELECT setval('client_property_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property;
-ALTER TABLE client_property ALTER COLUMN id SET DEFAULT nextval('client_property_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS client_property_photos_id_seq OWNED BY client_property_photos.id;
-SELECT setval('client_property_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_photos;
-ALTER TABLE client_property_photos ALTER COLUMN id SET DEFAULT nextval('client_property_photos_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS client_property_poa_id_seq OWNED BY client_property_poa.id;
-SELECT setval('client_property_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_poa;
-ALTER TABLE client_property_poa ALTER COLUMN id SET DEFAULT nextval('client_property_poa_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS orders_id_seq OWNED BY orders.id;
+-- SELECT setval('orders_id_seq', COALESCE(max(id), 0) + 1, false) FROM orders;
+-- ALTER TABLE orders ALTER COLUMN id SET DEFAULT nextval('orders_id_seq');
 
 
-CREATE SEQUENCE IF NOT EXISTS client_property_owner_id_seq OWNED BY client_property_owner.id;
-SELECT setval('client_property_owner_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_owner;
-ALTER TABLE client_property_owner ALTER COLUMN id SET DEFAULT nextval('client_property_owner_id_seq');
+-- -- Create a new sequence if it doesn't exist starting from the maximum value of column id + 1
+-- CREATE SEQUENCE IF NOT EXISTS builder_id_seq OWNED BY builder.id;
+
+-- -- Set the initial value of the sequence based on the maximum value of column id in the builder table
+-- SELECT setval('builder_id_seq', COALESCE(max(id), 0) + 1, false) FROM builder;
+
+-- -- Alter the table to set the default value of column id to use the sequence
+-- ALTER TABLE builder ALTER COLUMN id SET DEFAULT nextval('builder_id_seq');
+
+-- -- For client table
+-- CREATE SEQUENCE IF NOT EXISTS client_id_seq OWNED BY client.id;
+-- SELECT setval('client_id_seq', COALESCE(max(id), 0) + 1, false) FROM client;
+-- ALTER TABLE client ALTER COLUMN id SET DEFAULT nextval('client_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS country_id_seq OWNED BY country.id;
+-- SELECT setval('country_id_seq', COALESCE(max(id), 0) + 1, false) FROM country;
+-- ALTER TABLE country ALTER COLUMN id SET DEFAULT nextval('country_id_seq');
+
+-- -- For client_access table
+-- CREATE SEQUENCE IF NOT EXISTS client_access_id_seq OWNED BY client_access.id;
+-- SELECT setval('client_access_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_access;
+-- ALTER TABLE client_access ALTER COLUMN id SET DEFAULT nextval('client_access_id_seq');
+
+-- -- For client_legal_info table
+-- CREATE SEQUENCE IF NOT EXISTS client_legal_info_id_seq OWNED BY client_legal_info.id;
+-- SELECT setval('client_legal_info_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_legal_info;
+-- ALTER TABLE client_legal_info ALTER COLUMN id SET DEFAULT nextval('client_legal_info_id_seq');
+
+-- -- For client_bank_info table
+-- CREATE SEQUENCE IF NOT EXISTS client_bank_info_id_seq OWNED BY client_bank_info.id;
+-- SELECT setval('client_bank_info_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_bank_info;
+-- ALTER TABLE client_bank_info ALTER COLUMN id SET DEFAULT nextval('client_bank_info_id_seq');
+
+-- -- For client_poa table
+-- CREATE SEQUENCE IF NOT EXISTS client_poa_id_seq OWNED BY client_poa.id;
+-- SELECT setval('client_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_poa;
+-- ALTER TABLE client_poa ALTER COLUMN id SET DEFAULT nextval('client_poa_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS project_id_seq OWNED BY project.id;
+-- SELECT setval('project_id_seq', COALESCE(max(id), 0) + 1, false) FROM project;
+-- ALTER TABLE project ALTER COLUMN id SET DEFAULT nextval('project_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS project_amenities_id_seq OWNED BY project_amenities.id;
+-- SELECT setval('project_amenities_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_amenities;
+-- ALTER TABLE project_amenities ALTER COLUMN id SET DEFAULT nextval('project_amenities_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS project_bank_details_id_seq OWNED BY project_bank_details.id;
+-- SELECT setval('project_bank_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_bank_details;
+-- ALTER TABLE project_bank_details ALTER COLUMN id SET DEFAULT nextval('project_bank_details_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS project_contacts_id_seq OWNED BY project_contacts.id;
+-- SELECT setval('project_contacts_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_contacts;
+-- ALTER TABLE project_contacts ALTER COLUMN id SET DEFAULT nextval('project_contacts_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS project_photos_id_seq OWNED BY project_photos.id;
+-- SELECT setval('project_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM project_photos;
+-- ALTER TABLE project_photos ALTER COLUMN id SET DEFAULT nextval('project_photos_id_seq');
+
+-- CREATE TABLE project_photos(
+--     id int,
+--     projectid int,
+--     photo_link text,
+--     description text,
+--     date_taken date,
+--     dated timestamp(3),
+--     createdby int,
+--     isdeleted boolean
+-- );
+
+-- CREATE SEQUENCE IF NOT EXISTS client_property_id_seq OWNED BY client_property.id;
+-- SELECT setval('client_property_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property;
+-- ALTER TABLE client_property ALTER COLUMN id SET DEFAULT nextval('client_property_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS client_property_photos_id_seq OWNED BY client_property_photos.id;
+-- SELECT setval('client_property_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_photos;
+-- ALTER TABLE client_property_photos ALTER COLUMN id SET DEFAULT nextval('client_property_photos_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS client_property_poa_id_seq OWNED BY client_property_poa.id;
+-- SELECT setval('client_property_poa_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_poa;
+-- ALTER TABLE client_property_poa ALTER COLUMN id SET DEFAULT nextval('client_property_poa_id_seq');
 
 
-alter table client_property alter column initialpossessiondate type date;
+-- CREATE SEQUENCE IF NOT EXISTS client_property_owner_id_seq OWNED BY client_property_owner.id;
+-- SELECT setval('client_property_owner_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_owner;
+-- ALTER TABLE client_property_owner ALTER COLUMN id SET DEFAULT nextval('client_property_owner_id_seq');
 
-alter table client_property add column website text;
-alter table client_property add column email text;
 
-SELECT setval('client_property_id_seq', (SELECT MAX(id) FROM client_property));
 
-ALTER TABLE client_property_caretaking_agreement RENAME COLUMN pmaholder TO poaholder;
+-- SELECT setval('client_property_id_seq', (SELECT MAX(id) FROM client_property));
+
 
 CREATE VIEW get_client_receipt_view AS
 SELECT DISTINCT
@@ -842,30 +1582,30 @@ LEFT JOIN
 LEFT JOIN
     mode_of_payment g ON a.paymentmode = g.id;
 
-CREATE OR REPLACE FUNCTION delete_from_get_client_receipt_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client_receipt WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION delete_from_get_client_receipt_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM client_receipt WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER delete_trigger_for_get_client_receipt_view
-INSTEAD OF DELETE ON get_client_receipt_view
-FOR EACH ROW
-EXECUTE FUNCTION delete_from_get_client_receipt_view();
+-- CREATE TRIGGER delete_trigger_for_get_client_receipt_view
+-- INSTEAD OF DELETE ON get_client_receipt_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION delete_from_get_client_receipt_view();
 
-CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
-SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
-ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
+-- SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
+-- ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
 
-ALTER TABLE client_receipt ALTER COLUMN recddate set type date;
 
-CREATE SEQUENCE IF NOT EXISTS client_property_caretaking_agreement_id_seq OWNED BY client_property_caretaking_agreement.id;
-SELECT setval('client_property_caretaking_agreement_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_caretaking_agreement;
-ALTER TABLE client_property_caretaking_agreement ALTER COLUMN id SET DEFAULT nextval('client_property_caretaking_agreement_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS client_property_caretaking_agreement_id_seq OWNED BY client_property_caretaking_agreement.id;
+-- SELECT setval('client_property_caretaking_agreement_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_caretaking_agreement;
+-- ALTER TABLE client_property_caretaking_agreement ALTER COLUMN id SET DEFAULT nextval('client_property_caretaking_agreement_id_seq');
 
 
 
@@ -878,12 +1618,13 @@ SELECT DISTINCT
     d.status as propertystatusname,
     d.client as clientname,
     d.clientid,
-    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
+    CASE a.active WHEN true THEN 'Active' ELSE 'Inactive' END AS activemap,
     a.startdate,
     a.enddate,
     a.actualenddate,
-    a.active,
+    d.status,
     a.scancopy,
+    a.active,
     a.reasonforearlyterminationifapplicable,
     a.dated,
     a.createdby,
@@ -906,20 +1647,20 @@ LEFT JOIN
     get_client_property_view d ON a.clientpropertyid = d.id;
 
 
-CREATE OR REPLACE FUNCTION get_client_property_pma_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client_property_caretaking_agreement WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION get_client_property_pma_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM client_property_caretaking_agreement WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER get_client_property_pma_view
-INSTEAD OF DELETE ON get_client_property_pma_view
-FOR EACH ROW
-EXECUTE FUNCTION get_client_property_pma_view();
+-- CREATE TRIGGER get_client_property_pma_view
+-- INSTEAD OF DELETE ON get_client_property_pma_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION get_client_property_pma_view();
 
 CREATE VIEW get_client_property_lla_view AS
 SELECT DISTINCT
@@ -937,6 +1678,7 @@ SELECT DISTINCT
     a.durationinmonth,
     a.depositamount,
     a.rentamount,
+    CASE a.active WHEN true THEN 'Active' ELSE 'Inactive' END AS activemap,    
     a.registrationtype,
     a.rentpaymentdate,
     a.noticeperiodindays,
@@ -952,45 +1694,36 @@ LEFT JOIN
 LEFT JOIN
     get_client_property_view d ON a.clientpropertyid = d.id;
 
-CREATE SEQUENCE IF NOT EXISTS client_property_leave_license_details_id_seq OWNED BY client_property_leave_license_details.id;
-SELECT setval('client_property_leave_license_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_leave_license_details;
-ALTER TABLE client_property_leave_license_details ALTER COLUMN id SET DEFAULT nextval('client_property_leave_license_details_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS client_property_leave_license_details_id_seq OWNED BY client_property_leave_license_details.id;
+-- SELECT setval('client_property_leave_license_details_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_property_leave_license_details;
+-- ALTER TABLE client_property_leave_license_details ALTER COLUMN id SET DEFAULT nextval('client_property_leave_license_details_id_seq');
 
-CREATE OR REPLACE FUNCTION get_client_property_lla_view() RETURNS TRIGGER AS $$
-BEGIN
-    -- Perform delete operation on the underlying table(s)
-    DELETE FROM client_property_leave_license_details WHERE id = OLD.id;
-    -- You might need additional delete operations if data is spread across multiple tables
-    -- If so, add DELETE statements for those tables here.
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION get_client_property_lla_view() RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Perform delete operation on the underlying table(s)
+--     DELETE FROM client_property_leave_license_details WHERE id = OLD.id;
+--     -- You might need additional delete operations if data is spread across multiple tables
+--     -- If so, add DELETE statements for those tables here.
+--     RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER get_client_property_lla_view
-INSTEAD OF DELETE ON get_client_property_lla_view
-FOR EACH ROW
-EXECUTE FUNCTION get_client_property_lla_view();
+-- CREATE TRIGGER get_client_property_lla_view
+-- INSTEAD OF DELETE ON get_client_property_lla_view
+-- FOR EACH ROW
+-- EXECUTE FUNCTION get_client_property_lla_view();
 
-CREATE SEQUENCE IF NOT EXISTS order_status_change_id_seq OWNED BY order_status_change.id;
-SELECT setval('order_status_change_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_status_change;
-ALTER TABLE order_status_change ALTER COLUMN id SET DEFAULT nextval('order_status_change_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS order_status_change_id_seq OWNED BY order_status_change.id;
+-- SELECT setval('order_status_change_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_status_change;
+-- ALTER TABLE order_status_change ALTER COLUMN id SET DEFAULT nextval('order_status_change_id_seq');
 
-CREATE TABLE order_photos (
-    id int,
-    orderid int,
-    photolink text,
-    description text,
-    phototakenwhen timestamp,
-    dated timestamp,
-    createdby int,
-    isdeleted boolean
-);
 
-CREATE SEQUENCE IF NOT EXISTS order_photos_id_seq OWNED BY order_photos.id;
-SELECT setval('order_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_photos;
-ALTER TABLE order_photos ALTER COLUMN id SET DEFAULT nextval('order_photos_id_seq');
 
-ALTER TABLE order_invoice ALTER COLUMN invoicedate type date;
+-- CREATE SEQUENCE IF NOT EXISTS order_photos_id_seq OWNED BY order_photos.id;
+-- SELECT setval('order_photos_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_photos;
+-- ALTER TABLE order_photos ALTER COLUMN id SET DEFAULT nextval('order_photos_id_seq');
+
+
 
 CREATE VIEW get_orders_invoice_view AS
 SELECT DISTINCT
@@ -1024,7 +1757,7 @@ LEFT JOIN
 LEFT JOIN
     usertable e ON a.createdby = e.id;
 
- alter table order_receipt alter column recddate type date;
+
 
  CREATE VIEW get_orders_receipt_view AS
  SELECT DISTINCT
@@ -1073,11 +1806,10 @@ LEFT JOIN
 LEFT JOIN
     client_property k ON i.clientpropertyid = k.id;
 
-CREATE SEQUENCE IF NOT EXISTS order_receipt_id_seq OWNED BY order_receipt.id;
-SELECT setval('order_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_receipt;
-ALTER TABLE order_receipt ALTER COLUMN id SET DEFAULT nextval('order_receipt_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS order_receipt_id_seq OWNED BY order_receipt.id;
+-- SELECT setval('order_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_receipt;
+-- ALTER TABLE order_receipt ALTER COLUMN id SET DEFAULT nextval('order_receipt_id_seq');
 
- alter table vendor rename column servicetaxno to gstservicetaxno;
 
 CREATE VIEW get_vendor_view AS
 SELECT DISTINCT
@@ -1123,20 +1855,16 @@ LEFT JOIN country c ON a.country = c.id
 LEFT JOIN tallyledger d ON a.tallyledgerid = d.id
 LEFT JOIN vendor_category e ON a.category = e.id; -- Joining with vendor_Category table using alias e
 
-CREATE SEQUENCE IF NOT EXISTS vendor_id_seq OWNED BY vendor.id;
-SELECT setval('vendor_id_seq', COALESCE(max(id), 0) + 1, false) FROM vendor;
-ALTER TABLE vendor ALTER COLUMN id SET DEFAULT nextval('vendor_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS vendor_id_seq OWNED BY vendor.id;
+-- SELECT setval('vendor_id_seq', COALESCE(max(id), 0) + 1, false) FROM vendor;
+-- ALTER TABLE vendor ALTER COLUMN id SET DEFAULT nextval('vendor_id_seq');
 
-CREATE SEQUENCE IF NOT EXISTS cities_id_seq OWNED BY cities.id;
-SELECT setval('cities_id_seq', COALESCE(max(id), 0) + 1, false) FROM cities;
-ALTER TABLE cities ALTER COLUMN id SET DEFAULT nextval('cities_id_seq');
 
-CREATE SEQUENCE IF NOT EXISTS order_vendorestimate_id_seq OWNED BY order_vendorestimate.id;
-SELECT setval('order_vendorestimate_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_vendorestimate;
-ALTER TABLE order_vendorestimate ALTER COLUMN id SET DEFAULT nextval('order_vendorestimate_id_seq');
 
-alter table order_vendorestimate alter column invoicedate type date;
-alter table order_vendorestimate alter column estimatedate type date;
+-- CREATE SEQUENCE IF NOT EXISTS order_vendorestimate_id_seq OWNED BY order_vendorestimate.id;
+-- SELECT setval('order_vendorestimate_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_vendorestimate;
+-- ALTER TABLE order_vendorestimate ALTER COLUMN id SET DEFAULT nextval('order_vendorestimate_id_seq');
+
 
 CREATE VIEW get_vendor_invoice_view AS
 SELECT DISTINCT
@@ -1181,13 +1909,7 @@ LEFT JOIN
 LEFT JOIN
     usertable g ON a.createdby = g.id;
 
-alter table project_amenities add column "4BHK" bool;
-alter table project_amenities add column other bool;
-alter table project_amenities add column "RK" bool;
-alter table project_amenities add column other bool;
-alter table project_amenities add column duplex bool;
 
-alter table order_payment alter column paymentdate type date;
 
 CREATE VIEW get_vendor_payment_view AS
 SELECT DISTINCT
@@ -1239,17 +1961,16 @@ LEFT JOIN
 LEFT JOIN
     client_property j ON c.clientpropertyid = j.id;
 
-CREATE SEQUENCE IF NOT EXISTS order_payment_id_seq OWNED BY order_payment.id;
-SELECT setval('order_payment_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_payment;
-ALTER TABLE order_payment ALTER COLUMN id SET DEFAULT nextval('order_payment_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS order_payment_id_seq OWNED BY order_payment.id;
+-- SELECT setval('order_payment_id_seq', COALESCE(max(id), 0) + 1, false) FROM order_payment;
+-- ALTER TABLE order_payment ALTER COLUMN id SET DEFAULT nextval('order_payment_id_seq');
 
 delete from order_status where id=7;
-update order_status set name='Closed (Work Done & Collection Completed)' where id=5;
-update order_status set name='Work Done - Pending Collection' where id=8;
 
-CREATE SEQUENCE IF NOT EXISTS clientleavelicensetenant_id_seq OWNED BY clientleavelicensetenant.id;
-SELECT setval('clientleavelicensetenant_id_seq', COALESCE(max(id), 0) + 1, false) FROM clientleavelicensetenant;
-ALTER TABLE clientleavelicensetenant ALTER COLUMN id SET DEFAULT nextval('clientleavelicensetenant_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS clientleavelicensetenant_id_seq OWNED BY clientleavelicensetenant.id;
+-- SELECT setval('clientleavelicensetenant_id_seq', COALESCE(max(id), 0) + 1, false) FROM clientleavelicensetenant;
+-- ALTER TABLE clientleavelicensetenant ALTER COLUMN id SET DEFAULT nextval('clientleavelicensetenant_id_seq');
 
 
 --tobedone
@@ -1354,59 +2075,108 @@ WHERE
 
 
 
-CREATE or replace VIEW propertiesview AS
-SELECT
-    Client_Property.ClientID,
-    Client_Property.ProjectID,
-    Client_Property.PropertyDescription,
-    Client_Property.PropertyType,
-    Client_Property.LayoutDetails,
-    Client_Property.NumberOfParkings,
-    Client_Property.InternalFurnitureAndFittings,
-    Client_Property.LevelOfFurnishing,
-    Client_Property.Status,
-    Client_Property.InitialPossessionDate,
-    Client_Property.POAGiven,
-    Client_Property.POAID,
-    Client_Property.ElectricityConsumerNumber,
-    Client_Property.ElectricityBillingUnit,
-    Client_Property.OtherElectricityDetails,
-    Client_Property.GasConnectionDetails,
-    Client_Property.PropertyTaxNumber,
-    Client_Property.ClientServiceManager,
-    Client_Property.PropertyManager,
-    Client_Property.Comments,
-    Client_Property.PropertyOwnedByClientOnly,
-    Client_Property.TextForPosting,
-    Client_Property.Dated,
-    Client_Property.CreatedBy AS CreatedById,
-    Property_Status.Name AS Property_Status,
-    Property_Type.Name AS Property_Type,
-    usertable.FirstName || ' ' || usertable.LastName AS CreatedBy,
-    Level_Of_furnishing.Name AS Level_Of_furnishing,
-    Client.FirstName || ' ' || Client.LastName AS ClientName,
-    Client_Property.ID,
-    Client_Property.Suburb,
-    Client_Property.City,
-    Client_Property.State,
-    Client_Property.Country AS CountryId,
-    Country.Name AS Country,
-    Client_Property.ID AS PropertyID,
-    Project.ProjectName,
-    Client_Property.ElectricityBillingDueDate
-FROM
-    Client_Property
-    INNER JOIN Property_Type ON Client_Property.PropertyType = Property_Type.ID
-    INNER JOIN Property_Status ON Client_Property.Status = Property_Status.ID
-    INNER JOIN usertable ON Client_Property.CreatedBy = usertable.ID
-    INNER JOIN Level_Of_furnishing ON Client_Property.LevelOfFurnishing = Level_Of_furnishing.ID
-    INNER JOIN Client ON Client_Property.ClientID = Client.ID
-    INNER JOIN Project ON Client_Property.ProjectID = Project.ID
-    LEFT OUTER JOIN Country ON Client_Property.Country = Country.ID
-WHERE
-    Client_Property.IsDeleted = 'false' or client_property.isdeleted=null
-ORDER BY
-    Client.FirstName || ' ' || Client.LastName;
+-- CREATE or replace VIEW propertiesview AS
+-- SELECT
+--     Client_Property.ClientID,
+--     Client_Property.ProjectID,
+--     Client_Property.PropertyDescription,
+--     Client_Property.PropertyType,
+--     Client_Property.LayoutDetails,
+--     Client_Property.NumberOfParkings,
+--     Client_Property.InternalFurnitureAndFittings,
+--     Client_Property.LevelOfFurnishing,
+--     Client_Property.Status,
+--     Client_Property.InitialPossessionDate,
+--     Client_Property.POAGiven,
+--     Client_Property.POAID,
+--     Client_Property.ElectricityConsumerNumber,
+--     Client_Property.ElectricityBillingUnit,
+--     Client_Property.OtherElectricityDetails,
+--     Client_Property.GasConnectionDetails,
+--     Client_Property.PropertyTaxNumber,
+--     Client_Property.ClientServiceManager,
+--     Client_Property.PropertyManager,
+--     Client_Property.Comments,
+--     Client_Property.PropertyOwnedByClientOnly,
+--     Client_Property.TextForPosting,
+--     Client_Property.Dated,
+--     Client_Property.CreatedBy AS CreatedById,
+--     Property_Status.Name AS Property_Status,
+--     Property_Type.Name AS Property_Type,
+--     usertable.FirstName || ' ' || usertable.LastName AS CreatedBy,
+--     Level_Of_furnishing.Name AS Level_Of_furnishing,
+--     Client.FirstName || ' ' || Client.LastName AS ClientName,
+--     Client_Property.ID,
+--     Client_Property.Suburb,
+--     Client_Property.City,
+--     Client_Property.State,
+--     Client_Property.Country AS CountryId,
+--     Country.Name AS Country,
+--     Client_Property.ID AS PropertyID,
+--     Project.ProjectName,
+--     Client_Property.ElectricityBillingDueDate
+-- FROM
+--     Client_Property
+--     INNER JOIN Property_Type ON Client_Property.PropertyType = Property_Type.ID
+--     INNER JOIN Property_Status ON Client_Property.Status = Property_Status.ID
+--     INNER JOIN usertable ON Client_Property.CreatedBy = usertable.ID
+--     INNER JOIN Level_Of_furnishing ON Client_Property.LevelOfFurnishing = Level_Of_furnishing.ID
+--     INNER JOIN Client ON Client_Property.ClientID = Client.ID
+--     INNER JOIN Project ON Client_Property.ProjectID = Project.ID
+--     LEFT OUTER JOIN Country ON Client_Property.Country = Country.ID
+-- WHERE
+--     Client_Property.IsDeleted = 'false' or client_property.isdeleted=null
+-- ORDER BY
+--     Client.FirstName || ' ' || Client.LastName;
+
+CREATE VIEW PropertiesView AS
+SELECT DISTINCT ON (cp.id) cp.clientid, 
+                    cp.projectid, 
+                    cp.propertydescription, 
+                    cp.propertytype,
+                    cp.layoutdetails, 
+                    cp.numberofparkings, 
+                    cp.internalfurnitureandfittings, 
+                    cp.leveloffurnishing,
+                    cp.status, 
+                    cp.initialpossessiondate, 
+                    cp.poagiven, 
+                    cp.poaid,
+                    cp.electricityconsumernumber, 
+                    cp.electricitybillingunit, 
+                    cp.otherelectricitydetails,
+                    cp.gasconnectiondetails, 
+                    cp.propertytaxnumber, 
+                    cp.clientservicemanager, 
+                    cp.propertymanager,
+                    cp.comments, 
+                    cp.propertyownedbyclientonly, 
+                    cp.textforposting, 
+                    cp.dated,
+                    cp.createdby AS createdbyid, 
+                    ps.name AS property_status, 
+                    pt.name AS property_type,
+                    usr.firstname || ' ' || usr.lastname AS createdby, 
+                    lof.name AS level_of_furnishing,
+                    c.firstname || ' ' || c.lastname AS clientname, 
+                    cp.id, 
+                    cp.suburb, 
+                    cp.city, 
+                    cp.state,
+                    co.name AS country, 
+                    cp.id AS propertyid, 
+                    pr.projectname,
+                    cp.electricitybillingduedate
+FROM client_property cp
+INNER JOIN property_type pt ON cp.propertytype = pt.id
+INNER JOIN property_status ps ON cp.status = ps.id
+INNER JOIN usertable usr ON cp.createdby = usr.id
+INNER JOIN level_of_furnishing lof ON cp.leveloffurnishing = lof.id
+INNER JOIN client c ON cp.clientid = c.id
+INNER JOIN project pr ON cp.projectid = pr.id
+LEFT OUTER JOIN country co ON cp.country = co.id
+WHERE cp.isdeleted = FALSE
+ORDER BY cp.id, clientname;
 
 
 
@@ -1487,9 +2257,9 @@ WHERE
 
 
 CREATE OR REPLACE FUNCTION getFinancialYear(date_input TIMESTAMP)
-RETURNS VARCHAR(7) AS $$
+RETURNS text AS $$
 DECLARE
-    ret_val VARCHAR(7);
+    ret_val text;
     month_val INTEGER;
     year_val INTEGER;
 BEGIN
@@ -1511,16 +2281,24 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION getMonthYear(date_input TIMESTAMP)
-RETURNS VARCHAR(8) AS $$
+RETURNS text AS $$
 DECLARE
-    ret_val VARCHAR(8);
+    ret_val text;
 BEGIN
     ret_val := TO_CHAR(date_input, 'Mon-YYYY');
     RETURN ret_val;
 END;
 $$ LANGUAGE plpgsql;
 
-
+CREATE OR REPLACE FUNCTION getMonthYear(date_input TIMESTAMP WITHOUT TIME ZONE)
+RETURNS text AS $$
+DECLARE
+    ret_val text;
+BEGIN
+    ret_val := TO_CHAR(date_input, 'Mon-YYYY');
+    RETURN ret_val;
+END;
+$$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE VIEW orderpaymentview AS
@@ -1577,25 +2355,25 @@ FROM
 -- order receipt view
 
 
-CREATE SEQUENCE payment_source_id_seq;
+-- CREATE SEQUENCE payment_source_id_seq;
 
-CREATE TABLE payment_source (
-    id bigint NOT NULL DEFAULT nextval('payment_source_id_seq'::regclass),
-    name text NOT NULL,
-    CONSTRAINT idx_93250_pk_payment_source PRIMARY KEY (id)
-);
+-- CREATE TABLE payment_source (
+--     id bigint NOT NULL DEFAULT nextval('payment_source_id_seq'::regclass),
+--     name text NOT NULL,
+--     CONSTRAINT idx_93250_pk_payment_source PRIMARY KEY (id)
+-- );
 
-ALTER SEQUENCE payment_source_id_seq OWNED BY payment_source.id;
+-- ALTER SEQUENCE payment_source_id_seq OWNED BY payment_source.id;
 
-INSERT INTO payment_source (id, name) VALUES
-(1, 'Client'),
-(2, 'Builder'),
-(3, 'Society'),
-(4, 'Tenant'),
-(5, 'Broker'),
-(6, 'Internal cash transfer'),
-(7, 'Director'),
-(8, 'Buyer');
+-- INSERT INTO payment_source (id, name) VALUES
+-- (1, 'Client'),
+-- (2, 'Builder'),
+-- (3, 'Society'),
+-- (4, 'Tenant'),
+-- (5, 'Broker'),
+-- (6, 'Internal cash transfer'),
+-- (7, 'Director'),
+-- (8, 'Buyer');
 
 
 
@@ -1649,183 +2427,134 @@ WHERE
   Order_Receipt.IsDeleted = false;
 
 -- order receipt view
-=======
-CREATE VIEW ordersview AS
-SELECT DISTINCT
-    orders.briefdescription, 
-    earlieststartdate, 
-    orders.expectedcompletiondate, 
-    orders.actualcompletiondate, 
-    orders.owner, 
-    orders.comments, 
-    orders.status, 
-    orders.additionalcomments, 
-    orders.service AS serviceid, 
-    orders.clientpropertyid, 
-    orders.vendorid, 
-    orders.assignedtooffice AS assignedtoofficeid, 
-    orders.billable, 
-    orders.dated, 
-    orders.createdby AS createdbyid, 
-    orders.isdeleted, 
-    order_status.name AS orderstatus, 
-    services.service, 
-    office.name AS assignedtooffice, 
-    vendor.vendorname, 
-    ut1.firstname || ' ' || ut1.lastname AS createdby, 
-    orders.id, 
-    CASE 
-        WHEN DATE_PART('day', CURRENT_DATE - orders.statusupdatedtimestamp) >  999 THEN - 1 
-        ELSE DATE_PART('day', CURRENT_DATE - orders.statusupdatedtimestamp)
-    END AS ageing, 
-    ut2.firstname || ' ' || ut2.lastname AS ownername, 
-    orders.orderdate, 
-    get_client_property_view.description AS propertydescription, 
-    get_client_property_view.propertytype AS propertytypeid, 
-    get_client_property_view.status AS propertystatusid, 
-    get_client_property_view.propertystatus, 
-    get_client_property_view.propertytype, 
-    get_client_property_view.suburb, 
-    get_client_info_view.clientname, 
-    get_client_info_view.clienttypename, 
-    orders.clientid, 
-    get_client_property_view.propertymanager, 
-    get_client_property_view.clientservicemanager, 
-    orders.default_task_owner, 
-    lob.name AS lobname, 
-    services.servicetype, 
-    orders.glcode, 
-    orders.entityid, 
-    entity.name AS entityname, 
-    tallyledger.tallyledger, 
-    orders.tallyledgerid, 
-    orders.statusupdatedtimestamp, 
-    get_client_info_view.homephone, 
-    get_client_info_view.workphone, 
-    get_client_info_view.mobilephone, 
-    get_client_info_view.email1, 
-    get_client_info_view.email2
-FROM
-    orders 
-INNER JOIN
-    order_status ON orders.status = order_status.id
-INNER JOIN
-    services ON orders.service = services.id
-LEFT OUTER JOIN
-    vendor ON orders.vendorid = vendor.id
-INNER JOIN
-    office ON orders.assignedtooffice = office.id
-INNER JOIN
-    usertable ut1 ON orders.createdby = ut1.id
-INNER JOIN
-    usertable ut2 ON orders.owner = ut2.id
-INNER JOIN
-    get_client_property_view ON orders.clientpropertyid = get_client_property_view.id
-INNER JOIN
-    get_client_info_view ON orders.clientid = get_client_info_view.id
-INNER JOIN
-    lob ON services.lob = lob.id
-LEFT OUTER JOIN
-    tallyledger ON orders.tallyledgerid = tallyledger.id
-LEFT OUTER JOIN
-    entity ON orders.entityid = entity.id
-WHERE
-    orders.isdeleted = FALSE;
 
-CREATE VIEW PropertiesView AS
-SELECT DISTINCT ON (cp.id) cp.clientid, 
-                    cp.projectid, 
-                    cp.propertydescription, 
-                    cp.propertytype,
-                    cp.layoutdetails, 
-                    cp.numberofparkings, 
-                    cp.internalfurnitureandfittings, 
-                    cp.leveloffurnishing,
-                    cp.status, 
-                    cp.initialpossessiondate, 
-                    cp.poagiven, 
-                    cp.poaid,
-                    cp.electricityconsumernumber, 
-                    cp.electricitybillingunit, 
-                    cp.otherelectricitydetails,
-                    cp.gasconnectiondetails, 
-                    cp.propertytaxnumber, 
-                    cp.clientservicemanager, 
-                    cp.propertymanager,
-                    cp.comments, 
-                    cp.propertyownedbyclientonly, 
-                    cp.textforposting, 
-                    cp.dated,
-                    cp.createdby AS createdbyid, 
-                    ps.name AS property_status, 
-                    pt.name AS property_type,
-                    usr.firstname || ' ' || usr.lastname AS createdby, 
-                    lof.name AS level_of_furnishing,
-                    c.firstname || ' ' || c.lastname AS clientname, 
-                    cp.id, 
-                    cp.suburb, 
-                    cp.city, 
-                    cp.state,
-                    co.name AS country, 
-                    cp.id AS propertyid, 
-                    pr.projectname,
-                    cp.electricitybillingduedate
-FROM client_property cp
-INNER JOIN property_type pt ON cp.propertytype = pt.id
-INNER JOIN property_status ps ON cp.status = ps.id
-INNER JOIN usertable usr ON cp.createdby = usr.id
-INNER JOIN level_of_furnishing lof ON cp.leveloffurnishing = lof.id
-INNER JOIN client c ON cp.clientid = c.id
-INNER JOIN project pr ON cp.projectid = pr.id
-LEFT OUTER JOIN country co ON cp.country = co.id
-WHERE cp.isdeleted = FALSE
-ORDER BY cp.id, clientname;
+-- CREATE VIEW ordersview AS
+-- SELECT DISTINCT
+--     orders.briefdescription, 
+--     earlieststartdate, 
+--     orders.expectedcompletiondate, 
+--     orders.actualcompletiondate, 
+--     orders.owner, 
+--     orders.comments, 
+--     orders.status, 
+--     orders.additionalcomments, 
+--     orders.service AS serviceid, 
+--     orders.clientpropertyid, 
+--     orders.vendorid, 
+--     orders.assignedtooffice AS assignedtoofficeid, 
+--     orders.billable, 
+--     orders.dated, 
+--     orders.createdby AS createdbyid, 
+--     orders.isdeleted, 
+--     order_status.name AS orderstatus, 
+--     services.service, 
+--     office.name AS assignedtooffice, 
+--     vendor.vendorname, 
+--     ut1.firstname || ' ' || ut1.lastname AS createdby, 
+--     orders.id, 
+--     CASE 
+--         WHEN DATE_PART('day', CURRENT_DATE - orders.statusupdatedtimestamp) >  999 THEN - 1 
+--         ELSE DATE_PART('day', CURRENT_DATE - orders.statusupdatedtimestamp)
+--     END AS ageing, 
+--     ut2.firstname || ' ' || ut2.lastname AS ownername, 
+--     orders.orderdate, 
+--     get_client_property_view.description AS propertydescription, 
+--     get_client_property_view.propertytype AS propertytypeid, 
+--     get_client_property_view.status AS propertystatusid, 
+--     get_client_property_view.propertystatus, 
+--     get_client_property_view.propertytype, 
+--     get_client_property_view.suburb, 
+--     get_client_info_view.clientname, 
+--     get_client_info_view.clienttypename, 
+--     orders.clientid, 
+--     get_client_property_view.propertymanager, 
+--     get_client_property_view.clientservicemanager, 
+--     orders.default_task_owner, 
+--     lob.name AS lobname, 
+--     services.servicetype, 
+--     orders.glcode, 
+--     orders.entityid, 
+--     entity.name AS entityname, 
+--     tallyledger.tallyledger, 
+--     orders.tallyledgerid, 
+--     orders.statusupdatedtimestamp, 
+--     get_client_info_view.homephone, 
+--     get_client_info_view.workphone, 
+--     get_client_info_view.mobilephone, 
+--     get_client_info_view.email1, 
+--     get_client_info_view.email2
+-- FROM
+--     orders 
+-- INNER JOIN
+--     order_status ON orders.status = order_status.id
+-- INNER JOIN
+--     services ON orders.service = services.id
+-- LEFT OUTER JOIN
+--     vendor ON orders.vendorid = vendor.id
+-- INNER JOIN
+--     office ON orders.assignedtooffice = office.id
+-- INNER JOIN
+--     usertable ut1 ON orders.createdby = ut1.id
+-- INNER JOIN
+--     usertable ut2 ON orders.owner = ut2.id
+-- INNER JOIN
+--     get_client_property_view ON orders.clientpropertyid = get_client_property_view.id
+-- INNER JOIN
+--     get_client_info_view ON orders.clientid = get_client_info_view.id
+-- INNER JOIN
+--     lob ON services.lob = lob.id
+-- LEFT OUTER JOIN
+--     tallyledger ON orders.tallyledgerid = tallyledger.id
+-- LEFT OUTER JOIN
+--     entity ON orders.entityid = entity.id
+-- WHERE
+--     orders.isdeleted = FALSE;
 
 
-CREATE VIEW orderpaymentview AS
-SELECT DISTINCT
-       op.id,
-       op.paymentby AS paymentbyid,
-       op.amount,
-       op.paymentdate,
-       op.orderid,
-       op.vendorid,
-       op.mode,
-       op.description,
-       op.servicetaxamount,
-       op.dated,
-       op.createdby AS createdbyid,
-       op.isdeleted,
-       mop.name AS mode_of_payment,
-       u1.firstname || ' ' || u1.lastname AS createdby,
-       ut.firstname || ' ' || ut.lastname AS paymentby,
-       ov.clientname,
-       ov.briefdescription AS orderdescription,
-       op.tds,
-       pv.propertydescription,
-       v.vendorname,
-       ov.lobname,
-       ov.servicetype,
-       ov.serviceid,
-       EXTRACT(MONTH FROM op.paymentdate) AS monthyear,
-       EXTRACT(MONTH FROM op.paymentdate) AS fy,
-       op.entityid,
-       e.name AS entityname,
-       op.officeid,
-       o.name AS officename,
-       ov.clientid,
-       ov.service,
-       ov.tallyledger
-FROM order_payment op
-LEFT OUTER JOIN usertable u ON op.paymentby = u.id
-LEFT OUTER JOIN office o ON o.id = op.officeid
-LEFT OUTER JOIN mode_of_payment mop ON op.mode = mop.id
-INNER JOIN usertable AS u1 ON op.createdby = u1.id
-INNER JOIN usertable AS ut ON op.paymentby = ut.id
-INNER JOIN ordersview ov ON op.orderid = ov.id
-LEFT OUTER JOIN propertiesview pv ON ov.clientpropertyid = pv.propertyid AND ov.clientid = pv.clientid
-INNER JOIN vendor v ON op.vendorid = v.id
-LEFT OUTER JOIN entity e ON op.entityid = e.id;
+-- CREATE VIEW orderpaymentview AS
+-- SELECT DISTINCT
+--        op.id,
+--        op.paymentby AS paymentbyid,
+--        op.amount,
+--        op.paymentdate,
+--        op.orderid,
+--        op.vendorid,
+--        op.mode,
+--        op.description,
+--        op.servicetaxamount,
+--        op.dated,
+--        op.createdby AS createdbyid,
+--        op.isdeleted,
+--        mop.name AS mode_of_payment,
+--        u1.firstname || ' ' || u1.lastname AS createdby,
+--        ut.firstname || ' ' || ut.lastname AS paymentby,
+--        ov.clientname,
+--        ov.briefdescription AS orderdescription,
+--        op.tds,
+--        pv.propertydescription,
+--        v.vendorname,
+--        ov.lobname,
+--        ov.servicetype,
+--        ov.serviceid,
+--        EXTRACT(MONTH FROM op.paymentdate) AS monthyear,
+--        EXTRACT(MONTH FROM op.paymentdate) AS fy,
+--        op.entityid,
+--        e.name AS entityname,
+--        op.officeid,
+--        o.name AS officename,
+--        ov.clientid,
+--        ov.service,
+--        ov.tallyledger
+-- FROM order_payment op
+-- LEFT OUTER JOIN usertable u ON op.paymentby = u.id
+-- LEFT OUTER JOIN office o ON o.id = op.officeid
+-- LEFT OUTER JOIN mode_of_payment mop ON op.mode = mop.id
+-- INNER JOIN usertable AS u1 ON op.createdby = u1.id
+-- INNER JOIN usertable AS ut ON op.paymentby = ut.id
+-- INNER JOIN ordersview ov ON op.orderid = ov.id
+-- LEFT OUTER JOIN propertiesview pv ON ov.clientpropertyid = pv.propertyid AND ov.clientid = pv.clientid
+-- INNER JOIN vendor v ON op.vendorid = v.id
+-- LEFT OUTER JOIN entity e ON op.entityid = e.id;
 
 CREATE OR REPLACE FUNCTION getfinancialyear(_date DATE)
 RETURNS TEXT AS 
@@ -1860,9 +2589,9 @@ END;
 $$
 LANGUAGE PLPGSQL;
 
-CREATE SEQUENCE IF NOT EXISTS usertable_id_seq OWNED BY usertable.id;
-SELECT setval('usertable_id_seq', COALESCE(max(id), 0) + 1, false) FROM usertable;
-ALTER TABLE usertable ALTER COLUMN id SET DEFAULT nextval('usertable_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS usertable_id_seq OWNED BY usertable.id;
+-- SELECT setval('usertable_id_seq', COALESCE(max(id), 0) + 1, false) FROM usertable;
+-- ALTER TABLE usertable ALTER COLUMN id SET DEFAULT nextval('usertable_id_seq');
 
 CREATE VIEW get_users_view AS
 SELECT DISTINCT
@@ -1879,7 +2608,8 @@ SELECT DISTINCT
     a.firstname,
     a.lastname,
     concat_ws(' ',a.firstname,a.lastname) as fullname,
-    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS status,
+    CASE a.status WHEN true THEN 'Active' ELSE 'Inactive' END AS statusmap,
+    a.status,
     a.effectivedate,
     a.homephone,
     a.workphone,
@@ -1980,20 +2710,48 @@ FROM
 LEFT JOIN
     country b ON a.country = b.id;
 
-CREATE SEQUENCE IF NOT EXISTS research_employer_id_seq OWNED BY research_employer.id;
-SELECT setval('research_employer_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_employer;
-ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_employer_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS research_employer_id_seq OWNED BY research_employer.id;
+-- SELECT setval('research_employer_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_employer;
+-- ALTER TABLE research_employer ALTER COLUMN id SET DEFAULT nextval('research_employer_id_seq');
 
-ALTER TABLE realestateagents 
-ALTER COLUMN registered 
-TYPE boolean 
-USING 
-  CASE 
-    WHEN registered IS NOT NULL AND registered <> '' THEN true
-    ELSE false
-  END;
 
-alter table realestateagents add column rera_registration_number text;
+CREATE view contractualpaymentsview AS
+ SELECT ref_contractual_payments.id,
+    ref_contractual_payments.paymentto AS paymenttoid,
+    ref_contractual_payments.paidon,
+    ref_contractual_payments.paymentmode AS paymentmodeid,
+    ref_contractual_payments.description,
+    ref_contractual_payments.banktransactionid,
+    ref_contractual_payments.paymentfor AS paymentforid,
+    ref_contractual_payments.dated,
+    ref_contractual_payments.createdby,
+    ref_contractual_payments.isdeleted,
+    payment_for.name AS paymentfor,
+    userview.fullname AS paymentto,
+    mode_of_payment.name AS paymentmode,
+    ref_contractual_payments.amount,
+    ref_contractual_payments.paymentby AS paymentbyid,
+    userview_1.fullname AS paymentby,
+    getmonthyear(ref_contractual_payments.paidon::timestamp without time zone) AS monthyear,
+    getfinancialyear(ref_contractual_payments.paidon::date) AS fy,
+    ref_contractual_payments.entityid,
+    entity.name AS entityname,
+    ref_contractual_payments.officeid,
+    office.name AS officename,
+    ref_contractual_payments.tds,
+    ref_contractual_payments.professiontax,
+    ref_contractual_payments.month,
+    ref_contractual_payments.deduction
+   FROM ref_contractual_payments
+     JOIN office ON office.id = ref_contractual_payments.officeid
+     JOIN mode_of_payment ON ref_contractual_payments.paymentmode = mode_of_payment.id
+     JOIN payment_for ON ref_contractual_payments.paymentfor = payment_for.id
+     JOIN userview ON ref_contractual_payments.paymentto = userview.userid
+     LEFT JOIN entity ON mode_of_payment.entityid = entity.id AND ref_contractual_payments.entityid = entity.id
+     LEFT JOIN userview userview_1 ON ref_contractual_payments.paymentby = userview_1.userid;
+
+
+
 
 CREATE OR REPLACE VIEW get_research_realestate_agents_view AS
 SELECT DISTINCT
@@ -2014,9 +2772,9 @@ SELECT DISTINCT
 FROM
     realestateagents a;
 
-CREATE SEQUENCE IF NOT EXISTS realestateagents_id_seq OWNED BY realestateagents.id;
-SELECT setval('realestateagents_id_seq', COALESCE(max(id), 0) + 1, false) FROM realestateagents;
-ALTER TABLE realestateagents ALTER COLUMN id SET DEFAULT nextval('realestateagents_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS realestateagents_id_seq OWNED BY realestateagents.id;
+-- SELECT setval('realestateagents_id_seq', COALESCE(max(id), 0) + 1, false) FROM realestateagents;
+-- ALTER TABLE realestateagents ALTER COLUMN id SET DEFAULT nextval('realestateagents_id_seq');
 
 CREATE OR REPLACE VIEW get_bankst_view AS
 SELECT
@@ -2097,135 +2855,135 @@ LEFT JOIN
 LEFT JOIN
     cocbusinessgrouptype e ON a.groupid = e.id;
 
-CREATE SEQUENCE IF NOT EXISTS cocandbusinessgroup_id_seq OWNED BY cocandbusinessgroup.id;
-SELECT setval('cocandbusinessgroup_id_seq', COALESCE(max(id), 0) + 1, false) FROM cocandbusinessgroup;
-ALTER TABLE cocandbusinessgroup ALTER COLUMN id SET DEFAULT nextval('cocandbusinessgroup_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS cocandbusinessgroup_id_seq OWNED BY cocandbusinessgroup.id;
+-- SELECT setval('cocandbusinessgroup_id_seq', COALESCE(max(id), 0) + 1, false) FROM cocandbusinessgroup;
+-- ALTER TABLE cocandbusinessgroup ALTER COLUMN id SET DEFAULT nextval('cocandbusinessgroup_id_seq');
 
-CREATE TABLE college (
-    id BIGINT,
-    name TEXT,
-    typeid INTEGER,
-    emailid TEXT,
-    phoneno TEXT,
-    dated TIMESTAMP,
-    createdby INTEGER NOT NULL,
-    isdeleted BOOLEAN,
-    suburb TEXT,
-    city INTEGER,
-    state TEXT,
-    country INTEGER,
-    website TEXT,
-    email1 TEXT,
-    email2 TEXT,
-    contactname1 TEXT,
-    contactname2 TEXT,
-    phoneno1 TEXT,
-    phoneno2 TEXT,
-    excludefrommailinglist BOOLEAN
-);
+-- CREATE TABLE college (
+--     id BIGINT,
+--     name TEXT,
+--     typeid INTEGER,
+--     emailid TEXT,
+--     phoneno TEXT,
+--     dated TIMESTAMP,
+--     createdby INTEGER NOT NULL,
+--     isdeleted BOOLEAN,
+--     suburb TEXT,
+--     city INTEGER,
+--     state TEXT,
+--     country INTEGER,
+--     website TEXT,
+--     email1 TEXT,
+--     email2 TEXT,
+--     contactname1 TEXT,
+--     contactname2 TEXT,
+--     phoneno1 TEXT,
+--     phoneno2 TEXT,
+--     excludefrommailinglist BOOLEAN
+-- );
 
-CREATE TABLE collegetypes (
-    id bigint,
-    name text
-);
+-- CREATE TABLE collegetypes (
+--     id bigint,
+--     name text
+-- );
 
-CREATE TABLE serviceapartmentsandguesthouses (
-    id BIGINT PRIMARY KEY,
-    name TEXT,
-    emailid TEXT,
-    phoneno TEXT,
-    website TEXT,
-    contactperson1 TEXT,
-    contactperson2 TEXT,
-    email1 TEXT,
-    email2 TEXT,
-    contactname1 TEXT,
-    contactname2 TEXT,
-    createdby INTEGER,
-    dated TIMESTAMP WITH TIME ZONE,
-    isdeleted BOOLEAN,
-    suburb TEXT,
-    city INTEGER,
-    state TEXT,
-    country INTEGER,
-    apartments_guesthouse TEXT
-);
+-- CREATE TABLE serviceapartmentsandguesthouses (
+--     id BIGINT PRIMARY KEY,
+--     name TEXT,
+--     emailid TEXT,
+--     phoneno TEXT,
+--     website TEXT,
+--     contactperson1 TEXT,
+--     contactperson2 TEXT,
+--     email1 TEXT,
+--     email2 TEXT,
+--     contactname1 TEXT,
+--     contactname2 TEXT,
+--     createdby INTEGER,
+--     dated TIMESTAMP WITH TIME ZONE,
+--     isdeleted BOOLEAN,
+--     suburb TEXT,
+--     city INTEGER,
+--     state TEXT,
+--     country INTEGER,
+--     apartments_guesthouse TEXT
+-- );
 
-CREATE TABLE banksandbranches (
-    id BIGINT,
-    name TEXT,
-    emailid TEXT,
-    phoneno TEXT,
-    website TEXT,
-    contact TEXT,
-    dated TIMESTAMP WITH TIME ZONE,
-    createdby INTEGER NOT NULL,
-    isdeleted BOOLEAN,
-    excludefrommailinglist BOOLEAN
-);
+-- CREATE TABLE banksandbranches (
+--     id BIGINT,
+--     name TEXT,
+--     emailid TEXT,
+--     phoneno TEXT,
+--     website TEXT,
+--     contact TEXT,
+--     dated TIMESTAMP WITH TIME ZONE,
+--     createdby INTEGER NOT NULL,
+--     isdeleted BOOLEAN,
+--     excludefrommailinglist BOOLEAN
+-- );
 
-CREATE TABLE mandalas (
-    id BIGINT PRIMARY KEY,
-    name TEXT,
-    typeid INTEGER,
-    emailid TEXT,
-    phoneno TEXT,
-    dated TIMESTAMP WITH TIME ZONE,
-    createdby INTEGER NOT NULL,
-    isdeleted BOOLEAN,
-    suburb TEXT,
-    city INTEGER,
-    state TEXT,
-    country INTEGER,
-    website TEXT,
-    email1 TEXT,
-    email2 TEXT,
-    contactname1 TEXT,
-    contactname2 TEXT,
-    phoneno1 TEXT,
-    phoneno2 TEXT,
-    excludefrommailinglist BOOLEAN
-);
+-- CREATE TABLE mandalas (
+--     id BIGINT PRIMARY KEY,
+--     name TEXT,
+--     typeid INTEGER,
+--     emailid TEXT,
+--     phoneno TEXT,
+--     dated TIMESTAMP WITH TIME ZONE,
+--     createdby INTEGER NOT NULL,
+--     isdeleted BOOLEAN,
+--     suburb TEXT,
+--     city INTEGER,
+--     state TEXT,
+--     country INTEGER,
+--     website TEXT,
+--     email1 TEXT,
+--     email2 TEXT,
+--     contactname1 TEXT,
+--     contactname2 TEXT,
+--     phoneno1 TEXT,
+--     phoneno2 TEXT,
+--     excludefrommailinglist BOOLEAN
+-- );
 
-CREATE TABLE friends (
-    id BIGINT PRIMARY KEY,
-    name TEXT,
-    emailid TEXT,
-    phoneno TEXT,
-    contactname TEXT,
-    societyname TEXT,
-    employer TEXT,
-    dated TIMESTAMP WITH TIME ZONE,
-    createdby INTEGER NOT NULL,
-    isdeleted BOOLEAN,
-    suburb TEXT,
-    city INTEGER,
-    state TEXT,
-    country INTEGER,
-    notes TEXT,
-    excludefrommailinglist BOOLEAN
-);
+-- CREATE TABLE friends (
+--     id BIGINT PRIMARY KEY,
+--     name TEXT,
+--     emailid TEXT,
+--     phoneno TEXT,
+--     contactname TEXT,
+--     societyname TEXT,
+--     employer TEXT,
+--     dated TIMESTAMP WITH TIME ZONE,
+--     createdby INTEGER NOT NULL,
+--     isdeleted BOOLEAN,
+--     suburb TEXT,
+--     city INTEGER,
+--     state TEXT,
+--     country INTEGER,
+--     notes TEXT,
+--     excludefrommailinglist BOOLEAN
+-- );
 
-CREATE TABLE research_government_agencies (
-    id BIGINT,
-    agencyname TEXT,
-    addressline1 TEXT,
-    addressline2 TEXT,
-    suburb TEXT,
-    city TEXT,
-    state TEXT,
-    country INTEGER,
-    zip TEXT,
-    agencytype INTEGER,
-    details TEXT,
-    contactname TEXT,
-    contactmail TEXT,
-    contactphone TEXT,
-    dated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    createdby INTEGER NOT NULL,
-    isdeleted BOOLEAN NOT NULL,
-    maplink TEXT
-);
+-- CREATE TABLE research_government_agencies (
+--     id BIGINT,
+--     agencyname TEXT,
+--     addressline1 TEXT,
+--     addressline2 TEXT,
+--     suburb TEXT,
+--     city TEXT,
+--     state TEXT,
+--     country INTEGER,
+--     zip TEXT,
+--     agencytype INTEGER,
+--     details TEXT,
+--     contactname TEXT,
+--     contactmail TEXT,
+--     contactphone TEXT,
+--     dated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     createdby INTEGER NOT NULL,
+--     isdeleted BOOLEAN NOT NULL,
+--     maplink TEXT
+-- );
 
 CREATE VIEW get_professionals_view AS
 SELECT DISTINCT
@@ -2259,9 +3017,9 @@ LEFT JOIN
 LEFT JOIN
     country e ON a.country = e.id;
 
-CREATE SEQUENCE IF NOT EXISTS professionals_id_seq OWNED BY professionals.id;
-SELECT setval('professionals_id_seq', COALESCE(max(id), 0) + 1, false) FROM professionals;
-ALTER TABLE professionals ALTER COLUMN id SET DEFAULT nextval('professionals_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS professionals_id_seq OWNED BY professionals.id;
+-- SELECT setval('professionals_id_seq', COALESCE(max(id), 0) + 1, false) FROM professionals;
+-- ALTER TABLE professionals ALTER COLUMN id SET DEFAULT nextval('professionals_id_seq');
 
 CREATE OR REPLACE VIEW orderreceiptview AS
 SELECT
@@ -2313,7 +3071,6 @@ FROM
 WHERE
   Order_Receipt.IsDeleted = false;
 
-alter table research_government_agencies rename column agencytype to departmenttype;
 
 CREATE VIEW get_research_govt_agencies_view AS
 SELECT
@@ -2348,13 +3105,13 @@ LEFT JOIN
     usertable d ON a.createdby = d.id;
 
 
-CREATE SEQUENCE IF NOT EXISTS research_government_agencies_id_seq OWNED BY research_government_agencies.id;
-SELECT setval('research_government_agencies_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_government_agencies;
-ALTER TABLE research_government_agencies ALTER COLUMN id SET DEFAULT nextval('research_government_agencies_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS research_government_agencies_id_seq OWNED BY research_government_agencies.id;
+-- SELECT setval('research_government_agencies_id_seq', COALESCE(max(id), 0) + 1, false) FROM research_government_agencies;
+-- ALTER TABLE research_government_agencies ALTER COLUMN id SET DEFAULT nextval('research_government_agencies_id_seq');
 
-CREATE SEQUENCE IF NOT EXISTS friends_id_seq OWNED BY friends.id;
-SELECT setval('friends_id_seq', COALESCE(max(id), 0) + 1, false) FROM friends;
-ALTER TABLE friends ALTER COLUMN id SET DEFAULT nextval('friends_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS friends_id_seq OWNED BY friends.id;
+-- SELECT setval('friends_id_seq', COALESCE(max(id), 0) + 1, false) FROM friends;
+-- ALTER TABLE friends ALTER COLUMN id SET DEFAULT nextval('friends_id_seq');
 
 CREATE VIEW get_research_friends_view AS
 SELECT
@@ -2383,10 +3140,10 @@ LEFT JOIN
 LEFT JOIN
     country c ON a.country = c.id;
 
-CREATE TABLE mandaltypes(
-    mandalid int,
-    name text
-);
+-- CREATE TABLE mandaltypes(
+--     mandalid int,
+--     name text
+-- );
 
 CREATE VIEW lltenant_view AS
 SELECT DISTINCT
@@ -2402,13 +3159,12 @@ FROM
 LEFT JOIN
     client b ON a.tenantid = b.id;
 
-CREATE SEQUENCE IF NOT EXISTS banksandbranches_id_seq OWNED BY banksandbranches.id;
-SELECT setval('banksandbranches_id_seq', COALESCE(max(id), 0) + 1, false) FROM banksandbranches;
-ALTER TABLE banksandbranches ALTER COLUMN id SET DEFAULT nextval('banksandbranches_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS banksandbranches_id_seq OWNED BY banksandbranches.id;
+-- SELECT setval('banksandbranches_id_seq', COALESCE(max(id), 0) + 1, false) FROM banksandbranches;
+-- ALTER TABLE banksandbranches ALTER COLUMN id SET DEFAULT nextval('banksandbranches_id_seq');
 
-alter table employee alter column dateofjoining type date;
-alter table employee alter column lastdateofworking type date;
-alter table employee alter column dob type date;
+
+
 
 CREATE OR REPLACE VIEW orderinvoicelistview AS
 SELECT order_invoice.id,
@@ -2623,6 +3379,83 @@ CREATE OR REPLACE VIEW PMABillingTrendView AS
            'VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12)'::text) 
            ct(clientname text, gy text, jan numeric, feb numeric, mar numeric, apr numeric, may numeric, jun numeric, jul numeric, aug numeric, sep numeric, oct numeric, nov numeric, dec numeric);
 
+CREATE VIEW RptBankstAmount AS
+
+SELECT
+    COALESCE(SUM(CASE WHEN BankSt.crdr = 'DR' THEN BankSt.Amount ELSE 0 END), 0) AS BankStAMount,
+    BankSt.Date,
+    BankSt.ModeofPayment,
+    Mode_Of_payment.Name
+FROM
+    BankSt
+INNER JOIN
+    Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
+GROUP BY
+    BankSt.Date,
+    BankSt.ModeofPayment,
+    Mode_Of_payment.Name;
+
+CREATE VIEW RptOrderAmount AS
+
+SELECT
+    COALESCE(SUM(Order_Receipt.Amount), 0) AS ORAmount,
+    Order_Receipt.RecdDate AS Date,
+    Mode_Of_payment.Name,
+    Order_Receipt.PaymentMode
+FROM
+    Order_Receipt
+INNER JOIN
+    Mode_Of_payment ON Order_Receipt.PaymentMode = Mode_Of_payment.ID
+WHERE
+    Order_Receipt.IsDeleted = false
+GROUP BY
+    Order_Receipt.RecdDate,
+    Mode_Of_payment.Name,
+    Order_Receipt.PaymentMode;
+
+CREATE VIEW RptClientAmount AS
+
+SELECT
+    COALESCE(SUM(Client_Receipt.Amount), 0) AS CRAMount,
+    Client_Receipt.RecdDate AS Date,
+    Mode_Of_payment.Name,
+    Client_Receipt.PaymentMode
+FROM
+    Client_Receipt
+INNER JOIN
+    Mode_Of_payment ON Client_Receipt.PaymentMode = Mode_Of_payment.ID
+WHERE
+    Client_Receipt.IsDeleted = false
+GROUP BY
+    Client_Receipt.RecdDate,
+    Mode_Of_payment.Name,
+    Client_Receipt.PaymentMode;
+
+
+CREATE VIEW BankReconcillationview AS
+
+SELECT
+    p.Date,
+    p.PaymentMode,
+    COALESCE(p.Bankst, 0) AS BankStAMount,
+    COALESCE(p.ORAmount, 0) AS ORAmount,
+    COALESCE(p.CRAMount, 0) AS CRAMount
+FROM
+    (
+        SELECT
+            COALESCE(BankSt.Date, ORAmount.Date, CRAMount.Date) AS Date,
+            COALESCE(BankSt.Name, ORAmount.Name, CRAMount.Name) AS PaymentMode,
+            COALESCE(BankSt.BankStAMount, 0) AS Bankst,
+            COALESCE(ORAmount.ORAmount, 0) AS ORAmount,
+            COALESCE(CRAMount.CRAMount, 0) AS CRAMount
+        FROM
+            RptBankstAmount AS BankSt
+        FULL OUTER JOIN RptOrderAmount AS ORAmount ON BankSt.Date = ORAmount.Date AND BankSt.Name = ORAmount.Name
+        FULL OUTER JOIN RptClientAmount AS CRAMount ON BankSt.Date = CRAMount.Date AND BankSt.Name = CRAMount.Name
+    ) AS p;
+
+
+
 CREATE VIEW rpt_daily_bank_receipts_reco AS
  SELECT bankreconcillationview.date,
     sum(bankreconcillationview.bankstamount) AS bankst_cr,
@@ -2744,51 +3577,73 @@ LEFT OUTER JOIN entity ON client_receipt.entityid = entity.id
 LEFT OUTER JOIN payment_source ON client_receipt.paymentsource = payment_source.id;
 
 create or replace view rpt_pmaclient as 
- SELECT 'Invoice'::text AS type,
-    ordersview.clientname,
-    order_invoice.id,
-    order_invoice.invoicedate AS date,
-    order_invoice.invoiceamount AS amount,
+SELECT 'Invoice'::text AS type,
+    ov.clientname,
+    oi.id,
+    oi.invoicedate AS date,
+    oi.invoiceamount AS amount,
     NULL::numeric AS tds,
-    replace(replace(ordersview.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
-    entity.name AS entity,
-    services.service,
-    replace(replace(order_invoice.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
+    replace(replace(ov.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
+    e.name AS entity,
+    s.service,
+    replace(replace(oi.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
     ''::text AS mode,
-    ordersview.clienttypename AS clienttype,
-    ordersview.id AS orderid,
-    ordersview.clientid,
-    getmonthyear(order_invoice.invoicedate::timestamp without time zone) AS monthyear,
-    getfinancialyear(order_invoice.invoicedate) AS fy,
-    ordersview.lobname
-   FROM order_invoice
-     LEFT JOIN ordersview ON ordersview.id = order_invoice.orderid
-     LEFT JOIN entity ON entity.id = order_invoice.entityid
-     LEFT JOIN services ON services.id = ordersview.serviceid
-  WHERE ordersview.clienttypename ilike '%PMA%'::text
+    ov.clienttypename AS client_type,
+    ov.id AS order_id,
+    ov.clientid,
+    getmonthyear(oi.invoicedate::timestamp without time zone) AS monthyear,
+    getfinancialyear(oi.invoicedate) AS fy,
+    ov.lobname
+   FROM order_invoice oi
+     LEFT JOIN ordersview ov ON ov.id = oi.orderid
+     LEFT JOIN entity e ON e.id = oi.entityid
+     LEFT JOIN services s ON s.id = ov.serviceid
+  WHERE ov.clienttypename !~~ '%PMA%'::text AND ov.clientname !~~ '%1-%'::text
 UNION ALL
  SELECT 'Payment'::text AS type,
-    clientview.fullname AS clientname,
-    clientreceiptview.id,
-    clientreceiptview.recddate AS date,
-    '-1'::integer::numeric * clientreceiptview.amount AS amount,
-    clientreceiptview.tds,
+    cv.fullname AS clientname,
+    crv.id,
+    crv.recddate AS date,
+    '-1'::integer::numeric * crv.amount AS amount,
+    crv.tds,
     NULL::text AS orderdetails,
-    entity.name AS entity,
+    e.name AS entity,
     NULL::text AS service,
-    howreceived.name AS details,
-    clientreceiptview.paymentmode AS mode,
-    clientview.clienttypename AS clienttype,
-    NULL::bigint AS orderid,
-    clientview.id AS clientid,
-    getmonthyear(clientreceiptview.recddate::timestamp without time zone) AS monthyear,
-    getfinancialyear(clientreceiptview.recddate) AS fy,
+    hr.name AS details,
+    crv.paymentmode AS mode,
+    cv.clienttypename AS client_type,
+    NULL::bigint AS order_id,
+    cv.id AS clientid,
+    getmonthyear(crv.recddate::timestamp without time zone) AS monthyear,
+    getfinancialyear(crv.recddate) AS fy,
     NULL::text AS lobname
-   FROM clientview
-     JOIN clientreceiptview ON clientview.id = clientreceiptview.clientid
-     LEFT JOIN entity ON clientreceiptview.entityid = entity.id
-     LEFT JOIN howreceived ON clientreceiptview.howreceivedid = howreceived.id
-  WHERE clientview.clienttypename ilike '%PMA%'::text;
+   FROM clientview cv
+     JOIN clientreceiptview crv ON cv.id = crv.clientid
+     LEFT JOIN entity e ON crv.entityid = e.id
+     LEFT JOIN howreceived hr ON crv.howreceivedid = hr.id
+  WHERE cv.clienttypename !~~ '%PMA%'::text AND cv.firstname !~~ '%1-%'::text
+UNION ALL
+ SELECT 'OrderRec'::text AS type,
+    cv.fullname AS clientname,
+    orv.id,
+    orv.recddate AS date,
+    '-1'::integer::numeric * orv.amount AS amount,
+    orv.tds,
+    orv.orderdescription AS orderdetails,
+    e.name AS entity,
+    orv.service,
+    orv.receiptdesc AS details,
+    orv.paymentmode AS mode,
+    cv.clienttypename AS client_type,
+    orv.orderid AS order_id,
+    cv.id AS clientid,
+    getmonthyear(orv.recddate::timestamp without time zone) AS monthyear,
+    getfinancialyear(orv.recddate) AS fy,
+    orv.lobname
+   FROM clientview cv
+     JOIN orderreceiptview orv ON cv.id = orv.clientid
+     LEFT JOIN entity e ON orv.entityid = e.id
+  WHERE cv.clienttypename !~~ '%PMA%'::text AND cv.firstname !~~ '%1-%'::text;
 
 
 
@@ -2801,13 +3656,13 @@ WHERE entity LIKE '%CURA%' AND
       type NOT LIKE '%OrderRec%'
 GROUP BY clientname;
 
-CREATE SEQUENCE IF NOT EXISTS architech_id_seq OWNED BY architech.id;
-SELECT setval('architech_id_seq', COALESCE(max(id), 0) + 1, false) FROM architech;
-ALTER TABLE architech ALTER COLUMN id SET DEFAULT nextval('architech_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS architech_id_seq OWNED BY architech.id;
+-- SELECT setval('architech_id_seq', COALESCE(max(id), 0) + 1, false) FROM architech;
+-- ALTER TABLE architech ALTER COLUMN id SET DEFAULT nextval('architech_id_seq');
 
-CREATE SEQUENCE IF NOT EXISTS colleges_id_seq OWNED BY colleges.id;
-SELECT setval('colleges_id_seq', COALESCE(max(id), 0) + 1, false) FROM colleges;
-ALTER TABLE colleges ALTER COLUMN id SET DEFAULT nextval('colleges_id_seq');
+-- CREATE SEQUENCE IF NOT EXISTS colleges_id_seq OWNED BY colleges.id;
+-- SELECT setval('colleges_id_seq', COALESCE(max(id), 0) + 1, false) FROM colleges;
+-- ALTER TABLE colleges ALTER COLUMN id SET DEFAULT nextval('colleges_id_seq');
 
 CREATE VIEW get_research_architect_view AS
 SELECT
@@ -2874,12 +3729,11 @@ LEFT JOIN
 LEFT JOIN
     collegetypes e ON a.typeid = e.id;
 
-alter table bankst add column isdeleted type boolean;
-update bankst set isdeleted=false;
 
-CREATE SEQUENCE IF NOT EXISTS owners_id_seq OWNED BY owners.id;
-SELECT setval('owners_id_seq', COALESCE(max(id), 0) + 1, false) FROM owners;
-ALTER TABLE owners ALTER COLUMN id SET DEFAULT nextval('owners_id_seq');
+
+-- CREATE SEQUENCE IF NOT EXISTS owners_id_seq OWNED BY owners.id;
+-- SELECT setval('owners_id_seq', COALESCE(max(id), 0) + 1, false) FROM owners;
+-- ALTER TABLE owners ALTER COLUMN id SET DEFAULT nextval('owners_id_seq');
 
 CREATE VIEW clientstatementview AS
 SELECT
@@ -3027,100 +3881,279 @@ INNER JOIN
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-
-CREATE VIEW rpt_nonpmaclient AS
-SELECT
-    'Invoice' AS type,
+CREATE OR REPLACE VIEW rpt_nonpmaclient
+AS
+SELECT 'Invoice'::text AS type,
     ov.clientname,
     oi.id,
     oi.invoicedate AS date,
     oi.invoiceamount AS amount,
-    NULL AS tds,
-    REPLACE(REPLACE(ov.briefdescription, CHR(10), ''), CHR(13), '') AS orderdetails,
+    NULL::numeric AS tds,
+    replace(replace(ov.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
     e.name AS entity,
     s.service,
-    REPLACE(REPLACE(oi.quotedescription, CHR(10), ''), CHR(13), '') AS details,
-    '' AS mode,
+    replace(replace(oi.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
+    ''::text AS mode,
     ov.clienttypename AS client_type,
     ov.id AS order_id,
-    ov.clientid AS clientid,
-    getmonthyear(oi.invoicedate) AS monthyear,
+    ov.clientid,
+    getmonthyear(oi.invoicedate::timestamp without time zone) AS monthyear,
     getfinancialyear(oi.invoicedate) AS fy,
-    ov.lobname AS lobname
-FROM
-    order_invoice oi
-LEFT JOIN
-    ordersview ov ON ov.id = oi.orderid
-LEFT JOIN
-    entity e ON e.id = oi.entityid
-LEFT JOIN
-    services s ON s.id = ov.serviceid
-WHERE
-    ov.clienttypename NOT LIKE 'pma - owner' AND
-    ov.clientname NOT LIKE '%1-%'
+    ov.lobname
+   FROM order_invoice oi
+     LEFT JOIN ordersview ov ON ov.id = oi.orderid
+     LEFT JOIN entity e ON e.id = oi.entityid
+     LEFT JOIN services s ON s.id = ov.serviceid
+WHERE ov.clienttypename NOT LIKE '%PMA%' AND ov.clientname NOT LIKE '%1-%'
 
 UNION ALL
-
-SELECT
-    'Payment' AS type,
-    cv.fullname,
+ SELECT 'Payment'::text AS type,
+    cv.fullname AS clientname,
     crv.id,
     crv.recddate AS date,
-    -1 * crv.amount AS amount,
+    '-1'::integer::numeric * crv.amount AS amount,
     crv.tds,
-    NULL AS orderdetails,
+    NULL::text AS orderdetails,
     e.name AS entity,
-    NULL AS service,
+    NULL::text AS service,
     hr.name AS details,
     crv.paymentmode AS mode,
     cv.clienttypename AS client_type,
-    NULL AS order_id,
+    NULL::bigint AS order_id,
     cv.id AS clientid,
-    getmonthyear(crv.recddate) AS monthyear,
+    getmonthyear(crv.recddate::timestamp without time zone) AS monthyear,
     getfinancialyear(crv.recddate) AS fy,
-    NULL AS lobname
-FROM
-    clientview cv
-INNER JOIN
-    clientreceiptview crv ON cv.id = crv.clientid
-LEFT JOIN
-    entity e ON crv.entityid = e.id
-LEFT JOIN
-    howreceived hr ON crv.howreceivedid = hr.id
-WHERE
-    cv.clienttypename NOT LIKE 'pma - owner' AND
-    cv.firstname NOT LIKE '%1-%'
-
+    NULL::text AS lobname
+   FROM clientview cv
+     JOIN clientreceiptview crv ON cv.id = crv.clientid
+     LEFT JOIN entity e ON crv.entityid = e.id
+     LEFT JOIN howreceived hr ON crv.howreceivedid = hr.id
+WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%'
 UNION ALL
-
-SELECT
-    'OrderRec' AS type,
-    cv.fullname,
+ SELECT 'OrderRec'::text AS type,
+    cv.fullname AS clientname,
     orv.id,
     orv.recddate AS date,
-    -1 * orv.amount AS amount,
+    '-1'::integer::numeric * orv.amount AS amount,
     orv.tds,
     orv.orderdescription AS orderdetails,
     e.name AS entity,
-    orv.service AS service,
+    orv.service,
     orv.receiptdesc AS details,
     orv.paymentmode AS mode,
     cv.clienttypename AS client_type,
     orv.orderid AS order_id,
     cv.id AS clientid,
-    getmonthyear(orv.recddate) AS monthyear,
+    getmonthyear(orv.recddate::timestamp without time zone) AS monthyear,
     getfinancialyear(orv.recddate) AS fy,
-    orv.lobname AS lobname
-FROM
-    clientview cv
-INNER JOIN
-    orderreceiptview orv ON cv.id = orv.clientid
-LEFT JOIN
-    entity e ON orv.entityid = e.id
-WHERE
-    cv.clienttypename NOT LIKE 'pma - owner' AND
-    cv.firstname NOT LIKE '%1-%';
+    orv.lobname
+   FROM clientview cv
+     JOIN orderreceiptview orv ON cv.id = orv.clientid
+     LEFT JOIN entity e ON orv.entityid = e.id
+WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%';
 
+
+
+-- CREATE VIEW rpt_nonpmaclient AS
+-- SELECT
+--     'Invoice' AS type,
+--     ov.clientname,
+--     oi.id,
+--     oi.invoicedate AS date,
+--     oi.invoiceamount AS amount,
+--     NULL AS tds,
+--     REPLACE(REPLACE(ov.briefdescription, CHR(10), ''), CHR(13), '') AS orderdetails,
+--     e.name AS entity,
+--     s.service,
+--     REPLACE(REPLACE(oi.quotedescription, CHR(10), ''), CHR(13), '') AS details,
+--     '' AS mode,
+--     ov.clienttypename AS client_type,
+--     ov.id AS order_id,
+--     ov.clientid AS clientid,
+--     getmonthyear(oi.invoicedate) AS monthyear,
+--     getfinancialyear(oi.invoicedate) AS fy,
+--     ov.lobname AS lobname
+-- FROM
+--     order_invoice oi
+-- LEFT JOIN
+--     ordersview ov ON ov.id = oi.orderid
+-- LEFT JOIN
+--     entity e ON e.id = oi.entityid
+-- LEFT JOIN
+--     services s ON s.id = ov.serviceid
+-- WHERE
+--     ov.clienttypename NOT LIKE 'pma - owner' AND
+--     ov.clientname NOT LIKE '%1-%'
+
+-- UNION ALL
+
+-- SELECT
+--     'Payment' AS type,
+--     cv.fullname,
+--     crv.id,
+--     crv.recddate AS date,
+--     -1 * crv.amount AS amount,
+--     crv.tds,
+--     NULL AS orderdetails,
+--     e.name AS entity,
+--     NULL AS service,
+--     hr.name AS details,
+--     crv.paymentmode AS mode,
+--     cv.clienttypename AS client_type,
+--     NULL AS order_id,
+--     cv.id AS clientid,
+--     getmonthyear(crv.recddate) AS monthyear,
+--     getfinancialyear(crv.recddate) AS fy,
+--     NULL AS lobname
+-- FROM
+--     clientview cv
+-- INNER JOIN
+--     clientreceiptview crv ON cv.id = crv.clientid
+-- LEFT JOIN
+--     entity e ON crv.entityid = e.id
+-- LEFT JOIN
+--     howreceived hr ON crv.howreceivedid = hr.id
+-- WHERE
+--     cv.clienttypename NOT LIKE 'pma - owner' AND
+--     cv.firstname NOT LIKE '%1-%'
+
+-- UNION ALL
+
+-- SELECT
+--     'OrderRec' AS type,
+--     cv.fullname,
+--     orv.id,
+--     orv.recddate AS date,
+--     -1 * orv.amount AS amount,
+--     orv.tds,
+--     orv.orderdescription AS orderdetails,
+--     e.name AS entity,
+--     orv.service AS service,
+--     orv.receiptdesc AS details,
+--     orv.paymentmode AS mode,
+--     cv.clienttypename AS client_type,
+--     orv.orderid AS order_id,
+--     cv.id AS clientid,
+--     getmonthyear(orv.recddate) AS monthyear,
+--     getfinancialyear(orv.recddate) AS fy,
+--     orv.lobname AS lobname
+-- FROM
+--     clientview cv
+-- INNER JOIN
+--     orderreceiptview orv ON cv.id = orv.clientid
+-- LEFT JOIN
+--     entity e ON orv.entityid = e.id
+-- WHERE
+--     cv.clienttypename NOT LIKE 'pma - owner' AND
+--     cv.firstname NOT LIKE '%1-%';
+
+
+-- CREATE VIEW client_property_leave_license_detailsview AS
+-- SELECT 
+--     CASE 
+--         WHEN cplld.active = 'true' THEN 'Active' 
+--         ELSE 'Inactive' 
+--     END AS status,
+--     cplld.clientpropertyid,
+--     cplld.orderid,
+--     cplld.startdate,
+--     cplld.vacatingdate,
+--     cplld.durationinmonth,
+--     cplld.actualenddate,
+--     cplld.depositamount,
+--     cplld.rentamount,
+--     cplld.registrationtype,
+--     cplld.rentpaymentdate,
+--     cplld.paymentcycle,
+--     cplld.reasonforclosure,
+--     cplld.noticeperiodindays,
+--     cplld.modeofrentpaymentid,
+--     cplld.clientpropertyorderid,
+--     cplld.signedby,
+--     cplld.active,
+--     cplld.tenantsearchmode AS tenantsearchmodeid,
+--     cplld.llscancopy,
+--     cplld.pvscancopy,
+--     cplld.dated,
+--     cplld.createdby AS expr2,
+--     cplld.isdeleted,
+--     tsm.name AS tenantsearchmode,
+--     cplld.id,
+--     cplld.comments,
+--     pv.clientname,
+--     pv.propertydescription,
+--     ov.propertydescription AS expr1,
+--     getmonthyear(cplld.startdate) AS startdatemonthyear,
+--     getmonthyear(cplld.actualenddate) AS enddatemonthyear,
+--     ov.orderstatus,
+--     ov.status AS orderstatusid,
+--     pv.clientid,
+--     pv.propertytaxnumber,
+--     pv.property_status,
+--     pv.electricitybillingunit,
+--     pv.electricityconsumernumber
+-- FROM 
+--     client_property_leave_license_details cplld
+-- INNER JOIN
+--     propertiesview pv ON cplld.clientpropertyid = pv.id
+-- LEFT OUTER JOIN
+--     tenant_search_mode tsm ON cplld.tenantsearchmode = tsm.id
+-- LEFT OUTER JOIN
+--     ordersview ov ON cplld.orderid = ov.id
+-- WHERE 
+--     cplld.isdeleted = false;
+
+CREATE OR REPLACE VIEW client_property_leave_license_detailsview AS
+SELECT
+        CASE
+            WHEN cplld.active = true THEN 'Active'::text
+            ELSE 'Inactive'::text
+        END AS status,
+    cplld.clientpropertyid,
+    cplld.orderid,
+    cplld.startdate,
+    cplld.vacatingdate,
+    cplld.durationinmonth,
+    cplld.actualenddate,
+    cplld.depositamount,
+    cplld.rentamount,
+    cplld.registrationtype,
+    cplld.rentpaymentdate,
+    cplld.paymentcycle,
+    cplld.reasonforclosure,
+    cplld.noticeperiodindays,
+    cplld.modeofrentpaymentid,
+    cplld.clientpropertyorderid,
+    cplld.signedby,
+    cplld.active,
+    cplld.llscancopy,
+    cplld.pvscancopy,
+    cplld.dated,
+    cplld.createdby AS expr2,
+    cplld.isdeleted,
+    cplld.id,
+    cplld.comments,
+    pv.clientname,
+    pv.propertydescription,
+    ov.propertydescription AS expr1,
+    ( SELECT getmonthyear(cplld.startdate::timestamp without time zone) AS getmonthyear) AS startdatemonthyear,
+    ( SELECT getmonthyear(cplld.actualenddate::timestamp without time zone) AS getmonthyear) AS enddatemonthyear,
+    ov.orderstatus,
+    ov.status AS orderstatusid,
+    pv.clientid,
+    pv.propertytaxnumber,
+    pv.property_status,
+    pv.electricitybillingunit,
+    pv.electricityconsumernumber,
+    ov.service,
+    ov.lobname,
+    ov.entityname,
+    cv.clienttype,
+    cv.clienttypename
+   FROM client_property_leave_license_details cplld
+     JOIN propertiesview pv ON cplld.clientpropertyid = pv.id
+     JOIN clientview cv ON pv.clientid = cv.id
+     LEFT JOIN ordersview ov ON cplld.orderid = ov.id;
 
 
 
@@ -3194,79 +4227,63 @@ LEFT OUTER JOIN
 
 
 
-CREATE VIEW client_property_leave_license_detailsview AS
-SELECT 
-    CASE 
-        WHEN cplld.active = 'true' THEN 'Active' 
-        ELSE 'Inactive' 
-    END AS status,
-    cplld.clientpropertyid,
-    cplld.orderid,
-    cplld.startdate,
-    cplld.vacatingdate,
-    cplld.durationinmonth,
-    cplld.actualenddate,
-    cplld.depositamount,
-    cplld.rentamount,
-    cplld.registrationtype,
-    cplld.rentpaymentdate,
-    cplld.paymentcycle,
-    cplld.reasonforclosure,
-    cplld.noticeperiodindays,
-    cplld.modeofrentpaymentid,
-    cplld.clientpropertyorderid,
-    cplld.signedby,
-    cplld.active,
-    cplld.llscancopy,
-    cplld.pvscancopy,
-    cplld.dated,
-    cplld.createdby AS expr2,
-    cplld.isdeleted,
-    cplld.id,
-    cplld.comments,
-    pv.clientname,
-    pv.propertydescription,
-    ov.propertydescription AS expr1,
-    getmonthyear(cplld.startdate) AS startdatemonthyear,
-    getmonthyear(cplld.actualenddate) AS enddatemonthyear,
-    ov.orderstatus,
-    ov.status AS orderstatusid,
-    pv.clientid,
-    pv.propertytaxnumber,
-    pv.property_status,
-    pv.electricitybillingunit,
-    pv.electricityconsumernumber
-FROM 
-    client_property_leave_license_details cplld
-INNER JOIN
-    propertiesview pv ON cplld.clientpropertyid = pv.id
-LEFT OUTER JOIN
-    ordersview ov ON cplld.orderid = ov.id
-WHERE 
-    cplld.isdeleted = false;
+-- CREATE VIEW client_property_leave_license_detailsview AS
+-- SELECT 
+--     CASE 
+--         WHEN cplld.active = 'true' THEN 'Active' 
+--         ELSE 'Inactive' 
+--     END AS status,
+--     cplld.clientpropertyid,
+--     cplld.orderid,
+--     cplld.startdate,
+--     cplld.vacatingdate,
+--     cplld.durationinmonth,
+--     cplld.actualenddate,
+--     cplld.depositamount,
+--     cplld.rentamount,
+--     cplld.registrationtype,
+--     cplld.rentpaymentdate,
+--     cplld.paymentcycle,
+--     cplld.reasonforclosure,
+--     cplld.noticeperiodindays,
+--     cplld.modeofrentpaymentid,
+--     cplld.clientpropertyorderid,
+--     cplld.signedby,
+--     cplld.active,
+--     cplld.llscancopy,
+--     cplld.pvscancopy,
+--     cplld.dated,
+--     cplld.createdby AS expr2,
+--     cplld.isdeleted,
+--     cplld.id,
+--     cplld.comments,
+--     pv.clientname,
+--     pv.propertydescription,
+--     ov.propertydescription AS expr1,
+--     getmonthyear(cplld.startdate) AS startdatemonthyear,
+--     getmonthyear(cplld.actualenddate) AS enddatemonthyear,
+--     ov.orderstatus,
+--     ov.status AS orderstatusid,
+--     pv.clientid,
+--     pv.propertytaxnumber,
+--     pv.property_status,
+--     pv.electricitybillingunit,
+--     pv.electricityconsumernumber
+-- FROM 
+--     client_property_leave_license_details cplld
+-- INNER JOIN
+--     propertiesview pv ON cplld.clientpropertyid = pv.id
+-- LEFT OUTER JOIN
+--     ordersview ov ON cplld.orderid = ov.id
+-- WHERE 
+--     cplld.isdeleted = false;
 
 
 
 -----------------------------------------------------------------------------------------------------------------------------------------
 
 
-CREATE VIEW projectcontactsview AS
-SELECT
-    pv.buildername,
-    pv.projectname,
-    pv.city,
-    pv.suburb,
-    pc.contactname,
-    pc.phone,
-    pc.email,
-    pc.effectivedate,
-    pc.role,
-    pc.tenureenddate,
-    pc.details
-FROM
-    project_contacts pc
-INNER JOIN
-    projectsview pv ON pc.projectid = pv.id;
+
 
 CREATE VIEW projectsview AS
 SELECT 
@@ -3335,19 +4352,24 @@ INNER JOIN
 INNER JOIN
     project_type ON project.project_type = project_type.id;
 
+CREATE VIEW projectcontactsview AS
+SELECT
+    pv.buildername,
+    pv.projectname,
+    pv.city,
+    pv.suburb,
+    pc.contactname,
+    pc.phone,
+    pc.email,
+    pc.effectivedate,
+    pc.role,
+    pc.tenureenddate,
+    pc.details
+FROM
+    project_contacts pc
+INNER JOIN
+    projectsview pv ON pc.projectid = pv.id;
 ------------------------------------------------------------------------------------------------------------------------------------------
-
-
-CREATE OR REPLACE VIEW rpt_clientswithadvanceholdingamounts AS
- SELECT clientsummaryview.clientname,
-    COALESCE(sum(clientsummaryview.sumpayment), 0::numeric) AS payments,
-    COALESCE(sum(clientsummaryview.sumreceipt), 0::numeric) AS receipts,
-    row_number() OVER (ORDER BY clientsummaryview.clientname) AS rn
-   FROM clientsummaryview
-  WHERE clientsummaryview.service ~~* '%Advance hold%'::text
-  GROUP BY clientsummaryview.clientname
- HAVING COALESCE(sum(clientsummaryview.sumpayment), 0::numeric) < COALESCE(sum(clientsummaryview.sumreceipt), 0::numeric);
-
 
 CREATE VIEW ClientSummaryView AS
 SELECT
@@ -3423,6 +4445,19 @@ LEFT OUTER JOIN (
     GROUP BY
         OrderID
 ) AS SumVendorEstimate ON OrdersView.ID = SumVendorEstimate.OrderID;
+
+
+    CREATE OR REPLACE VIEW rpt_clientswithadvanceholdingamounts AS
+    SELECT clientsummaryview.clientname,
+        COALESCE(sum(clientsummaryview.sumpayment), 0::numeric) AS payments,
+        COALESCE(sum(clientsummaryview.sumreceipt), 0::numeric) AS receipts,
+        row_number() OVER (ORDER BY clientsummaryview.clientname) AS rn
+    FROM clientsummaryview
+    WHERE clientsummaryview.service ~~* '%Advance hold%'::text
+    GROUP BY clientsummaryview.clientname
+    HAVING COALESCE(sum(clientsummaryview.sumpayment), 0::numeric) < COALESCE(sum(clientsummaryview.sumreceipt), 0::numeric);
+
+
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -3556,89 +4591,14 @@ CREATE VIEW get_owners_view AS
 
 -------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW rpt_nonpmaclient
-AS
-SELECT 'Invoice'::text AS type,
-    ov.clientname,
-    oi.id,
-    oi.invoicedate AS date,
-    oi.invoiceamount AS amount,
-    NULL::numeric AS tds,
-    replace(replace(ov.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
-    e.name AS entity,
-    s.service,
-    replace(replace(oi.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
-    ''::text AS mode,
-    ov.clienttypename AS client_type,
-    ov.id AS order_id,
-    ov.clientid,
-    getmonthyear(oi.invoicedate::timestamp without time zone) AS monthyear,
-    getfinancialyear(oi.invoicedate) AS fy,
-    ov.lobname
-   FROM order_invoice oi
-     LEFT JOIN ordersview ov ON ov.id = oi.orderid
-     LEFT JOIN entity e ON e.id = oi.entityid
-     LEFT JOIN services s ON s.id = ov.serviceid
-WHERE ov.clienttypename NOT LIKE '%PMA%' AND ov.clientname NOT LIKE '%1-%'
+--  CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
+-- SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
+-- ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
 
-UNION ALL
- SELECT 'Payment'::text AS type,
-    cv.fullname AS clientname,
-    crv.id,
-    crv.recddate AS date,
-    '-1'::integer::numeric * crv.amount AS amount,
-    crv.tds,
-    NULL::text AS orderdetails,
-    e.name AS entity,
-    NULL::text AS service,
-    hr.name AS details,
-    crv.paymentmode AS mode,
-    cv.clienttypename AS client_type,
-    NULL::bigint AS order_id,
-    cv.id AS clientid,
-    getmonthyear(crv.recddate::timestamp without time zone) AS monthyear,
-    getfinancialyear(crv.recddate) AS fy,
-    NULL::text AS lobname
-   FROM clientview cv
-     JOIN clientreceiptview crv ON cv.id = crv.clientid
-     LEFT JOIN entity e ON crv.entityid = e.id
-     LEFT JOIN howreceived hr ON crv.howreceivedid = hr.id
-WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%'
-UNION ALL
- SELECT 'OrderRec'::text AS type,
-    cv.fullname AS clientname,
-    orv.id,
-    orv.recddate AS date,
-    '-1'::integer::numeric * orv.amount AS amount,
-    orv.tds,
-    orv.orderdescription AS orderdetails,
-    e.name AS entity,
-    orv.service,
-    orv.receiptdesc AS details,
-    orv.paymentmode AS mode,
-    cv.clienttypename AS client_type,
-    orv.orderid AS order_id,
-    cv.id AS clientid,
-    getmonthyear(orv.recddate::timestamp without time zone) AS monthyear,
-    getfinancialyear(orv.recddate) AS fy,
-    orv.lobname
-   FROM clientview cv
-     JOIN orderreceiptview orv ON cv.id = orv.clientid
-     LEFT JOIN entity e ON orv.entityid = e.id
-WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%';
+--  CREATE SEQUENCE IF NOT EXISTS builder_contacts_id_seq OWNED BY builder_contacts.id;
+-- SELECT setval('builder_contacts_id_seq', COALESCE(max(id), 0) + 1, false) FROM builder_contacts;
+-- ALTER TABLE builder_contacts ALTER COLUMN id SET DEFAULT nextval('builder_contacts_id_seq');
 
- CREATE SEQUENCE IF NOT EXISTS client_receipt_id_seq OWNED BY client_receipt.id;
-SELECT setval('client_receipt_id_seq', COALESCE(max(id), 0) + 1, false) FROM client_receipt;
-ALTER TABLE client_receipt ALTER COLUMN id SET DEFAULT nextval('client_receipt_id_seq');
-
- CREATE SEQUENCE IF NOT EXISTS builder_contacts_id_seq OWNED BY builder_contacts.id;
-SELECT setval('builder_contacts_id_seq', COALESCE(max(id), 0) + 1, false) FROM builder_contacts;
-ALTER TABLE builder_contacts ALTER COLUMN id SET DEFAULT nextval('builder_contacts_id_seq');
-
-
-CREATE TABLE token_access_config(
-    timedata int
-);
 
 --10.04
 
@@ -3814,59 +4774,54 @@ WHERE isdeleted = false;
 --10.05
 
 CREATE OR REPLACE VIEW tally_cr_to_salesinvoice AS
-SELECT
-' ' AS uniqueid,
-'Sales' AS base_vch_type,
-'GST Invoice' AS vch_type,
-' ' AS vch_no,
-CAST(client_receipt.recddate AS DATE) AS vch_date,
-' ' AS ref_no,
-' ' AS ref_date,
-client.firstname || ' ' || client.lastname AS party,
-' ' AS gstin,
-'Maharashtra' AS state,
-'Property Services' AS item_name,
-' ' AS item_hsn_code,
-' ' AS item_units,
-' ' AS item_qty,
-' ' AS item_rate,
-' ' AS item_discountpercentage,
-ROUND(client_receipt.amount / 1.18, 2) AS item_amount,
-' ' AS igst_percentage,
-' ' AS igst_amount,
-'9' AS cgst_percentage,
-ROUND(client_receipt.amount * 0.076271, 2) AS cgst_amount,
-'9' AS sgst_percentage,
-ROUND(client_receipt.amount * 0.076271, 2) AS sgst_amount,
-'GST Sale B2C' AS sales_purchase_ledger,
-' ' AS igst_ledger,
-'Output CGST' AS cgst_ledger,
-'Output SGST' AS sgst_ledger,
-'Real estate service fees (HSN 9972)' AS narration,
-'Yes' AS auto_round_off_yes_no,
-client_receipt.tds,
-client_receipt.serviceamount,
-client_receipt.reimbursementamount
-FROM client_receipt
-INNER JOIN client ON client_receipt.clientid = client.id
-INNER JOIN entity ON client_receipt.entityid = entity.id
-WHERE
-entity.name ILIKE '%CURA%'
-AND
-client_receipt.isdeleted = false
-AND
-client_receipt.recddate > '2023-12-31'
-LIMIT 100;
-
+ SELECT ' '::text AS uniqueid,
+    'Sales'::text AS base_vch_type,
+    'GST Invoice'::text AS vch_type,
+    ' '::text AS vch_no,
+    client_receipt.recddate AS vch_date,
+    ' '::text AS ref_no,
+    ' '::text AS ref_date,
+    (client.firstname || ' '::text) || client.lastname AS party,
+    ' '::text AS gstin,
+    'Maharashtra'::text AS state,
+    'Property Services'::text AS item_name,
+    ' '::text AS item_hsn_code,
+    ' '::text AS item_units,
+    ' '::text AS item_qty,
+    ' '::text AS item_rate,
+    ' '::text AS item_discountpercentage,
+    round(client_receipt.amount / 1.18, 2) AS item_amount,
+    ' '::text AS igst_percentage,
+    ' '::text AS igst_amount,
+    '9'::text AS cgst_percentage,
+    round(client_receipt.amount * 0.076271, 2) AS cgst_amount,
+    '9'::text AS sgst_percentage,
+    round(client_receipt.amount * 0.076271, 2) AS sgst_amount,
+    'GST Sale B2C'::text AS sales_purchase_ledger,
+    ' '::text AS igst_ledger,
+    'Output CGST'::text AS cgst_ledger,
+    'Output SGST'::text AS sgst_ledger,
+    'Real estate service fees (HSN 9972)'::text AS narration,
+    'Yes'::text AS auto_round_off_yes_no,
+    client_receipt.tds,
+    client_receipt.serviceamount,
+    client_receipt.reimbursementamount,
+    client_receipt.entityid,
+    client_receipt.paymentmode AS paymentmodeid
+   FROM client_receipt
+     JOIN client ON client_receipt.clientid = client.id
+     JOIN entity ON client_receipt.entityid = entity.id
+  WHERE entity.name ~~* '%CURA%'::text AND client_receipt.isdeleted = false AND client_receipt.recddate > '2023-12-31'::date
+ LIMIT 100;
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-SELECT 
-    SUM(receipts) - SUM(payments) AS diff
-FROM 
-    bankstbalanceview
-WHERE 
-    name LIKE '%DAP-ICICI-42%' 
-    AND date <= '2024-03-31';
+-- SELECT 
+--     SUM(receipts) - SUM(payments) AS diff
+-- FROM 
+--     bankstbalanceview
+-- WHERE 
+--     name LIKE '%DAP-ICICI-42%' 
+--     AND date <= '2024-03-31';
 
 create view bank_pmt_rcpts as SELECT
 'Payment' as Type,
@@ -3891,20 +4846,21 @@ FROM            REF_Contractual_Payments, Mode_Of_payment
 WHERE        REF_Contractual_Payments.PaymentMode = mode_of_payment.ID AND (mode_of_payment.name NOT IN ('Cash'))
 AND REF_Contractual_Payments.IsDeleted <> true;
 
-SELECT
-    SUM(amount)
-FROM
-    bank_pmt_rcpts
-WHERE
-    bankname LIKE '%DAP-ICICI-42%'
-    AND date <= '2024-03-31';
+-- SELECT
+--     SUM(amount)
+-- FROM
+--     bank_pmt_rcpts
+-- WHERE
+--     bankname LIKE '%DAP-ICICI-42%'
+--     AND date <= '2024-03-31';
 
-alter table client_property alter column propertyemanager type text;
-alter table client_property alter column propertymanager type text;
 
-CREATE SEQUENCE IF NOT EXISTS serviceapartmentsandguesthouses_id_seq OWNED BY serviceapartmentsandguesthouses.id;
-SELECT setval('serviceapartmentsandguesthouses_id_seq', COALESCE(max(id), 0) + 1, false) FROM serviceapartmentsandguesthouses;
-ALTER TABLE serviceapartmentsandguesthouses ALTER COLUMN id SET DEFAULT nextval('serviceapartmentsandguesthouses_id_seq');
+-- alter table client_property alter column propertyemanager type text;
+
+
+-- CREATE SEQUENCE IF NOT EXISTS serviceapartmentsandguesthouses_id_seq OWNED BY serviceapartmentsandguesthouses.id;
+-- SELECT setval('serviceapartmentsandguesthouses_id_seq', COALESCE(max(id), 0) + 1, false) FROM serviceapartmentsandguesthouses;
+-- ALTER TABLE serviceapartmentsandguesthouses ALTER COLUMN id SET DEFAULT nextval('serviceapartmentsandguesthouses_id_seq');
 
 CREATE VIEW get_apartment_view AS
 SELECT
@@ -4033,55 +4989,55 @@ INNER JOIN BankSt ON Vendor.ID = BankSt.VendorID;
 
 --13.1
 
-CREATE VIEW VendorSummaryForFinancialYearView AS
-SELECT
-    Vendor.VendorName,
-    Vendor.AddressLine1,
-    Vendor.AddressLine2,
-    Vendor.Suburb,
-    Vendor.PANNo,
-    Vendor.TANNo,
-    Vendor.VATTinNo,
-    Vendor.GSTServiceTaxNo,  -- Changed column name
-    Vendor.LBTNo,
-    Vendor.TDSSection,
-    CASE WHEN Vendor.Registered = 'true' THEN 'Yes' ELSE 'No' END AS Registered,
-    Vendor.BankName,
-    Vendor.BankBranch,
-    Vendor.BankCity,
-    Vendor.BankAcctHolderName,
-    Vendor.BankAcctNo,
-    Vendor.BankIFSCCode,
-    Vendor.BankMICRCode,
-    Vendor.BankAcctType,
-    Vendor.VendorDealerStatus,
-    OrderPaymentView.ID,
-    OrderPaymentView.PaymentById,
-    OrderPaymentView.Amount,
-    OrderPaymentView.PaymentDate,
-    OrderPaymentView.OrderID,
-    OrderPaymentView.VendorID,
-    OrderPaymentView.Mode,
-    OrderPaymentView.Description,
-    OrderPaymentView.ServiceTaxAmount,
-    OrderPaymentView.Dated,
-    OrderPaymentView.CreatedById,
-    OrderPaymentView.IsDeleted,
-    OrderPaymentView.Mode_Of_payment,
-    OrderPaymentView.CreatedBy,
-    OrderPaymentView.PaymentBy,
-    OrderPaymentView.ClientName,
-    OrderPaymentView.OrderDescription,
-    OrderPaymentView.TDS,
-    OrderPaymentView.PropertyDescription,
-    OrderPaymentView.VendorName AS Expr1,
-    OrderPaymentView.LOBName,
-    OrderPaymentView.ServiceType,
-    OrderPaymentView.ServiceId,
-    OrderPaymentView.MonthYear,
-    OrderPaymentView.FY
-FROM Vendor
-INNER JOIN OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
+-- CREATE VIEW VendorSummaryForFinancialYearView AS
+-- SELECT
+--     Vendor.VendorName,
+--     Vendor.AddressLine1,
+--     Vendor.AddressLine2,
+--     Vendor.Suburb,
+--     Vendor.PANNo,
+--     Vendor.TANNo,
+--     Vendor.VATTinNo,
+--     Vendor.GSTServiceTaxNo,  -- Changed column name
+--     Vendor.LBTNo,
+--     Vendor.TDSSection,
+--     CASE WHEN Vendor.Registered = 'true' THEN 'Yes' ELSE 'No' END AS Registered,
+--     Vendor.BankName,
+--     Vendor.BankBranch,
+--     Vendor.BankCity,
+--     Vendor.BankAcctHolderName,
+--     Vendor.BankAcctNo,
+--     Vendor.BankIFSCCode,
+--     Vendor.BankMICRCode,
+--     Vendor.BankAcctType,
+--     Vendor.VendorDealerStatus,
+--     OrderPaymentView.ID,
+--     OrderPaymentView.PaymentById,
+--     OrderPaymentView.Amount,
+--     OrderPaymentView.PaymentDate,
+--     OrderPaymentView.OrderID,
+--     OrderPaymentView.VendorID,
+--     OrderPaymentView.Mode,
+--     OrderPaymentView.Description,
+--     OrderPaymentView.ServiceTaxAmount,
+--     OrderPaymentView.Dated,
+--     OrderPaymentView.CreatedById,
+--     OrderPaymentView.IsDeleted,
+--     OrderPaymentView.Mode_Of_payment,
+--     OrderPaymentView.CreatedBy,
+--     OrderPaymentView.PaymentBy,
+--     OrderPaymentView.ClientName,
+--     OrderPaymentView.OrderDescription,
+--     OrderPaymentView.TDS,
+--     OrderPaymentView.PropertyDescription,
+--     OrderPaymentView.VendorName AS Expr1,
+--     OrderPaymentView.LOBName,
+--     OrderPaymentView.ServiceType,
+--     OrderPaymentView.ServiceId,
+--     OrderPaymentView.MonthYear,
+--     OrderPaymentView.FY
+-- FROM Vendor
+-- INNER JOIN OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------
@@ -4277,20 +5233,9 @@ SELECT
    FROM order_payment
      JOIN orders ON order_payment.orderid = orders.id
      JOIN vendor ON order_payment.vendorid = vendor.id
-  WHERE orders.id = ANY (ARRAY[31648::bigint, 10770::bigint, 31649::bigint, 353444::bigint, 122525::bigint])
+  WHERE orders.id = ANY (ARRAY[31648::bigint, 10770::bigint, 31649::bigint, 353444::bigint, 122525::bigint]);
 
-alter table agencytype rename to departmenttype;
-alter table bankst rename column "Cr/Dr" to crdr;
-alter table banksandbranches add column branchaddress text;
-alter table banksandbranches rename column contact to contactperson;
-alter table banksandbranches add column notes text;
-alter table bankst rename column "AvailableBalance(INR)" to availablebalance;
-alter table cocbusinessgroup rename to cocbusinessgrouptype;
-alter table bankst rename column receivedby to receivedhow;
-alter table professionals rename column phoneno to professionid;
-alter table collegeous rename to colleges;
-alter table professionals rename column phoneno1 to phonenumber;
-alter table collegeoustypes rename to collegetypes;
+
 
 
 CREATE VIEW agedorders AS
@@ -4346,17 +5291,17 @@ create view vendorsummary as
   WHERE tempdatatable.vendorid IS NOT NULL AND (ordersview.orderstatus <> ALL (ARRAY['Inquiry'::text, 'Cancelled'::text, 'Estimate Given'::text]));
 
 
-   create view monthlybalanceview as  SELECT sum(COALESCE(fin_bank_transactions_daily_summary.payments, 0::numeric)) AS payments,
-    fin_bank_transactions_daily_summary.name,
-    fin_bank_transactions_daily_summary.monthyear,
-    sum(COALESCE(fin_bank_transactions_daily_summary.receipts, 0::numeric)) AS receipts,
-    sum(COALESCE(fin_bank_transactions_daily_summary.receipts, 0::numeric)) - sum(COALESCE(fin_bank_transactions_daily_summary.payments, 0::numeric)) AS total,
-    sum(COALESCE(fin_bank_transactions_daily_summary.bankreceipts, 0::numeric)) AS bankreceipts,
-    sum(COALESCE(fin_bank_transactions_daily_summary.bankpayments, 0::numeric)) AS bankpayments,
-    sum(COALESCE(fin_bank_transactions_daily_summary.bankreceipts, 0::numeric)) - sum(COALESCE(fin_bank_transactions_daily_summary.bankpayments, 0::numeric)) AS banktotal
-   FROM fin_bank_transactions_daily_summary
-  GROUP BY fin_bank_transactions_daily_summary.name, fin_bank_transactions_daily_summary.monthyear
-  ORDER BY fin_bank_transactions_daily_summary.monthyear DESC;
+--    create view monthlybalanceview as  SELECT sum(COALESCE(fin_bank_transactions_daily_summary.payments, 0::numeric)) AS payments,
+--     fin_bank_transactions_daily_summary.name,
+--     fin_bank_transactions_daily_summary.monthyear,
+--     sum(COALESCE(fin_bank_transactions_daily_summary.receipts, 0::numeric)) AS receipts,
+--     sum(COALESCE(fin_bank_transactions_daily_summary.receipts, 0::numeric)) - sum(COALESCE(fin_bank_transactions_daily_summary.payments, 0::numeric)) AS total,
+--     sum(COALESCE(fin_bank_transactions_daily_summary.bankreceipts, 0::numeric)) AS bankreceipts,
+--     sum(COALESCE(fin_bank_transactions_daily_summary.bankpayments, 0::numeric)) AS bankpayments,
+--     sum(COALESCE(fin_bank_transactions_daily_summary.bankreceipts, 0::numeric)) - sum(COALESCE(fin_bank_transactions_daily_summary.bankpayments, 0::numeric)) AS banktotal
+--    FROM fin_bank_transactions_daily_summary
+--   GROUP BY fin_bank_transactions_daily_summary.name, fin_bank_transactions_daily_summary.monthyear
+--   ORDER BY fin_bank_transactions_daily_summary.monthyear DESC;
 
 CREATE VIEW pmaclientportalreport AS
    SELECT DISTINCT c.id AS clientid,
@@ -4419,644 +5364,589 @@ CREATE VIEW datewiselobentityview AS
 
 --duplication x6
 
-CREATE VIEW rpt_client_property_caretaking_agreementview AS
-SELECT
-    cpca.id,
-    cpca.clientpropertyid,
-    cpca.startdate,
-    cpca.enddate,
-    cpca.actualenddate,
-    cpca.monthlymaintenancedate,
-    cpca.monthlymaintenanceamount,
-    cpca.active,
-    cpca.scancopy,
-    cpca.reasonforearlyterminationifapplicable,
-    cpca.dated,
-    cpca.createdby AS createdbyid,
-    cpca.isdeleted,
-    ut.firstname || ' ' || ut.lastname AS createdby,
-    CASE
-        WHEN cpca.active = TRUE THEN 'Active'
-        ELSE 'Inactive'
-    END AS status,
-    pv.clientname,
-    pv.propertydescription,
-    pv.property_status AS propertystatus,
-    pv.electricitybillingduedate,
-    pv.electricitybillingunit,
-    pv.electricityconsumernumber,
-    pv.propertytaxnumber,
-    cpca.description,
-    lnl.startdate AS lnlstartdate,
-    lnl.actualenddate AS lnlenddate,
-    lnl.rentamount,
-    cpca.vacant,
-    cpca.rented,
-    cpca.fixed,
-    cpca.vacanttax,
-    cpca.rentedtax,
-    cpca.fixedtax,
-    cpca.electricitybillcreated,
-    cpca.propertytaxbillcreated,
-    cpca.pipedgasbillcreated,
-    cpca.societyduesbillcreated,
-    cpca.advanceforreimbursementcreated,
-    cpca.createclientportalaccount,
-    cpca.orderid,
-    o.briefdescription AS orderdescription,
-    pv.clientid,
-    cli.fulllegalname,
-    cv.clienttypename,
-    cpca.poastartdate,
-    cpca.poaenddate,
-    cpca.ptaxpaidtilldate,
-    cpca.societyduespaidtilldate,
-    cpca.poaholder
-FROM
-    client_property_caretaking_agreement cpca
-INNER JOIN
-    usertable ut ON cpca.createdby = ut.id
-INNER JOIN
-    propertiesview pv ON cpca.clientpropertyid = pv.id
-LEFT OUTER JOIN
-    clientview cv ON pv.clientid = cv.id
-LEFT OUTER JOIN
-    client_legal_info cli ON pv.clientid = cli.clientid
-LEFT OUTER JOIN
-    orders o ON cpca.orderid = o.id
-LEFT OUTER JOIN
-    client_property_leave_license_detailsview lnl ON lnl.clientpropertyid = cpca.clientpropertyid AND lnl.active = TRUE;
-
-CREATE VIEW client_property_leave_license_detailsview AS
-SELECT 
-    CASE 
-        WHEN cplld.active = 'true' THEN 'Active' 
-        ELSE 'Inactive' 
-    END AS status,
-    cplld.clientpropertyid,
-    cplld.orderid,
-    cplld.startdate,
-    cplld.vacatingdate,
-    cplld.durationinmonth,
-    cplld.actualenddate,
-    cplld.depositamount,
-    cplld.rentamount,
-    cplld.registrationtype,
-    cplld.rentpaymentdate,
-    cplld.paymentcycle,
-    cplld.reasonforclosure,
-    cplld.noticeperiodindays,
-    cplld.modeofrentpaymentid,
-    cplld.clientpropertyorderid,
-    cplld.signedby,
-    cplld.active,
-    cplld.tenantsearchmode AS tenantsearchmodeid,
-    cplld.llscancopy,
-    cplld.pvscancopy,
-    cplld.dated,
-    cplld.createdby AS expr2,
-    cplld.isdeleted,
-    tsm.name AS tenantsearchmode,
-    cplld.id,
-    cplld.comments,
-    pv.clientname,
-    pv.propertydescription,
-    ov.propertydescription AS expr1,
-    getmonthyear(cplld.startdate) AS startdatemonthyear,
-    getmonthyear(cplld.actualenddate) AS enddatemonthyear,
-    ov.orderstatus,
-    ov.status AS orderstatusid,
-    pv.clientid,
-    pv.propertytaxnumber,
-    pv.property_status,
-    pv.electricitybillingunit,
-    pv.electricityconsumernumber
-FROM 
-    client_property_leave_license_details cplld
-INNER JOIN
-    propertiesview pv ON cplld.clientpropertyid = pv.id
-LEFT OUTER JOIN
-    tenant_search_mode tsm ON cplld.tenantsearchmode = tsm.id
-LEFT OUTER JOIN
-    ordersview ov ON cplld.orderid = ov.id
-WHERE 
-    cplld.isdeleted = false;
+-- CREATE VIEW rpt_client_property_caretaking_agreementview AS
+-- SELECT
+--     cpca.id,
+--     cpca.clientpropertyid,
+--     cpca.startdate,
+--     cpca.enddate,
+--     cpca.actualenddate,
+--     cpca.monthlymaintenancedate,
+--     cpca.monthlymaintenanceamount,
+--     cpca.active,
+--     cpca.scancopy,
+--     cpca.reasonforearlyterminationifapplicable,
+--     cpca.dated,
+--     cpca.createdby AS createdbyid,
+--     cpca.isdeleted,
+--     ut.firstname || ' ' || ut.lastname AS createdby,
+--     CASE
+--         WHEN cpca.active = TRUE THEN 'Active'
+--         ELSE 'Inactive'
+--     END AS status,
+--     pv.clientname,
+--     pv.propertydescription,
+--     pv.property_status AS propertystatus,
+--     pv.electricitybillingduedate,
+--     pv.electricitybillingunit,
+--     pv.electricityconsumernumber,
+--     pv.propertytaxnumber,
+--     cpca.description,
+--     lnl.startdate AS lnlstartdate,
+--     lnl.actualenddate AS lnlenddate,
+--     lnl.rentamount,
+--     cpca.vacant,
+--     cpca.rented,
+--     cpca.fixed,
+--     cpca.vacanttax,
+--     cpca.rentedtax,
+--     cpca.fixedtax,
+--     cpca.electricitybillcreated,
+--     cpca.propertytaxbillcreated,
+--     cpca.pipedgasbillcreated,
+--     cpca.societyduesbillcreated,
+--     cpca.advanceforreimbursementcreated,
+--     cpca.createclientportalaccount,
+--     cpca.orderid,
+--     o.briefdescription AS orderdescription,
+--     pv.clientid,
+--     cli.fulllegalname,
+--     cv.clienttypename,
+--     cpca.poastartdate,
+--     cpca.poaenddate,
+--     cpca.ptaxpaidtilldate,
+--     cpca.societyduespaidtilldate,
+--     cpca.poaholder
+-- FROM
+--     client_property_caretaking_agreement cpca
+-- INNER JOIN
+--     usertable ut ON cpca.createdby = ut.id
+-- INNER JOIN
+--     propertiesview pv ON cpca.clientpropertyid = pv.id
+-- LEFT OUTER JOIN
+--     clientview cv ON pv.clientid = cv.id
+-- LEFT OUTER JOIN
+--     client_legal_info cli ON pv.clientid = cli.clientid
+-- LEFT OUTER JOIN
+--     orders o ON cpca.orderid = o.id
+-- LEFT OUTER JOIN
+--     client_property_leave_license_detailsview lnl ON lnl.clientpropertyid = cpca.clientpropertyid AND lnl.active = TRUE;
 
 
 
 -----------------------------------------------------------------------------------------------------------------------------------------
 
 
-CREATE VIEW projectcontactsview AS
-SELECT
-    pv.buildername,
-    pv.projectname,
-    pv.city,
-    pv.suburb,
-    pc.contactname,
-    pc.phone,
-    pc.email,
-    pc.effectivedate,
-    pc.role,
-    pc.tenureenddate,
-    pc.details
-FROM
-    project_contacts pc
-INNER JOIN
-    projectsview pv ON pc.projectid = pv.id;
+-- CREATE VIEW projectcontactsview AS
+-- SELECT
+--     pv.buildername,
+--     pv.projectname,
+--     pv.city,
+--     pv.suburb,
+--     pc.contactname,
+--     pc.phone,
+--     pc.email,
+--     pc.effectivedate,
+--     pc.role,
+--     pc.tenureenddate,
+--     pc.details
+-- FROM
+--     project_contacts pc
+-- INNER JOIN
+--     projectsview pv ON pc.projectid = pv.id;
 
-CREATE VIEW projectsview AS
-SELECT 
-    project.id,
-    project.builderid,
-    project.addressline1,
-    project.addressline2,
-    project.suburb,
-    project.city AS cityid,
-    project.state,
-    project.country,
-    project.zip,
-    project.project_type,
-    project.mailgroup1,
-    project.mailgroup2,
-    project.website,
-    project.project_legal_status,
-    project.rules,
-    project.completionyear,
-    project.jurisdiction,
-    project.taluka,
-    project.corporationward,
-    project.policechowkey,
-    project.policestation,
-    project.maintenance_details,
-    project.numberoffloors,
-    project.numberofbuildings,
-    project.approxtotalunits,
-    project.tenantstudentsallowed,
-    project.tenantworkingbachelorsallowed,
-    project.tenantforeignersallowed,
-    project.otherdetails,
-    project.duespayablemonth,
-    project.dated,
-    project.createdby AS createdbyid,
-    project.isdeleted,
-    cities.city,
-    country.name AS countryname,
-    usertable.firstname || ' ' || usertable.lastname AS createdby,
-    project.projectname,
-    project.nearestlandmark,
-    builder.buildername,
-    project_type.name AS projecttype,
-    CASE 
-        WHEN project.tenantstudentsallowed = '1' THEN 'Tenant Students Allowed,'
-        ELSE '' 
-    END 
-    || CASE 
-        WHEN project.tenantworkingbachelorsallowed = '1' THEN ' Tenant Working Bachelors Allowed,'
-        ELSE '' 
-    END 
-    || CASE 
-        WHEN project.tenantforeignersallowed = '1' THEN ' Tenant Foreigners Allowed' 
-        ELSE '' 
-    END AS tenantallowed
-FROM     
-    project
-INNER JOIN
-    cities ON project.city = cities.id
-INNER JOIN
-    country ON project.country = country.id
-INNER JOIN
-    usertable ON project.createdby = usertable.id
-INNER JOIN
-    builder ON project.builderid = builder.id
-INNER JOIN
-    project_type ON project.project_type = project_type.id;
+-- CREATE VIEW projectsview AS
+-- SELECT 
+--     project.id,
+--     project.builderid,
+--     project.addressline1,
+--     project.addressline2,
+--     project.suburb,
+--     project.city AS cityid,
+--     project.state,
+--     project.country,
+--     project.zip,
+--     project.project_type,
+--     project.mailgroup1,
+--     project.mailgroup2,
+--     project.website,
+--     project.project_legal_status,
+--     project.rules,
+--     project.completionyear,
+--     project.jurisdiction,
+--     project.taluka,
+--     project.corporationward,
+--     project.policechowkey,
+--     project.policestation,
+--     project.maintenance_details,
+--     project.numberoffloors,
+--     project.numberofbuildings,
+--     project.approxtotalunits,
+--     project.tenantstudentsallowed,
+--     project.tenantworkingbachelorsallowed,
+--     project.tenantforeignersallowed,
+--     project.otherdetails,
+--     project.duespayablemonth,
+--     project.dated,
+--     project.createdby AS createdbyid,
+--     project.isdeleted,
+--     cities.city,
+--     country.name AS countryname,
+--     usertable.firstname || ' ' || usertable.lastname AS createdby,
+--     project.projectname,
+--     project.nearestlandmark,
+--     builder.buildername,
+--     project_type.name AS projecttype,
+--     CASE 
+--         WHEN project.tenantstudentsallowed = '1' THEN 'Tenant Students Allowed,'
+--         ELSE '' 
+--     END 
+--     || CASE 
+--         WHEN project.tenantworkingbachelorsallowed = '1' THEN ' Tenant Working Bachelors Allowed,'
+--         ELSE '' 
+--     END 
+--     || CASE 
+--         WHEN project.tenantforeignersallowed = '1' THEN ' Tenant Foreigners Allowed' 
+--         ELSE '' 
+--     END AS tenantallowed
+-- FROM     
+--     project
+-- INNER JOIN
+--     cities ON project.city = cities.id
+-- INNER JOIN
+--     country ON project.country = country.id
+-- INNER JOIN
+--     usertable ON project.createdby = usertable.id
+-- INNER JOIN
+--     builder ON project.builderid = builder.id
+-- INNER JOIN
+--     project_type ON project.project_type = project_type.id;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+-- CREATE VIEW ClientSummaryView AS
+-- SELECT
+--     OrdersView.ID AS OrderId,
+--     COALESCE(OrdersView.ClientName, '') as ClientName,
+--     COALESCE(OrdersView.PropertyDescription, '') as PropertyDescription,
+--     COALESCE(OrdersView.BriefDescription, '') as BriefDescription,
+--     COALESCE(OrdersView.Service, '') as Service,
+--     COALESCE(SumVendorEstimate.EstimateAmount, 0) AS VendorEstimate,
+--     COALESCE(SumVendorEstimate.InvoiceAmount, 0) AS VendorInvoiceAmount,
+--     COALESCE(SumPayment.paymentamount, 0) AS SumPayment,
+--     COALESCE(SumInvoice.EstimateAmount, 0) as EstimateAmount,
+--     CASE
+--         WHEN OrdersView.OrderStatus = 'Cancelled' THEN 0
+--         ELSE
+--             CASE
+--                 WHEN COALESCE(SumInvoice.invoiceamount, 0) = 0 THEN SumInvoice.EstimateAmount
+--                 ELSE SumInvoice.invoiceamount
+--             END
+--     END - COALESCE(SumReceipt.receiptamount, 0) AS ComputedPending,
+--     COALESCE(SumReceipt.receiptamount, 0) AS SumReceipt,
+--     OrdersView.OrderDate,
+--     COALESCE(OrdersView.OrderStatus, '') as OrderStatus,
+--     COALESCE(SumInvoice.invoiceamount, 0) as invoiceamount,
+--     COALESCE(SumReceipt.receiptamount - SumPayment.paymentamount - SumInvoice.TaxAmount, 0) AS Profit,
+--     COALESCE(OrdersView.Owner, 0) as Owner,
+--     COALESCE(OrdersView.Status, 0) AS OrderStatusId,
+--     COALESCE(OrdersView.LOBName, '') as LOBName,
+--     COALESCE(OrdersView.OwnerName, '') as OwnerName,
+--     COALESCE(OrdersView.ServiceType, '') as ServiceType,
+--     OrdersView.ClientID,
+--     COALESCE(OrdersView.ServiceId, 0) as ServiceId,
+--     COALESCE(OrdersView.Ageing, 0) as Ageing,
+--     COALESCE(OrdersView.EntityName, '') as EntityName
+-- FROM
+--     OrdersView
+-- LEFT OUTER JOIN (
+--     SELECT
+--         OrderID,
+--         SUM(InvoiceAmount) AS invoiceamount,
+--         SUM(EstimateAmount) AS EstimateAmount,
+--         SUM(COALESCE(Tax, 0)) AS TaxAmount
+--     FROM
+--         Order_Invoice
+--     GROUP BY
+--         OrderID
+-- ) AS SumInvoice ON OrdersView.ID = SumInvoice.OrderID
+-- LEFT OUTER JOIN (
+--     SELECT
+--         OrderID,
+--         SUM(Amount + COALESCE(TDS, 0)) AS receiptamount
+--     FROM
+--         Order_Receipt
+--     GROUP BY
+--         OrderID
+-- ) AS SumReceipt ON OrdersView.ID = SumReceipt.OrderID
+-- LEFT OUTER JOIN (
+--     SELECT
+--         OrderID,
+--         SUM(Amount) AS paymentamount
+--     FROM
+--         Order_Payment
+--     GROUP BY
+--         OrderID
+-- ) AS SumPayment ON OrdersView.ID = SumPayment.OrderID
+-- LEFT OUTER JOIN (
+--     SELECT
+--         OrderID,
+--         SUM(InvoiceAmount) AS InvoiceAmount,
+--         SUM(Amount) AS EstimateAmount
+--     FROM
+--         Order_VendorEstimate
+--     GROUP BY
+--         OrderID
+-- ) AS SumVendorEstimate ON OrdersView.ID = SumVendorEstimate.OrderID;
+
+
+-- CREATE VIEW rpt_clientswithadvanceholdingamounts AS
+-- SELECT
+--     clientname,
+--     COALESCE(SUM(sumpayment), 0) AS payments,
+--     COALESCE(SUM(sumreceipt), 0) AS receipts,
+--     row_number() OVER (ORDER BY clientname) AS rn
+-- FROM
+--     clientsummaryview
+-- WHERE
+--     service = 'H-Advance Paid'
+-- GROUP BY
+--     clientname
+-- HAVING
+--     COALESCE(SUM(sumpayment), 0) < COALESCE(SUM(sumreceipt), 0);
+
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 
-CREATE VIEW rpt_clientswithadvanceholdingamounts AS
-SELECT
-    clientname,
-    COALESCE(SUM(sumpayment), 0) AS payments,
-    COALESCE(SUM(sumreceipt), 0) AS receipts,
-    row_number() OVER (ORDER BY clientname) AS rn
-FROM
-    clientsummaryview
-WHERE
-    service = 'H-Advance Paid'
-GROUP BY
-    clientname
-HAVING
-    COALESCE(SUM(sumpayment), 0) < COALESCE(SUM(sumreceipt), 0);
+-- CREATE VIEW rpt_clients_transactions AS
+-- SELECT
+--     'Invoice' AS type,
+--     ov.clientname,
+--     oi.id,
+--     oi.invoicedate AS date,
+--     oi.invoiceamount AS amount,
+--     NULL AS tds,
+--     REPLACE(REPLACE(ov.briefdescription, CHR(10), ''), CHR(13), '') AS orderdetails,
+--     e.name AS entity,
+--     s.service,
+--     REPLACE(REPLACE(oi.quotedescription, CHR(10), ''), CHR(13), '') AS details,
+--     '' AS mode,
+--     ov.clienttypename AS client_type,
+--     ov.id AS order_id,
+--     ov.clientid AS clientid,
+--     getmonthyear(oi.invoicedate) AS monthyear,
+--     getfinancialyear(oi.invoicedate) AS fy,
+--     ov.lobname
+-- FROM
+--     order_invoice oi
+-- LEFT JOIN
+--     ordersview ov ON ov.id = oi.orderid
+-- LEFT JOIN
+--     entity e ON e.id = oi.entityid
+-- LEFT JOIN
+--     services s ON s.id = ov.serviceid
+-- WHERE
+--     LOWER(ov.clienttypename) = 'pma-owner'
 
-CREATE VIEW ClientSummaryView AS
-SELECT
-    OrdersView.ID AS OrderId,
-    COALESCE(OrdersView.ClientName, '') as ClientName,
-    COALESCE(OrdersView.PropertyDescription, '') as PropertyDescription,
-    COALESCE(OrdersView.BriefDescription, '') as BriefDescription,
-    COALESCE(OrdersView.Service, '') as Service,
-    COALESCE(SumVendorEstimate.EstimateAmount, 0) AS VendorEstimate,
-    COALESCE(SumVendorEstimate.InvoiceAmount, 0) AS VendorInvoiceAmount,
-    COALESCE(SumPayment.paymentamount, 0) AS SumPayment,
-    COALESCE(SumInvoice.EstimateAmount, 0) as EstimateAmount,
-    CASE
-        WHEN OrdersView.OrderStatus = 'Cancelled' THEN 0
-        ELSE
-            CASE
-                WHEN COALESCE(SumInvoice.invoiceamount, 0) = 0 THEN SumInvoice.EstimateAmount
-                ELSE SumInvoice.invoiceamount
-            END
-    END - COALESCE(SumReceipt.receiptamount, 0) AS ComputedPending,
-    COALESCE(SumReceipt.receiptamount, 0) AS SumReceipt,
-    OrdersView.OrderDate,
-    COALESCE(OrdersView.OrderStatus, '') as OrderStatus,
-    COALESCE(SumInvoice.invoiceamount, 0) as invoiceamount,
-    COALESCE(SumReceipt.receiptamount - SumPayment.paymentamount - SumInvoice.TaxAmount, 0) AS Profit,
-    COALESCE(OrdersView.Owner, 0) as Owner,
-    COALESCE(OrdersView.Status, 0) AS OrderStatusId,
-    COALESCE(OrdersView.LOBName, '') as LOBName,
-    COALESCE(OrdersView.OwnerName, '') as OwnerName,
-    COALESCE(OrdersView.ServiceType, '') as ServiceType,
-    OrdersView.ClientID,
-    COALESCE(OrdersView.ServiceId, 0) as ServiceId,
-    COALESCE(OrdersView.Ageing, 0) as Ageing,
-    COALESCE(OrdersView.EntityName, '') as EntityName
-FROM
-    OrdersView
-LEFT OUTER JOIN (
-    SELECT
-        OrderID,
-        SUM(InvoiceAmount) AS invoiceamount,
-        SUM(EstimateAmount) AS EstimateAmount,
-        SUM(COALESCE(Tax, 0)) AS TaxAmount
-    FROM
-        Order_Invoice
-    GROUP BY
-        OrderID
-) AS SumInvoice ON OrdersView.ID = SumInvoice.OrderID
-LEFT OUTER JOIN (
-    SELECT
-        OrderID,
-        SUM(Amount + COALESCE(TDS, 0)) AS receiptamount
-    FROM
-        Order_Receipt
-    GROUP BY
-        OrderID
-) AS SumReceipt ON OrdersView.ID = SumReceipt.OrderID
-LEFT OUTER JOIN (
-    SELECT
-        OrderID,
-        SUM(Amount) AS paymentamount
-    FROM
-        Order_Payment
-    GROUP BY
-        OrderID
-) AS SumPayment ON OrdersView.ID = SumPayment.OrderID
-LEFT OUTER JOIN (
-    SELECT
-        OrderID,
-        SUM(InvoiceAmount) AS InvoiceAmount,
-        SUM(Amount) AS EstimateAmount
-    FROM
-        Order_VendorEstimate
-    GROUP BY
-        OrderID
-) AS SumVendorEstimate ON OrdersView.ID = SumVendorEstimate.OrderID;
+-- UNION ALL
+
+-- SELECT
+--     'Payment' AS type,
+--     cv.fullname,
+--     crv.id,
+--     crv.recddate AS date,
+--     -1 * crv.amount AS amount,
+--     crv.tds,
+--     NULL AS orderdetails,
+--     e.name AS entity,
+--     NULL AS service,
+--     hr.name AS details,
+--     crv.paymentmode AS mode,
+--     cv.clienttypename,
+--     NULL AS order_id,
+--     cv.id AS clientid,
+--     getmonthyear(crv.recddate) AS monthyear,
+--     getfinancialyear(crv.recddate) AS fy,
+--     NULL AS lobname
+-- FROM
+--     clientview cv
+-- INNER JOIN
+--     clientreceiptview crv ON cv.id = crv.clientid
+-- LEFT JOIN
+--     entity e ON crv.entityid = e.id
+-- LEFT JOIN
+--     howreceived hr ON crv.howreceivedid = hr.id
+-- WHERE
+--     LOWER(cv.clienttypename) = 'pma-owner'
+
+-- UNION ALL
+
+-- SELECT
+--     'OrderRec' AS type,
+--     cv.fullname,
+--     orv.id,
+--     orv.recddate AS date,
+--     -1 * orv.amount AS amount,
+--     orv.tds,
+--     orv.orderdescription AS orderdetails,
+--     e.name AS entity,
+--     orv.service,
+--     orv.receiptdesc AS details,
+--     orv.paymentmode AS mode,
+--     cv.clienttypename,
+--     NULL AS order_id,
+--     cv.id AS clientid,
+--     getmonthyear(orv.recddate) AS monthyear,
+--     getfinancialyear(orv.recddate) AS fy,
+--     orv.lobname
+-- FROM
+--     clientview cv
+-- INNER JOIN
+--     orderreceiptview orv ON cv.id = orv.clientid
+-- LEFT JOIN
+--     entity e ON orv.entityid = e.id
+-- WHERE
+--     LOWER(cv.clienttypename) = 'pma-owner';
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+-- CREATE VIEW clientstatementview AS
+-- SELECT
+--     'Invoice' AS type,
+--     ov.clientname,
+--     oi.id,
+--     oi.invoicedate AS date,
+--     oi.invoiceamount AS amount,
+--     NULL AS tds,
+--     ov.briefdescription AS orderdetails,
+--     e.name,
+--     s.service,
+--     oi.quotedescription AS details,
+--     oi.visibletoclient,
+--     ov.clientid,
+--     '' AS mode,
+--     ov.lobname AS lob_name
+-- FROM
+--     order_invoice oi
+-- LEFT JOIN
+--     ordersview ov ON ov.id = oi.orderid
+-- LEFT JOIN
+--     entity e ON e.id = oi.entityid
+-- LEFT JOIN
+--     services s ON s.id = ov.serviceid
+
+-- UNION
+
+-- SELECT
+--     'C Receipt' AS type,
+--     cv.fullname,
+--     crv.id,
+--     crv.recddate AS date,
+--     crv.amount AS amount,
+--     crv.tds,
+--     NULL AS orderdetails,
+--     e.name AS entity,
+--     NULL AS service,
+--     crv.receiptdesc AS details,
+--     crv.visibletoclient,
+--     cv.id,
+--     crv.paymentmode AS mode,
+--     '' AS lob_name
+-- FROM
+--     clientview cv
+-- INNER JOIN
+--     clientreceiptview crv ON cv.id = crv.clientid
+-- LEFT JOIN
+--     entity e ON crv.entityid = e.id
+
+-- UNION
+
+-- SELECT
+--     'Payment' AS type,
+--     cv.fullname,
+--     opv.id,
+--     opv.paymentdate AS date,
+--     opv.amount AS amount,
+--     opv.tds,
+--     opv.orderdescription AS orderdetails,
+--     e.name AS entity,
+--     opv.service AS service,
+--     opv.description AS details,
+--     FALSE AS visible_to_client,
+--     cv.id,
+--     opv.mode_of_payment AS mode,
+--     opv.lobname AS lob_name
+-- FROM
+--     clientview cv
+-- INNER JOIN
+--     orderpaymentview opv ON cv.id = opv.clientid
+-- LEFT JOIN
+--     entity e ON opv.entityid = e.id
+
+-- UNION
+
+-- SELECT
+--     'Order Receipt' AS type,
+--     cv.fullname,
+--     orv.id,
+--     orv.recddate AS date,
+--     orv.amount AS amount,
+--     orv.tds,
+--     orv.orderdescription AS orderdetails,
+--     e.name AS entity,
+--     orv.service AS service,
+--     orv.receiptdesc AS details,
+--     FALSE AS visible_to_client,
+--     cv.id AS clientid,
+--     orv.paymentmode AS mode,
+--     orv.lobname AS lob_name
+-- FROM
+--     clientview cv
+-- INNER JOIN
+--     orderreceiptview orv ON cv.id = orv.clientid
+-- LEFT JOIN
+--     entity e ON orv.entityid = e.id;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+-- CREATE VIEW duplicateclients AS
+-- SELECT
+--     c.firstname,
+--     c.lastname,
+--     COUNT(c.email1) AS count,
+--     c.clienttype,
+--     ct.name
+-- FROM
+--     client c
+-- INNER JOIN
+--     client_type ct ON c.clienttype = ct.id
+-- GROUP BY
+--     c.email1,
+--     c.firstname,
+--     c.lastname,
+--     c.clienttype,
+--     ct.name,
+--     c.isdeleted
+-- HAVING
+--     COUNT(c.email1) > 1
+--     AND c.isdeleted = false;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+-- CREATE VIEW clientbankdetails AS
+-- SELECT
+--     c.firstname,
+--     c.lastname,
+--     ca.onlinemailid,
+--     cbi.bankname,
+--     cbi.bankbranch,
+--     cbi.bankaccountno,
+--     cbi.bankaccountholdername,
+--     cbi.bankcity,
+--     cbi.bankifsccode,
+--     cbi.bankaccounttype
+-- FROM
+--     client_access ca
+-- INNER JOIN
+--     client c ON ca.clientid = c.id
+-- INNER JOIN
+--     client_bank_info cbi ON c.id = cbi.clientid;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 
-CREATE VIEW rpt_clients_transactions AS
-SELECT
-    'Invoice' AS type,
-    ov.clientname,
-    oi.id,
-    oi.invoicedate AS date,
-    oi.invoiceamount AS amount,
-    NULL AS tds,
-    REPLACE(REPLACE(ov.briefdescription, CHR(10), ''), CHR(13), '') AS orderdetails,
-    e.name AS entity,
-    s.service,
-    REPLACE(REPLACE(oi.quotedescription, CHR(10), ''), CHR(13), '') AS details,
-    '' AS mode,
-    ov.clienttypename AS client_type,
-    ov.id AS order_id,
-    ov.clientid AS clientid,
-    getmonthyear(oi.invoicedate) AS monthyear,
-    getfinancialyear(oi.invoicedate) AS fy,
-    ov.lobname
-FROM
-    order_invoice oi
-LEFT JOIN
-    ordersview ov ON ov.id = oi.orderid
-LEFT JOIN
-    entity e ON e.id = oi.entityid
-LEFT JOIN
-    services s ON s.id = ov.serviceid
-WHERE
-    LOWER(ov.clienttypename) = 'pma-owner'
+-- CREATE VIEW rpt_nonpmaclient AS
+-- SELECT
+--     'Invoice' AS type,
+--     ov.clientname,
+--     oi.id,
+--     oi.invoicedate AS date,
+--     oi.invoiceamount AS amount,
+--     NULL AS tds,
+--     REPLACE(REPLACE(ov.briefdescription, CHR(10), ''), CHR(13), '') AS orderdetails,
+--     e.name AS entity,
+--     s.service,
+--     REPLACE(REPLACE(oi.quotedescription, CHR(10), ''), CHR(13), '') AS details,
+--     '' AS mode,
+--     ov.clienttypename AS client_type,
+--     ov.id AS order_id,
+--     ov.clientid AS clientid,
+--     getmonthyear(oi.invoicedate) AS monthyear,
+--     getfinancialyear(oi.invoicedate) AS fy,
+--     ov.lobname AS lobname
+-- FROM
+--     order_invoice oi
+-- LEFT JOIN
+--     ordersview ov ON ov.id = oi.orderid
+-- LEFT JOIN
+--     entity e ON e.id = oi.entityid
+-- LEFT JOIN
+--     services s ON s.id = ov.serviceid
+-- WHERE
+--     ov.clienttypename NOT LIKE 'pma - owner' AND
+--     ov.clientname NOT LIKE '%1-%'
 
-UNION ALL
+-- UNION ALL
 
-SELECT
-    'Payment' AS type,
-    cv.fullname,
-    crv.id,
-    crv.recddate AS date,
-    -1 * crv.amount AS amount,
-    crv.tds,
-    NULL AS orderdetails,
-    e.name AS entity,
-    NULL AS service,
-    hr.name AS details,
-    crv.paymentmode AS mode,
-    cv.clienttypename,
-    NULL AS order_id,
-    cv.id AS clientid,
-    getmonthyear(crv.recddate) AS monthyear,
-    getfinancialyear(crv.recddate) AS fy,
-    NULL AS lobname
-FROM
-    clientview cv
-INNER JOIN
-    clientreceiptview crv ON cv.id = crv.clientid
-LEFT JOIN
-    entity e ON crv.entityid = e.id
-LEFT JOIN
-    howreceived hr ON crv.howreceivedid = hr.id
-WHERE
-    LOWER(cv.clienttypename) = 'pma-owner'
+-- SELECT
+--     'Payment' AS type,
+--     cv.fullname,
+--     crv.id,
+--     crv.recddate AS date,
+--     -1 * crv.amount AS amount,
+--     crv.tds,
+--     NULL AS orderdetails,
+--     e.name AS entity,
+--     NULL AS service,
+--     hr.name AS details,
+--     crv.paymentmode AS mode,
+--     cv.clienttypename AS client_type,
+--     NULL AS order_id,
+--     cv.id AS clientid,
+--     getmonthyear(crv.recddate) AS monthyear,
+--     getfinancialyear(crv.recddate) AS fy,
+--     NULL AS lobname
+-- FROM
+--     clientview cv
+-- INNER JOIN
+--     clientreceiptview crv ON cv.id = crv.clientid
+-- LEFT JOIN
+--     entity e ON crv.entityid = e.id
+-- LEFT JOIN
+--     howreceived hr ON crv.howreceivedid = hr.id
+-- WHERE
+--     cv.clienttypename NOT LIKE 'pma - owner' AND
+--     cv.firstname NOT LIKE '%1-%'
 
-UNION ALL
+-- UNION ALL
 
-SELECT
-    'OrderRec' AS type,
-    cv.fullname,
-    orv.id,
-    orv.recddate AS date,
-    -1 * orv.amount AS amount,
-    orv.tds,
-    orv.orderdescription AS orderdetails,
-    e.name AS entity,
-    orv.service,
-    orv.receiptdesc AS details,
-    orv.paymentmode AS mode,
-    cv.clienttypename,
-    NULL AS order_id,
-    cv.id AS clientid,
-    getmonthyear(orv.recddate) AS monthyear,
-    getfinancialyear(orv.recddate) AS fy,
-    orv.lobname
-FROM
-    clientview cv
-INNER JOIN
-    orderreceiptview orv ON cv.id = orv.clientid
-LEFT JOIN
-    entity e ON orv.entityid = e.id
-WHERE
-    LOWER(cv.clienttypename) = 'pma-owner';
-
-------------------------------------------------------------------------------------------------------------------------------------------
-
-CREATE VIEW clientstatementview AS
-SELECT
-    'Invoice' AS type,
-    ov.clientname,
-    oi.id,
-    oi.invoicedate AS date,
-    oi.invoiceamount AS amount,
-    NULL AS tds,
-    ov.briefdescription AS orderdetails,
-    e.name,
-    s.service,
-    oi.quotedescription AS details,
-    oi.visibletoclient,
-    ov.clientid,
-    '' AS mode,
-    ov.lobname AS lob_name
-FROM
-    order_invoice oi
-LEFT JOIN
-    ordersview ov ON ov.id = oi.orderid
-LEFT JOIN
-    entity e ON e.id = oi.entityid
-LEFT JOIN
-    services s ON s.id = ov.serviceid
-
-UNION
-
-SELECT
-    'C Receipt' AS type,
-    cv.fullname,
-    crv.id,
-    crv.recddate AS date,
-    crv.amount AS amount,
-    crv.tds,
-    NULL AS orderdetails,
-    e.name AS entity,
-    NULL AS service,
-    crv.receiptdesc AS details,
-    crv.visibletoclient,
-    cv.id,
-    crv.paymentmode AS mode,
-    '' AS lob_name
-FROM
-    clientview cv
-INNER JOIN
-    clientreceiptview crv ON cv.id = crv.clientid
-LEFT JOIN
-    entity e ON crv.entityid = e.id
-
-UNION
-
-SELECT
-    'Payment' AS type,
-    cv.fullname,
-    opv.id,
-    opv.paymentdate AS date,
-    opv.amount AS amount,
-    opv.tds,
-    opv.orderdescription AS orderdetails,
-    e.name AS entity,
-    opv.service AS service,
-    opv.description AS details,
-    FALSE AS visible_to_client,
-    cv.id,
-    opv.mode_of_payment AS mode,
-    opv.lobname AS lob_name
-FROM
-    clientview cv
-INNER JOIN
-    orderpaymentview opv ON cv.id = opv.clientid
-LEFT JOIN
-    entity e ON opv.entityid = e.id
-
-UNION
-
-SELECT
-    'Order Receipt' AS type,
-    cv.fullname,
-    orv.id,
-    orv.recddate AS date,
-    orv.amount AS amount,
-    orv.tds,
-    orv.orderdescription AS orderdetails,
-    e.name AS entity,
-    orv.service AS service,
-    orv.receiptdesc AS details,
-    FALSE AS visible_to_client,
-    cv.id AS clientid,
-    orv.paymentmode AS mode,
-    orv.lobname AS lob_name
-FROM
-    clientview cv
-INNER JOIN
-    orderreceiptview orv ON cv.id = orv.clientid
-LEFT JOIN
-    entity e ON orv.entityid = e.id;
-
-------------------------------------------------------------------------------------------------------------------------------------------
-
-CREATE VIEW duplicateclients AS
-SELECT
-    c.firstname,
-    c.lastname,
-    COUNT(c.email1) AS count,
-    c.clienttype,
-    ct.name
-FROM
-    client c
-INNER JOIN
-    client_type ct ON c.clienttype = ct.id
-GROUP BY
-    c.email1,
-    c.firstname,
-    c.lastname,
-    c.clienttype,
-    ct.name,
-    c.isdeleted
-HAVING
-    COUNT(c.email1) > 1
-    AND c.isdeleted = false;
-
-------------------------------------------------------------------------------------------------------------------------------------------
-
-CREATE VIEW clientbankdetails AS
-SELECT
-    c.firstname,
-    c.lastname,
-    ca.onlinemailid,
-    cbi.bankname,
-    cbi.bankbranch,
-    cbi.bankaccountno,
-    cbi.bankaccountholdername,
-    cbi.bankcity,
-    cbi.bankifsccode,
-    cbi.bankaccounttype
-FROM
-    client_access ca
-INNER JOIN
-    client c ON ca.clientid = c.id
-INNER JOIN
-    client_bank_info cbi ON c.id = cbi.clientid;
-
-------------------------------------------------------------------------------------------------------------------------------------------
-
-
-CREATE VIEW rpt_nonpmaclient AS
-SELECT
-    'Invoice' AS type,
-    ov.clientname,
-    oi.id,
-    oi.invoicedate AS date,
-    oi.invoiceamount AS amount,
-    NULL AS tds,
-    REPLACE(REPLACE(ov.briefdescription, CHR(10), ''), CHR(13), '') AS orderdetails,
-    e.name AS entity,
-    s.service,
-    REPLACE(REPLACE(oi.quotedescription, CHR(10), ''), CHR(13), '') AS details,
-    '' AS mode,
-    ov.clienttypename AS client_type,
-    ov.id AS order_id,
-    ov.clientid AS clientid,
-    getmonthyear(oi.invoicedate) AS monthyear,
-    getfinancialyear(oi.invoicedate) AS fy,
-    ov.lobname AS lobname
-FROM
-    order_invoice oi
-LEFT JOIN
-    ordersview ov ON ov.id = oi.orderid
-LEFT JOIN
-    entity e ON e.id = oi.entityid
-LEFT JOIN
-    services s ON s.id = ov.serviceid
-WHERE
-    ov.clienttypename NOT LIKE 'pma - owner' AND
-    ov.clientname NOT LIKE '%1-%'
-
-UNION ALL
-
-SELECT
-    'Payment' AS type,
-    cv.fullname,
-    crv.id,
-    crv.recddate AS date,
-    -1 * crv.amount AS amount,
-    crv.tds,
-    NULL AS orderdetails,
-    e.name AS entity,
-    NULL AS service,
-    hr.name AS details,
-    crv.paymentmode AS mode,
-    cv.clienttypename AS client_type,
-    NULL AS order_id,
-    cv.id AS clientid,
-    getmonthyear(crv.recddate) AS monthyear,
-    getfinancialyear(crv.recddate) AS fy,
-    NULL AS lobname
-FROM
-    clientview cv
-INNER JOIN
-    clientreceiptview crv ON cv.id = crv.clientid
-LEFT JOIN
-    entity e ON crv.entityid = e.id
-LEFT JOIN
-    howreceived hr ON crv.howreceivedid = hr.id
-WHERE
-    cv.clienttypename NOT LIKE 'pma - owner' AND
-    cv.firstname NOT LIKE '%1-%'
-
-UNION ALL
-
-SELECT
-    'OrderRec' AS type,
-    cv.fullname,
-    orv.id,
-    orv.recddate AS date,
-    -1 * orv.amount AS amount,
-    orv.tds,
-    orv.orderdescription AS orderdetails,
-    e.name AS entity,
-    orv.service AS service,
-    orv.receiptdesc AS details,
-    orv.paymentmode AS mode,
-    cv.clienttypename AS client_type,
-    orv.orderid AS order_id,
-    cv.id AS clientid,
-    getmonthyear(orv.recddate) AS monthyear,
-    getfinancialyear(orv.recddate) AS fy,
-    orv.lobname AS lobname
-FROM
-    clientview cv
-INNER JOIN
-    orderreceiptview orv ON cv.id = orv.clientid
-LEFT JOIN
-    entity e ON orv.entityid = e.id
-WHERE
-    cv.clienttypename NOT LIKE 'pma - owner' AND
-    cv.firstname NOT LIKE '%1-%';
+-- SELECT
+--     'OrderRec' AS type,
+--     cv.fullname,
+--     orv.id,
+--     orv.recddate AS date,
+--     -1 * orv.amount AS amount,
+--     orv.tds,
+--     orv.orderdescription AS orderdetails,
+--     e.name AS entity,
+--     orv.service AS service,
+--     orv.receiptdesc AS details,
+--     orv.paymentmode AS mode,
+--     cv.clienttypename AS client_type,
+--     orv.orderid AS order_id,
+--     cv.id AS clientid,
+--     getmonthyear(orv.recddate) AS monthyear,
+--     getfinancialyear(orv.recddate) AS fy,
+--     orv.lobname AS lobname
+-- FROM
+--     clientview cv
+-- INNER JOIN
+--     orderreceiptview orv ON cv.id = orv.clientid
+-- LEFT JOIN
+--     entity e ON orv.entityid = e.id
+-- WHERE
+--     cv.clienttypename NOT LIKE 'pma - owner' AND
+--     cv.firstname NOT LIKE '%1-%';
 
 -- 1. Bank Record - Client Order Receipt Mismatch Details
 
@@ -5359,30 +6249,13 @@ ORDER BY
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 --4.
-CREATE VIEW BankReconcillationview AS
 
-SELECT
-    p.Date,
-    p.PaymentMode,
-    COALESCE(p.Bankst, 0) AS BankStAMount,
-    COALESCE(p.ORAmount, 0) AS ORAmount,
-    COALESCE(p.CRAMount, 0) AS CRAMount
-FROM
-    (
-        SELECT
-            COALESCE(BankSt.Date, ORAmount.Date, CRAMount.Date) AS Date,
-            COALESCE(BankSt.Name, ORAmount.Name, CRAMount.Name) AS PaymentMode,
-            COALESCE(BankSt.BankStAMount, 0) AS Bankst,
-            COALESCE(ORAmount.ORAmount, 0) AS ORAmount,
-            COALESCE(CRAMount.CRAMount, 0) AS CRAMount
-        FROM
-            RptBankstAmount AS BankSt
-        FULL OUTER JOIN RptOrderAmount AS ORAmount ON BankSt.Date = ORAmount.Date AND BankSt.Name = ORAmount.Name
-        FULL OUTER JOIN RptClientAmount AS CRAMount ON BankSt.Date = CRAMount.Date AND BankSt.Name = CRAMount.Name
-    ) AS p;
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+--5.
 
 CREATE VIEW RptBankstAmount1 AS
-
 SELECT
     COALESCE(SUM(CASE WHEN BankSt.crdr = 'DR' THEN BankSt.Amount ELSE 0 END), 0) AS BankStAMount,
     BankSt.Date,
@@ -5397,44 +6270,15 @@ GROUP BY
     BankSt.ModeofPayment,
     Mode_Of_payment.Name;
 
-CREATE VIEW RptClientAmount AS
-
-SELECT
-    COALESCE(SUM(Client_Receipt.Amount), 0) AS CRAMount,
-    Client_Receipt.RecdDate AS Date,
-    Mode_Of_payment.Name,
-    Client_Receipt.PaymentMode
-FROM
-    Client_Receipt
-INNER JOIN
-    Mode_Of_payment ON Client_Receipt.PaymentMode = Mode_Of_payment.ID
-WHERE
-    Client_Receipt.IsDeleted = false
-GROUP BY
-    Client_Receipt.RecdDate,
-    Mode_Of_payment.Name,
-    Client_Receipt.PaymentMode;
-
-CREATE VIEW RptOrderAmount AS
-
-SELECT
-    COALESCE(SUM(Order_Receipt.Amount), 0) AS ORAmount,
-    Order_Receipt.RecdDate AS Date,
-    Mode_Of_payment.Name,
-    Order_Receipt.PaymentMode
-FROM
-    Order_Receipt
-INNER JOIN
-    Mode_Of_payment ON Order_Receipt.PaymentMode = Mode_Of_payment.ID
-WHERE
-    Order_Receipt.IsDeleted = false
-GROUP BY
-    Order_Receipt.RecdDate,
-    Mode_Of_payment.Name,
-    Order_Receipt.PaymentMode;
-------------------------------------------------------------------------------------------------------------------------------------------
-
---5.
+CREATE VIEW rptorderpaymentamount1 As
+ SELECT COALESCE(sum(order_payment.amount), 0::numeric) AS opamount,
+    order_payment.paymentdate AS date,
+    mode_of_payment.name,
+    order_payment.mode
+   FROM order_payment
+     JOIN mode_of_payment ON order_payment.mode = mode_of_payment.id
+  WHERE order_payment.isdeleted = false
+  GROUP BY order_payment.paymentdate, mode_of_payment.name, order_payment.mode;
 
 CREATE VIEW BankReconcillationviewPayment AS
 SELECT
@@ -5458,20 +6302,7 @@ FROM
         FULL OUTER JOIN RptContractualPaymentAmount1 AS CPAMount ON BankSt.Date = CPAMount.Date AND BankSt.Name = CPAMount.Name
     ) AS p;
 
-CREATE VIEW RptBankstAmount1 AS
-SELECT
-    COALESCE(SUM(CASE WHEN BankSt.crdr = 'DR' THEN BankSt.Amount ELSE 0 END), 0) AS BankStAMount,
-    BankSt.Date,
-    BankSt.ModeofPayment,
-    Mode_Of_payment.Name
-FROM
-    BankSt
-INNER JOIN
-    Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
-GROUP BY
-    BankSt.Date,
-    BankSt.ModeofPayment,
-    Mode_Of_payment.Name;
+
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -5512,31 +6343,31 @@ GROUP BY
 --10.04
 
 
-CREATE VIEW tally_orderpayment_bank2bank AS
-SELECT
- '' AS uniqueid,
- CAST(paymentdate AS DATE) AS date,
- 'Payment' AS voucher,
- 'Payment' AS vouchertype,
- '' AS vouchernumber,
-CASE 
-    WHEN mode = 5 THEN 'DAP-ICICI-65'
-    WHEN mode = 17 THEN 'DAP-ICICI-42'
-    ELSE 'SENDINGMODE'
-END AS drledger,
- mode_of_payment AS crledger,
- amount AS ledgeramount,
- clientname || '- ' || orderdescription || '- ' || description AS narration,
- '' AS instrumentno,
- '' AS instrumentdate,
- mode,
- entityid,
- tds,
- serviceid,
- clientid
-FROM orderpaymentview
-WHERE serviceid = 76
-  AND isdeleted = false;
+-- CREATE VIEW tally_orderpayment_bank2bank AS
+-- SELECT
+--  '' AS uniqueid,
+--  CAST(paymentdate AS DATE) AS date,
+--  'Payment' AS voucher,
+--  'Payment' AS vouchertype,
+--  '' AS vouchernumber,
+-- CASE 
+--     WHEN mode = 5 THEN 'DAP-ICICI-65'
+--     WHEN mode = 17 THEN 'DAP-ICICI-42'
+--     ELSE 'SENDINGMODE'
+-- END AS drledger,
+--  mode_of_payment AS crledger,
+--  amount AS ledgeramount,
+--  clientname || '- ' || orderdescription || '- ' || description AS narration,
+--  '' AS instrumentno,
+--  '' AS instrumentdate,
+--  mode,
+--  entityid,
+--  tds,
+--  serviceid,
+--  clientid
+-- FROM orderpaymentview
+-- WHERE serviceid = 76
+--   AND isdeleted = false;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -5571,27 +6402,27 @@ WHERE serviceid = 75
 
 --10.02
 
-CREATE VIEW tally_orderpayments_taxes AS
-SELECT 
- '' AS uniqueid,
- CAST(paymentdate AS DATE) AS date,
- 'Payment' AS voucher,
- 'Payment' AS vouchertype,
- '' AS vouchernumber,
- orderdescription AS drledger,
- mode_of_payment AS crledger,
- amount AS ledgeramount,
- clientname || '- ' || orderdescription || '- ' || description AS narration,
- '' AS instrumentno,
- '' AS instrumentdate,
- mode,
- entityid,
- tds,
- serviceid,
- clientid
-FROM orderpaymentview
-WHERE clientid = 15284
-  AND isdeleted = false;
+-- CREATE VIEW tally_orderpayments_taxes AS
+-- SELECT 
+--  '' AS uniqueid,
+--  CAST(paymentdate AS DATE) AS date,
+--  'Payment' AS voucher,
+--  'Payment' AS vouchertype,
+--  '' AS vouchernumber,
+--  orderdescription AS drledger,
+--  mode_of_payment AS crledger,
+--  amount AS ledgeramount,
+--  clientname || '- ' || orderdescription || '- ' || description AS narration,
+--  '' AS instrumentno,
+--  '' AS instrumentdate,
+--  mode,
+--  entityid,
+--  tds,
+--  serviceid,
+--  clientid
+-- FROM orderpaymentview
+-- WHERE clientid = 15284
+--   AND isdeleted = false;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -5651,235 +6482,236 @@ WHERE clientid NOT IN (15284, 15285)
 
 --10.01
 
-CREATE VIEW tally_clientreceipt AS
-SELECT
- ' ' AS uniqueid,
- CAST(recddate AS DATE) AS date,
- 'Receipt' AS type,
- 'Receipt' AS vouchertype,    
- ' ' AS vouchernumber,
- paymentmode AS drledger,
- clientname AS crledger,
- amount AS ledgeramount,
- 'Property management charges received' AS narration,
- ' ' AS instrumentno,
- ' ' AS instrumentdate,
- paymentmodeid,
- entityid
-FROM clientreceiptlistview
-WHERE isdeleted = false;
+-- CREATE VIEW tally_clientreceipt AS
+-- SELECT
+--  ' ' AS uniqueid,
+--  CAST(recddate AS DATE) AS date,
+--  'Receipt' AS type,
+--  'Receipt' AS vouchertype,    
+--  ' ' AS vouchernumber,
+--  paymentmode AS drledger,
+--  clientname AS crledger,
+--  amount AS ledgeramount,
+--  'Property management charges received' AS narration,
+--  ' ' AS instrumentno,
+--  ' ' AS instrumentdate,
+--  paymentmodeid,
+--  entityid
+-- FROM clientreceiptlistview
+-- WHERE isdeleted = false;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 --10.05
 
-CREATE OR REPLACE VIEW tally_cr_to_salesinvoice AS
-SELECT
-' ' AS uniqueid,
-'Sales' AS base_vch_type,
-'GST Invoice' AS vch_type,
-' ' AS vch_no,
-CAST(client_receipt.recddate AS DATE) AS vch_date,
-' ' AS ref_no,
-' ' AS ref_date,
-client.firstname || ' ' || client.lastname AS party,
-' ' AS gstin,
-'Maharashtra' AS state,
-'Property Services' AS item_name,
-' ' AS item_hsn_code,
-' ' AS item_units,
-' ' AS item_qty,
-' ' AS item_rate,
-' ' AS item_discountpercentage,
-ROUND(client_receipt.amount / 1.18, 2) AS item_amount,
-' ' AS igst_percentage,
-' ' AS igst_amount,
-'9' AS cgst_percentage,
-ROUND(client_receipt.amount * 0.076271, 2) AS cgst_amount,
-'9' AS sgst_percentage,
-ROUND(client_receipt.amount * 0.076271, 2) AS sgst_amount,
-'GST Sale B2C' AS sales_purchase_ledger,
-' ' AS igst_ledger,
-'Output CGST' AS cgst_ledger,
-'Output SGST' AS sgst_ledger,
-'Real estate service fees (HSN 9972)' AS narration,
-'Yes' AS auto_round_off_yes_no,
-client_receipt.tds,
-client_receipt.serviceamount,
-client_receipt.reimbursementamount
-FROM client_receipt
-INNER JOIN client ON client_receipt.clientid = client.id
-INNER JOIN entity ON client_receipt.entityid = entity.id
-WHERE
-entity.name ILIKE '%CURA%'
-AND
-client_receipt.isdeleted = false
-AND
-client_receipt.recddate > '2023-12-31'
-LIMIT 100;
+-- CREATE OR REPLACE VIEW tally_cr_to_salesinvoice AS
+-- SELECT
+-- ' ' AS uniqueid,
+-- 'Sales' AS base_vch_type,
+-- 'GST Invoice' AS vch_type,
+-- ' ' AS vch_no,
+-- CAST(client_receipt.recddate AS DATE) AS vch_date,
+-- ' ' AS ref_no,
+-- ' ' AS ref_date,
+-- client.firstname || ' ' || client.lastname AS party,
+-- ' ' AS gstin,
+-- 'Maharashtra' AS state,
+-- 'Property Services' AS item_name,
+-- ' ' AS item_hsn_code,
+-- ' ' AS item_units,
+-- ' ' AS item_qty,
+-- ' ' AS item_rate,
+-- ' ' AS item_discountpercentage,
+-- ROUND(client_receipt.amount / 1.18, 2) AS item_amount,
+-- ' ' AS igst_percentage,
+-- ' ' AS igst_amount,
+-- '9' AS cgst_percentage,
+-- ROUND(client_receipt.amount * 0.076271, 2) AS cgst_amount,
+-- '9' AS sgst_percentage,
+-- ROUND(client_receipt.amount * 0.076271, 2) AS sgst_amount,
+-- 'GST Sale B2C' AS sales_purchase_ledger,
+-- ' ' AS igst_ledger,
+-- 'Output CGST' AS cgst_ledger,
+-- 'Output SGST' AS sgst_ledger,
+-- 'Real estate service fees (HSN 9972)' AS narration,
+-- 'Yes' AS auto_round_off_yes_no,
+-- client_receipt.tds,
+-- client_receipt.serviceamount,
+-- client_receipt.reimbursementamount
+-- FROM client_receipt
+-- INNER JOIN client ON client_receipt.clientid = client.id
+-- INNER JOIN entity ON client_receipt.entityid = entity.id
+-- WHERE
+-- entity.name ILIKE '%CURA%'
+-- AND
+-- client_receipt.isdeleted = false
+-- AND
+-- client_receipt.recddate > '2023-12-31'
+-- LIMIT 100;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-SELECT 
-    SUM(receipts) - SUM(payments) AS diff
-FROM 
-    bankstbalanceview
-WHERE 
-    name LIKE '%DAP-ICICI-42%' 
-    AND date <= '2024-03-31';
+-- SELECT 
+--     SUM(receipts) - SUM(payments) AS diff
+-- FROM 
+--     bankstbalanceview
+-- WHERE 
+--     name LIKE '%DAP-ICICI-42%' 
+--     AND date <= '2024-03-31';
 
 
-SELECT
-    SUM(amount)
-FROM
-    bank_pmt_rcpts
-WHERE
-    bankname LIKE '%DAP-ICICI-42%'
-    AND date <= '2024-03-31';
+-- SELECT
+--     SUM(amount)
+-- FROM
+--     bank_pmt_rcpts
+-- WHERE
+--     bankname LIKE '%DAP-ICICI-42%'
+    -- AND date <= '2024-03-31';
 
 --11.1
 
-CREATE VIEW TotalClientIDsView AS
-SELECT 'Property ID' AS Type, Client.ID AS ClientID, Client_Property.ID AS RelatedID
-FROM Client
-INNER JOIN Client_Property ON Client.ID = Client_Property.ClientID
+-- CREATE VIEW TotalClientIDsView AS
+-- SELECT 'Property ID' AS Type, Client.ID AS ClientID, Client_Property.ID AS RelatedID
+-- FROM Client
+-- INNER JOIN Client_Property ON Client.ID = Client_Property.ClientID
 
-UNION
+-- UNION
 
-SELECT 'ClientReceipt ID' AS Type, Client.ID AS ClientID, Client_Receipt.ID AS RelatedID
-FROM Client
-INNER JOIN Client_Receipt ON Client.ID = Client_Receipt.ClientID
+-- SELECT 'ClientReceipt ID' AS Type, Client.ID AS ClientID, Client_Receipt.ID AS RelatedID
+-- FROM Client
+-- INNER JOIN Client_Receipt ON Client.ID = Client_Receipt.ClientID
 
-UNION
+-- UNION
 
-SELECT 'Order ID' AS Type, Client.ID AS ClientID, Orders.ID AS RelatedID
-FROM Client
-INNER JOIN Orders ON Client.ID = Orders.ClientID
+-- SELECT 'Order ID' AS Type, Client.ID AS ClientID, Orders.ID AS RelatedID
+-- FROM Client
+-- INNER JOIN Orders ON Client.ID = Orders.ClientID
 
-UNION
+-- UNION
 
-SELECT 'ClientPOA ID' AS Type, Client.ID AS ClientID, Client_POA.ID AS RelatedID
-FROM Client
-INNER JOIN Client_POA ON Client.ID = Client_POA.ClientID
+-- SELECT 'ClientPOA ID' AS Type, Client.ID AS ClientID, Client_POA.ID AS RelatedID
+-- FROM Client
+-- INNER JOIN Client_POA ON Client.ID = Client_POA.ClientID
 
-UNION
+-- UNION
 
-SELECT 'BankSt ID' AS Type, Client.ID AS ClientID, BankSt.ID AS RelatedID
-FROM Client
-INNER JOIN BankSt ON Client.ID = BankSt.ClientID;
+-- SELECT 'BankSt ID' AS Type, Client.ID AS ClientID, BankSt.ID AS RelatedID
+-- FROM Client
+-- INNER JOIN BankSt ON Client.ID = BankSt.ClientID;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 --11.2
 
-CREATE VIEW TotalOrderIDsView AS
-SELECT 'Order Receipt ID' AS Type, Orders.ID, Order_Receipt.ID AS OrderID
-FROM Orders
-INNER JOIN Order_Receipt ON Orders.ID = Order_Receipt.OrderID
+-- CREATE VIEW TotalOrderIDsView AS
+-- SELECT 'Order Receipt ID' AS Type, Orders.ID, Order_Receipt.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_Receipt ON Orders.ID = Order_Receipt.OrderID
 
-UNION 
+-- UNION 
 
-SELECT 'Order Payment ID' AS Type, Orders.ID, Order_Payment.ID AS OrderID
-FROM Orders
-INNER JOIN Order_Payment ON Orders.ID = Order_Payment.OrderID
+-- SELECT 'Order Payment ID' AS Type, Orders.ID, Order_Payment.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_Payment ON Orders.ID = Order_Payment.OrderID
 
-UNION
+-- UNION
 
-SELECT 'Order Invoice ID' AS Type, Orders.ID, Order_Invoice.ID AS OrderID
-FROM Orders
-INNER JOIN Order_Invoice ON Orders.ID = Order_Invoice.OrderID
+-- SELECT 'Order Invoice ID' AS Type, Orders.ID, Order_Invoice.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_Invoice ON Orders.ID = Order_Invoice.OrderID
 
-UNION
+-- UNION
 
-SELECT 'Vendor Invoice ID' AS Type, Orders.ID, Order_VendorEstimate.ID AS OrderID
-FROM Orders
-INNER JOIN Order_VendorEstimate ON Orders.ID = Order_VendorEstimate.OrderID
+-- SELECT 'Vendor Invoice ID' AS Type, Orders.ID, Order_VendorEstimate.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_VendorEstimate ON Orders.ID = Order_VendorEstimate.OrderID
 
-UNION
+-- UNION
 
-SELECT 'Order Task ID' AS Type, Orders.ID, Order_Task.ID AS OrderID
-FROM Orders
-INNER JOIN Order_Task ON Orders.ID = Order_Task.OrderID
+-- SELECT 'Order Task ID' AS Type, Orders.ID, Order_Task.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_Task ON Orders.ID = Order_Task.OrderID
 
-UNION
+-- UNION
 
-SELECT 'Order Status Change ID' AS Type, Orders.ID, Order_Status_Change.ID AS OrderID
-FROM Orders
-INNER JOIN Order_Status_Change ON Orders.ID = Order_Status_Change.OrderID;
+-- SELECT 'Order Status Change ID' AS Type, Orders.ID, Order_Status_Change.ID AS OrderID
+-- FROM Orders
+-- INNER JOIN Order_Status_Change ON Orders.ID = Order_Status_Change.OrderID;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 --11.3
 
-CREATE VIEW TotalVendorIDsView AS
-SELECT 'Order Payment ID' AS Type, Vendor.ID, Order_Payment.ID AS VendorID
-FROM Vendor
-INNER JOIN Order_Payment ON Vendor.ID = Order_Payment.VendorID
+-- CREATE VIEW TotalVendorIDsView AS
+-- SELECT 'Order Payment ID' AS Type, Vendor.ID, Order_Payment.ID AS VendorID
+-- FROM Vendor
+-- INNER JOIN Order_Payment ON Vendor.ID = Order_Payment.VendorID
 
-UNION
+-- UNION
 
-SELECT 'Vendor Invoice ID' AS Type, Vendor.ID, Order_VendorEstimate.ID AS VendorID
-FROM Vendor
-INNER JOIN Order_VendorEstimate ON Vendor.ID = Order_VendorEstimate.VendorID
+-- SELECT 'Vendor Invoice ID' AS Type, Vendor.ID, Order_VendorEstimate.ID AS VendorID
+-- FROM Vendor
+-- INNER JOIN Order_VendorEstimate ON Vendor.ID = Order_VendorEstimate.VendorID
 
-UNION
+-- UNION
 
-SELECT 'BankSt ID' AS Type, Vendor.ID, BankSt.ID AS VendorID
-FROM Vendor
-INNER JOIN BankSt ON Vendor.ID = BankSt.VendorID;
+-- SELECT 'BankSt ID' AS Type, Vendor.ID, BankSt.ID AS VendorID
+-- FROM Vendor
+-- INNER JOIN BankSt ON Vendor.ID = BankSt.VendorID;
 
 --13.1
 
-CREATE VIEW VendorSummaryForFinancialYearView AS
-SELECT
-    Vendor.VendorName,
-    Vendor.AddressLine1,
-    Vendor.AddressLine2,
-    Vendor.Suburb,
-    Vendor.PANNo,
-    Vendor.TANNo,
-    Vendor.VATTinNo,
-    Vendor.GSTServiceTaxNo,  -- Changed column name
-    Vendor.LBTNo,
-    Vendor.TDSSection,
-    CASE WHEN Vendor.Registered = 'true' THEN 'Yes' ELSE 'No' END AS Registered,
-    Vendor.BankName,
-    Vendor.BankBranch,
-    Vendor.BankCity,
-    Vendor.BankAcctHolderName,
-    Vendor.BankAcctNo,
-    Vendor.BankIFSCCode,
-    Vendor.BankMICRCode,
-    Vendor.BankAcctType,
-    Vendor.VendorDealerStatus,
-    OrderPaymentView.ID,
-    OrderPaymentView.PaymentById,
-    OrderPaymentView.Amount,
-    OrderPaymentView.PaymentDate,
-    OrderPaymentView.OrderID,
-    OrderPaymentView.VendorID,
-    OrderPaymentView.Mode,
-    OrderPaymentView.Description,
-    OrderPaymentView.ServiceTaxAmount,
-    OrderPaymentView.Dated,
-    OrderPaymentView.CreatedById,
-    OrderPaymentView.IsDeleted,
-    OrderPaymentView.Mode_Of_payment,
-    OrderPaymentView.CreatedBy,
-    OrderPaymentView.PaymentBy,
-    OrderPaymentView.ClientName,
-    OrderPaymentView.OrderDescription,
-    OrderPaymentView.TDS,
-    OrderPaymentView.PropertyDescription,
-    OrderPaymentView.VendorName AS Expr1,
-    OrderPaymentView.LOBName,
-    OrderPaymentView.ServiceType,
-    OrderPaymentView.ServiceId,
-    OrderPaymentView.MonthYear,
-    OrderPaymentView.FY
-FROM Vendor
-INNER JOIN OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
-
+-- CREATE VIEW VendorSummaryForFinancialYearView AS
+--  SELECT vendor.vendorname,
+--     vendor.addressline1,
+--     vendor.addressline2,
+--     vendor.suburb,
+--     vendor.panno,
+--     vendor.tanno,
+--     vendor.vattinno,
+--     vendor.lbtno,
+--     vendor.tdssection,
+--     vendor.gstservicetaxno,
+--         CASE
+--             WHEN vendor.registered = true THEN 'Yes'::text
+--             ELSE 'No'::text
+--         END AS registered,
+--     vendor.bankname,
+--     vendor.bankbranch,
+--     vendor.bankcity,
+--     vendor.bankacctholdername,
+--     vendor.bankacctno,
+--     vendor.bankifsccode,
+--     vendor.bankmicrcode,
+--     vendor.bankaccttype,
+--     vendor.vendordealerstatus,
+--     orderpaymentview.id,
+--     orderpaymentview.paymentbyid,
+--     orderpaymentview.amount,
+--     orderpaymentview.paymentdate,
+--     orderpaymentview.orderid,
+--     orderpaymentview.vendorid,
+--     orderpaymentview.mode,
+--     orderpaymentview.description,
+--     orderpaymentview.servicetaxamount,
+--     orderpaymentview.dated,
+--     orderpaymentview.createdbyid,
+--     orderpaymentview.isdeleted,
+--     orderpaymentview.mode_of_payment,
+--     orderpaymentview.createdby,
+--     orderpaymentview.paymentby,
+--     orderpaymentview.clientname,
+--     orderpaymentview.orderdescription,
+--     orderpaymentview.tds,
+--     orderpaymentview.propertydescription,
+--     orderpaymentview.vendorname AS expr1,
+--     orderpaymentview.lobname,
+--     orderpaymentview.servicetype,
+--     orderpaymentview.serviceid,
+--     orderpaymentview.monthyear,
+--     orderpaymentview.fy
+--    FROM vendor
+--      JOIN orderpaymentview ON vendor.id = orderpaymentview.vendorid;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -5923,136 +6755,136 @@ LEFT OUTER JOIN
 LEFT OUTER JOIN
     Vendor ON Vendor.ID = Order_VendorEstimate.VendorID;
 
-CREATE VIEW vendorstatementview AS
-SELECT
-    'Invoice' AS type,
-    ordervendorestimateview.invoicedate AS invoicedate_orderpaymentdate,
-    ordervendorestimateview.invoiceamount AS invoiceamount_orderpaymentamount,
-    ordervendorestimateview.briefdescription AS estimatedescription_orderdescription,
-    ordervendorestimateview.clientname AS clientname_vendorname,
-    NULL AS modeofpayment,
-    ordersview.clientname,
-    entity.name AS entityname,
-    ordersview.clientid,
-    ordervendorestimateview.vendorid,
-    ordervendorestimateview.id,
-    to_char(ordervendorestimateview.invoicedate, 'YYYY-MM') AS monthyear
-FROM
-    ordersview
-INNER JOIN
-    ordervendorestimateview ON ordersview.id = ordervendorestimateview.orderid
-LEFT OUTER JOIN
-    entity ON ordervendorestimateview.entityid = entity.id
-UNION
-SELECT
-    'Payments' AS type,
-    order_payment.paymentdate,
-    order_payment.amount,
-    ordersview.briefdescription AS orderdescription,
-    vendor.vendorname,
-    mode_of_payment.name AS modeofpayment,
-    ordersview.clientname,
-    entity.name,
-    ordersview.id,
-    vendor.id AS vendorid,
-    order_payment.id,
-    to_char(order_payment.paymentdate, 'YYYY-MM') AS monthyear
-FROM
-    mode_of_payment
-INNER JOIN
-    order_payment ON mode_of_payment.id = order_payment.mode
-INNER JOIN
-    vendor ON order_payment.vendorid = vendor.id
-INNER JOIN
-    ordersview ON order_payment.orderid = ordersview.id
-INNER JOIN
-    client ON ordersview.clientid = client.id
-LEFT OUTER JOIN
-    entity ON order_payment.entityid = entity.id;
+-- CREATE VIEW vendorstatementview AS
+-- SELECT
+--     'Invoice' AS type,
+--     ordervendorestimateview.invoicedate AS invoicedate_orderpaymentdate,
+--     ordervendorestimateview.invoiceamount AS invoiceamount_orderpaymentamount,
+--     ordervendorestimateview.briefdescription AS estimatedescription_orderdescription,
+--     ordervendorestimateview.clientname AS clientname_vendorname,
+--     NULL AS modeofpayment,
+--     ordersview.clientname,
+--     entity.name AS entityname,
+--     ordersview.clientid,
+--     ordervendorestimateview.vendorid,
+--     ordervendorestimateview.id,
+--     to_char(ordervendorestimateview.invoicedate, 'YYYY-MM') AS monthyear
+-- FROM
+--     ordersview
+-- INNER JOIN
+--     ordervendorestimateview ON ordersview.id = ordervendorestimateview.orderid
+-- LEFT OUTER JOIN
+--     entity ON ordervendorestimateview.entityid = entity.id
+-- UNION
+-- SELECT
+--     'Payments' AS type,
+--     order_payment.paymentdate,
+--     order_payment.amount,
+--     ordersview.briefdescription AS orderdescription,
+--     vendor.vendorname,
+--     mode_of_payment.name AS modeofpayment,
+--     ordersview.clientname,
+--     entity.name,
+--     ordersview.id,
+--     vendor.id AS vendorid,
+--     order_payment.id,
+--     to_char(order_payment.paymentdate, 'YYYY-MM') AS monthyear
+-- FROM
+--     mode_of_payment
+-- INNER JOIN
+--     order_payment ON mode_of_payment.id = order_payment.mode
+-- INNER JOIN
+--     vendor ON order_payment.vendorid = vendor.id
+-- INNER JOIN
+--     ordersview ON order_payment.orderid = ordersview.id
+-- INNER JOIN
+--     client ON ordersview.clientid = client.id
+-- LEFT OUTER JOIN
+--     entity ON order_payment.entityid = entity.id;
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 --17.1
 
- CREATE VIEW FIN_TDS_Paid_By_Vendor AS
-SELECT
-    Vendor.VendorName,
-    CASE WHEN Vendor.companydeductee != false THEN 'YES' ELSE 'NO' END AS companydeductee,
-    Vendor_Category.Name AS VendorCategory,
-    CASE WHEN Vendor.Registered != false THEN 'Yes' ELSE 'No' END AS Registered,
-    Order_Payment.PaymentDate,
-    Order_Payment.Amount,
-    getMonthYear(Order_Payment.PaymentDate) AS MonthYear,
-    getFinancialYear(Order_Payment.PaymentDate) AS FY,
-    Mode_Of_payment.Name AS PaymentMode,
-    Order_Payment.TDS,
-    Vendor.PANNo,
-    Vendor.TDSSection,
-    Order_Payment.ID
-FROM
-    Order_Payment
-INNER JOIN Vendor ON Order_Payment.VendorID = Vendor.ID
-INNER JOIN Vendor_Category ON Vendor.Category = Vendor_Category.ID
-INNER JOIN Mode_Of_payment ON Order_Payment.Mode = Mode_Of_payment.ID
-WHERE
-    Order_Payment.TDS > 0;
+--  CREATE VIEW FIN_TDS_Paid_By_Vendor AS
+-- SELECT
+--     Vendor.VendorName,
+--     CASE WHEN Vendor.companydeductee != false THEN 'YES' ELSE 'NO' END AS companydeductee,
+--     Vendor_Category.Name AS VendorCategory,
+--     CASE WHEN Vendor.Registered != false THEN 'Yes' ELSE 'No' END AS Registered,
+--     Order_Payment.PaymentDate,
+--     Order_Payment.Amount,
+--     getMonthYear(Order_Payment.PaymentDate) AS MonthYear,
+--     getFinancialYear(Order_Payment.PaymentDate) AS FY,
+--     Mode_Of_payment.Name AS PaymentMode,
+--     Order_Payment.TDS,
+--     Vendor.PANNo,
+--     Vendor.TDSSection,
+--     Order_Payment.ID
+-- FROM
+--     Order_Payment
+-- INNER JOIN Vendor ON Order_Payment.VendorID = Vendor.ID
+-- INNER JOIN Vendor_Category ON Vendor.Category = Vendor_Category.ID
+-- INNER JOIN Mode_Of_payment ON Order_Payment.Mode = Mode_Of_payment.ID
+-- WHERE
+--     Order_Payment.TDS > 0;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 --17.2
 
-CREATE VIEW VendorSummaryForFinancialYearView AS
-SELECT
-    Vendor.VendorName,
-    Vendor.AddressLine1,
-    Vendor.AddressLine2,
-    Vendor.Suburb,
-    Vendor.PANNo,
-    Vendor.TANNo,
-    Vendor.VATTinNo,
-    Vendor.LBTNo,
-    Vendor.TDSSection,
-    Vendor.gstservicetaxno,
-    CASE WHEN Vendor.Registered = 'true' THEN 'Yes' ELSE 'No' END AS Registered,
-    Vendor.BankName,
-    Vendor.BankBranch,
-    Vendor.BankCity,
-    Vendor.BankAcctHolderName,
-    Vendor.BankAcctNo,
-    Vendor.BankIFSCCode,
-    Vendor.BankMICRCode,
-    Vendor.BankAcctType,
-    Vendor.VendorDealerStatus,
-    OrderPaymentView.ID,
-    OrderPaymentView.PaymentById,
-    OrderPaymentView.Amount,
-    OrderPaymentView.PaymentDate,
-    OrderPaymentView.OrderID,
-    OrderPaymentView.VendorID,
-    OrderPaymentView.Mode,
-    OrderPaymentView.Description,
-    OrderPaymentView.ServiceTaxAmount,
-    OrderPaymentView.Dated,
-    OrderPaymentView.CreatedById,
-    OrderPaymentView.IsDeleted,
-    OrderPaymentView.Mode_Of_payment,
-    OrderPaymentView.CreatedBy,
-    OrderPaymentView.PaymentBy,
-    OrderPaymentView.ClientName,
-    OrderPaymentView.OrderDescription,
-    OrderPaymentView.TDS,
-    OrderPaymentView.PropertyDescription,
-    OrderPaymentView.VendorName AS Expr1,
-    OrderPaymentView.LOBName,
-    OrderPaymentView.ServiceType,
-    OrderPaymentView.ServiceId,
-    OrderPaymentView.MonthYear,
-    OrderPaymentView.FY
-FROM
-    Vendor
-INNER JOIN
-    OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
+-- CREATE VIEW VendorSummaryForFinancialYearView AS
+-- SELECT
+--     Vendor.VendorName,
+--     Vendor.AddressLine1,
+--     Vendor.AddressLine2,
+--     Vendor.Suburb,
+--     Vendor.PANNo,
+--     Vendor.TANNo,
+--     Vendor.VATTinNo,
+--     Vendor.LBTNo,
+--     Vendor.TDSSection,
+--     Vendor.gstservicetaxno,
+--     CASE WHEN Vendor.Registered = 'true' THEN 'Yes' ELSE 'No' END AS Registered,
+--     Vendor.BankName,
+--     Vendor.BankBranch,
+--     Vendor.BankCity,
+--     Vendor.BankAcctHolderName,
+--     Vendor.BankAcctNo,
+--     Vendor.BankIFSCCode,
+--     Vendor.BankMICRCode,
+--     Vendor.BankAcctType,
+--     Vendor.VendorDealerStatus,
+--     OrderPaymentView.ID,
+--     OrderPaymentView.PaymentById,
+--     OrderPaymentView.Amount,
+--     OrderPaymentView.PaymentDate,
+--     OrderPaymentView.OrderID,
+--     OrderPaymentView.VendorID,
+--     OrderPaymentView.Mode,
+--     OrderPaymentView.Description,
+--     OrderPaymentView.ServiceTaxAmount,
+--     OrderPaymentView.Dated,
+--     OrderPaymentView.CreatedById,
+--     OrderPaymentView.IsDeleted,
+--     OrderPaymentView.Mode_Of_payment,
+--     OrderPaymentView.CreatedBy,
+--     OrderPaymentView.PaymentBy,
+--     OrderPaymentView.ClientName,
+--     OrderPaymentView.OrderDescription,
+--     OrderPaymentView.TDS,
+--     OrderPaymentView.PropertyDescription,
+--     OrderPaymentView.VendorName AS Expr1,
+--     OrderPaymentView.LOBName,
+--     OrderPaymentView.ServiceType,
+--     OrderPaymentView.ServiceId,
+--     OrderPaymentView.MonthYear,
+--     OrderPaymentView.FY
+-- FROM
+--     Vendor
+-- INNER JOIN
+--     OrderPaymentView ON Vendor.ID = OrderPaymentView.VendorID;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -6066,26 +6898,26 @@ INNER JOIN
 
 --17.3
 
-CREATE VIEW TDSPaidtoGovernment AS
-SELECT
-    REPLACE(REPLACE(orders.BriefDescription, E'\n', ''), E'\r', '') AS "Order Description",
-    Order_Payment.Amount,
-    TO_CHAR(Order_Payment.PaymentDate, 'DD-MM-YYYY') AS Date,
-    REPLACE(REPLACE(Order_Payment.Description, E'\n', ''), E'\r', '') AS "Payment Description",
-    Vendor.VendorName,
-    orders.ID AS OrderID
-FROM
-    Order_Payment
-INNER JOIN
-    orders ON Order_Payment.OrderID = orders.ID
-INNER JOIN
-    Vendor ON Order_Payment.VendorID = Vendor.ID
-WHERE
-    orders.ID IN (31648, 10770, 31649, 353444, 122525);
+-- CREATE VIEW TDSPaidtoGovernment AS
+-- SELECT
+--     REPLACE(REPLACE(orders.BriefDescription, E'\n', ''), E'\r', '') AS "Order Description",
+--     Order_Payment.Amount,
+--     TO_CHAR(Order_Payment.PaymentDate, 'DD-MM-YYYY') AS Date,
+--     REPLACE(REPLACE(Order_Payment.Description, E'\n', ''), E'\r', '') AS "Payment Description",
+--     Vendor.VendorName,
+--     orders.ID AS OrderID
+-- FROM
+--     Order_Payment
+-- INNER JOIN
+--     orders ON Order_Payment.OrderID = orders.ID
+-- INNER JOIN
+--     Vendor ON Order_Payment.VendorID = Vendor.ID
+-- WHERE
+--     orders.ID IN (31648, 10770, 31649, 353444, 122525);
 
 --16.1,5.1
 
-CREATE OR REPLACE VIEW orderstatisticsview AS
+CREATE VIEW orderstatisticsview AS
 SELECT
     service,
     lobname,
@@ -6105,7 +6937,7 @@ GROUP BY service, lobname;
 
 --5.2
 
-create or replace view ordersummary as SELECT 
+create view ordersummary as SELECT 
     clientsummaryview.clientname,
     clientsummaryview.propertydescription,
     clientsummaryview.briefdescription AS orderdescription,
@@ -6126,62 +6958,62 @@ create or replace view ordersummary as SELECT
 
 --6
 
-CREATE OR REPLACE VIEW client_property_leave_license_detailsview AS
-SELECT
-        CASE
-            WHEN cplld.active = true THEN 'Active'::text
-            ELSE 'Inactive'::text
-        END AS status,
-    cplld.clientpropertyid,
-    cplld.orderid,
-    cplld.startdate,
-    cplld.vacatingdate,
-    cplld.durationinmonth,
-    cplld.actualenddate,
-    cplld.depositamount,
-    cplld.rentamount,
-    cplld.registrationtype,
-    cplld.rentpaymentdate,
-    cplld.paymentcycle,
-    cplld.reasonforclosure,
-    cplld.noticeperiodindays,
-    cplld.modeofrentpaymentid,
-    cplld.clientpropertyorderid,
-    cplld.signedby,
-    cplld.active,
-    cplld.llscancopy,
-    cplld.pvscancopy,
-    cplld.dated,
-    cplld.createdby AS expr2,
-    cplld.isdeleted,
-    cplld.id,
-    cplld.comments,
-    pv.clientname,
-    pv.propertydescription,
-    ov.propertydescription AS expr1,
-    ( SELECT getmonthyear(cplld.startdate::timestamp without time zone) AS getmonthyear) AS startdatemonthyear,
-    ( SELECT getmonthyear(cplld.actualenddate::timestamp without time zone) AS getmonthyear) AS enddatemonthyear,
-    ov.orderstatus,
-    ov.status AS orderstatusid,
-    pv.clientid,
-    pv.propertytaxnumber,
-    pv.property_status,
-    pv.electricitybillingunit,
-    pv.electricityconsumernumber,
-    ov.service,
-    ov.lobname,
-    ov.entityname,
-    cv.clienttype,
-    cv.clienttypename
-   FROM client_property_leave_license_details cplld
-     JOIN propertiesview pv ON cplld.clientpropertyid = pv.id
-     JOIN clientview cv ON pv.clientid = cv.id
-     LEFT JOIN ordersview ov ON cplld.orderid = ov.id;
-------------------------------------------------------------------------------------------------------------------------------------------
+-- CREATE OR REPLACE VIEW client_property_leave_license_detailsview AS
+-- SELECT
+--         CASE
+--             WHEN cplld.active = true THEN 'Active'::text
+--             ELSE 'Inactive'::text
+--         END AS status,
+--     cplld.clientpropertyid,
+--     cplld.orderid,
+--     cplld.startdate,
+--     cplld.vacatingdate,
+--     cplld.durationinmonth,
+--     cplld.actualenddate,
+--     cplld.depositamount,
+--     cplld.rentamount,
+--     cplld.registrationtype,
+--     cplld.rentpaymentdate,
+--     cplld.paymentcycle,
+--     cplld.reasonforclosure,
+--     cplld.noticeperiodindays,
+--     cplld.modeofrentpaymentid,
+--     cplld.clientpropertyorderid,
+--     cplld.signedby,
+--     cplld.active,
+--     cplld.llscancopy,
+--     cplld.pvscancopy,
+--     cplld.dated,
+--     cplld.createdby AS expr2,
+--     cplld.isdeleted,
+--     cplld.id,
+--     cplld.comments,
+--     pv.clientname,
+--     pv.propertydescription,
+--     ov.propertydescription AS expr1,
+--     ( SELECT getmonthyear(cplld.startdate::timestamp without time zone) AS getmonthyear) AS startdatemonthyear,
+--     ( SELECT getmonthyear(cplld.actualenddate::timestamp without time zone) AS getmonthyear) AS enddatemonthyear,
+--     ov.orderstatus,
+--     ov.status AS orderstatusid,
+--     pv.clientid,
+--     pv.propertytaxnumber,
+--     pv.property_status,
+--     pv.electricitybillingunit,
+--     pv.electricityconsumernumber,
+--     ov.service,
+--     ov.lobname,
+--     ov.entityname,
+--     cv.clienttype,
+--     cv.clienttypename
+--    FROM client_property_leave_license_details cplld
+--      JOIN propertiesview pv ON cplld.clientpropertyid = pv.id
+--      JOIN clientview cv ON pv.clientid = cv.id
+--  LEFT JOIN ordersview ov ON cplld.orderid = ov.id;
+-- ------------------------------------------------------------------------------------------------------------------------------------------
 
 --7.6
 
-CREATE OR REPLACE VIEW client_property_leave_license_detailslistview AS
+CREATE VIEW client_property_leave_license_detailslistview AS
 SELECT
         CASE
             WHEN cplld.active = true THEN 'Active'::text
@@ -6341,7 +7173,7 @@ SELECT
     COUNT(*) AS count,
     SUM(0) AS amount
 FROM 
-    owners;
+    client_property;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -6380,10 +7212,10 @@ WHERE
 
 CREATE VIEW ownersstatisticsview AS
 SELECT
-    COUNT(CASE WHEN source = 'Corporation' THEN 1 END) AS "Corporation",
-    COUNT(CASE WHEN source = 'RBS-Rentals' THEN 1 END) AS "RBSRentals",
-    COUNT(CASE WHEN source = 'RBS-Sales' THEN 1 END) AS "RBSSales",
-    COALESCE(SUM(CASE WHEN source = 'ID' THEN 1 END), -1) AS "ID"
+    COUNT(CASE WHEN source = 'Corporation' THEN 1 END) AS Corporation,
+    COUNT(CASE WHEN source = 'RBS-Rentals' THEN 1 END) AS RBSRentals,
+    COUNT(CASE WHEN source = 'RBS-Sales' THEN 1 END) AS RBSSales,
+    COALESCE(SUM(CASE WHEN source = 'ID' THEN 1 END), -1) AS ID
 FROM
     ownersview;
 
@@ -6415,7 +7247,7 @@ INNER JOIN
 WHERE
     order_payment.servicetaxamount > 0;
 
-CREATE OR REPLACE VIEW Rpt_SuspensePayments AS
+CREATE VIEW Rpt_SuspensePayments AS
 SELECT
     ClientName,
     OrderDescription AS ORDERDESC,
@@ -6437,7 +7269,7 @@ ORDER BY
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 
-CREATE OR REPLACE VIEW Rpt_SuspenseReceipts AS
+CREATE VIEW Rpt_SuspenseReceipts AS
 SELECT
     ClientName,
     OrderDescription AS ORDERDESC,
@@ -6458,7 +7290,7 @@ ORDER BY
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 
-CREATE OR REPLACE VIEW Rpt_ClientsWithOrderButEmailMissing AS
+CREATE VIEW Rpt_ClientsWithOrderButEmailMissing AS
 SELECT
     FullName,
     ClientTypeName,
@@ -6485,7 +7317,7 @@ WHERE
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW VendorView AS
+CREATE VIEW VendorView AS
 SELECT
     Vendor.ID,
     Vendor.VendorName,
@@ -6540,7 +7372,7 @@ WHERE
     Vendor.IsDeleted = FALSE;
 
 
-CREATE OR REPLACE VIEW Rpt_UserVendorMapping AS
+CREATE VIEW Rpt_UserVendorMapping AS
 SELECT
     UserView.UserId,
     UserView.UserName,
@@ -6554,7 +7386,7 @@ FROM
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW Rpt_BankTransactionsWithWrongNames AS
+CREATE VIEW Rpt_BankTransactionsWithWrongNames AS
 SELECT
     'Payment' AS type,
     ID,
@@ -6585,7 +7417,7 @@ WHERE
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW Rpt_EntityblankView AS
+CREATE VIEW Rpt_EntityblankView AS
 SELECT
     'OI' AS TYPE,
     OrdersView.ClientName,
@@ -6691,7 +7523,7 @@ WHERE
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW noPropertyOwnersView AS
+CREATE VIEW noPropertyOwnersView AS
 SELECT
     Client.FirstName || ' ' || Client.LastName AS FullName,
     Client.ClientType,
@@ -6707,7 +7539,7 @@ WHERE
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW FIN_Agency_Services_Receipts_For_Taxes AS
+CREATE VIEW FIN_Agency_Services_Receipts_For_Taxes AS
 SELECT
     Services.ServiceType,
     Services.Service,
@@ -6738,7 +7570,7 @@ WHERE
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW Rpt_Client_And_Inquiry_MailIDs AS
+CREATE VIEW Rpt_Client_And_Inquiry_MailIDs AS
 SELECT
     tempdata.EMAIL,
     COALESCE(ROW_NUMBER() OVER (ORDER BY EMAIL), 0) AS RN
@@ -6759,7 +7591,7 @@ FROM
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW Rpt_AllTenantMailIds AS
+CREATE VIEW Rpt_AllTenantMailIds AS
 SELECT
     FullName,
     FirstName,
@@ -6774,7 +7606,7 @@ WHERE
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW OwnersPhonenoView AS
+CREATE VIEW OwnersPhonenoView AS
 WITH ue(id1) AS (
     SELECT MAX(ID) AS id1
     FROM Owners
@@ -6787,14 +7619,23 @@ WHERE PhoneNo ~ '^[7-9]' OR PhoneNo != 'NA' OR PhoneNo != '';
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW ClientPhonenoView AS
-WITH ue(id1) AS (
-    SELECT MAX(ID) AS id1
-    FROM Client
-    GROUP BY WorkPhone, MobilePhone, HomePhone
-)
-SELECT t.ID, t.FirstName, t.WorkPhone, t.MobilePhone, t.HomePhone, t.ClientType, t.LastName, Client_Type.Name AS ClientTypeName
-FROM Client AS t
-INNER JOIN ue AS ue_1 ON ue_1.id1 = t.ID
-INNER JOIN Client_Type ON t.ClientType = Client_Type.ID
-WHERE t.MobilePhone ~ '^[7-9]' OR t.MobilePhone != 'NA' OR t.MobilePhone != '';
+CREATE VIEW ClientPhonenoView AS
+ WITH ue(id1) AS (
+         SELECT max(client.id) AS id1
+           FROM client
+          GROUP BY client.workphone, client.mobilephone, client.homephone
+        )
+ SELECT t.id,
+    t.firstname,
+    t.workphone,
+    t.mobilephone,
+    t.homephone,
+    t.clienttype,
+    t.lastname,
+    (t.firstname || ' '::text) || t.lastname AS clientname,
+    client_type.name AS clienttypename
+   FROM client t
+     JOIN ue ue_1 ON ue_1.id1 = t.id
+     JOIN client_type ON t.clienttype = client_type.id
+  WHERE t.mobilephone ~ '^[7-9]'::text OR t.mobilephone <> 'NA'::text OR t.mobilephone <> ''::text;
+
