@@ -148,6 +148,8 @@ def usernames(conn : psycopg2.extensions.connection):
             for i in data:
                 res[i[2]] = f'{i[0]} {i[1]}'
         return res
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         return None
@@ -164,6 +166,8 @@ def paymentfor(conn: psycopg2.extensions.connection):
             res[i[0]] = i[1]
         # logging.info(res)
         return res
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         logging.info(f"Error is {e}")
@@ -181,6 +185,8 @@ def paymentreqstatus(conn: psycopg2.extensions.connection):
             res[i[0]] = i[1]
         # logging.info(res)
         return res
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         logging.info(f"Error is {e}")
@@ -199,6 +205,8 @@ def paymentmode(conn: psycopg2.extensions.connection):
             res[i[0]] = i[1]
         # logging.info(res)
         return res
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         logging.info(f"Error is {e}")
@@ -215,6 +223,8 @@ def entity(conn):
             res[i[0]] = i[1]
         # logging.info(res)
         return res
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         logging.info(f"Error is {e}")
@@ -232,6 +242,8 @@ def roles(conn):
             res[i[0]] = i[1]
         # logging.info(res)
         return res
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         logging.info(f"Error is {e}")
@@ -332,6 +344,8 @@ def filterAndPaginate(db_config,
 
 
         return {'data':rows, 'total_count' : total_count, 'message':'success', 'colnames':colnames}
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
         msg = str(e).replace("\n","")
@@ -404,6 +418,8 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
             pdf.build(elements)
             logging.info(f'generated pdf file <{fname}>')
         return filename
+    except HTTPException as h:
+        raise h
     except Exception as e:
         msg = str(e).replace("\n","")
         logging.info(traceback.print_exc())
@@ -583,6 +599,8 @@ def filterAndPaginate_v2(db_config,
             logging.info(f'downloadType is <None>')
 
         return resp_payload
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(f' exception {traceback.print_exc()}')
         #print(traceback.print_exc())
@@ -606,6 +624,8 @@ async def addLogsForAction(data: dict,conn,id:int = None):
                                     givenowtime(),
                                     data['token'][7:]] if 'modulename' in data else 'module missing')
             conn[0].commit()
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.format_exc())
         return None
@@ -850,6 +870,8 @@ def check_role_access(conn, payload: dict,request: Request = None,method = None,
             "message": "key {ke} not found",
             "user_id": payload['user_id']
         }  
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
         raise HTTPException(498,"Expired Token")
@@ -870,6 +892,8 @@ async def payment_for_admin(payload:dict, request:Request, conn: psycopg2.extens
             return giveSuccess(payload['user_id'],role_access_status,arr,total_count=len(arr))
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise giveFailure("Invalid Credentials",0,0)
 
@@ -952,6 +976,8 @@ async def add_country(payload:dict, request:Request, conn: psycopg2.extensions.c
                 raise giveFailure("Already Exists",payload['user_id'],role_access_status)
     except KeyError as ke:
         raise giveFailure(f"key {ke} not found",payload['user_id'],0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise giveFailure(f"Error {e}",payload["user_id"],0)
     
@@ -966,6 +992,8 @@ def checkcountry(payload: str,conn: psycopg2.extensions.connection = Depends(get
                 return True
             else:
                 return False
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
         return False
@@ -999,6 +1027,8 @@ async def edit_country(payload:dict, request:Request, conn: psycopg2.extensions.
             raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
     except KeyError as ke:
         raise giveFailure(f"key {ke} not found",payload['user_id'],0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
 
@@ -1027,6 +1057,8 @@ async def delete_country(payload:dict, request:Request, conn: psycopg2.extension
             else:
                 raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
 
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
 
@@ -1250,6 +1282,8 @@ async def get_states_admin(payload:dict, request:Request, conn: psycopg2.extensi
             return giveSuccess(payload["user_id"],role_access_status,data['data'], total_count=total_count)
         else:
             raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1277,6 +1311,8 @@ async def get_states(payload:dict, request:Request, conn: psycopg2.extensions.co
     except ValueError as ve:
         logging.info(traceback.print_exc())
         raise giveFailure(f"{ve} error found",payload["user_id"],0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure(f"{e} error found",payload['user_id'],0)
@@ -1303,6 +1339,8 @@ async def get_cities(payload:dict, request:Request, conn: psycopg2.extensions.co
             return giveSuccess(payload["user_id"],role_access_status,res)
         else:
             raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure(f"{e} error found",payload['user_id'],0)
@@ -1413,6 +1451,8 @@ async def add_new_builder_contact(payload:dict, request:Request, conn: psycopg2.
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.format_exc())
         raise giveFailure(str(e),payload['user_id'],0)
@@ -1453,6 +1493,8 @@ async def add_localities(payload: dict, request:Request, conn: psycopg2.extensio
             return HTTPException(status_code=403,detail="Access Denied")
         else:
             return HTTPException(status_code=403,detail="Already Exists")
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         return HTTPException(status_code=400,detail="Invalid Credentials")
@@ -1475,6 +1517,8 @@ async def edit_localities(payload: dict, request:Request, conn: psycopg2.extensi
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
 
@@ -1493,6 +1537,8 @@ async def delete_localities(payload: dict, request:Request, conn : psycopg2.exte
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1558,6 +1604,8 @@ async def add_bank_statement(payload: dict, request:Request, conn: psycopg2.exte
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
             raise giveFailure("Already Exists",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         raise giveFailure(f"failed to add bank statement due to exception <{str(e)}>",payload['user_id'],0)
@@ -1585,6 +1633,8 @@ async def edit_bank_statement(payload: dict, request:Request, conn: psycopg2.ext
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1608,6 +1658,8 @@ async def delete_bank_statement(payload: dict, request:Request, conn: psycopg2.e
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)  
@@ -1671,6 +1723,8 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
             raise giveFailure("Already Exists",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1718,6 +1772,8 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1743,6 +1799,8 @@ async def delete_employee(payload: dict, request:Request, conn: psycopg2.extensi
             return giveSuccess(payload["user_id"],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)  
@@ -1796,6 +1854,8 @@ async def add_lob(payload:dict, request:Request, conn: psycopg2.extensions.conne
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
             raise giveFailure("Already Exists",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1821,6 +1881,8 @@ async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.conn
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1844,6 +1906,8 @@ async def delete_lob(payload:dict, request:Request, conn: psycopg2.extensions.co
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -2004,6 +2068,8 @@ async def add_payment(payload:dict, request:Request, conn: psycopg2.extensions.c
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -2028,6 +2094,8 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -2050,6 +2118,8 @@ async def edit_payment(payload:dict, request:Request, conn: psycopg2.extensions.
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)   
@@ -2076,6 +2146,8 @@ async def delete_payment(payload:dict, request:Request, conn: psycopg2.extension
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -2094,6 +2166,8 @@ async def get_vendor_admin(payload: dict, request:Request, conn: psycopg2.extens
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         giveFailure('Invalid Credentials',payload['user_id'],0)
 
@@ -2195,6 +2269,8 @@ async def get_client_admin(payload:dict, request:Request, conn: psycopg2.extensi
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
             giveFailure("Access Denied", payload['user_id'], role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(f'getClientAdmin_Exception: <{str(e)}>')
         giveFailure('Invalid Credentials', payload['user_id'], 0)
@@ -2213,6 +2289,8 @@ async def get_modes_admin(payload:dict, request:Request, conn: psycopg2.extensio
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
             giveFailure("Access Denied", payload['user_id'], role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(f'getModesAdmin_Exception: <{str(e)}>')
         giveFailure('Invalid Credentials', payload['user_id'], 0)
@@ -2231,6 +2309,8 @@ async def get_entity_admin(payload:dict, request:Request, conn: psycopg2.extensi
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
             giveFailure("Access Denied", payload['user_id'], role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(f'getModesAdmin_Exception: <{str(e)}>')
         giveFailure('Invalid Credentials', payload['user_id'], 0)
@@ -2249,6 +2329,8 @@ async def get_howreceived_admin(payload:dict, request:Request, conn: psycopg2.ex
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
             giveFailure("Access Denied", payload['user_id'], role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(f'getHowReceivedAdmin_Exception: <{str(e)}>')
         giveFailure('Invalid Credentials', payload['user_id'], 0)
@@ -2271,6 +2353,8 @@ async def get_users_admin(payload: dict, request:Request, conn: psycopg2.extensi
         else:
            
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -2288,6 +2372,8 @@ async def get_roles(payload: dict, request:Request, conn: psycopg2.extensions.co
             return giveSuccess(payload['user_id'],role_access_status,arr,total_count=len(arr))
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise giveFailure("Invalid Credentials",0,0)
 
@@ -2308,6 +2394,8 @@ def clienttype(payload,conn):
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise giveFailure("Invalid Credentials",0,0)
 
@@ -2427,6 +2515,8 @@ async def get_client_info_by_clientid(payload: dict, request:Request, conn: psyc
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload["user_id"],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -2457,6 +2547,8 @@ async def get_item_by_id(payload:dict, request:Request, conn: psycopg2.extension
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         return {
@@ -2519,6 +2611,8 @@ async def get_projects_by_builder_id(payload: dict, request:Request, conn: psyco
             return giveSuccess(payload["user_id"],role_access_status,res, total_count=len(res))
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0) 
@@ -2549,6 +2643,8 @@ async def get_builder_contacts(payload: dict, request:Request, conn: psycopg2.ex
             return giveSuccess(payload["user_id"],role_access_status,res, total_count,data['filename'])
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0) 
@@ -2591,6 +2687,8 @@ async def get_builders_and_projects_list(payload:dict, request:Request, conn: ps
                 return giveSuccess(payload['user_id'], role_access_status, data)
         else:
             raise giveFailure("Access Denied", payload["user_id"], role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
         raise giveFailure("Invalid Credentials", payload['user_id'], 0)
@@ -2658,6 +2756,8 @@ async def add_client_info(payload: dict, request:Request, conn: psycopg2.extensi
             raise giveFailure(f"Error: {ke} not present",0,0)
         except Exception as e:
             logging.info(f"Client id {id} could not be deleted")  
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         # print(traceback.print_exc())
@@ -2696,6 +2796,8 @@ async def get_client_type_admin(payload:dict, request:Request, conn: psycopg2.ex
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise giveFailure("Invalid Credentials",0,0)
     
@@ -2720,6 +2822,8 @@ async def get_relation_admin(payload:dict, request:Request, conn: psycopg2.exten
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise giveFailure("Invalid Credentials",0,0)
        
@@ -2745,6 +2849,8 @@ async def get_tenant_of_property_admin(payload:dict, request:Request, conn: psyc
         else:
             
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -2777,6 +2883,8 @@ async def delete_client_info(payload:dict, request:Request, conn: psycopg2.exten
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -2819,6 +2927,8 @@ async def add_project(payload:dict, request:Request, conn: psycopg2.extensions.c
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         # else:
         #     raise giveFailure("Already Exists",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.format_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -2877,6 +2987,8 @@ async def add_client_property(payload:dict, request:Request, conn: psycopg2.exte
     except KeyError as e:
         logging.info(traceback.print_exc)
         raise giveFailure(f"Key missing {e}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         try:
@@ -2987,6 +3099,8 @@ async def edit_client_info(payload:dict, request:Request, conn: psycopg2.extensi
                 conn[0].commit()
                 logging.info(f'editClientInfo: client_poa update status is <{cursor.statusmessage}>')
         return giveSuccess(payload['user_id'],role_access_status,data)
+    except HTTPException as h:
+        raise h
     except Exception as e:
          logging.info(traceback.print_exc())
          raise giveFailure(f"Failed To Edit given client info due to <{traceback.print_exc()}>",0,0)
@@ -3017,6 +3131,8 @@ async def delete_client_property(payload:dict, request:Request, conn: psycopg2.e
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -3038,6 +3154,8 @@ async def get_property_status_admin(payload:dict, request:Request, conn: psycopg
                 "name":i[1]
             })
         return res
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         logging.info(f"Error is {e}")
@@ -3061,6 +3179,8 @@ async def get_level_of_furnishing(payload:dict, request:Request, conn: psycopg2.
             
         # logging.info(res)
         return res
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         logging.info(f"Error is {e}")
@@ -3082,6 +3202,8 @@ async def get_property_type(payload:dict, request:Request, conn: psycopg2.extens
                 "name":i[1]
             })
         return res
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         logging.info(f"Error is {e}")
@@ -3180,6 +3302,8 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
     except KeyError as e:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key : {e}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
          logging.info(traceback.print_exc())
          raise giveFailure(f"Failed To Edit given client info due to <{traceback.print_exc()}>",0,0)
@@ -3270,6 +3394,8 @@ async def get_client_property_by_id(payload:dict, request:Request, conn: psycopg
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload["user_id"],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -3327,6 +3453,8 @@ async def add_client_receipt(payload:dict, request:Request, conn: psycopg2.exten
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3368,6 +3496,8 @@ async def edit_client_receipt(payload: dict, request:Request, conn: psycopg2.ext
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3394,6 +3524,8 @@ async def delete_client_receipt(payload:dict, request:Request, conn: psycopg2.ex
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3437,6 +3569,8 @@ async def add_client_pma_agreement(payload:dict, request:Request, conn: psycopg2
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3466,6 +3600,8 @@ async def edit_client_pma_agreement(payload:dict, request:Request, conn: psycopg
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3487,6 +3623,8 @@ async def delete_client_pma_agreement(payload:dict, request:Request, conn: psyco
                     raise giveFailure("No Record Available",payload['user_id'],role_access_status)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3529,6 +3667,8 @@ async def add_client_ll_agreement(payload:dict, request:Request, conn: psycopg2.
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3556,6 +3696,8 @@ async def edit_client_ll_agreement(payload:dict, request:Request, conn: psycopg2
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3580,6 +3722,8 @@ async def delete_client_pma_agreement(payload:dict, request:Request, conn: psyco
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3603,6 +3747,8 @@ async def get_client_property_admin(payload:dict, request:Request, conn: psycopg
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3627,6 +3773,8 @@ async def get_order_by_client_id(payload:dict, request:Request, conn: psycopg2.e
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3705,6 +3853,8 @@ async def getprojectbyid(payload:dict, request:Request, conn: psycopg2.extension
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -3812,6 +3962,8 @@ async def edit_project(payload:dict, request:Request, conn: psycopg2.extensions.
                 return giveSuccess(payload['user_id'],role_access_status,{"edited project":payload['projectid']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
@@ -3834,6 +3986,8 @@ async def add_cities(payload:dict, request:Request, conn: psycopg2.extensions.co
             return giveSuccess(payload['user_id'],role_access_status,{"inserted_city":payload['city']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
@@ -3859,6 +4013,8 @@ async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.c
             return giveSuccess(payload['user_id'],role_access_status,{"editted_city":payload['city']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
@@ -3879,6 +4035,8 @@ async def delete_cities(payload:dict, request:Request, conn: psycopg2.extensions
             return giveSuccess(payload['user_id'],role_access_status,{"deleted_city":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
@@ -3932,6 +4090,8 @@ async def add_orders(payload:dict, request:Request, conn: psycopg2.extensions.co
                 return giveSuccess(payload['user_id'],role_access_status,data={"inserted data":data})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
@@ -3983,6 +4143,8 @@ async def edit_orders(payload:dict, request:Request, conn: psycopg2.extensions.c
                 return giveSuccess(payload['user_id'],role_access_status,data={"edited data":order_info['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)    
@@ -4007,6 +4169,8 @@ async def delete_orders(payload:dict, request:Request, conn: psycopg2.extensions
             return giveSuccess(payload['user_id'],role_access_status,{"Deleted Data":payload['order_id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4046,6 +4210,8 @@ async def add_order_invoice(payload:dict, request:Request, conn:psycopg2.extensi
             return giveSuccess(payload['user_id'],role_access_status,{"inserted data":data})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)   
@@ -4064,6 +4230,8 @@ async def get_service_admin(payload: dict, request:Request, conn:psycopg2.extens
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         giveFailure('Invalid Credentials',payload['user_id'],0)
 
@@ -4081,6 +4249,8 @@ async def get_client_property_admin(payload: dict, request:Request, conn: psycop
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         giveFailure('Invalid Credentials',payload['user_id'],0)
 
@@ -4098,6 +4268,8 @@ async def get_order_status_admin(payload: dict, request:Request, conn: psycopg2.
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         giveFailure('Invalid Credentials',payload['user_id'],0)   
@@ -4116,6 +4288,8 @@ async def get_tally_ledger_admin(payload:dict, request:Request, conn: psycopg2.e
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         giveFailure('Invalid Credentials',payload['user_id'],0)     
@@ -4139,6 +4313,8 @@ async def edit_order_invoice(payload:dict, request:Request, conn:psycopg2.extens
             return giveSuccess(payload['user_id'],role_access_status,{"edited data":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4161,6 +4337,8 @@ async def delete_order_invoice(payload:dict, request:Request, conn:psycopg2.exte
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4200,6 +4378,8 @@ async def add_order_receipt(payload:dict, request:Request, conn: psycopg2.extens
             return giveSuccess(payload['user_id'],role_access_status,{"inserted data":data})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)   
@@ -4222,6 +4402,8 @@ async def edit_order_receipt(payload:dict, request:Request, conn:psycopg2.extens
             return giveSuccess(payload['user_id'],role_access_status,{"edited data":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4244,6 +4426,8 @@ async def delete_order_receipt(payload:dict, request:Request, conn:psycopg2.exte
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4288,6 +4472,8 @@ async def get_order_by_id(payload: dict, request:Request, conn: psycopg2.extensi
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4312,6 +4498,8 @@ async def get_order_status_history(payload:dict, request:Request, conn:psycopg2.
             return giveSuccess(payload['user_id'],role_access_status,order_status_history)
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4330,6 +4518,8 @@ async def add_order_status_change(payload:dict, request:Request, conn: psycopg2.
             return giveSuccess(payload['user_id'],role_access_status,{"edited history":payload['orderid']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4354,6 +4544,8 @@ async def get_builders_admin(payload:dict, request:Request, conn: psycopg2.exten
                 return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4378,6 +4570,8 @@ async def get_project_legal_status_admin(payload:dict, request:Request, conn: ps
                 return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
@@ -4403,6 +4597,8 @@ async def get_project_type_admin(payload:dict, request:Request, conn: psycopg2.e
                 return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
@@ -4443,6 +4639,8 @@ async def add_vendors(payload: dict, request:Request, conn: psycopg2.extensions.
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Vendor":id})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
@@ -4467,6 +4665,8 @@ async def edit_vendors(payload: dict, request:Request, conn: psycopg2.extensions
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Vendor":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4487,6 +4687,8 @@ async def delete_vendors(payload: dict, request:Request, conn: psycopg2.extensio
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4527,6 +4729,8 @@ async def add_vendor_invoice(payload: dict, request:Request, conn: psycopg2.exte
             return giveSuccess(payload['user_id'],role_access_status,{"Inserted Invoice":id})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4550,6 +4754,8 @@ async def edit_vendor_invoice(payload:dict, request:Request, conn: psycopg2.exte
             return giveSuccess(payload['user_id'],role_access_status,{"Edited Invoice":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)    
@@ -4570,6 +4776,8 @@ async def delete_vendor_invoice(payload:dict, request:Request, conn:psycopg2.ext
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
@@ -4595,6 +4803,8 @@ async def get_vendor_category_admin(payload:dict, request:Request, conn:psycopg2
 
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4635,6 +4845,8 @@ async def add_vendor_payment(payload:dict, request:Request, conn: psycopg2.exten
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Payment":id})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4658,6 +4870,8 @@ async def edit_vendor_payment(payload:dict, request:Request, conn: psycopg2.exte
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Payment":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4678,6 +4892,8 @@ async def delete_vendor_payment(payload:dict, request:Request, conn: psycopg2.ex
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Payment":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4698,6 +4914,8 @@ async def forgot_password_email(payload:dict, request:Request, conn: psycopg2.ex
             else:
                 return giveSuccess(None,None,{"Email ID":email[0]})
 
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',None,None)
@@ -4715,6 +4933,8 @@ async def reset_password(payload:dict, request:Request, conn: psycopg2.extension
             #logging.info(msg)
             logging.info(cursor.mogrify(query,[newp,payload['username']]))
             return giveSuccess(None,None,{"Change PW for":payload['username']})
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',None,None)
@@ -4771,6 +4991,8 @@ async def add_new_builder_contact(payload:dict, request:Request, conn: psycopg2.
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         print(traceback.format_exc())
         raise giveFailure(str(e),payload['user_id'],0)
@@ -4788,6 +5010,8 @@ async def delete_builder_contact(payload: dict, request:Request, conn:psycopg2.e
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise giveFailure("Invalid Credentials",0,0)
 
@@ -4812,6 +5036,8 @@ async def add_ll_tenant(payload: dict, request:Request, conn:psycopg2.extensions
                 return giveSuccess(payload['user_id'],role_access_status,{"added ids are":[dct['tenantid'] for dct in payload['tenants']]})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)  
@@ -4832,6 +5058,8 @@ async def delete_ll_tenant(payload: dict, request:Request, conn:psycopg2.extensi
                 return giveSuccess(payload['user_id'],role_access_status,{"delete ll tenants from are":payload['leavelicenseid']})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)  
@@ -4855,6 +5083,8 @@ async def get_ll_tenant(payload:dict, request:Request, conn: psycopg2.extensions
 
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -4961,6 +5191,9 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                     return giveSuccess(payload['user_id'],role_access_status,len(_rows))
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
+    except HTTPException as h:
+        raise h
+
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -4991,6 +5224,8 @@ async def get_order_pending(payload: dict, request:Request, conn:psycopg2.extens
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Key error{ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -5028,6 +5263,8 @@ async def add_user(payload:dict, request:Request, conn: psycopg2.extensions.conn
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"{ke} is missing",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -5053,6 +5290,8 @@ async def edit_user(payload:dict, request:Request, conn: psycopg2.extensions.con
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"{ke} is missing",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -5078,6 +5317,8 @@ async def delete_user(payload:dict, request:Request, conn: psycopg2.extensions.c
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"{ke} is missing",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -5116,6 +5357,8 @@ async def add_services(payload:dict, request:Request, conn: psycopg2.extensions.
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Invalid Credentials",0,0)
@@ -5136,6 +5379,8 @@ async def edit_services(payload:dict, request:Request, conn: psycopg2.extensions
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Invalid Credentials",0,0)
@@ -5157,6 +5402,8 @@ async def delete_services(payload:dict, request:Request, conn: psycopg2.extensio
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Invalid Credentials",0,0)
@@ -5520,6 +5767,8 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -5673,6 +5922,8 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -5848,6 +6099,8 @@ async def get_agency_type_admin(payload:dict, request:Request, conn: psycopg2.ex
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -6110,6 +6363,8 @@ async def get_mandal_admin(payload: dict, request:Request, conn: psycopg2.extens
                 return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         giveFailure('Invalid Credentials',payload['user_id'],0)   
@@ -6431,6 +6686,8 @@ def send_email(email,password,subject, body,to_email,html=None,html2=None,filena
         server.sendmail(smtp_username, to_email, text)
         server.quit()
         print("Email sent successfully!")
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.format_exc())
         print(f"Failed to send email: {e}")
@@ -6458,6 +6715,8 @@ async def gentoken(payload:dict, request:Request, conn: psycopg2.extensions.conn
             conn[0].commit()
 
             return access_token
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise HTTPException(status_code=401,detail="Invalid Payload")
 
@@ -6482,6 +6741,8 @@ async def login_for_token(payload:dict, request:Request, conn: psycopg2.extensio
                 return access_token
             else:
                 raise HTTPException(status_code=401,detail="No username")
+    except HTTPException as h:
+        raise h
     except Exception as e:
         raise HTTPException(status_code=401,detail="Invalid Payload")
 
@@ -6522,6 +6783,8 @@ async def getdata(payload:dict,request : Request,conn: psycopg2.extensions.conne
     except jwt.exceptions.ExpiredSignatureError as e:
         logging.info("Expired Token")
         raise HTTPException(status_code=401,detail="Expired Token")
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise HTTPException(status_code=403,detail = "Invalid Credentials")
@@ -7919,6 +8182,8 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
     except psycopg2.Error as e:
         logging.info(traceback.format_exc())
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.format_exc())
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
@@ -8759,6 +9024,8 @@ async def report_exception_entity_blank(payload:dict, request:Request, conn: psy
             sum += i['amount'] if i['amount']else 0
         data['total'] = {'totalamount':sum}
         return data
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -9013,6 +9280,8 @@ async def change_company_key(payload: dict, request: Request,conn : psycopg2.ext
             return giveSuccess(payload['user_id'],role_access_status,{
                 "New company key":payload['companykey']
             })
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(traceback.print_exc())
         raise HTTPException(400,f"Bad request {e}")
