@@ -30,6 +30,8 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.units import mm, inch
 
+#logs
+
 pdfSizeMap = {
     "/admin/manageuser" : (10,10),
   "/admin/manageemployees" : (20,10),
@@ -51,7 +53,7 @@ pdfSizeMap = {
   "/manage/manageclientproperty" : (45,20),
   "/manage/manageclientreceipt" : (20,10),
   "/manage/managellagreement" : (20,10),
-  "/manage/managepmaagreement" : (30,10),
+  "/manage/managepmaagreement" : (35,10),
   "/manage/manageorderreceipt" : (40,10),
   "/manage/manageclientinvoice" : (25,10),
   "/manage/managevendor" : (16,10),
@@ -595,7 +597,7 @@ def filterAndPaginate_v2(db_config,
                 logging.info([start_index,end_index])
             else:
                 rows = search_results
-        resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames}
+        resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames,'filename':None}
         # generate downloadable file
         if page_number == 0 and page_size == 0 and (downloadType == 'excel' or downloadType == 'pdf'):
             
@@ -1144,6 +1146,7 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
                 data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], 'get_builder_view', payload['filters'],
                                         payload['sort_by'], payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,isdeleted=True,whereinquery=True,
+                                        mapping=payload['colmap'] if 'colmap' in payload else None,
                                             downloadType=payload['downloadType'] if 'downloadType' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
 
                 colnames = data['colnames']
@@ -2647,7 +2650,7 @@ async def get_builder_contacts(payload: dict, request:Request, conn: psycopg2.ex
                 for i,colname in enumerate(colnames):
                     row_dict[colname] = row[i]
                 res.append(row_dict)
-            return giveSuccess(payload["user_id"],role_access_status,res, total_count,data['filename'])
+            return giveSuccess(payload["user_id"],role_access_status,res, total_count,data['filename'] if 'filename' in data else None)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
     except HTTPException as h:
@@ -7820,7 +7823,7 @@ async def report_bank_balance_reconciliation(payload:dict, request:Request, conn
         logging.info(traceback.format_exc())
         raise giveFailure("Access Denied",0,None)
     
-@app.post('/reportMonthlyBankSummary')
+
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'Monthly_Balance_View'
     return await runInTryCatch(
@@ -8113,6 +8116,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
     </body>
 </html>
 '''
+
             html2 = """
             <!DOCTYPE html>
             <html>
@@ -8177,6 +8181,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             if 'downloadType' in payload:
                 filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
                 ans['filename'] = filename
+
             if not payload['sendEmail']:
                 return ans
 
