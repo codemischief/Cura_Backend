@@ -15,6 +15,10 @@ alter table project_photos alter column date_taken type date;
 alter table client_receipt rename column "Visible to client" to visibletoclient;
 alter table collegetypes rename column collegeousid to id;
 
+alter table research_prospect add column email1 text;
+alter table research_prospect add column phoneno text;
+
+
 ALTER TABLE client_property_owner DROP COLUMN owner1addressline1;
 ALTER TABLE client_property_owner DROP COLUMN owner1addressline2;
 ALTER TABLE client_property_owner DROP COLUMN owner1suburb;
@@ -1079,6 +1083,8 @@ SELECT
     a.country,
     a.propertylocation,
     a.possibleservices,
+    a.email1,
+    a.phoneno,
     a.dated,
     a.createdby,
     a.isdeleted

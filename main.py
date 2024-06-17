@@ -5465,13 +5465,13 @@ async def add_research_employer(payload:dict, request:Request, conn: psycopg2.ex
                 query = """INSERT INTO research_employer (country,onsiteopportunity,city,state,admincontactmail,zip,hc,website,
                 admincontactphone,contactname1,contactmail1,contactphone1,contactname2,contactmail2,contactphone2,
                 hrcontactname,hrcontactmail,hrcontactphone,admincontactname,employername,industry,addressline1,addressline2,suburb,
-                dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                dated,createdby,isdeleted,hc) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
                 msg = logMessage(cursor,query,[
                     payload["country"],payload["onsiteopportunity"],payload["city"],payload["state"],payload["admincontactmail"],
                     payload["zip"],payload["hc"],payload["website"],payload["admincontactphone"],payload["contactname1"],
                     payload["contactmail1"],payload["contactphone1"],payload["contactname2"],payload["contactmail2"],payload["contactphone2"],
                     payload["hrcontactname"],payload["hrcontactmail"],payload["hrcontactphone"],payload["admincontactname"],payload["employername"],
-                    payload["industry"],payload["addressline1"],payload["addressline2"],payload["suburb"],givenowtime(),payload['user_id'],False
+                    payload["industry"],payload["addressline1"],payload["addressline2"],payload["suburb"],givenowtime(),payload['user_id'],False,payload['hc']
                 ])
                 logging.info(msg)
                 id = cursor.fetchone()[0]
@@ -5498,13 +5498,13 @@ async def edit_research_employer(payload:dict, request:Request, conn: psycopg2.e
                 query = """UPDATE research_employer SET country=%s,onsiteopportunity=%s,city=%s,state=%s,admincontactmail=%s,zip=%s,hc=%s,website=%s,
                 admincontactphone=%s,contactname1=%s,contactmail1=%s,contactphone1=%s,contactname2=%s,contactmail2=%s,contactphone2=%s,
                 hrcontactname=%s,hrcontactmail=%s,hrcontactphone=%s,admincontactname=%s,employername=%s,industry=%s,addressline1=%s,addressline2=%s,suburb=%s,
-                dated=%s,createdby=%s,isdeleted=%s WHERE id=%s"""
+                dated=%s,createdby=%s,isdeleted=%s,hc=%s WHERE id=%s"""
                 msg = logMessage(cursor,query,[
                     payload["country"],payload["onsiteopportunity"],payload["city"],payload["state"],payload["admincontactmail"],
                     payload["zip"],payload["hc"],payload["website"],payload["admincontactphone"],payload["contactname1"],
                     payload["contactmail1"],payload["contactphone1"],payload["contactname2"],payload["contactmail2"],payload["contactphone2"],
                     payload["hrcontactname"],payload["hrcontactmail"],payload["hrcontactphone"],payload["admincontactname"],payload["employername"],
-                    payload["industry"],payload["addressline1"],payload["addressline2"],payload["suburb"],givenowtime(),payload['user_id'],False,payload['id']
+                    payload["industry"],payload["addressline1"],payload["addressline2"],payload["suburb"],givenowtime(),payload['user_id'],False,payload['hc'],payload['id']
                 ])
                 logging.info(msg)
                 conn[0].commit()
