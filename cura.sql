@@ -41,6 +41,35 @@ ALTER TABLE client_property_owner DROP COLUMN owner2relation;
 ALTER TABLE client_property_owner DROP COLUMN owner2relationwith;
 ALTER TABLE client_property_owner DROP COLUMN otherownerdetails;
 
+ALTER TABLE client_property_owner
+ADD COLUMN owner1aadhaarno text;
+
+ALTER TABLE client_property_owner
+ADD COLUMN owner1pancollected boolean;
+
+ALTER TABLE client_property_owner
+ADD COLUMN owner1aadhaarcollected boolean;
+
+ALTER TABLE client_property_owner
+ADD COLUMN owner2aadhaarno text;
+
+ALTER TABLE client_property_owner
+ADD COLUMN owner2pancollected boolean;
+
+ALTER TABLE client_property_owner
+ADD COLUMN owner2aadhaarcollected boolean;
+
+ALTER TABLE client_property_owner
+ADD COLUMN owner3aadhaarno text;
+
+ALTER TABLE client_property_owner
+ADD COLUMN owner3pancollected boolean;
+
+ALTER TABLE client_property_owner
+ADD COLUMN owner3aadhaarcollected boolean;
+
+ALTER TABLE client_property_owner
+ADD COLUMN comments text;
 
 
 CREATE SEQUENCE IF NOT EXISTS cities_id_seq OWNED BY cities.id;
