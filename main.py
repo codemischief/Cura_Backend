@@ -800,8 +800,6 @@ def giveFailure(msg,uid,rid,data=[]):
 
 def check_role_access(conn, payload: dict,request: Request = None,method = None,isUtilityRoute=False):
     logging.info(f"Method is {method}")
-    if isUtilityRoute:
-        return True
     if request and  request.headers.get('authorization'):
         with conn[0].cursor() as cursor:
             token = request.headers['authorization'][7:]
@@ -822,6 +820,8 @@ def check_role_access(conn, payload: dict,request: Request = None,method = None,
                 raise HTTPException(498,"Badly expired token")
         else:
             raise HTTPException(status_code=498,detail="Invalid Token")
+    if isUtilityRoute:
+        return True
     if 'user_id' in payload:
         identifier_id = payload['user_id']
         identifier_name = None
