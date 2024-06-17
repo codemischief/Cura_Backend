@@ -9288,8 +9288,8 @@ async def change_company_key(payload: dict, request: Request,conn : psycopg2.ext
             query = "UPDATE companykey SET companycode=%s"
 
             with conn[0].cursor() as cursor:
+                logging.info(cursor.mogrify(query,[payload['companykey']]))
                 msg = logMessage(cursor,query,(payload['companykey']))
-                logging.info(msg)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{
                 "New company key":payload['companykey']
