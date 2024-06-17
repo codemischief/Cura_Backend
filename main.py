@@ -78,7 +78,6 @@ pdfSizeMap = {
 logger = logging.getLogger(__name__)
 
 ALG = 'HS256'
-FILE_DIRECTORY = './downloads'
 
 month_map = {
     1:"Jan",
@@ -391,13 +390,13 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         filename = None
         if downloadType == 'excel':
             filename = f'{uuid.uuid4()}.xlsx'
-            fname = f'./downloads/{filename}'
+            fname = f'{FILE_DIRECTORY}/{filename}'
             df.to_excel(fname, engine='openpyxl',index=False)
             logging.info(f'generated excel file <{fname}>')
         else:
             data_list = [df.columns.values.tolist()] + df.values.tolist()
             filename = f'{uuid.uuid4()}.pdf'
-            fname = f'./downloads/{filename}'
+            fname = f'{FILE_DIRECTORY}/{filename}'
             # we may need to vary the pagesize based on each report
             # pagesize = (55 * inch, 28 * inch)
             if routename in pdfSizeMap:
@@ -7807,7 +7806,7 @@ async def report_bank_balance_reconciliation(payload:dict, request:Request, conn
         df = pd.DataFrame(rows,columns=cols)
         if payload['downloadType'] == 'excel':
             filename = f'{uuid.uuid4()}.xlsx'
-            fname = f'./downloads/{filename}'
+            fname = f'{FILE_DIRECTORY}/{filename}'
             df.to_excel(fname, engine='openpyxl',index=False)
             logging.info(f'generated excel file <{fname}>')
     try:
