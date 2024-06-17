@@ -3770,7 +3770,7 @@ async def get_order_by_client_id(payload:dict, request:Request, conn: psycopg2.e
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''SELECT DISTINCT id,briefdescription
-                            as ordername from orders WHERE clientid = %s order by briefdescription'''
+                            as ordername from orders WHERE clientid = %s AND status = true and isdeleted =  false order by briefdescription'''
                 msg = logMessage(cursor,query,(payload['client_id'],))
                 logging.info(msg)
                 data = cursor.fetchall()
