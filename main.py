@@ -737,6 +737,7 @@ async def validate_credentials(payload: dict, request:Request, conn: psycopg2.ex
             msg = logMessage(cursor,query,(payload['username'],))
             logging.info(msg)
             userdata = cursor.fetchone()
+            logging.info(f"Userdata is [{userdata}]")
             msg = logMessage(cursor,query2, (str(payload['company_key']),))
             logging.info(msg)
             company_key = cursor.fetchone()
@@ -7417,10 +7418,10 @@ async def getrole(payload: dict, conn, request:Request, token:str=None):
             raise HTTPException(status_code=400, detail="Please provide either 'user_id' or 'username' in the payload")
         cursor = conn[0].cursor()
         if identifier_id:
-            msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE id = %s", (identifier_id,))
+            msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE id = %s and isdeleted=false", (identifier_id,))
             logging.info(msg)
         elif identifier_name:
-            msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE username = %s", (identifier_name,))
+            msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE username = %s and isdeleted=false", (identifier_name,))
             logging.info(msg)
         else:
             raise HTTPException(status_code=403,detail=f"Bad Request {e}")
@@ -7449,6 +7450,7 @@ async def get_role_access(payload: dict,header:str,request:Request,conn):
         res = {}
         cursor = conn[0].cursor()
         role_access_status = await getrole(payload,conn,request,header)
+        logging.info(f"Role status is <{role_access_status}>")
         query = f"select distinct module from rules"
         cursor.execute(query)
         modulelist = [i[0] for i in cursor.fetchall()]
