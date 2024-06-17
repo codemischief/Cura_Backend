@@ -14,7 +14,7 @@ alter table project_photos rename column phototakenwhen to date_taken;
 alter table project_photos alter column date_taken type date;
 alter table client_receipt rename column "Visible to client" to visibletoclient;
 alter table collegetypes rename column collegeousid to id;
-
+alter table research_employer add column notes text;
 alter table research_prospect add column email1 text;
 alter table research_prospect add column phoneno text;
 
@@ -2722,6 +2722,7 @@ SELECT DISTINCT
     b.name as countryname,
     a.zip,
     a.hc,
+    a.notes,
     a.website,
     CASE a.onsiteopportunity WHEN true THEN 'Yes' ELSE 'No' END AS onsiteopportunitytext,
     a.onsiteopportunity,
