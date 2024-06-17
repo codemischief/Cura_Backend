@@ -9286,8 +9286,10 @@ async def change_company_key(payload: dict, request: Request,conn : psycopg2.ext
         role_access_status = check_role_access(conn,payload,request,method="editCompanyKey")
         if role_access_status == 1:
             query = "UPDATE companykey SET companycode=%s"
+
             with conn[0].cursor() as cursor:
-                cursor.execute(query,(payload['companykey']))
+                msg = logMessage(cursor,query,(payload['companykey']))
+                logging.info(msg)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{
                 "New company key":payload['companykey']
