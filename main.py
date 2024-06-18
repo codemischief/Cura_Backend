@@ -3054,8 +3054,8 @@ async def edit_client_info(payload:dict, request:Request, conn: psycopg2.extensi
                         logging.info(f'editClientInfo: client_access clientid <{clientid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
                 if 'client_access' in payload and 'insert' in payload['client_access']:
                     for u in payload['client_access']['insert']:
-                        query = ('INSERT into client_access (onlinemailid,onlinepwd,onlineclue,clientid) values (%s,%s,%s,%s)')
-                        data = logMessage(cursor, query,(u["onlinemailid"], u["onlinepwd"], u["onlineclue"], clientid))
+                        query = ('INSERT into client_access (onlinemailid,onlinepwd,onlineclue,clientid,dated,createdby,isdeleted) values (%s,%s,%s,%s,%s,%s,%s)')
+                        data = logMessage(cursor, query,(u["onlinemailid"], u["onlinepwd"], u["onlineclue"], clientid,givenowtime(),payload['user_id'],False))
                         conn[0].commit()
                         logging.info(f'editClientInfo: client_access clientid <{clientid}> INSERT status is <{cursor.statusmessage}>')
 
@@ -3072,10 +3072,10 @@ async def edit_client_info(payload:dict, request:Request, conn: psycopg2.extensi
                         logging.info(f'editClientInfo: client_access clientid <{clientid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
                 if 'client_bank_info' in payload and 'insert' in payload['client_bank_info']:
                     for u in payload['client_bank_info']['insert']:
-                        query = ('INSERT into client_bank_info (bankname,bankaccountholdername,bankaccountno,bankaccounttype,bankbranch,bankcity,bankifsccode,bankmicrcode,description,clientid) '
-                                 'values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)')
+                        query = ('INSERT into client_bank_info (bankname,bankaccountholdername,bankaccountno,bankaccounttype,bankbranch,bankcity,bankifsccode,bankmicrcode,description,clientid,dated,isdeleted,createdby) '
+                                 'values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)')
                         data = logMessage(cursor, query,(u["bankname"],u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
-                            u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], u['description'],clientid))
+                            u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], u['description'],clientid,givenowtime(),payload['user_id'],False))
                         conn[0].commit()
                         logging.info(f'editClientInfo: client_bank_info clientid <{clientid}> INSERT status is <{cursor.statusmessage}>')
 
