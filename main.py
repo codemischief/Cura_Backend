@@ -6654,7 +6654,7 @@ async def delete_research_architect(payload:dict, request:Request, conn:psycopg2
         logging.info(f"Exception encountered:{traceback.format_exc()}")
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
-def send_email(email,password,subject, body,to_email,html=None,html2=None,filename=None):
+def send_email(email,password,subject, body,to_email,html=None,filename=None):
     # SMTP server configuration
     smtp_server = SMTP_SERVER  # Example: 'smtp.gmail.com'
     smtp_port = SMTP_PORT  # For SSL, use 465; for TLS/StartTLS, use 587
@@ -6670,9 +6670,8 @@ def send_email(email,password,subject, body,to_email,html=None,html2=None,filena
     # Add body to the email
     msg.attach(MIMEText(body, 'plain'))
     if html is not None:
-        msg.attach(MIMEText(html, 'html'))
-    if html2 is not None:
-        msg.attach(MIMEText(html2, 'html'))
+        for i in html:
+            msg.attach(i)
     if filename is not None:
         with open(f"{FILE_DIRECTORY}/{filename}", 'rb') as attachment:
             part = MIMEBase(filename, 'pdf')
