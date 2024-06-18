@@ -6816,7 +6816,7 @@ async def login_for_token(payload:dict, request:Request, conn: psycopg2.extensio
                     logging.info(f"""Reset password at localhost:5173/reset/{access_token}""")
                     # print(access_token)
                     conn[0].commit()
-                    return giveSuccess(0,0,email[0])
+                    return giveSuccess(0,0,email)
                 return access_token
             else:
                 raise HTTPException(status_code=401,detail="No username")
