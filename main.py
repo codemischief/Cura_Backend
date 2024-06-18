@@ -42,7 +42,7 @@ pdfSizeMap = {
   "/admin/locality" : (12,6),
   "/admin/LOB" : (8,10),
   "/admin/service" : (10,10),
-  "/admin/payments" : (15,10),
+  "/admin/payments" : (16,10),
   "/admin/temp" : (10,10),
   "/admin/lobReceiptPayments" : (10,10),
   "/admin/entityReceiptPayments" : (10,10),
@@ -8192,7 +8192,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 query = f"SELECT email1 from client where id={payload['clientid']}"
                 cursor.execute(query)
                 emailid = cursor.fetchone()[0]
-            send_email_testing(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html)
+            send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html)
             return {"sent email to":emailid}
     except psycopg2.Error as e:
         logging.info(traceback.format_exc())
@@ -9353,5 +9353,17 @@ async def refresh_token(payload: dict,request:Request,conn: psycopg2.extensions.
     except Exception as e:
         logging.info(traceback.print_exc())
         raise HTTPException(400,"Bad Request")
+
+@app.post('/logout')
+async def logout(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = f"DELETE FROM tokens WHERE userid = {payload['user_id']}"
+            logging.info(query)
+            cursor.execute(query)
+            conn[0].commit()
+        return giveSuccess(payload['user_id'],0,{"Logged Out" : payload['user_id']})
+    except Exception as e:
+        raise HTTPException("400",f"Bad Request {e}")
 
 logger.info("program_started")
