@@ -29,7 +29,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.units import mm, inch
-# from sendEmail import send_email_testing
+from sendEmail import send_email_testing
 
 #logs
 
@@ -6692,7 +6692,7 @@ def send_email(email,password,subject, body,to_email,html=None,filename=None):
         server.starttls()  # Enable security
         server.login(smtp_username, smtp_password)
         text = msg.as_string()
-        # server.sendmail(smtp_username, to_email, text)
+        server.sendmail(smtp_username, to_email, text)
         server.quit()
         print("Email sent successfully!")
     except HTTPException as h:
@@ -8192,7 +8192,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 query = f"SELECT email1 from client where id={payload['clientid']}"
                 cursor.execute(query)
                 emailid = cursor.fetchone()[0]
-            send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html)
+            send_email_testing(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html)
             return {"sent email to":emailid}
     except psycopg2.Error as e:
         logging.info(traceback.format_exc())
