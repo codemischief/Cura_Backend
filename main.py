@@ -535,20 +535,23 @@ def filterAndPaginate_v2(db_config,
         if sort_column and static:
             q = f'''SELECT data_type
                     FROM information_schema.columns
-                    WHERE table_name = '{table_name}'
-                    AND column_name = '{sort_column[0]}';
+                    WHERE table_name = lower('{table_name}')
+                    AND column_name = lower('{sort_column[0]}');
 '''
             conn = psycopg2.connect(db_config)
             logging.info(q)
             cursor = conn.cursor()
             msg = logMessage(cursor,q)
             logging.info(q)
-            datatype = cursor.fetchone()[0]
+            datatype = cursor.fetchone()
+            if datatype:
+                datatype = datatype[0]
+            logging.info(f"Data type is{datatype}")
             if datatype != 'text':
                 query += f" ORDER BY {sort_column[0]} {'asc NULLS FIRST' if sort_order == 'asc' else 'desc  NULLS LAST'}"
             if datatype == 'text':
                 query += f" ORDER BY LOWER({sort_column[0]}) {'asc NULLS FIRST' if sort_order == 'asc' else 'desc  NULLS LAST'}"
-        # Handle pagination
+            # Handle pagination
         
         if group_by:
             query+= f"GROUP BY {','.join(group_by)}"
