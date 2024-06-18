@@ -3252,14 +3252,14 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
                 # perform CRUD for client accesses in 'client_access' table
                 if 'client_property_photos' in payload and 'update' in payload['client_property_photos']:
                     for u in payload['client_property_photos']['update']:
-                        query = ('UPDATE client_property_photos SET photolink=%s,' 'description=%s,' 'phototakenwhen=%s  WHERE id=%s and clientpropertyid=%s')
-                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], u["id"], propertyid))
+                        query = ('UPDATE client_property_photos SET photolink=%s,' 'description=%s,' 'phototakenwhen=%s,dated=%s,createdby=%s,isdeleted=%s  WHERE id=%s and clientpropertyid=%s')
+                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], u["id"], propertyid,givenowtime(),payload['user_id'],False))
                         conn[0].commit()
                         logging.info(f'editClientProperty: client_property_photos propertyid <{propertyid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
                 if 'client_property_photos' in payload and 'insert' in payload['client_property_photos']:
                     for u in payload['client_property_photos']['insert']:
-                        query = ('INSERT into client_property_photos (photolink,description,phototakenwhen,clientpropertyid) values (%s,%s,%s,%s)')
-                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], propertyid))
+                        query = ('INSERT into client_property_photos (photolink,description,phototakenwhen,clientpropertyid,dated,createdby,isdeleted) values (%s,%s,%s,%s,%s,%s,%s)')
+                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], propertyid,givenowtime(),payload['user_id'],False))
                         conn[0].commit()
                         logging.info(f'editClientProperty: client_property_photos clientid <{propertyid}> INSERT status is <{cursor.statusmessage}>')
 
@@ -3770,7 +3770,7 @@ async def get_order_by_client_id(payload:dict, request:Request, conn: psycopg2.e
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''SELECT DISTINCT id,briefdescription
-                            as ordername from orders WHERE clientid = %s AND isdeleted =  false order by briefdescription'''
+                            as ordername from orders WHERE clientid = %s AND isdeleted = false AND status != 4 AND status != 5 order by briefdescription'''
                 msg = logMessage(cursor,query,(payload['client_id'],))
                 logging.info(msg)
                 data = cursor.fetchall()
