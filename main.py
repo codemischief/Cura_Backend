@@ -8078,7 +8078,8 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             conn[0].commit()
             ans['data'] = res
             vardata='<p style="color: purple;">No statement could be generated</p>'
-            html = f'''
+            html = []
+            html1 = f'''
 <html>
     <body style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 18px;">
         <p>
@@ -8116,7 +8117,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
     </body>
 </html>
 '''
-            
+            html = [html1]
             if res :
                 html2 = """
             <!DOCTYPE html>
@@ -8179,6 +8180,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             </body>
             </html>
             """
+                html.append(html2)
             if 'downloadType' in payload:
                 filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
                 ans['filename'] = filename
@@ -8191,7 +8193,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 query = f"SELECT email1 from client where id={payload['clientid']}"
                 cursor.execute(query)
                 emailid = cursor.fetchone()[0]
-            send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html,html2)
+            send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html)
             return {"sent email to":emailid}
     except psycopg2.Error as e:
         logging.info(traceback.format_exc())
