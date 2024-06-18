@@ -35,43 +35,110 @@ from reportlab.lib.units import mm, inch
 
 pdfSizeMap = {
     "/admin/manageuser" : (10,10),
-  "/admin/manageemployees" : (20,10),
-  "/admin/country" : (10,10),
-  "/admin/state" : (10,10),
-  "/admin/city" : (10,10),
-  "/admin/locality" : (12,6),
-  "/admin/LOB" : (8,10),
-  "/admin/service" : (10,10),
-  "/admin/payments" : (16,10),
-  "/admin/temp" : (10,10),
-  "/admin/lobReceiptPayments" : (10,10),
-  "/admin/entityReceiptPayments" : (10,10),
-  "/admin/lobReceiptPaymentsConsolidated" : (10,10),
-  "/manage/bankstatement" : (30,15),
-  "/manage/manageBuilder":(15,10),
-  "/manage/manageprojectinfo":(15,10),
-  "/manage/manageclientinfo" : (45,15),
-  "/manage/manageclientproperty" : (45,20),
-  "/manage/manageclientreceipt" : (20,10),
-  "/manage/managellagreement" : (20,10),
-  "/manage/managepmaagreement" : (35,10),
-  "/manage/manageorderreceipt" : (40,10),
-  "/manage/manageclientinvoice" : (25,10),
-  "/manage/managevendor" : (16,10),
-  "/manage/managevendorinvoice" : (30,10),
-  "/manage/managevendorpayment" : (30,10),
-  "/manage/sendclientstatement" : (20,10),
-  "/manage/managebuilder/projects/:buildername" : (10,10),
-  "/manage/managebuilder/contacts/:buildername" : (10,10),
-  "/manage/managevendorpayment/:orderid" : (10,10),
-  "/manage/manageclientinvoice/:orderid" : (10,10),
-  "/manage/manageorderreceipt/:orderid" : (10,10),
-  "/manage/manageclientinfo/orders/showall/:orderid" : (10,10),
-  "/manage/manageclientinfo/properties/:clientname" : (10,10),
-  "/manage/manageclientinfo/orders/:clientname" : (10,10),
-  "/manage/manageclientproperty/pmaagreement/:clientname" : (10,10),
-  "/manage/manageclientproperty/llagreement/:clientname" : (10,10),
-  "/manage/pmaBilling" : (10,10)
+    "/admin/manageemployees" : (20,10),
+    "/admin/country" : (10,10),
+    "/admin/state" : (10,10),
+    "/admin/city" : (10,10),
+    "/admin/locality" : (12,6),
+    "/admin/LOB" : (8,10),
+    "/admin/service" : (10,10),
+    "/admin/payments" : (16,10),
+    "/admin/temp" : (10,10),
+    "/admin/lobReceiptPayments" : (10,10),
+    "/admin/entityReceiptPayments" : (10,10),
+    "/admin/lobReceiptPaymentsConsolidated" : (10,10),
+    "/manage/bankstatement" : (30,15),
+    "/manage/manageBuilder":(15,10),
+    "/manage/manageprojectinfo":(15,10),
+    "/manage/manageclientinfo" : (45,15),
+    "/manage/manageclientproperty" : (45,20),
+    "/manage/manageclientreceipt" : (20,10),
+    "/manage/managellagreement" : (20,10),
+    "/manage/managepmaagreement" : (35,10),
+    "/manage/manageorderreceipt" : (40,10),
+    "/manage/manageclientinvoice" : (25,10),
+    "/manage/managevendor" : (16,10),
+    "/manage/managevendorinvoice" : (30,10),
+    "/manage/managevendorpayment" : (30,10),
+    "/manage/sendclientstatement" : (20,10),
+    "/manage/managebuilder/projects/:buildername" : (10,10),
+    "/manage/managebuilder/contacts/:buildername" : (10,10),
+    "/manage/managevendorpayment/:orderid" : (10,10),
+    "/manage/manageclientinvoice/:orderid" : (10,10),
+    "/manage/manageorderreceipt/:orderid" : (10,10),
+    "/manage/manageclientinfo/orders/showall/:orderid" : (10,10),
+    "/manage/manageclientinfo/properties/:clientname" : (10,10),
+    "/manage/manageclientinfo/orders/:clientname" : (10,10),
+    "/manage/manageclientproperty/pmaagreement/:clientname" : (10,10),
+    "/manage/manageclientproperty/llagreement/:clientname" : (10,10),
+    "/manage/pmaBilling" : (10,10),
+    "/reports/orderPaymentList": (10, 10),
+    "/reports/orderReceiptList": (10, 10),
+    "/reports/orderInvoiceList": (10, 10),
+    "/reports/clientReceiptList": (10, 10),
+    "/reports/vendorPaymentsList": (10, 10),
+    # "/admin/lobReceiptPayments": (10, 10),
+    # "/admin/entityReceiptPayments": (10, 10),
+    # "/admin/lobReceiptPaymentsConsolidated": (10, 10),
+    "/reports/pmaBillingTrendView": (10, 10),
+    "/reports/pmaClientReport": (10, 10),
+    "/reports/pmaInvoiceList": (10, 10),
+    "/reports/pmaClientReceivable": (10, 10),
+    "/reports/activePmaAgreement": (10, 10),
+    "/reports/projectContact": (10, 10),
+    "/reports/advanceHoldingAmount": (10, 10),
+    "/reports/pmaClientStatementAll": (10, 10),
+    "/reports/pmaClientStatement": (10, 10),
+    "/reports/nonPmaClientStatement": (10, 10),
+    "/reports/nonPmaClientReceivables": (10, 10),
+    "/reports/clientStatementAll": (10, 10),
+    "/reports/duplicateClientReport": (10, 10),
+    "/reports/clientBankDetails": (10, 10),
+    "/reports/monthlyBankSummary": (10, 10),
+    "/reports/bankTransferReconciliation": (10, 10),
+    "/reports/clientOrderReceiptMismatchDetails": (10, 10),
+    "/reports/bankReceiptReconciliation": (10, 10),
+    "/reports/bankPaymentsReconciliation": (10, 10),
+    "/reports/clientTraceReport": (10, 10),
+    "/reports/orderTraceReport": (10, 10),
+    "/reports/vendorTraceReport": (10, 10),
+    "/reports/clientReceipt": (10, 10),
+    "/reports/orderpaymentDD": (10, 10),
+    "/reports/orderpaymentbanktocash": (10, 10),
+    "/reports/orderpaymentbanktobank": (10, 10),
+    "/reports/orderpaymentwithtds": (10, 10),
+    "/reports/orderpaymentwithouttds": (10, 10),
+    "/reports/orderreceipttoinvoiceTax": (10, 10),
+    "/reports/tdspaidbyvendor": (10, 10),
+    "/reports/vendorstatement": (10, 10),
+    "/reports/tdsPaidToGovernment": (10, 10),
+    "/reports/vendorpaymentsummary": (10, 10),
+    "/reports/clientStatistics": (10, 10),
+    "/reports/statisticsReport": (10, 10),
+    "/reports/serviceTaxPaidByVendor": (10, 10),
+    "/reports/tenantEmail": (10, 10),
+    "/reports/ownerMailId": (10, 10),
+    "/reports/clientContactDetails": (10, 10),
+    "/reports/orderStaticsView": (10, 10),
+    "/reports/activellagreement": (10, 10),
+    "/reports/orderanalysis": (10, 10),
+    "/reports/Lllist": (10, 10),
+    "/reports/clientstatics": (10, 10),
+    "/reports/clientStatementByDate": (10, 10),
+    "/reports/paymentUnderSuspenseOrder": (10, 10),
+    "/reports/receiptsUnderSuspenseOrder": (10, 10),
+    "/reports/clientsWithOrderButNoEmail": (10, 10),
+    "/reports/employeeWithoutVendor": (10, 10),
+    "/reports/bankTransactionsWithWrongUserName": (10, 10),
+    "/reports/entityBlankReport": (10, 10),
+    "/reports/ownerwithnoproperty": (10, 10),
+    "/reports/propertywithnoproject": (10, 10),
+    "/reports/serviceTaxReport": (10, 10),
+    "/reports/vendorSummary": (10, 10),
+    "/reports/clientphoneno": (10, 10),
+    "/reports/ownerphoneno": (10, 10),
+    "/reports/bankbalancereconciliation": (10, 10),
+    "/reports/agedOrders": (10, 10)
 }
 # Load the .env file
 
@@ -102,7 +169,7 @@ def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: l
     else:
         return f'QUERY IS : <{query}>'
 
-# PostgreSQL database UR
+# PostgreSQL database URL
 #todo : need to source user, password and ip port from variables
 load_dotenv()
 
@@ -7785,20 +7852,18 @@ async def report_bank_balance_reconciliation(payload:dict, request:Request, conn
         logging.info(databankpmtrcpts['data'])
         databankpmtrcpts['data'] = [{
             'TYPE':'Passbook Balance',
-            'Bank Name':databankpmtrcpts['data'][0]['bankname'] if 'bankname' in databankpmtrcpts['data'][0] else payload['bankName'],
-            'Payment':databankpmtrcpts['data'][0]['payment']  if 'payment' in databankpmtrcpts['data'][0] else 0,
-            'Receipt':databankpmtrcpts['data'][0]['receipt'] if 'receipt' in databankpmtrcpts['data'][0] else 0,
-            'Balance':databankpmtrcpts['data'][0]['balance'] if 'receipt' in databankpmtrcpts['data'][0] else 0,
+            'Bank Name':databankpmtrcpts['data'][0]['bankname'] if databankpmtrcpts['data'] else payload['bankName'],
+            'Payment':databankpmtrcpts['data'][0]['payment']  if databankpmtrcpts['data'] else 0,
+            'Receipt':databankpmtrcpts['data'][0]['receipt'] if databankpmtrcpts['data'] else 0,
+            'Balance':databankpmtrcpts['data'][0]['balance'] if databankpmtrcpts['data'] else 0,
 
         }]
         databankstbalance['data'] = [{
             'Type':'Application Balance',
-            'Bank Name':databankstbalance['data'][0]['bankname'] if 'bankname' in databankstbalance['data'][0] else payload['bankName'],
-            'Payment':databankstbalance['data'][0]['payment']  if 'payment' in databankstbalance['data'][0] else 0,
-            'Receipt':databankstbalance['data'][0]['receipt'] if 'receipt' in databankstbalance['data'][0] else 0,
-            'Balance':databankstbalance['data'][0]['balance'] if 'receipt' in databankstbalance['data'][0] else 0,
-            
-
+            'Bank Name':databankstbalance['data'][0]['bankname'] if databankstbalance['data'] else payload['bankName'],
+            'Payment':databankstbalance['data'][0]['payment']  if databankstbalance['data'] else 0,
+            'Receipt':databankstbalance['data'][0]['receipt'] if databankstbalance['data'] else 0,
+            'Balance':databankstbalance['data'][0]['balance'] if databankstbalance['data'] else 0,
         }]
         logging.info(databankstbalance['data'])
         if databankpmtrcpts['data'] != [] and databankstbalance['data'] != []:
@@ -7812,6 +7877,31 @@ async def report_bank_balance_reconciliation(payload:dict, request:Request, conn
             fname = f'{FILE_DIRECTORY}/{filename}'
             df.to_excel(fname, engine='openpyxl',index=False)
             logging.info(f'generated excel file <{fname}>')
+        else:
+            data_list = [df.columns.values.tolist()] + df.values.tolist()
+            filename = f'{uuid.uuid4()}.pdf'
+            fname = f'{FILE_DIRECTORY}/{filename}'
+            # we may need to vary the pagesize based on each report
+            # pagesize = (55 * inch, 28 * inch)
+            if payload['routename'] in pdfSizeMap:
+                logging.info(f'Route name {payload["routename"]} found')
+                pagesize = (pdfSizeMap[payload['routename']][0]*inch,pdfSizeMap[payload['routename']][1]*inch)
+            else:
+                logging.info('Route Name not found')
+                pagesize = (55 * inch, 28 * inch)
+            logging.info(pagesize)
+            pdf = SimpleDocTemplate(fname, pagesize=pagesize)
+            table = Table(data_list, colWidths=get_column_widths(df))
+            style = TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ])
+            table.setStyle(style)
+            elements = [table]
+            pdf.build(elements)
+            logging.info(f'generated pdf file <{fname}>')
     try:
         return giveSuccess(payload['user_id'],
                            databankstbalance['role_id'],
@@ -7825,7 +7915,7 @@ async def report_bank_balance_reconciliation(payload:dict, request:Request, conn
         logging.info(traceback.format_exc())
         raise giveFailure("Access Denied",0,None)
     
-
+@app.post('/reportMonthlyBankSummary')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'Monthly_Balance_View'
     return await runInTryCatch(
