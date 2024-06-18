@@ -29,6 +29,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.units import mm, inch
+# from sendEmail import send_email_testing
 
 #logs
 
@@ -41,7 +42,7 @@ pdfSizeMap = {
   "/admin/locality" : (12,6),
   "/admin/LOB" : (8,10),
   "/admin/service" : (10,10),
-  "/admin/payments" : (15,10),
+  "/admin/payments" : (16,10),
   "/admin/temp" : (10,10),
   "/admin/lobReceiptPayments" : (10,10),
   "/admin/entityReceiptPayments" : (10,10),
@@ -391,7 +392,7 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         if downloadType == 'excel':
             filename = f'{uuid.uuid4()}.xlsx'
             fname = f'{FILE_DIRECTORY}/{filename}'
-            df.to_excel(fname, engine='openpyxl',index=False)
+            df.astype("str").to_excel(fname, engine='openpyxl',index=False)
             logging.info(f'generated excel file <{fname}>')
         else:
             data_list = [df.columns.values.tolist()] + df.values.tolist()
@@ -3054,8 +3055,8 @@ async def edit_client_info(payload:dict, request:Request, conn: psycopg2.extensi
                         logging.info(f'editClientInfo: client_access clientid <{clientid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
                 if 'client_access' in payload and 'insert' in payload['client_access']:
                     for u in payload['client_access']['insert']:
-                        query = ('INSERT into client_access (onlinemailid,onlinepwd,onlineclue,clientid) values (%s,%s,%s,%s)')
-                        data = logMessage(cursor, query,(u["onlinemailid"], u["onlinepwd"], u["onlineclue"], clientid))
+                        query = ('INSERT into client_access (onlinemailid,onlinepwd,onlineclue,clientid,dated,createdby,isdeleted) values (%s,%s,%s,%s,%s,%s,%s)')
+                        data = logMessage(cursor, query,(u["onlinemailid"], u["onlinepwd"], u["onlineclue"], clientid,givenowtime(),payload['user_id'],False))
                         conn[0].commit()
                         logging.info(f'editClientInfo: client_access clientid <{clientid}> INSERT status is <{cursor.statusmessage}>')
 
@@ -3072,10 +3073,10 @@ async def edit_client_info(payload:dict, request:Request, conn: psycopg2.extensi
                         logging.info(f'editClientInfo: client_access clientid <{clientid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
                 if 'client_bank_info' in payload and 'insert' in payload['client_bank_info']:
                     for u in payload['client_bank_info']['insert']:
-                        query = ('INSERT into client_bank_info (bankname,bankaccountholdername,bankaccountno,bankaccounttype,bankbranch,bankcity,bankifsccode,bankmicrcode,description,clientid) '
-                                 'values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)')
+                        query = ('INSERT into client_bank_info (bankname,bankaccountholdername,bankaccountno,bankaccounttype,bankbranch,bankcity,bankifsccode,bankmicrcode,description,clientid,dated,isdeleted,createdby) '
+                                 'values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)')
                         data = logMessage(cursor, query,(u["bankname"],u["bankaccountholdername"], u["bankaccountno"], u["bankaccounttype"],
-                            u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], u['description'],clientid))
+                            u["bankbranch"], u["bankcity"], u["bankifsccode"], u["bankmicrcode"], u['description'],clientid,givenowtime(),payload['user_id'],False))
                         conn[0].commit()
                         logging.info(f'editClientInfo: client_bank_info clientid <{clientid}> INSERT status is <{cursor.statusmessage}>')
 
@@ -3252,14 +3253,14 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
                 # perform CRUD for client accesses in 'client_access' table
                 if 'client_property_photos' in payload and 'update' in payload['client_property_photos']:
                     for u in payload['client_property_photos']['update']:
-                        query = ('UPDATE client_property_photos SET photolink=%s,' 'description=%s,' 'phototakenwhen=%s  WHERE id=%s and clientpropertyid=%s')
-                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], u["id"], propertyid))
+                        query = ('UPDATE client_property_photos SET photolink=%s,' 'description=%s,' 'phototakenwhen=%s,dated=%s,createdby=%s,isdeleted=%s  WHERE id=%s and clientpropertyid=%s')
+                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], u["id"], propertyid,givenowtime(),payload['user_id'],False))
                         conn[0].commit()
                         logging.info(f'editClientProperty: client_property_photos propertyid <{propertyid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
                 if 'client_property_photos' in payload and 'insert' in payload['client_property_photos']:
                     for u in payload['client_property_photos']['insert']:
-                        query = ('INSERT into client_property_photos (photolink,description,phototakenwhen,clientpropertyid) values (%s,%s,%s,%s)')
-                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], propertyid))
+                        query = ('INSERT into client_property_photos (photolink,description,phototakenwhen,clientpropertyid,dated,createdby,isdeleted) values (%s,%s,%s,%s,%s,%s,%s)')
+                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], propertyid,givenowtime(),payload['user_id'],False))
                         conn[0].commit()
                         logging.info(f'editClientProperty: client_property_photos clientid <{propertyid}> INSERT status is <{cursor.statusmessage}>')
 
@@ -3770,7 +3771,7 @@ async def get_order_by_client_id(payload:dict, request:Request, conn: psycopg2.e
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''SELECT DISTINCT id,briefdescription
-                            as ordername from orders WHERE clientid = %s order by briefdescription'''
+                            as ordername from orders WHERE clientid = %s AND isdeleted = false AND status != 4 AND status != 5 order by briefdescription'''
                 msg = logMessage(cursor,query,(payload['client_id'],))
                 logging.info(msg)
                 data = cursor.fetchall()
@@ -5465,13 +5466,13 @@ async def add_research_employer(payload:dict, request:Request, conn: psycopg2.ex
                 query = """INSERT INTO research_employer (country,onsiteopportunity,city,state,admincontactmail,zip,hc,website,
                 admincontactphone,contactname1,contactmail1,contactphone1,contactname2,contactmail2,contactphone2,
                 hrcontactname,hrcontactmail,hrcontactphone,admincontactname,employername,industry,addressline1,addressline2,suburb,
-                dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
+                dated,createdby,isdeleted,notes) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
                 msg = logMessage(cursor,query,[
                     payload["country"],payload["onsiteopportunity"],payload["city"],payload["state"],payload["admincontactmail"],
                     payload["zip"],payload["hc"],payload["website"],payload["admincontactphone"],payload["contactname1"],
                     payload["contactmail1"],payload["contactphone1"],payload["contactname2"],payload["contactmail2"],payload["contactphone2"],
                     payload["hrcontactname"],payload["hrcontactmail"],payload["hrcontactphone"],payload["admincontactname"],payload["employername"],
-                    payload["industry"],payload["addressline1"],payload["addressline2"],payload["suburb"],givenowtime(),payload['user_id'],False
+                    payload["industry"],payload["addressline1"],payload["addressline2"],payload["suburb"],givenowtime(),payload['user_id'],False,payload['notes']
                 ])
                 logging.info(msg)
                 id = cursor.fetchone()[0]
@@ -5498,13 +5499,13 @@ async def edit_research_employer(payload:dict, request:Request, conn: psycopg2.e
                 query = """UPDATE research_employer SET country=%s,onsiteopportunity=%s,city=%s,state=%s,admincontactmail=%s,zip=%s,hc=%s,website=%s,
                 admincontactphone=%s,contactname1=%s,contactmail1=%s,contactphone1=%s,contactname2=%s,contactmail2=%s,contactphone2=%s,
                 hrcontactname=%s,hrcontactmail=%s,hrcontactphone=%s,admincontactname=%s,employername=%s,industry=%s,addressline1=%s,addressline2=%s,suburb=%s,
-                dated=%s,createdby=%s,isdeleted=%s WHERE id=%s"""
+                dated=%s,createdby=%s,isdeleted=%s,notes=%s WHERE id=%s"""
                 msg = logMessage(cursor,query,[
                     payload["country"],payload["onsiteopportunity"],payload["city"],payload["state"],payload["admincontactmail"],
                     payload["zip"],payload["hc"],payload["website"],payload["admincontactphone"],payload["contactname1"],
                     payload["contactmail1"],payload["contactphone1"],payload["contactname2"],payload["contactmail2"],payload["contactphone2"],
                     payload["hrcontactname"],payload["hrcontactmail"],payload["hrcontactphone"],payload["admincontactname"],payload["employername"],
-                    payload["industry"],payload["addressline1"],payload["addressline2"],payload["suburb"],givenowtime(),payload['user_id'],False,payload['id']
+                    payload["industry"],payload["addressline1"],payload["addressline2"],payload["suburb"],givenowtime(),payload['user_id'],False,payload['notes'],payload['id']
                 ])
                 logging.info(msg)
                 conn[0].commit()
@@ -6653,7 +6654,7 @@ async def delete_research_architect(payload:dict, request:Request, conn:psycopg2
         logging.info(f"Exception encountered:{traceback.format_exc()}")
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
 
-def send_email(email,password,subject, body,to_email,html=None,html2=None,filename=None):
+def send_email(email,password,subject, body,to_email,html=None,filename=None):
     # SMTP server configuration
     smtp_server = SMTP_SERVER  # Example: 'smtp.gmail.com'
     smtp_port = SMTP_PORT  # For SSL, use 465; for TLS/StartTLS, use 587
@@ -6665,13 +6666,12 @@ def send_email(email,password,subject, body,to_email,html=None,html2=None,filena
     msg['From'] = smtp_username
     msg['To'] = to_email
     msg['Subject'] = subject
-
+    logging.info(html)
     # Add body to the email
     msg.attach(MIMEText(body, 'plain'))
     if html is not None:
-        msg.attach(MIMEText(html, 'html'))
-    if html2 is not None:
-        msg.attach(MIMEText(html2, 'html'))
+        for i in html:
+            msg.attach(MIMEText(i,'html'))
     if filename is not None:
         with open(f"{FILE_DIRECTORY}/{filename}", 'rb') as attachment:
             part = MIMEBase(filename, 'pdf')
@@ -8077,7 +8077,8 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             conn[0].commit()
             ans['data'] = res
             vardata='<p style="color: purple;">No statement could be generated</p>'
-            html = f'''
+            html = []
+            html1 = f'''
 <html>
     <body style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 18px;">
         <p>
@@ -8115,8 +8116,9 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
     </body>
 </html>
 '''
-
-            html2 = """
+            html = [html1]
+            if res :
+                html2 = """
             <!DOCTYPE html>
             <html>
             <head>
@@ -8155,28 +8157,29 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             """
 
             # Add table headers
-            for key in res[0].keys():
-                html2 += f"<th>{key.capitalize()}</th>"
+                for key in res[0].keys():
+                    html2 += f"<th>{key.capitalize()}</th>"
 
-            html2 += """
+                html2 += """
                         </tr>
                     </thead>
                     <tbody>
             """
 
             # Add table rows
-            for index, item in enumerate(res, start=1):
-                html2 += f"<tr><td>{index}</td>"
-                for value in item.values():
-                    html2 += f"<td>{value}</td>"
-                html2 += "</tr>"
+                for index, item in enumerate(res, start=1):
+                    html2 += f"<tr><td>{index}</td>"
+                    for value in item.values():
+                        html2 += f"<td>{value}</td>"
+                    html2 += "</tr>"
 
-            html2 += """
+                html2 += """
                     </tbody>
                 </table>
             </body>
             </html>
             """
+                html.append(html2)
             if 'downloadType' in payload:
                 filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
                 ans['filename'] = filename
@@ -8189,7 +8192,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 query = f"SELECT email1 from client where id={payload['clientid']}"
                 cursor.execute(query)
                 emailid = cursor.fetchone()[0]
-            send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html,html2)
+            send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html)
             return {"sent email to":emailid}
     except psycopg2.Error as e:
         logging.info(traceback.format_exc())
@@ -9282,12 +9285,15 @@ async def get_company_key(payload: dict, request: Request,conn : psycopg2.extens
         raise HTTPException(400,f"Bad request error <{e}>")
 @app.post('/changeCompanyKey')
 async def change_company_key(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"payload is <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload,request,method="editCompanyKey")
         if role_access_status == 1:
-            query = "UPDATE companykey SET companykey=%s"
+            query = "UPDATE companykey SET companycode=%s"
+
             with conn[0].cursor() as cursor:
-                cursor.execute(query,(payload['companykey']))
+                logging.info(cursor.mogrify(query,[payload['companykey']]))
+                msg = logMessage(cursor,query,(payload['companykey'],))
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{
                 "New company key":payload['companykey']
@@ -9347,5 +9353,17 @@ async def refresh_token(payload: dict,request:Request,conn: psycopg2.extensions.
     except Exception as e:
         logging.info(traceback.print_exc())
         raise HTTPException(400,"Bad Request")
+
+@app.post('/logout')
+async def logout(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        with conn[0].cursor() as cursor:
+            query = f"DELETE FROM tokens WHERE userid = {payload['user_id']}"
+            logging.info(query)
+            cursor.execute(query)
+            conn[0].commit()
+        return giveSuccess(payload['user_id'],0,{"Logged Out" : payload['user_id']})
+    except Exception as e:
+        raise HTTPException("400",f"Bad Request {e}")
 
 logger.info("program_started")
