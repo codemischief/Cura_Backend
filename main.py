@@ -6671,7 +6671,7 @@ def send_email(email,password,subject, body,to_email,html=None,filename=None):
     msg.attach(MIMEText(body, 'plain'))
     if html is not None:
         for i in html:
-            msg.attach(i,'html')
+            msg.attach(MIMEText(i,'html'))
     if filename is not None:
         with open(f"{FILE_DIRECTORY}/{filename}", 'rb') as attachment:
             part = MIMEBase(filename, 'pdf')
