@@ -29,6 +29,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.units import mm, inch
+from sendEmail import send_email_testing
 
 #logs
 
@@ -8115,8 +8116,9 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
     </body>
 </html>
 '''
-
-            html2 = """
+            
+            if res :
+                html2 = """
             <!DOCTYPE html>
             <html>
             <head>
@@ -8155,23 +8157,23 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             """
 
             # Add table headers
-            for key in res[0].keys():
-                html2 += f"<th>{key.capitalize()}</th>"
+                for key in res[0].keys():
+                    html2 += f"<th>{key.capitalize()}</th>"
 
-            html2 += """
+                html2 += """
                         </tr>
                     </thead>
                     <tbody>
             """
 
             # Add table rows
-            for index, item in enumerate(res, start=1):
-                html2 += f"<tr><td>{index}</td>"
-                for value in item.values():
-                    html2 += f"<td>{value}</td>"
-                html2 += "</tr>"
+                for index, item in enumerate(res, start=1):
+                    html2 += f"<tr><td>{index}</td>"
+                    for value in item.values():
+                        html2 += f"<td>{value}</td>"
+                    html2 += "</tr>"
 
-            html2 += """
+                html2 += """
                     </tbody>
                 </table>
             </body>
@@ -8189,7 +8191,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 query = f"SELECT email1 from client where id={payload['clientid']}"
                 cursor.execute(query)
                 emailid = cursor.fetchone()[0]
-            send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html,html2)
+            send_email_testing(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid,html,html2)
             return {"sent email to":emailid}
     except psycopg2.Error as e:
         logging.info(traceback.format_exc())
