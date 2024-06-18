@@ -6666,7 +6666,7 @@ def send_email(email,password,subject, body,to_email,html=None,filename=None):
     msg['From'] = smtp_username
     msg['To'] = to_email
     msg['Subject'] = subject
-
+    logging.info(html)
     # Add body to the email
     msg.attach(MIMEText(body, 'plain'))
     if html is not None:
@@ -6692,7 +6692,7 @@ def send_email(email,password,subject, body,to_email,html=None,filename=None):
         server.starttls()  # Enable security
         server.login(smtp_username, smtp_password)
         text = msg.as_string()
-        server.sendmail(smtp_username, to_email, text)
+        # server.sendmail(smtp_username, to_email, text)
         server.quit()
         print("Email sent successfully!")
     except HTTPException as h:
