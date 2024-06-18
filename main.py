@@ -29,7 +29,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.units import mm, inch
-from sendEmail import send_email_testing
+# from sendEmail import send_email_testing
 
 #logs
 
