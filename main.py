@@ -8043,7 +8043,8 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             if 'sendEmail' in payload and not payload['sendEmail'] and 'downloadType' not in payload:
                 payload['rows'] = ['date','type','description','property','amount']
             else:
-                payload['rows'] = ['date','clientname','property','description','type','amount','opening_balance','closing_balance']
+                # payload['rows'] = ['date','clientname','property','description','type','amount','opening_balance','closing_balance']
+                payload['rows'] = ['date','clientname','property','description','type','amount']
             payload['table_name'] = table
             data = filterAndPaginate_v2(
                 db_config=DATABASE_URL,
@@ -8084,6 +8085,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
         <p>
             Hi,<br>Please find attached Statement of Account from {payload['startdate']} to {payload['enddate']} for your property/ies.
         </p>
+        
         <p>
             <ul style="color: purple;">
                 <li>Balance due till date is Rs. {ans['closing_balance']}/- including 18% taxes (GST).</li>
