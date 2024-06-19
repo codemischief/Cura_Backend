@@ -1251,7 +1251,7 @@ LEFT JOIN
 -- FOR EACH ROW
 -- EXECUTE FUNCTION delete_from_get_projects_view();
 
-CREATE VIEW get_builder_contact_view AS
+CREATE OR REPLACE VIEW get_builder_contact_view AS
 SELECT
     a.id,
     b.buildername,
@@ -1266,7 +1266,7 @@ SELECT
     a.addressline2,
     a.suburb,
     a.city as cityid,
-    c.cityid,
+    c.city,
     a.state,
     a.country,
     a.zip,

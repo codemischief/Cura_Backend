@@ -2711,7 +2711,7 @@ async def get_builder_contacts(payload: dict, request:Request, conn: psycopg2.ex
             data = filterAndPaginate_v2(DATABASE_URL, payload['rows'], table_name,payload['filters'], payload['sort_by'],
                                         payload['order'], payload["pg_no"], payload["pg_size"],
                                         search_key = payload['search_key'] if 'search_key' in payload else None,
-                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping = payload['colmap'] if 'colmap' in payload else None)
+                                        downloadType=payload['downloadType'] if 'downloadType' in payload else None,mapping = payload['colmap'] if 'colmap' in payload else None,isdeleted=True,whereinquery=True)
             
             total_count = data['total_count']
             colnames = payload['rows']
@@ -5084,8 +5084,9 @@ async def delete_builder_contact(payload: dict, request:Request, conn:psycopg2.e
         role_access_status = check_role_access(conn,payload,request=request,method="getBuilderInfo")
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE builder_contact SET isdeleted = true'
+                query = f'UPDATE builder_contacts SET isdeleted = true where id={payload["id"]}'
                 msg = logMessage(cursor,query,[payload['id']])
+                logging.info(query)
                 logging.info(msg)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
