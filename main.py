@@ -6814,7 +6814,7 @@ async def login_for_token(payload:dict, request:Request, conn: psycopg2.extensio
         with conn[0].cursor() as cursor:
             cursor.execute("SELECT email1,id FROM usertable WHERE username = %s",(payload["username"],))
             email,userid = cursor.fetchone()
-
+            logging.info(f"the email is <{email} and userid is {userid}>")
             if email:
                 access_token_expires = timedelta(minutes=10)
                 access_token,key = create_token(payload,access_token_expires)
@@ -7503,7 +7503,7 @@ async def getrole(payload: dict, conn, request:Request, token:str=None):
             msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE username = %s and isdeleted=false", (identifier_name,))
             logging.info(msg)
         else:
-            raise HTTPException(status_code=403,detail=f"Bad Request {e}")
+            raise HTTPException(status_code=403,detail=f"No identifier")
         role_id = cursor.fetchone()
         if role_id is None:
             raise HTTPException(status_code=404,detail="User not found")
