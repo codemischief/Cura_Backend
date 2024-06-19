@@ -21,6 +21,11 @@ alter table client_property_leave_license_details alter column startdate type da
 alter table client_property_leave_license_details alter column actualendate type date;
 alter table client_property_poa alter column poaeffectivedate type date;
 alter table client_property_poa alter column poaenddate type date;
+ALTER TABLE orders ALTER COLUMN orderdate TYPE date;
+ALTER TABLE orders ALTER COLUMN earlieststartdate TYPE date;
+ALTER TABLE orders ALTER COLUMN expectedcompletiondate TYPE date;
+ALTER TABLE orders ALTER COLUMN actualcompletiondate TYPE date;
+
 
 
 ALTER TABLE client_property_owner DROP COLUMN owner1addressline1;
