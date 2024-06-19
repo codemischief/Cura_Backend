@@ -5196,6 +5196,7 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                     d.orderid,
                                     CONCAT(' ',e.briefdescription,' {month_map[payload["month"]]}-{payload["year"]} Charges') as briefdescription,
                                     EXTRACT(DAY FROM d.startdate) AS start_day,
+                                    TO_CHAR(TO_DATE('{payload['year']}-{payload['month']}-01', 'YYYY-MM-DD'), 'DD-Mon-YYYY') AS invoicedate,
                                     d.vacatingdate,
                                     d.rentamount,
                                     a.rented,
@@ -5251,12 +5252,12 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                 cursor.execute(query)
                 logging.info(cursor.statusmessage)
                 conn[0].commit()
-                payload['rows'] = ['*']
-                # payload['rows'] = ['clientname','briefdescription','totalamt','totalbaseamt','totaltaxamt','fixedamt','fixedtaxamt','rentedamt','rentedtaxamt']
+                # payload['rows'] = ['*']
+                payload['rows'] = ['clientname','briefdescription','totalamt','totalbaseamt','totaltaxamt','fixedamt','fixedtaxamt','rentedamt','rentedtaxamt','invoicedate']
                 payload['table_name'] = tbl
                 data = await runInTryCatch(conn,fname='pma_billing',payload=payload,isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False,isUtilityRoute=True,request=request)
-                for row in data['data']:
-                    row['invoicedate'] = f"01-{month_map[payload['month']]}-{payload['year']}"
+                # for row in data['data']:
+                #     row['invoicedate'] = f"01-{month_map[payload['month']]}-{payload['year']}"
                 if not payload['insertIntoDB'] or not role_access_for_add:
                     return data
                 else:
@@ -6814,7 +6815,7 @@ async def login_for_token(payload:dict, request:Request, conn: psycopg2.extensio
         with conn[0].cursor() as cursor:
             cursor.execute("SELECT email1,id FROM usertable WHERE username = %s",(payload["username"],))
             email,userid = cursor.fetchone()
-
+            logging.info(f"the email is <{email} and userid is {userid}>")
             if email:
                 access_token_expires = timedelta(minutes=10)
                 access_token,key = create_token(payload,access_token_expires)
@@ -6834,20 +6835,23 @@ async def login_for_token(payload:dict, request:Request, conn: psycopg2.extensio
     except Exception as e:
         raise HTTPException(status_code=401,detail="Invalid Payload")
 
-@app.post("/reset")
-async def getdata(payload:dict,request : Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+@app.post("/reset/{token}")
+async def getdata(token:str,payload:dict,request : Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"Got token : {token}")
     try:
+        
         #header derive
-        headers = request.headers
-        if 'authorization' not in headers:
-            raise giveFailure("No token from user",0,0)
-        token = headers['authorization'][7:]
+        # headers = request.headers
+        # if 'authorization' not in headers:
+        #     raise giveFailure("No token from user",0,0)
+        # token = headers['authorization'][7:]
         with conn[0].cursor() as cursor:
             query = 'SELECT userid FROM tokens where token = %s'
             message = logMessage(cursor,query,[token])
             
             logging.info(message)
             userid = cursor.fetchone()[0]
+
             # logging.info(type(key))
         # logging.info(pl)
         try:
@@ -7503,7 +7507,7 @@ async def getrole(payload: dict, conn, request:Request, token:str=None):
             msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE username = %s and isdeleted=false", (identifier_name,))
             logging.info(msg)
         else:
-            raise HTTPException(status_code=403,detail=f"Bad Request {e}")
+            raise HTTPException(status_code=403,detail=f"No identifier")
         role_id = cursor.fetchone()
         if role_id is None:
             raise HTTPException(status_code=404,detail="User not found")
