@@ -176,11 +176,12 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 CLIENT_STATEMENT_ID = os.getenv("CLIENT_STATEMENT_ID")
 CLIENT_STATEMENT_PASS = os.getenv("CLIENT_STATEMENT_PASS")
-PASSWORD_RESET_ID = os.getenv("ADMIN_EMAIL_ID")
-PASSWORD_RESET_PASS = os.getenv("ADMIN_EMAIL_PASS")
+PASSWORD_RESET_ID = os.getenv("CLIENT_STATEMENT_ID")
+PASSWORD_RESET_PASS = os.getenv("CLIENT_STATEMENT_PASS")
 FILE_DIRECTORY = os.getenv("FILE_DIRECTORY")
 SMTP_SERVER = os.getenv("SMTP_SERVER")
 SMTP_PORT = os.getenv("SMTP_PORT")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -6812,8 +6813,8 @@ async def login_for_token(payload:dict, request:Request, conn: psycopg2.extensio
                 cursor.execute(f"""INSERT INTO tokens (token,key,active,userid) VALUES 
                                ('{access_token}','{key}',true,{userid})""")
                 if email:
-                    send_email(PASSWORD_RESET_ID,PASSWORD_RESET_PASS,"Reset Password",f"""Reset password at localhost:5173/reset/{access_token}""",email[0])
-                    logging.info(f"""Reset password at localhost:5173/reset/{access_token}""")
+                    send_email(PASSWORD_RESET_ID,PASSWORD_RESET_PASS,"Reset Password",f"""Reset password at {FRONTEND_URL}reset/{access_token}""",email)
+                    logging.info(f"""Reset password at {FRONTEND_URL}reset/{access_token}""")
                     # print(access_token)
                     conn[0].commit()
                     return giveSuccess(0,0,email)
