@@ -1265,7 +1265,8 @@ SELECT
     a.addressline1,
     a.addressline2,
     a.suburb,
-    a.city,
+    a.city as cityid,
+    c.cityid,
     a.state,
     a.country,
     a.zip,
@@ -1276,7 +1277,9 @@ SELECT
 FROM
     builder_contacts a
 LEFT JOIN
-    builder b ON a.builderid = b.id;
+    builder b ON a.builderid = b.id
+LEFT JOIN
+    cities c ON a.city = c.id;
 
 -- CREATE OR REPLACE FUNCTION delete_from_get_builder_contacts_view() RETURNS TRIGGER AS $$
 -- BEGIN
