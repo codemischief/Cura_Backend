@@ -3306,7 +3306,7 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
                          'suburb=%s,' 'projectid=%s,' 'status=%s,' 'clientservicemanager=%s,' 'propertymanager=%s,'
                          'propertydescription=%s,' 'layoutdetails=%s,' 'email=%s,' 'website=%s,' 'initialpossessiondate=%s,'
                          'electricityconsumernumber=%s,' 'otherelectricitydetails=%s,' 'electricitybillingduedate=%s,' 'comments=%s,' 
-                         'gasconnectiondetails=%s,' 'indexiicollected=%s,' 'textforposting=%s WHERE ID=%s and isdeleted = false'))
+                         'gasconnectiondetails=%s,' 'indexiicollected=%s,' 'textforposting=%s, propertyownedbyclientonly=%s WHERE ID=%s and isdeleted = false'))
                 msg = logMessage(cursor,
                     query,(
                         ci["clientid"],ci["propertytype"],ci["leveloffurnishing"],ci["numberofparkings"],
@@ -3314,7 +3314,7 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
                         ci["propertymanager"],ci["propertydescription"],ci["layoutdetails"],ci["email"],
                         ci["website"],ci["initialpossessiondate"],ci["electricityconsumernumber"],
                         ci["otherelectricitydetails"],ci["electricitybillingduedate"],ci["comments"],ci["gasconnectiondetails"],
-                        ci["indexiicollected"],ci["textforposting"],propertyid))
+                        ci["indexiicollected"],ci["textforposting"],ci['propertyownedbyclientonly'],propertyid))
                 logging.info(msg)
                 if cursor.statusmessage == 'UPDATE 0':
                     raise giveFailure('No record found',payload['user_id'],role_access_status)
