@@ -18,7 +18,7 @@ alter table research_employer add column notes text;
 alter table research_prospect add column email1 text;
 alter table research_prospect add column phoneno text;
 alter table client_property_leave_license_details alter column startdate type date;
-alter table client_property_leave_license_details alter column startdate type date;
+alter table client_property_leave_license_details alter column actualendate type date;
 
 
 ALTER TABLE client_property_owner DROP COLUMN owner1addressline1;
