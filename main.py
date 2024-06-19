@@ -1139,6 +1139,8 @@ async def delete_country(payload:dict, request:Request, conn: psycopg2.extension
 
     except HTTPException as h:
         raise h
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(403,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
 
@@ -1620,6 +1622,8 @@ async def delete_localities(payload: dict, request:Request, conn : psycopg2.exte
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(403,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         print(traceback.print_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -3306,7 +3310,7 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
                          'suburb=%s,' 'projectid=%s,' 'status=%s,' 'clientservicemanager=%s,' 'propertymanager=%s,'
                          'propertydescription=%s,' 'layoutdetails=%s,' 'email=%s,' 'website=%s,' 'initialpossessiondate=%s,'
                          'electricityconsumernumber=%s,' 'otherelectricitydetails=%s,' 'electricitybillingduedate=%s,' 'comments=%s,' 
-                         'gasconnectiondetails=%s,' 'indexiicollected=%s,' 'textforposting=%s WHERE ID=%s and isdeleted = false'))
+                         'gasconnectiondetails=%s,' 'indexiicollected=%s,' 'textforposting=%s, propertyownedbyclientonly=%s WHERE ID=%s and isdeleted = false'))
                 msg = logMessage(cursor,
                     query,(
                         ci["clientid"],ci["propertytype"],ci["leveloffurnishing"],ci["numberofparkings"],
@@ -3314,7 +3318,7 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
                         ci["propertymanager"],ci["propertydescription"],ci["layoutdetails"],ci["email"],
                         ci["website"],ci["initialpossessiondate"],ci["electricityconsumernumber"],
                         ci["otherelectricitydetails"],ci["electricitybillingduedate"],ci["comments"],ci["gasconnectiondetails"],
-                        ci["indexiicollected"],ci["textforposting"],propertyid))
+                        ci["indexiicollected"],ci["textforposting"],ci['propertyownedbyclientonly'],propertyid))
                 logging.info(msg)
                 if cursor.statusmessage == 'UPDATE 0':
                     raise giveFailure('No record found',payload['user_id'],role_access_status)
@@ -4118,6 +4122,8 @@ async def delete_cities(payload:dict, request:Request, conn: psycopg2.extensions
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(403,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
@@ -5246,6 +5252,7 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                 logging.info(cursor.statusmessage)
                 conn[0].commit()
                 payload['rows'] = ['*']
+                # payload['rows'] = ['clientname','briefdescription','totalamt','totalbaseamt','totaltaxamt','fixedamt','fixedtaxamt','rentedamt','rentedtaxamt']
                 payload['table_name'] = tbl
                 data = await runInTryCatch(conn,fname='pma_billing',payload=payload,isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False,isUtilityRoute=True,request=request)
                 for row in data['data']:
@@ -6836,28 +6843,26 @@ async def getdata(payload:dict,request : Request,conn: psycopg2.extensions.conne
             raise giveFailure("No token from user",0,0)
         token = headers['authorization'][7:]
         with conn[0].cursor() as cursor:
-            query = 'SELECT key FROM tokens where token = %s'
+            query = 'SELECT userid FROM tokens where token = %s'
             message = logMessage(cursor,query,[token])
             
             logging.info(message)
-            key = cursor.fetchone()[0]
+            userid = cursor.fetchone()[0]
             # logging.info(type(key))
-        pl = jwt.decode(token,key,algorithms=ALG)
-        logging.info(pl)
-        username = pl['username']
+        # logging.info(pl)
         try:
             with conn[0].cursor() as cursor:
                 #hashing to be done here, using bcrypt for now.
                 newp = bcrypt.hashpw(payload['password'].encode('ascii'),bcrypt.gensalt()).decode('utf-8')
                 logging.info(newp)
                 #update part
-                query = 'UPDATE usertable SET password = %s WHERE username = %s'
+                query = 'UPDATE usertable SET password = %s WHERE id = %s'
                 # msg = logMessage(cursor,query,[newp,payload['username']])
                 #logging.info(msg
-                logging.info(logMessage(cursor,query,[newp,username]))
+                logging.info(logMessage(cursor,query,[newp,userid]))
                 logging.info(cursor.statusmessage)
             conn[0].commit()
-            return giveSuccess(None,None,{"Change PW for":username})
+            return giveSuccess(None,None,{"Change PW for":userid})
         except Exception as e:
             logging.info(traceback.print_exc())
             raise HTTPException(status_code=401,detail="Invalid Payload")
@@ -9362,6 +9367,8 @@ async def delete_from_table(payload:dict, request:Request, conn: psycopg2.extens
                 })
     except HTTPException as h:
         raise h
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(403,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         raise HTTPException(400,f"Bad request error <{e}>")
 
@@ -9380,6 +9387,7 @@ async def get_company_key(payload: dict, request: Request,conn : psycopg2.extens
         raise h
     except Exception as e:
         raise HTTPException(400,f"Bad request error <{e}>")
+    
 @app.post('/changeCompanyKey')
 async def change_company_key(payload: dict, request: Request,conn : psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f"payload is <{payload}>")
