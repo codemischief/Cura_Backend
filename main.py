@@ -5035,7 +5035,7 @@ async def add_new_builder_contact(payload:dict, request:Request, conn: psycopg2.
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''
-                    INSERT INTO builder_contacts (
+                    UPDATE builder_contacts SET
                         builderid=%s, contactname=%s, email1=%s, jobtitle=%s,
                         businessphone=%s, homephone=%s, mobilephone=%s, addressline1=%s,
                         addressline2=%s, suburb=%s, city=%s, state=%s, country=%s,
