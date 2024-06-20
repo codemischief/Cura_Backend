@@ -1053,7 +1053,7 @@ async def add_country(payload:dict, request:Request, conn: psycopg2.extensions.c
             elif role_access_status!=1:
                 raise giveFailure("Access Denied",payload['user_id'],role_access_status)
             else:
-                raise HTTPException(status_code=400,detail="Already Exists")
+                raise HTTPException(status_code=409,detail="Already Exists")
     except KeyError as ke:
         raise giveFailure(f"key {ke} not found",payload['user_id'],0)
     except HTTPException as h:
@@ -1103,7 +1103,7 @@ async def edit_country(payload:dict, request:Request, conn: psycopg2.extensions.
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=400,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Already Exists")
     except KeyError as ke:
         raise giveFailure(f"key {ke} not found",payload['user_id'],0)
     except HTTPException as h:
@@ -1574,7 +1574,7 @@ async def add_localities(payload: dict, request:Request, conn: psycopg2.extensio
         elif role_access_status!=1:
             return HTTPException(status_code=403,detail="Access Denied")
         else:
-            raise HTTPException(status_code=400,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1597,8 +1597,10 @@ async def edit_localities(payload: dict, request:Request, conn: psycopg2.extensi
                 "Updated Locality":payload['locality']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
+        elif role_access_status!=1:
+            return HTTPException(status_code=403,detail="Access Denied")
         else:
-            raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=409,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1806,7 +1808,7 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=400,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1857,7 +1859,7 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=400,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1939,7 +1941,7 @@ async def add_lob(payload:dict, request:Request, conn: psycopg2.extensions.conne
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=400,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1968,7 +1970,7 @@ async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.conn
         elif role_access_status!=1:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=400,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -4077,7 +4079,7 @@ async def add_cities(payload:dict, request:Request, conn: psycopg2.extensions.co
         elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=400,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -4106,7 +4108,7 @@ async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.c
         elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=400,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
