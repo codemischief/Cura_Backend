@@ -195,8 +195,8 @@ def getdata(conn: psycopg2.extensions.connection):
 def ifNotExist(criteria : str,table_name : str,conn: psycopg2.extensions.connection,value):
     try:
         with conn[0].cursor() as cursor:
-            query = f"SELECT {criteria} FROM {table_name} WHERE {criteria} = %s"
-            logMessage(cursor,query,(value,))
+            query = f"SELECT {criteria} FROM {table_name} WHERE lower({criteria}) = %s"
+            logMessage(cursor,query,(value.lower(),))
             s = len(cursor.fetchall())
             logging.info(s)
         if s!=0:
