@@ -1053,7 +1053,7 @@ async def add_country(payload:dict, request:Request, conn: psycopg2.extensions.c
             elif role_access_status!=1:
                 raise giveFailure("Access Denied",payload['user_id'],role_access_status)
             else:
-                raise giveFailure("Already Exists",payload['user_id'],role_access_status)
+                raise HTTPException(status_code=400,detail="Already Exists")
     except KeyError as ke:
         raise giveFailure(f"key {ke} not found",payload['user_id'],0)
     except HTTPException as h:
@@ -1085,7 +1085,7 @@ async def edit_country(payload:dict, request:Request, conn: psycopg2.extensions.
         # Check user role
         role_access_status = check_role_access(conn,payload,request=request,method="editCountry")
 
-        if role_access_status == 1 and checkcountry(payload['old_country_name'],conn):
+        if role_access_status == 1 and checkcountry(payload['old_country_name'],conn) and ifNotExist('name','country',conn,payload['country_name']):
             with conn[0].cursor() as cursor:
                 # Update country name in the database
                 query_update = "UPDATE country SET name = %s WHERE name = %s"
@@ -1102,9 +1102,8 @@ async def edit_country(payload:dict, request:Request, conn: psycopg2.extensions.
             raise giveFailure("No country Exists",payload['user_id'],role_access_status)
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
-        
         else:
-            raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=400,detail="Already Exists")
     except KeyError as ke:
         raise giveFailure(f"key {ke} not found",payload['user_id'],0)
     except HTTPException as h:
@@ -1575,7 +1574,7 @@ async def add_localities(payload: dict, request:Request, conn: psycopg2.extensio
         elif role_access_status!=1:
             return HTTPException(status_code=403,detail="Access Denied")
         else:
-            return HTTPException(status_code=403,detail="Already Exists")
+            raise HTTPException(status_code=400,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1587,7 +1586,7 @@ async def edit_localities(payload: dict, request:Request, conn: psycopg2.extensi
     logging.info(f'edit_locality: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editLocality")
-        if role_access_status==1:
+        if role_access_status==1 and ifNotExist('locality','locality',conn,payload['locality']):
             payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
                 query = 'UPDATE locality SET locality = %s,cityid = %s WHERE id=%s'
@@ -1807,7 +1806,7 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise giveFailure("Already Exists",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=400,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1819,7 +1818,7 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
     logging.info(f'edit_employee: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editEmployee")
-        if role_access_status==1:
+        if role_access_status==1 and ifNotExist('employeeid','employee',conn,payload['employeeid']):
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = '''UPDATe employee SET employeename=%s,employeeid=%s, userid=%s,roleid=%s, dateofjoining=%s, dob=%s, panno=%s,status=%s, phoneno=%s, email=%s, addressline1=%s, addressline2=%s,suburb=%s, city=%s, state=%s, country=%s, zip=%s,dated=%s, createdby=%s, isdeleted=%s, entityid=%s,lobid=%s, lastdateofworking=%s, designation=%s WHERE id=%s'''
@@ -1855,8 +1854,10 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
                 "Updated Employee":payload['employeename']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
-        else:
+        elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+        else:
+            raise HTTPException(status_code=400,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1938,7 +1939,7 @@ async def add_lob(payload:dict, request:Request, conn: psycopg2.extensions.conne
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise giveFailure("Already Exists",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=400,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1950,7 +1951,7 @@ async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.conn
     logging.info(f'edit_lob: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editLob")
-        if role_access_status == 1:
+        if role_access_status == 1 and ifNotExist('name','lob',conn,payload['name']):
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'UPDATE lob SET name=%s WHERE name=%s'
@@ -1964,8 +1965,10 @@ async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.conn
                 "edited_lob":payload['old_name']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
-        else:
+        elif role_access_status!=1:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+        else:
+            raise HTTPException(status_code=400,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -4060,7 +4063,7 @@ async def add_cities(payload:dict, request:Request, conn: psycopg2.extensions.co
     logging.info(f"add_cities:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="addCities")
-        if role_access_status == 1:
+        if role_access_status == 1 and ifNotExist('city','cities',conn,payload['city']):
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO cities (city,state,countryid) VALUES (%s,%s,%s)'
                 msg = logMessage(cursor,query,[
@@ -4071,8 +4074,10 @@ async def add_cities(payload:dict, request:Request, conn: psycopg2.extensions.co
                 logging.info(msg)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"inserted_city":payload['city']})
-        else:
+        elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+        else:
+            raise HTTPException(status_code=400,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -4084,7 +4089,7 @@ async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.c
     logging.info(f"edit_cities:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editCities")
-        if role_access_status == 1:
+        if role_access_status == 1 and ifNotExist('city','cities',conn,payload['city']):
             with conn[0].cursor() as cursor:
                 query = 'UPDATE cities SET city=%s,state=%s,countryid=%s WHERE id=%s'
                 msg = logMessage(cursor,query,[
@@ -4098,8 +4103,10 @@ async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.c
                 if cursor.statusmessage == 'UPDATE 0':
                     raise giveFailure('Does not exist',payload['user_id'],role_access_status)
             return giveSuccess(payload['user_id'],role_access_status,{"editted_city":payload['city']})
-        else:
+        elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+        else:
+            raise HTTPException(status_code=400,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
