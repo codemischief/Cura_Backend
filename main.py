@@ -1140,7 +1140,7 @@ async def delete_country(payload:dict, request:Request, conn: psycopg2.extension
     except HTTPException as h:
         raise h
     except psycopg2.errors.ForeignKeyViolation:
-        raise HTTPException(403,f"Foreign key violation: Can't delete entry with child elements")
+        raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
 
@@ -1623,7 +1623,7 @@ async def delete_localities(payload: dict, request:Request, conn : psycopg2.exte
     except HTTPException as h:
         raise h
     except psycopg2.errors.ForeignKeyViolation:
-        raise HTTPException(403,f"Foreign key violation: Can't delete entry with child elements")
+        raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         print(traceback.print_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1993,6 +1993,8 @@ async def delete_lob(payload:dict, request:Request, conn: psycopg2.extensions.co
             giveFailure("Access Denied",payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -4123,7 +4125,7 @@ async def delete_cities(payload:dict, request:Request, conn: psycopg2.extensions
     except HTTPException as h:
         raise h
     except psycopg2.errors.ForeignKeyViolation:
-        raise HTTPException(403,f"Foreign key violation: Can't delete entry with child elements")
+        raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
@@ -5494,6 +5496,8 @@ async def delete_services(payload:dict, request:Request, conn: psycopg2.extensio
         raise giveFailure(f"Missing key {ke}",0,0)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Invalid Credentials",0,0)
@@ -6877,7 +6881,7 @@ async def getdata(token:str,payload:dict,request : Request,conn: psycopg2.extens
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise HTTPException(status_code=403,detail = "Invalid Credentials")
+        raise HTTPException(status_code=401,detail = "Invalid Credentials")
 
 
 @app.post('/getReportClientReceipt')
@@ -9230,9 +9234,9 @@ async def report_client_contacts(payload:dict, request:Request, conn: psycopg2.e
     payload['table_name'] = 'ClientView'
     query = """ SELECT id,employername,localcontact1name,localcontact1address,
     localcontact1details,localcontact2name,localcontact2address,localcontact2details
-      FROM ClientView where employername != '' or localcontact1name != '' 
+      FROM ClientView where (employername != '' or localcontact1name != '' 
       or localcontact1address != '' or localcontact1details != '' or localcontact2name != ''
-        or localcontact2address != '' or localcontact2details!='' """
+        or localcontact2address != '' or localcontact2details!='') """
     return await runInTryCatch(
         request=request,
         conn = conn,
@@ -9240,7 +9244,7 @@ async def report_client_contacts(payload:dict, request:Request, conn: psycopg2.e
         payload = payload,
         query = query,
         isPaginationRequired=True,
-        whereinquery=False,
+        whereinquery=True,
         formatData=True,
         isdeleted=False,
         isUtilityRoute=True
@@ -9372,7 +9376,7 @@ async def delete_from_table(payload:dict, request:Request, conn: psycopg2.extens
     except HTTPException as h:
         raise h
     except psycopg2.errors.ForeignKeyViolation:
-        raise HTTPException(403,f"Foreign key violation: Can't delete entry with child elements")
+        raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         raise HTTPException(400,f"Bad request error <{e}>")
 
