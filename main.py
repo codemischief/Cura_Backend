@@ -195,8 +195,8 @@ def getdata(conn: psycopg2.extensions.connection):
 def ifNotExist(criteria : str,table_name : str,conn: psycopg2.extensions.connection,value):
     try:
         with conn[0].cursor() as cursor:
-            query = f"SELECT {criteria} FROM {table_name} WHERE {criteria} = %s"
-            logMessage(cursor,query,(value,))
+            query = f"SELECT {criteria} FROM {table_name} WHERE lower({criteria}) = %s"
+            logMessage(cursor,query,(value.lower(),))
             s = len(cursor.fetchall())
             logging.info(s)
         if s!=0:
@@ -827,13 +827,13 @@ async def validate_credentials(payload: dict, request:Request, conn: psycopg2.ex
             if bcrypt.checkpw(encoded_pw,database_pw) and company_key[0]:
             # if userdata and payload=userdata[0],userdata[0]) and key[0]:
                 # For refresh token
-                query = "SELECT * FROM token_access_config where type='Refresh'"
-                cursor.execute(query)
-                reftime = cursor.fetchone()[0]
-                refresh_token_expires = timedelta(days=reftime)
+                # query = "SELECT * FROM token_access_config where type='Refresh'"
+                # cursor.execute(query)
+                # reftime = cursor.fetchone()[0]
+                refresh_token_expires = timedelta(days=180)
                 refresh_token,key = create_token(payload,refresh_token_expires)
-                cursor.execute(f"""INSERT INTO refresh_tokens (refresh_token,key,active,userid) 
-                               VALUES ('{refresh_token}','{key}',true,{userdata[1]})""")
+                cursor.execute(f"""INSERT INTO refresh_tokens (refresh_token,key,userid) 
+                               VALUES ('{refresh_token}','{key}',{userdata[1]})""")
                 #For TimeOut
                 cursor.execute("SELECT * FROM token_access_config where type='IdleTimeOut'")
                 timeout = cursor.fetchone()[0]
@@ -866,10 +866,10 @@ async def validate_credentials(payload: dict, request:Request, conn: psycopg2.ex
         logging.info(traceback.format_exc())
         raise h
     except KeyError as ke:
-        raise HTTPException(status_code=400,detail=f"Bad Request,{ke} missing")
+        raise HTTPException(status_code=400,detail=f",{ke} missing")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise HTTPException(status_code=400,detail="Bad Request")
+        raise HTTPException(status_code=400,detail="")
 
 
 def giveSuccess(uid,rid,data=[], total_count=None, filename=None):
@@ -887,9 +887,9 @@ def giveSuccess(uid,rid,data=[], total_count=None, filename=None):
     #logging.debug(f'prepared final response <{final_data}>')
     return final_data
 
-def giveFailure(msg,uid,rid,data=[]):
+def giveFailure(msg,uid,rid,data=[],status=None):
     # send_email("",msg,"theruderaw678@gmail.com")
-    raise HTTPException(status_code=401,detail=f"Bad request {msg}")
+    raise HTTPException(status_code=401 if status == None else status,detail=f"Error encountered: {msg}")
 
 def check_role_access(conn, payload: dict,request: Request = None,method = None,isUtilityRoute=False):
     logging.info(f"Method is {method}")
@@ -897,7 +897,7 @@ def check_role_access(conn, payload: dict,request: Request = None,method = None,
         with conn[0].cursor() as cursor:
             token = request.headers['authorization'][7:]
             logging.info(f"Token is <{token}>")
-            cursor.execute("SELECT key FROM tokens WHERE token = %s", (token,))
+            cursor.execute("SELECT key FROM tokens WHERE token = %s AND active=true", (token,))
             key = cursor.fetchone()
             logging.info(key)
         if key:
@@ -1066,7 +1066,8 @@ async def add_country(payload:dict, request:Request, conn: psycopg2.extensions.c
             elif role_access_status!=1:
                 raise giveFailure("Access Denied",payload['user_id'],role_access_status)
             else:
-                raise giveFailure("Already Exists",payload['user_id'],role_access_status)
+                raise HTTPException(status_code=400,detail="Already Exists")
+
     except KeyError as ke:
         raise giveFailure(f"key {ke} not found",payload['user_id'],0)
     except HTTPException as h:
@@ -1098,7 +1099,7 @@ async def edit_country(payload:dict, request:Request, conn: psycopg2.extensions.
         # Check user role
         role_access_status = check_role_access(conn,payload,request=request,method="editCountry")
 
-        if role_access_status == 1 and checkcountry(payload['old_country_name'],conn):
+        if role_access_status == 1 and checkcountry(payload['old_country_name'],conn) and ifNotExist('name','country',conn,payload['new_country_name']):
             with conn[0].cursor() as cursor:
                 # Update country name in the database
                 query_update = "UPDATE country SET name = %s WHERE name = %s"
@@ -1114,10 +1115,9 @@ async def edit_country(payload:dict, request:Request, conn: psycopg2.extensions.
         elif not checkcountry(payload['old_country_name'],conn):
             raise giveFailure("No country Exists",payload['user_id'],role_access_status)
         elif role_access_status!=1:
-            raise giveFailure("Access Denied",payload['user_id'],role_access_status)
-        
+            raise giveFailure("Access Denied",payload['user_id'],role_access_status,400)
         else:
-            raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=400,detail="Already Exists")
     except KeyError as ke:
         raise giveFailure(f"key {ke} not found",payload['user_id'],0)
     except HTTPException as h:
@@ -1586,21 +1586,21 @@ async def add_localities(payload: dict, request:Request, conn: psycopg2.extensio
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
-            return HTTPException(status_code=403,detail="Access Denied")
+            raise HTTPException(status_code=403,detail="Access Denied")
         else:
-            return HTTPException(status_code=403,detail="Already Exists")
+            raise HTTPException(status_code=400,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        return HTTPException(status_code=400,detail="Invalid Credentials")
+        raise HTTPException(status_code=400,detail="Invalid Credentials")
 
 @app.post('/editLocality')
 async def edit_localities(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'edit_locality: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editLocality")
-        if role_access_status==1:
+        if role_access_status == 1 and ifNotExist('locality','locality',conn,payload['locality']):
             payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
                 query = 'UPDATE locality SET locality = %s,cityid = %s WHERE id=%s'
@@ -1611,8 +1611,10 @@ async def edit_localities(payload: dict, request:Request, conn: psycopg2.extensi
                 "Updated Locality":payload['locality']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
-        else:
+        elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+        else:
+            raise HTTPException(status_code=400,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1820,7 +1822,8 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise giveFailure("Already Exists",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=400,detail="Already Exists")
+
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1832,7 +1835,7 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
     logging.info(f'edit_employee: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editEmployee")
-        if role_access_status==1:
+        if role_access_status == 1 and ifNotExist('employeeid','employee',conn,payload['employeeid']):
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = '''UPDATe employee SET employeename=%s,employeeid=%s, userid=%s,roleid=%s, dateofjoining=%s, dob=%s, panno=%s,status=%s, phoneno=%s, email=%s, addressline1=%s, addressline2=%s,suburb=%s, city=%s, state=%s, country=%s, zip=%s,dated=%s, createdby=%s, isdeleted=%s, entityid=%s,lobid=%s, lastdateofworking=%s, designation=%s WHERE id=%s'''
@@ -1868,8 +1871,10 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
                 "Updated Employee":payload['employeename']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
-        else:
+        elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+        else:
+            raise HTTPException(status_code=400,detail="Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1951,7 +1956,8 @@ async def add_lob(payload:dict, request:Request, conn: psycopg2.extensions.conne
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise giveFailure("Already Exists",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=400,detail="Already Exists")
+
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1963,7 +1969,7 @@ async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.conn
     logging.info(f'edit_lob: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editLob")
-        if role_access_status == 1:
+        if role_access_status == 1 and ifNotExist('name','lob',conn,payload['name']):
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'UPDATE lob SET name=%s WHERE name=%s'
@@ -1977,8 +1983,11 @@ async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.conn
                 "edited_lob":payload['old_name']
             }
             return giveSuccess(payload['user_id'],role_access_status,data)
-        else:
+        elif role_access_status!=1:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
+        else:
+            raise HTTPException(status_code=400,detail="Already Exists")
+
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -4071,7 +4080,7 @@ async def add_cities(payload:dict, request:Request, conn: psycopg2.extensions.co
     logging.info(f"add_cities:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="addCities")
-        if role_access_status == 1:
+        if role_access_status == 1 and ifNotExist('city','cities',conn,payload['city']):
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO cities (city,state,countryid) VALUES (%s,%s,%s)'
                 msg = logMessage(cursor,query,[
@@ -4082,8 +4091,11 @@ async def add_cities(payload:dict, request:Request, conn: psycopg2.extensions.co
                 logging.info(msg)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"inserted_city":payload['city']})
-        else:
+        elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+        else:
+            raise HTTPException(status_code=400,detail="Already Exists")
+
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -4095,7 +4107,7 @@ async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.c
     logging.info(f"edit_cities:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editCities")
-        if role_access_status == 1:
+        if role_access_status == 1 and ifNotExist('city','cities',conn,payload['city']):
             with conn[0].cursor() as cursor:
                 query = 'UPDATE cities SET city=%s,state=%s,countryid=%s WHERE id=%s'
                 msg = logMessage(cursor,query,[
@@ -4109,8 +4121,11 @@ async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.c
                 if cursor.statusmessage == 'UPDATE 0':
                     raise giveFailure('Does not exist',payload['user_id'],role_access_status)
             return giveSuccess(payload['user_id'],role_access_status,{"editted_city":payload['city']})
-        else:
+        elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
+        else:
+            raise HTTPException(status_code=400,detail="Already Exists")
+
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -6859,7 +6874,7 @@ async def getdata(token:str,payload:dict,request : Request,conn: psycopg2.extens
         #     raise giveFailure("No token from user",0,0)
         # token = headers['authorization'][7:]
         with conn[0].cursor() as cursor:
-            query = 'SELECT userid FROM tokens where token = %s'
+            query = 'SELECT userid FROM tokens where token = %s and AND active=true'
             message = logMessage(cursor,query,[token])
             
             logging.info(message)
@@ -7089,9 +7104,9 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload:dict, 
 ) as zz"""
     payload['pg_size'] = 0
     payload['pg_no'] = 0
-    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
-    if 'lobName' in payload and payload['lobName'] != 'all':
-        payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
+    # payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
+    # if 'lobName' in payload and payload['lobName'] != 'all':
+    #     payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
     dt = await runInTryCatch(
         request=request,
         conn = conn,
@@ -7495,7 +7510,7 @@ async def getrole(payload: dict, conn, request:Request, token:str=None):
         with conn[0].cursor() as cursor:
             
             logging.info(f"Token is <{token}>")
-            logMessage(cursor,"SELECT key FROM tokens WHERE token = %s", (token,))
+            logMessage(cursor,"SELECT key FROM tokens WHERE token = %s AND active=true", (token,))
             key = cursor.fetchone()
             logging.info(key)
             if key[0]:
@@ -9454,22 +9469,48 @@ async def change_password(payload: dict, request: Request,conn: psycopg2.extensi
 async def refresh_token(payload: dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         with conn[0].cursor() as cursor:
-                token = request.headers.get("refreshtoken")
-                token = token[7:]
-                query = "SELECT * FROM token_access_config where type='Login'"
-                cursor.execute("SELECT key FROM tokens WHERE token = %s",(token,))
+                old_token = request.headers.get("authorization")
+                old_token = old_token[7:]
+                query1 = "SELECT active FROM tokens where token = %s"
+                cursor.execute(query1,(old_token,))
+                status = cursor.fetchone()
+                logging.info(status)
+                if not status:
+                    raise HTTPException(404,f"Token {old_token} not valid")
+                if not status[0]:
+                    raise HTTPException(404,f"Token {old_token} has already expired")
+                rtoken = request.headers.get("refreshtoken")
+                query2 = "SELECT key FROM refresh_tokens WHERE refresh_token = %s"
+                cursor.execute(query2,(rtoken,))
+                refresh_key = cursor.fetchone()
+                if not refresh_key:
+                    raise HTTPException(404,f"Invalid Refresh Token {rtoken}")
+                token_val = jwt.decode(rtoken,refresh_key[0],ALG)
+
+                #making new token
+
+                query = "SELECT timedata FROM token_access_config where type='Login'"
+                # cursor.execute("SELECT key FROM tokens WHERE token = %s",(rtoken,))
                 msg = logMessage(cursor,query)
                 timedata = cursor.fetchone()
                 if timedata:
                     timedata = timedata[0]
                 else:
-                    raise HTTPException(404,"Time not configured")
-                access_token_expires = timedelta(seconds=timedata)
-                access_token,key = create_token({"user_id":payload['user_id']},access_token_expires)
-                cursor.execute(f"""INSERT INTO tokens (token,key,active,userid) 
-                               VALUES ('{access_token}','{key}',true,{payload['user_id']})""")
+                    raise HTTPException(404,"Logout time not configured")
+
+                new_token_expires = timedelta(seconds=timedata)
+                new_token,key = create_token({"user_id":payload['user_id']},new_token_expires)
+                cursor.execute(f"""INSERT INTO tokens (token,key,refresh_token,active,userid) 
+                               VALUES ('{new_token}','{key}','{rtoken}',true,{payload['user_id']})""")
                 conn[0].commit()
-                return giveSuccess(payload['user_id'],0,{"token":access_token})
+
+                # disabling old token
+
+
+                query = f"UPDATE tokens SET active=false WHERE token='{old_token}'"
+                cursor.execute(query)
+                conn[0].commit()
+                return giveSuccess(payload['user_id'],0,{"token":new_token})
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -9479,20 +9520,22 @@ async def refresh_token(payload: dict,request:Request,conn: psycopg2.extensions.
 @app.post('/logout')
 async def logout(payload: dict,request: Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
-        if 'authorization' in request.headers:
-            refresh_token = request.headers['authorization'][7:]
+        if 'refreshtoken' in request.headers:
+            refresh_token = request.headers['refreshtoken']
             
         with conn[0].cursor() as cursor:
-            query = f"DELETE FROM tokens WHERE refresh_token = {refresh_token}"
+            query = f"DELETE FROM tokens WHERE refresh_token = '{refresh_token}'"
             logging.info(query)
             cursor.execute(query)
             conn[0].commit()
-            query = f"DELETE FROM refresh_tokens WHERE refresh_token = {refresh_token}"
+            query = f"DELETE FROM refresh_tokens WHERE refresh_token = '{refresh_token}'"
             logging.info(query)
             cursor.execute(query)
             conn[0].commit()
+        logging.info(f"User <{payload['user_id']}> logged out")
         return giveSuccess(payload['user_id'],0,{"Logged Out" : payload['user_id']})
     except Exception as e:
+        logging.info(f"Encountered exception due to <{traceback.format_exc()}>")
         raise HTTPException("400",f"Bad Request {e}")
 
 logger.info("program_started")
