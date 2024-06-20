@@ -1951,7 +1951,7 @@ async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.conn
     logging.info(f'edit_lob: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editLob")
-        if role_access_status == 1 and ifNotExist('name','lob',conn,payload['name']):
+        if role_access_status == 1 and ifNotExist('name','lob',conn,payload['new_name']):
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'UPDATE lob SET name=%s WHERE name=%s'
