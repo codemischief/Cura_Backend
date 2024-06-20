@@ -397,7 +397,7 @@ INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (101, 69, 3);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (102, 70, 3);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (103, 71, 3);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (104, 69, 4);
-INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (105, 70, 34);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (105, 70, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (106, 71, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (107, 69, 5);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (108, 73, 1);
