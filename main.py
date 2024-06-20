@@ -826,23 +826,36 @@ async def validate_credentials(payload: dict, request:Request, conn: psycopg2.ex
             database_pw = bytes(userdata[0],'ascii')
             if bcrypt.checkpw(encoded_pw,database_pw) and company_key[0]:
             # if userdata and payload=userdata[0],userdata[0]) and key[0]:
+                # For refresh token
+                query = "SELECT * FROM token_access_config where type='Refresh'"
+                cursor.execute(query)
+                reftime = cursor.fetchone()[0]
+                refresh_token_expires = timedelta(days=reftime)
+                refresh_token,key = create_token(payload,refresh_token_expires)
+                cursor.execute(f"""INSERT INTO refresh_tokens (refresh_token,key,active,userid) 
+                               VALUES ('{refresh_token}','{key}',true,{userdata[1]})""")
+                #For TimeOut
+                cursor.execute("SELECT * FROM token_access_config where type='IdleTimeOut'")
+                timeout = cursor.fetchone()[0]
+                
+                #For Login
                 query = "SELECT * FROM token_access_config where type='Login'"
                 msg = logMessage(cursor,query)
                 timedata = cursor.fetchone()[0]
                 logging.info(f"The time assigned is {timedata}")
+
                 logger.info('Password is ok')
                 access_token_expires = timedelta(seconds=timedata)
                 access_token,key = create_token(payload,access_token_expires)
-                cursor.execute(f"""INSERT INTO tokens (token,key,active,userid) 
-                               VALUES ('{access_token}','{key}',true,{userdata[1]})""")
+                cursor.execute(f"""INSERT INTO tokens (token,key,refresh_token,active,userid) 
+                               VALUES ('{access_token}','{key}','{refresh_token}',true,{userdata[1]})""")
                 conn[0].commit()
-                cursor.execute("SELECT * FROM token_access_config where type='IdleTimeOut'")
-                timeout = cursor.fetchone()[0]
                 resp = {
                     "result": "success",
                     "user_id":userdata[1],
                     "role_id":userdata[2],
                     "token": access_token,
+                    "refresh_token":refresh_token,
                     "access_rights": await get_role_access(payload,access_token,request,conn),
                     "idleTimeOut":timeout
                 }
@@ -9441,7 +9454,7 @@ async def change_password(payload: dict, request: Request,conn: psycopg2.extensi
 async def refresh_token(payload: dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         with conn[0].cursor() as cursor:
-                token = request.headers.get("authorization")
+                token = request.headers.get("refreshtoken")
                 token = token[7:]
                 query = "SELECT * FROM token_access_config where type='Login'"
                 cursor.execute("SELECT key FROM tokens WHERE token = %s",(token,))
@@ -9464,10 +9477,17 @@ async def refresh_token(payload: dict,request:Request,conn: psycopg2.extensions.
         raise HTTPException(400,"Bad Request")
 
 @app.post('/logout')
-async def logout(payload: dict,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+async def logout(payload: dict,request: Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
+        if 'authorization' in request.headers:
+            refresh_token = request.headers['authorization'][7:]
+            
         with conn[0].cursor() as cursor:
-            query = f"DELETE FROM tokens WHERE userid = {payload['user_id']}"
+            query = f"DELETE FROM tokens WHERE refresh_token = {refresh_token}"
+            logging.info(query)
+            cursor.execute(query)
+            conn[0].commit()
+            query = f"DELETE FROM refresh_tokens WHERE refresh_token = {refresh_token}"
             logging.info(query)
             cursor.execute(query)
             conn[0].commit()

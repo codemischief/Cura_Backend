@@ -748,12 +748,21 @@ INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (462, 182, 5);
 
 INSERT INTO token_access_config (timedata, type) VALUES
 (900, 'Login'),
-(900, 'IdleTimeOut');
-
+(900, 'IdleTimeOut'),
+(180, 'Refresh');
 
 CREATE TABLE tokens (
     id SERIAL,
     token text,-- Create the roles table
+    key text,
+    refresh_token text,
+    active bool,
+    userid int
+);
+
+CREATE TABLE refresh_tokens (
+    id SERIAL,
+    refresh_token text,
     key text,
     active bool,
     userid int
