@@ -9234,9 +9234,9 @@ async def report_client_contacts(payload:dict, request:Request, conn: psycopg2.e
     payload['table_name'] = 'ClientView'
     query = """ SELECT id,employername,localcontact1name,localcontact1address,
     localcontact1details,localcontact2name,localcontact2address,localcontact2details
-      FROM ClientView where employername != '' or localcontact1name != '' 
+      FROM ClientView where (employername != '' or localcontact1name != '' 
       or localcontact1address != '' or localcontact1details != '' or localcontact2name != ''
-        or localcontact2address != '' or localcontact2details!='' """
+        or localcontact2address != '' or localcontact2details!='') """
     return await runInTryCatch(
         request=request,
         conn = conn,
