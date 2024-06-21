@@ -133,6 +133,13 @@ CREATE TABLE rules (
 );
 
 
+INSERT INTO collegetypes (name) VALUES ('College');
+INSERT INTO collegetypes (name) VALUES ('Pre-Primary School');
+INSERT INTO collegetypes (name) VALUES ('Day Care');
+INSERT INTO collegetypes (name) VALUES ('High School');
+INSERT INTO collegetypes (name) VALUES ('Primary School');
+
+
 INSERT INTO rules (id, module, method, status) VALUES (25, 'BuilderInfo', 'addBuilderInfo', true);
 INSERT INTO rules (id, module, method, status) VALUES (26, 'BuilderInfo', 'getBuilderInfo', true);
 INSERT INTO rules (id, module, method, status) VALUES (27, 'BuilderInfo', 'editBuilder', true);
@@ -863,16 +870,10 @@ alter table order_payment alter column paymentdate type date;
 update order_status set name='Closed (Work Done & Collection Completed)' where id=5;
 update order_status set name='Work Done - Pending Collection' where id=8;
 
-alter table realestateagents add column rera_registration_number text;
+alter table realestateagents rename column registered to rera_registration_number;
 
-ALTER TABLE realestateagents 
-ALTER COLUMN registered 
-TYPE boolean 
-USING 
-  CASE 
-    WHEN registered IS NOT NULL AND registered <> '' THEN true
-    ELSE false
-  END;
+ALTER TABLE realestateagents ADD COLUMN registered bool;
+
 
 alter table employee alter column dateofjoining type date;
 alter table employee alter column lastdateofworking type date;
