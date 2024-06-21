@@ -6461,7 +6461,7 @@ async def get_mandal_admin(payload: dict, request:Request, conn: psycopg2.extens
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not data:
+                if not _data:
                     res = {colname:None for colname in colnames}
                 return giveSuccess(payload['user_id'],role_access_status,res)
         else:
