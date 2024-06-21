@@ -9449,17 +9449,21 @@ async def dashboard_data(payload:dict, request:Request, conn: psycopg2.extension
 @app.post('/deleteFromTable')
 async def delete_from_table(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
-        query = f"DELETE FROM {payload['table_name']} where id={payload['id']}"
-        with conn[0].cursor() as cursor:
-            cursor.execute(query)
-            conn[0].commit()
-            if cursor.statusmessage == 'DELETE 0':
-                raise HTTPException(404,"ID not found")
-            else:
-                return giveSuccess(payload['user_id'],None,{
-                    "table_edited":payload['table_name'],
-                    "id delete":payload['id']
-                })
+        role_access_status = check_role_access(conn,payload,request,method='delete')
+        if role_access_status==1:
+            query = f"DELETE FROM {payload['table_name']} where id={payload['id']}"
+            with conn[0].cursor() as cursor:
+                cursor.execute(query)
+                conn[0].commit()
+                if cursor.statusmessage == 'DELETE 0':
+                    raise HTTPException(404,"ID not found")
+                else:
+                    return giveSuccess(payload['user_id'],None,{
+                        "table_edited":payload['table_name'],
+                        "id delete":payload['id']
+                    })
+        else:
+            raise HTTPException(404,"Access Denied")
     except HTTPException as h:
         raise h
     except psycopg2.errors.ForeignKeyViolation:
@@ -9569,24 +9573,28 @@ async def logout(payload: dict,conn: psycopg2.extensions.connection = Depends(ge
 @app.post('/deleteFromClient')
 async def delete_from_client(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
-        queryarr = [
-            f"DELETE FROM client_access where clientid={payload['id']}",
-            f"DELETE FROM client_poa where clientid={payload['id']}",
-            f"DELETE FROM client_legal_info where clientid={payload['id']}",
-            f"DELETE FROM client_bank_info where clientid={payload['id']}",
-            f"DELETE FROM client where id={payload['id']}"
-        ]
-        with conn[0].cursor() as cursor:
-            for query in queryarr:
-                cursor.execute(query)
-                conn[0].commit()
-            if cursor.statusmessage == 'DELETE 0':
-                raise HTTPException(404,"ID not found")
-            else:
-                return giveSuccess(payload['user_id'],None,{
-                    "table_edited":"client",
-                    "id delete":payload['id']
-                })
+        role_access_status = check_role_access(conn,payload,request,method='delete')
+        if role_access_status==1:
+            queryarr = [
+                f"DELETE FROM client_access where clientid={payload['id']}",
+                f"DELETE FROM client_poa where clientid={payload['id']}",
+                f"DELETE FROM client_legal_info where clientid={payload['id']}",
+                f"DELETE FROM client_bank_info where clientid={payload['id']}",
+                f"DELETE FROM client where id={payload['id']}"
+            ]
+            with conn[0].cursor() as cursor:
+                for query in queryarr:
+                    cursor.execute(query)
+                    conn[0].commit()
+                if cursor.statusmessage == 'DELETE 0':
+                    raise HTTPException(404,"ID not found")
+                else:
+                    return giveSuccess(payload['user_id'],None,{
+                        "table_edited":"client",
+                        "id delete":payload['id']
+                    })
+        else:
+            raise HTTPException(403,"Access Denied")
     except HTTPException as h:
         raise h
     except psycopg2.errors.ForeignKeyViolation:
@@ -9597,22 +9605,26 @@ async def delete_from_client(payload:dict, request:Request, conn: psycopg2.exten
 @app.post('/deleteFromOrders')
 async def delete_from_client(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
-        queryarr = [
-            f"DELETE FROM order_photos where orderid={payload['id']}",
-            f"DELETE FROM order_status_change where orderid={payload['id']}",
-            f"DELETE FROM orders where id={payload['id']}"
-        ]
-        with conn[0].cursor() as cursor:
-            for query in queryarr:
-                cursor.execute(query)
-                conn[0].commit()
-            if cursor.statusmessage == 'DELETE 0':
-                raise HTTPException(404,"ID not found")
-            else:
-                return giveSuccess(payload['user_id'],None,{
-                    "table_edited":"orders",
-                    "id delete":payload['id']
-                })
+        role_access_status = check_role_access(conn,payload,request,method='delete')
+        if role_access_status==1:
+            queryarr = [
+                f"DELETE FROM order_photos where orderid={payload['id']}",
+                f"DELETE FROM order_status_change where orderid={payload['id']}",
+                f"DELETE FROM orders where id={payload['id']}"
+            ]
+            with conn[0].cursor() as cursor:
+                for query in queryarr:
+                    cursor.execute(query)
+                    conn[0].commit()
+                if cursor.statusmessage == 'DELETE 0':
+                    raise HTTPException(404,"ID not found")
+                else:
+                    return giveSuccess(payload['user_id'],None,{
+                        "table_edited":"orders",
+                        "id delete":payload['id']
+                    })
+        else:
+            raise HTTPException(403,"Access Denied")
     except HTTPException as h:
         raise h
     except psycopg2.errors.ForeignKeyViolation:
