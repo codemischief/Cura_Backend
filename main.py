@@ -9514,4 +9514,59 @@ async def logout(payload: dict,conn: psycopg2.extensions.connection = Depends(ge
     except Exception as e:
         raise HTTPException("400",f"Bad Request {e}")
 
+@app.post('/deleteFromClient')
+async def delete_from_client(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        queryarr = [
+            f"DELETE FROM client_access where id={payload['id']}",
+            f"DELETE FROM client_poa where id={payload['id']}",
+            f"DELETE FROM client_legal_info where id={payload['id']}",
+            f"DELETE FROM client_bank_info where id={payload['id']}",
+            f"DELETE FROM client where id={payload['id']}"
+        ]
+        with conn[0].cursor() as cursor:
+            for query in queryarr:
+                cursor.execute(query)
+                conn[0].commit()
+            if cursor.statusmessage == 'DELETE 0':
+                raise HTTPException(404,"ID not found")
+            else:
+                return giveSuccess(payload['user_id'],None,{
+                    "table_edited":"client",
+                    "id delete":payload['id']
+                })
+    except HTTPException as h:
+        raise h
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
+    except Exception as e:
+        raise HTTPException(400,f"Bad request error <{e}>")
+
+@app.post('/deleteFromOrders')
+async def delete_from_client(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        queryarr = [
+            f"DELETE FROM orders where id={payload['id']}",
+            f"DELETE FROM order_photos where id={payload['id']}"
+        ]
+        with conn[0].cursor() as cursor:
+            for query in queryarr:
+                cursor.execute(query)
+                conn[0].commit()
+            if cursor.statusmessage == 'DELETE 0':
+                raise HTTPException(404,"ID not found")
+            else:
+                return giveSuccess(payload['user_id'],None,{
+                    "table_edited":"orders",
+                    "id delete":payload['id']
+                })
+    except HTTPException as h:
+        raise h
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
+    except Exception as e:
+        raise HTTPException(400,f"Bad request error <{e}>")
+
+
+
 logger.info("program_started")
