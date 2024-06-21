@@ -2182,7 +2182,7 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
                 if not _data:
-                    res = {colname:None for colname in colnames}
+                    res = [{colname:None for colname in colnames}]
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -2632,7 +2632,7 @@ async def get_item_by_id(payload:dict, request:Request, conn: psycopg2.extension
                 
                 res = {}
                 if data is None:
-                    res = {colname:None for colname in colnames}
+                    res = [{colname:None for colname in colnames}]
                 else:
                     for i,e in enumerate(data):
                         res[colnames[i]] = e
@@ -5865,8 +5865,8 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not data:
-                    res = {colname:None for colname in colnames}
+                if not _data:
+                    res = [{colname:None for colname in colnames}]
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -6020,8 +6020,8 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not data:
-                    res = {colname:None for colname in colnames}
+                if not _data:
+                    res = [{colname:None for colname in colnames}]
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -6197,8 +6197,8 @@ async def get_agency_type_admin(payload:dict, request:Request, conn: psycopg2.ex
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not data:
-                    res = {colname:None for colname in colnames}
+                if not _data:
+                    res = [{colname:None for colname in colnames}]
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -6462,7 +6462,7 @@ async def get_mandal_admin(payload: dict, request:Request, conn: psycopg2.extens
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
                 if not _data:
-                    res = {colname:None for colname in colnames}
+                    res = [{colname:None for colname in colnames}]
                 return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -7276,8 +7276,8 @@ async def get_research_college_types(payload:dict, request:Request, conn: psycop
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not data:
-                    res = {colname:None for colname in colnames}
+                if not _data:
+                    res = [{colname:None for colname in colnames}]
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
