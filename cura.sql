@@ -26,6 +26,8 @@ ALTER TABLE orders ALTER COLUMN orderdate TYPE date;
 ALTER TABLE orders ALTER COLUMN earlieststartdate TYPE date;
 ALTER TABLE orders ALTER COLUMN expectedcompletiondate TYPE date;
 ALTER TABLE orders ALTER COLUMN actualcompletiondate TYPE date;
+alter table project_contacts alter column effectivedate type date;
+alter table project_contacts alter column tenureenddate type date;
 
 
 
@@ -54,6 +56,37 @@ ALTER TABLE client_property_owner DROP COLUMN owner2employer;
 ALTER TABLE client_property_owner DROP COLUMN owner2relation;
 ALTER TABLE client_property_owner DROP COLUMN owner2relationwith;
 ALTER TABLE client_property_owner DROP COLUMN otherownerdetails;
+
+ALTER TABLE bankst ADD CONSTRAINT amount CHECK (amount >= 0);
+ALTER TABLE client_property ADD CONSTRAINT numberofparkings CHECK (numberofparkings >= 0);
+ALTER TABLE project ADD CONSTRAINT numberoffloors CHECK (numberoffloors >= 0);
+ALTER TABLE project ADD CONSTRAINT numberofbuildings CHECK (numberofbuildings >= 0);
+ALTER TABLE project ADD CONSTRAINT approxtotalunits CHECK (approxtotalunits >= 0);
+ALTER TABLE order_invoice ADD CONSTRAINT invoiceamount CHECK (invoiceamount >= 0);
+ALTER TABLE order_invoice ADD CONSTRAINT estimateamount CHECK (estimateamount >= 0);
+ALTER TABLE order_invoice ADD CONSTRAINT baseamount CHECK (baseamount >= 0);
+ALTER TABLE order_invoice ADD CONSTRAINT tax CHECK (tax >= 0);
+ALTER TABLE client_receipt ADD CONSTRAINT serviceamount CHECK (serviceamount >= 0);
+ALTER TABLE client_receipt ADD CONSTRAINT reimbursementamount CHECK (reimbursementamount >= 0);
+ALTER TABLE client_receipt ADD CONSTRAINT tds CHECK (tds >= 0);
+ALTER TABLE client_receipt ADD CONSTRAINT amount CHECK (amount >= 0);
+ALTER TABLE order_receipt ADD CONSTRAINT amount CHECK (amount >= 0);
+ALTER TABLE order_receipt ADD CONSTRAINT tds CHECK (tds >= 0);
+ALTER TABLE order_vendorestimate ADD CONSTRAINT amount CHECK (amount >= 0);
+ALTER TABLE order_vendorestimate ADD CONSTRAINT invoiceamount CHECK (invoiceamount >= 0);
+ALTER TABLE order_vendorestimate ADD CONSTRAINT servicetax CHECK (servicetax >= 0);
+ALTER TABLE order_vendorestimate ADD CONSTRAINT vat1 CHECK (vat1 >= 0);
+ALTER TABLE order_payment ADD CONSTRAINT amount CHECK (amount >= 0);
+ALTER TABLE order_payment ADD CONSTRAINT servicetaxamount CHECK (servicetaxamount >= 0);
+ALTER TABLE order_payment ADD CONSTRAINT tds CHECK (tds >= 0);
+ALTER TABLE client_property_caretaking_agreement ADD CONSTRAINT rented CHECK (rented >= 0);
+ALTER TABLE client_property_caretaking_agreement ADD CONSTRAINT fixed CHECK (fixed >= 0);
+ALTER TABLE client_property_leave_license_details ADD CONSTRAINT rentamount CHECK (rentamount >= 0);
+ALTER TABLE client_property_leave_license_details ADD CONSTRAINT durationinmonth CHECK (durationinmonth >= 0);
+ALTER TABLE client_property_leave_license_details ADD CONSTRAINT noticeperiodindays CHECK (noticeperiodindays >= 0);
+ALTER TABLE client_property_leave_license_details ADD CONSTRAINT depositamount CHECK (depositamount >= 0);
+ALTER TABLE ref_contractual_payments ADD CONSTRAINT amount CHECK (amount >= 0);
+
 
 ALTER TABLE client_property_owner
 ADD COLUMN owner1aadhaarno text;
@@ -7153,7 +7186,7 @@ GROUP BY
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE VIEW totalcountview AS
+CREATE OR REPLACE VIEW totalcountview AS
 SELECT 
     'Client Receipt' AS type,
     COUNT(*) AS count,
@@ -7243,7 +7276,83 @@ SELECT
     COUNT(*) AS count,
     SUM(0) AS amount
 FROM 
-    client_property;
+    client_property
+UNION
+SELECT 
+    'BankStatementRecords' AS Type, 
+    COUNT(*) AS Count, 
+    SUM(amount) AS Amount
+FROM 
+    BankSt
+UNION
+SELECT 
+    'BuilderProjects' AS Type, 
+    COUNT(*) AS Count, 
+    SUM(0) AS Amount
+FROM 
+    Project
+UNION
+SELECT 
+    'Users' AS Type, 
+    COUNT(*) AS Count, 
+    SUM(0) AS Amount
+FROM 
+    usertable
+UNION
+SELECT 
+    'Employees' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM 
+    Employee
+UNION
+SELECT
+    'LOBs' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM LOB
+UNION
+SELECT 
+    'Services' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM 
+    Services
+UNION
+SELECT 
+    'Cities' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM 
+    Cities
+UNION
+SELECT 
+    'Countries' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM 
+    Country
+UNION
+SELECT 
+    'PMA_Agreements' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM 
+    Client_Property_Caretaking_Agreement
+UNION
+SELECT 
+    'L_L_Agreements' AS Type,
+    COUNT(*) AS Count,
+    SUM(RentAmount) AS Amount
+FROM 
+    Client_Property_Leave_License_Details
+UNION
+SELECT 
+    'Localities' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM Locality;
+;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
