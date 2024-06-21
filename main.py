@@ -3011,7 +3011,7 @@ async def add_project(payload:dict, request:Request, conn: psycopg2.extensions.c
                     query = 'insert into project_contacts(projectid,contactname,phone,email,role,effectivedate,tenureenddate,details,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                     logMessage(cursor,query,(id,project_contacts["contactname"],project_contacts["phone"],project_contacts["email"],project_contacts["role"],project_contacts["effectivedate"],project_contacts["tenureenddate"],project_contacts["details"],givenowtime(),payload['user_id'],False))
                 for project_photos in project_photos_list:
-                    query = 'insert into project_photos(projectid,photo_link,description,date_taken,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s)'
+                    query = 'insert into project_photos(projectid,photolink,description,date_taken,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s)'
                     logMessage(cursor,query,(id,project_photos["photo_link"],project_photos["description"],project_photos["date_taken"],givenowtime(),payload['user_id'],False))
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,data)
@@ -4020,12 +4020,12 @@ async def edit_project(payload:dict, request:Request, conn: psycopg2.extensions.
                 if 'update' in payload['project_photos']:
                     _photo_update = payload['project_photos']['update']
                     for photo_update in _photo_update:
-                        query = '''UPDATE project_photos SET photo_link=%s,description=%s,date_taken=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
+                        query = '''UPDATE project_photos SET photolink=%s,description=%s,date_taken=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
                         logMessage(cursor,query,(photo_update["photo_link"],photo_update["description"],photo_update["date_taken"],givenowtime(),payload['user_id'],False,photo_update['id']))
                 if 'insert' in payload['project_photos']:
                     _photo_insert = payload['project_photos']['insert']
                     for photo_insert in _photo_insert:
-                        query = '''INSERT INTO project_photos(projectid,photo_link,description,date_taken,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'''
+                        query = '''INSERT INTO project_photos(projectid,photolink,description,date_taken,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'''
                         logMessage(cursor,query,(payload['projectid'],photo_insert["photo_link"],photo_insert["description"],photo_insert["date_taken"],
                                               givenowtime(),payload['user_id'],False))
                 if 'delete' in payload['project_photos']:
