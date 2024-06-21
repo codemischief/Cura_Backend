@@ -4021,7 +4021,7 @@ async def edit_project(payload:dict, request:Request, conn: psycopg2.extensions.
                     _photo_update = payload['project_photos']['update']
                     for photo_update in _photo_update:
                         query = '''UPDATE project_photos SET photolink=%s,description=%s,date_taken=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
-                        logMessage(cursor,query,(photo_update["photo_link"],photo_update["description"],photo_update["date_taken"],givenowtime(),payload['user_id'],False,photo_update['id']))
+                        logMessage(cursor,query,(photo_update["photolink"],photo_update["description"],photo_update["date_taken"],givenowtime(),payload['user_id'],False,photo_update['id']))
                 if 'insert' in payload['project_photos']:
                     _photo_insert = payload['project_photos']['insert']
                     for photo_insert in _photo_insert:
