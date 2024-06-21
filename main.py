@@ -7260,6 +7260,32 @@ async def get_research_colleges(payload:dict, request:Request, conn: psycopg2.ex
         isdeleted=True,
         methodname="getResearchColleges"
     )
+
+@app.post('/getCollegeTypesAdmin')
+async def get_research_college_types(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload,request=request,isUtilityRoute=True)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT DISTINCT id,name from collegetypes order by name'
+                msg = logMessage(cursor,query)
+                _data = cursor.fetchall()
+                logging.info(msg)
+                
+                colnames = [desc[0] for desc in cursor.description]
+                res = []
+                for data in _data:
+                    res.append({colname:val for colname,val in zip(colnames,data)})
+                if not data:
+                    res = {colname:None for colname in colnames}
+            return giveSuccess(payload['user_id'],role_access_status,res)
+        else:
+            raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        raise giveFailure("Invalid Credentials",0,0)
         
 @app.post('/addResearchColleges')
 async def add_research_colleges(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
