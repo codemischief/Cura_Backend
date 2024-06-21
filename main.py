@@ -711,22 +711,7 @@ async def addLogsForAction(data: dict,conn,id:int = None):
 def get_db_connection():
     # global DATABASE_URL
     try:
-#         db_config =  {
-#     'dbname': DATABASE_NAME,
-#     'user': DATABASE_USER,
-#     'password': DATABASE_PASS,
-#     'host': DATABASE_HOST,
-#     'port':DATABASE_PORT,
-#     'options': f'-c search_path={DATABSE_SCHEMA}'
-# }
-#         DATABASE_URL = (
-#     f"dbname={db_config['dbname']} "
-#     f"user={db_config['user']} "
-#     f"password={db_config['password']} "
-#     f"host={db_config['host']} "
-#     f"port={db_config['port']} "
-#     f"options='{db_config['options']}'"
-# )
+
         conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
         yield conn, cursor
@@ -1053,7 +1038,7 @@ async def add_country(payload:dict, request:Request, conn: psycopg2.extensions.c
             elif role_access_status!=1:
                 raise giveFailure("Access Denied",payload['user_id'],role_access_status)
             else:
-                raise HTTPException(status_code=409,detail="Already Exists")
+                raise HTTPException(status_code=409,detail="Country Already Exists")
     except KeyError as ke:
         raise giveFailure(f"key {ke} not found",payload['user_id'],0)
     except HTTPException as h:
@@ -1103,7 +1088,7 @@ async def edit_country(payload:dict, request:Request, conn: psycopg2.extensions.
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=409,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Country Already Exists")
     except KeyError as ke:
         raise giveFailure(f"key {ke} not found",payload['user_id'],0)
     except HTTPException as h:
@@ -1574,7 +1559,7 @@ async def add_localities(payload: dict, request:Request, conn: psycopg2.extensio
         elif role_access_status!=1:
             return HTTPException(status_code=403,detail="Access Denied")
         else:
-            raise HTTPException(status_code=409,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Locality Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1600,7 +1585,7 @@ async def edit_localities(payload: dict, request:Request, conn: psycopg2.extensi
         elif role_access_status!=1:
             return HTTPException(status_code=403,detail="Access Denied")
         else:
-            raise HTTPException(status_code=409,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Locality Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1692,6 +1677,8 @@ async def add_bank_statement(payload: dict, request:Request, conn: psycopg2.exte
             raise giveFailure("Already Exists",payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         print(traceback.print_exc())
         raise giveFailure(f"failed to add bank statement due to exception <{str(e)}>",payload['user_id'],0)
@@ -1721,6 +1708,8 @@ async def edit_bank_statement(payload: dict, request:Request, conn: psycopg2.ext
             giveFailure("Access Denied",payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -1808,7 +1797,7 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=409,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Employee Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1859,7 +1848,7 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=409,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="Employee Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1941,7 +1930,7 @@ async def add_lob(payload:dict, request:Request, conn: psycopg2.extensions.conne
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=409,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="LOB Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -1970,7 +1959,7 @@ async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.conn
         elif role_access_status!=1:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=409,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="LOB Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -2162,6 +2151,8 @@ async def add_payment(payload:dict, request:Request, conn: psycopg2.extensions.c
             giveFailure("Access Denied",payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -2182,7 +2173,7 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
                 if not _data:
-                    res = {colname:None for colname in colnames}
+                    res = [{colname:None for colname in colnames}]
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -2212,6 +2203,8 @@ async def edit_payment(payload:dict, request:Request, conn: psycopg2.extensions.
             giveFailure("Access Denied",payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)   
@@ -2632,7 +2625,7 @@ async def get_item_by_id(payload:dict, request:Request, conn: psycopg2.extension
                 
                 res = {}
                 if data is None:
-                    res = {colname:None for colname in colnames}
+                    res = [{colname:None for colname in colnames}]
                 else:
                     for i,e in enumerate(data):
                         res[colnames[i]] = e
@@ -3011,8 +3004,8 @@ async def add_project(payload:dict, request:Request, conn: psycopg2.extensions.c
                     query = 'insert into project_contacts(projectid,contactname,phone,email,role,effectivedate,tenureenddate,details,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                     logMessage(cursor,query,(id,project_contacts["contactname"],project_contacts["phone"],project_contacts["email"],project_contacts["role"],project_contacts["effectivedate"],project_contacts["tenureenddate"],project_contacts["details"],givenowtime(),payload['user_id'],False))
                 for project_photos in project_photos_list:
-                    query = 'insert into project_photos(projectid,photo_link,description,date_taken,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s)'
-                    logMessage(cursor,query,(id,project_photos["photo_link"],project_photos["description"],project_photos["date_taken"],givenowtime(),payload['user_id'],False))
+                    query = 'insert into project_photos(projectid,photolink,description,date_taken,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s)'
+                    logMessage(cursor,query,(id,project_photos["photolink"],project_photos["description"],project_photos["date_taken"],givenowtime(),payload['user_id'],False))
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
@@ -3021,9 +3014,12 @@ async def add_project(payload:dict, request:Request, conn: psycopg2.extensions.c
         #     raise giveFailure("Already Exists",payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.format_exc())
         raise giveFailure("Invalid Credentials",payload['user_id'],0)
+    
 @app.post('/addClientProperty')
 async def add_client_property(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f"add_client_property:received payload <{payload}>")
@@ -3081,6 +3077,8 @@ async def add_client_property(payload:dict, request:Request, conn: psycopg2.exte
         raise giveFailure(f"Key missing {e}",0,0)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         print(traceback.print_exc())
         try:
@@ -3193,6 +3191,8 @@ async def edit_client_info(payload:dict, request:Request, conn: psycopg2.extensi
         return giveSuccess(payload['user_id'],role_access_status,data)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
          logging.info(traceback.print_exc())
          raise giveFailure(f"Failed To Edit given client info due to <{traceback.print_exc()}>",0,0)
@@ -3396,6 +3396,8 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
         raise giveFailure(f"Missing key : {e}",0,0)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
          logging.info(traceback.print_exc())
          raise giveFailure(f"Failed To Edit given client info due to <{traceback.print_exc()}>",0,0)
@@ -3547,6 +3549,8 @@ async def add_client_receipt(payload:dict, request:Request, conn: psycopg2.exten
         raise giveFailure(f"Missing key {ke}",0,0)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3590,6 +3594,8 @@ async def edit_client_receipt(payload: dict, request:Request, conn: psycopg2.ext
         raise giveFailure(f"Missing key {ke}",0,0)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3663,6 +3669,8 @@ async def add_client_pma_agreement(payload:dict, request:Request, conn: psycopg2
         raise giveFailure(f"Missing key {ke}",0,0)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3694,6 +3702,8 @@ async def edit_client_pma_agreement(payload:dict, request:Request, conn: psycopg
         raise giveFailure(f"Missing key {ke}",0,0)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3761,6 +3771,8 @@ async def add_client_ll_agreement(payload:dict, request:Request, conn: psycopg2.
         raise giveFailure(f"Missing key {ke}",0,0)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -3790,6 +3802,8 @@ async def edit_client_ll_agreement(payload:dict, request:Request, conn: psycopg2
         raise giveFailure(f"Missing key {ke}",0,0)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Invalid Credentials",0,0)
@@ -4020,13 +4034,13 @@ async def edit_project(payload:dict, request:Request, conn: psycopg2.extensions.
                 if 'update' in payload['project_photos']:
                     _photo_update = payload['project_photos']['update']
                     for photo_update in _photo_update:
-                        query = '''UPDATE project_photos SET photo_link=%s,description=%s,date_taken=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
-                        logMessage(cursor,query,(photo_update["photo_link"],photo_update["description"],photo_update["date_taken"],givenowtime(),payload['user_id'],False,photo_update['id']))
+                        query = '''UPDATE project_photos SET photolink=%s,description=%s,date_taken=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'''
+                        logMessage(cursor,query,(photo_update["photolink"],photo_update["description"],photo_update["date_taken"],givenowtime(),payload['user_id'],False,photo_update['id']))
                 if 'insert' in payload['project_photos']:
                     _photo_insert = payload['project_photos']['insert']
                     for photo_insert in _photo_insert:
-                        query = '''INSERT INTO project_photos(projectid,photo_link,description,date_taken,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'''
-                        logMessage(cursor,query,(payload['projectid'],photo_insert["photo_link"],photo_insert["description"],photo_insert["date_taken"],
+                        query = '''INSERT INTO project_photos(projectid,photolink,description,date_taken,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'''
+                        logMessage(cursor,query,(payload['projectid'],photo_insert["photolink"],photo_insert["description"],photo_insert["date_taken"],
                                               givenowtime(),payload['user_id'],False))
                 if 'delete' in payload['project_photos']:
                     _photo_delete = payload['project_photos']['delete']
@@ -4056,6 +4070,8 @@ async def edit_project(payload:dict, request:Request, conn: psycopg2.extensions.
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
@@ -4079,7 +4095,7 @@ async def add_cities(payload:dict, request:Request, conn: psycopg2.extensions.co
         elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=409,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="City Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -4108,7 +4124,7 @@ async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.c
         elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=409,detail="Already Exists")
+            raise HTTPException(status_code=409,detail="City Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -4190,6 +4206,8 @@ async def add_orders(payload:dict, request:Request, conn: psycopg2.extensions.co
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
@@ -4243,6 +4261,8 @@ async def edit_orders(payload:dict, request:Request, conn: psycopg2.extensions.c
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)    
@@ -4310,6 +4330,8 @@ async def add_order_invoice(payload:dict, request:Request, conn:psycopg2.extensi
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)   
@@ -4413,6 +4435,8 @@ async def edit_order_invoice(payload:dict, request:Request, conn:psycopg2.extens
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4437,6 +4461,8 @@ async def delete_order_invoice(payload:dict, request:Request, conn:psycopg2.exte
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4478,6 +4504,8 @@ async def add_order_receipt(payload:dict, request:Request, conn: psycopg2.extens
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)   
@@ -4502,6 +4530,8 @@ async def edit_order_receipt(payload:dict, request:Request, conn:psycopg2.extens
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4583,7 +4613,7 @@ async def get_order_status_history(payload:dict, request:Request, conn:psycopg2.
         role_access_status = check_role_access(conn,payload,request=request,method="getOrders")
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT distinct a.id,b.briefdescription,c.name,a.dated FROM order_status_change a LEFT JOIN orders b ON a.orderid = b.id LEFT JOIN order_status c ON a.statusid = c.id WHERE a.orderid = %s'
+                query = "SELECT distinct a.id,b.briefdescription,c.name,TO_CHAR(a.dated AT TIME ZONE 'UTC', 'DD-Mon-YYYY HH24:MI:SS') AS dated FROM order_status_change a LEFT JOIN orders b ON a.orderid = b.id LEFT JOIN order_status c ON a.statusid = c.id WHERE a.orderid = %s"
                 msg = logMessage(cursor,query,[payload['id']])
                 logging.info(msg)
                 data = cursor.fetchall()
@@ -4829,6 +4859,8 @@ async def add_vendor_invoice(payload: dict, request:Request, conn: psycopg2.exte
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4854,6 +4886,8 @@ async def edit_vendor_invoice(payload:dict, request:Request, conn: psycopg2.exte
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)    
@@ -4945,6 +4979,8 @@ async def add_vendor_payment(payload:dict, request:Request, conn: psycopg2.exten
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -4970,6 +5006,8 @@ async def edit_vendor_payment(payload:dict, request:Request, conn: psycopg2.exte
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
@@ -5310,7 +5348,9 @@ async def get_order_pending(payload: dict, request:Request, conn:psycopg2.extens
         role_access_status = check_role_access(conn,payload,request=request,isUtilityRoute=True)
         if role_access_status:
             with conn[0].cursor() as cursor:
-                logMessage(cursor,f"SELECT sum(a.invoiceamount)-sum(b.amount) FROM order_invoice a LEFT JOIN order_receipt b ON a.orderid = b.orderid WHERE a.orderid = {payload['orderid']}")
+                logMessage(cursor,f"""SELECT sum(a.invoiceamount)-sum(b.amount) FROM order_invoice a 
+                           LEFT JOIN order_receipt b ON a.orderid = b.orderid WHERE a.orderid = {payload['orderid']}
+                            and a.isdeleted=false and b.isdeleted=false""")
                 pending = cursor.fetchone()[0]
                 logMessage(cursor,f"SELECT orderstatus,orderdate FROM get_orders_view WHERE id={payload['orderid']}")
                 orderstatus,orderdate = cursor.fetchone()
@@ -5865,8 +5905,8 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not data:
-                    res = {colname:None for colname in colnames}
+                if not _data:
+                    res = [{colname:None for colname in colnames}]
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -6020,8 +6060,8 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not data:
-                    res = {colname:None for colname in colnames}
+                if not _data:
+                    res = [{colname:None for colname in colnames}]
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -6197,8 +6237,8 @@ async def get_agency_type_admin(payload:dict, request:Request, conn: psycopg2.ex
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not data:
-                    res = {colname:None for colname in colnames}
+                if not _data:
+                    res = [{colname:None for colname in colnames}]
             return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -6461,8 +6501,8 @@ async def get_mandal_admin(payload: dict, request:Request, conn: psycopg2.extens
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not data:
-                    res = {colname:None for colname in colnames}
+                if not _data:
+                    res = [{colname:None for colname in colnames}]
                 return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -7055,16 +7095,37 @@ async def report_monthly_margin_entity_receipt_payments(payload:dict, request:Re
 async def report_monthly_margin_lob_receipt_payments_consolidated(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'datewiselobserviceview'
     payload['static'] = True
-    query = """ select zz.lobname, zz.total_orderreceiptamount, zz.total_paymentamount, zz.total_diff from
-(SELECT
-    lobname,
-    SUM(orderreceiptamount) AS total_orderreceiptamount,
-    SUM(paymentamount) AS total_paymentamount,
-    SUM(orderreceiptamount - paymentamount) AS total_diff,
-    max(date) AS date
-        FROM     datewiselobserviceview group by lobname
-) as zz"""
-    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
+    query = f"""SELECT
+	lobname,
+	total_orderreceiptamount,
+	total_paymentamount,
+	total_diff
+FROM 
+(SELECT 
+            lob.name AS lobname, 
+            COALESCE(zz.total_orderreceiptamount, 0) AS total_orderreceiptamount, 
+            COALESCE(zz.total_paymentamount, 0) AS total_paymentamount, 
+            COALESCE(zz.total_diff, 0) AS total_diff
+        FROM 
+            lob
+        LEFT JOIN 
+            (
+                SELECT 
+                    lobname, 
+                    SUM(orderreceiptamount) AS total_orderreceiptamount, 
+                    SUM(paymentamount) AS total_paymentamount, 
+                    SUM(orderreceiptamount - paymentamount) AS total_diff
+                FROM 
+                    datewiselobserviceview
+                WHERE 
+                    date >= '2024-01-01' AND date <= '2025-01-01'
+                GROUP BY 
+                    lobname
+            ) zz 
+        ON 
+    lob.name = zz.lobname) as t
+    """
+    # payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
     data = await runInTryCatch(
@@ -7078,18 +7139,9 @@ async def report_monthly_margin_lob_receipt_payments_consolidated(payload:dict, 
         formatData=True,
         isUtilityRoute=True
     )
-    query = """ select zz.lobname, zz.total_orderreceiptamount, zz.total_paymentamount, zz.total_diff from
-(SELECT
-    lobname,
-    SUM(orderreceiptamount) AS total_orderreceiptamount,
-    SUM(paymentamount) AS total_paymentamount,
-    SUM(orderreceiptamount - paymentamount) AS total_diff,
-    max(date) AS date
-        FROM     datewiselobserviceview group by lobname
-) as zz"""
     payload['pg_size'] = 0
     payload['pg_no'] = 0
-    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
+    # payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
     dt = await runInTryCatch(
@@ -7260,6 +7312,32 @@ async def get_research_colleges(payload:dict, request:Request, conn: psycopg2.ex
         isdeleted=True,
         methodname="getResearchColleges"
     )
+
+@app.post('/getCollegeTypesAdmin')
+async def get_research_college_types(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload,request=request,isUtilityRoute=True)
+        if role_access_status == 1:
+            with conn[0].cursor() as cursor:
+                query = 'SELECT DISTINCT id,name from collegetypes order by name'
+                msg = logMessage(cursor,query)
+                _data = cursor.fetchall()
+                logging.info(msg)
+                
+                colnames = [desc[0] for desc in cursor.description]
+                res = []
+                for data in _data:
+                    res.append({colname:val for colname,val in zip(colnames,data)})
+                if not _data:
+                    res = [{colname:None for colname in colnames}]
+            return giveSuccess(payload['user_id'],role_access_status,res)
+        else:
+            raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except HTTPException as h:
+        raise h
+    except Exception as e:
+        logging.info(traceback.print_exc())
+        raise giveFailure("Invalid Credentials",0,0)
         
 @app.post('/addResearchColleges')
 async def add_research_colleges(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -8935,9 +9013,9 @@ async def report_order_analysis(payload:dict, request:Request, conn: psycopg2.ex
         payload['filters'].append(['lobname','equalTo',payload['lobName'],'String'])
     if 'statusName' in payload and payload['statusName'] != 'all':
         payload['filters'].append(['orderstatus','equalTo',payload['statusName'],'String'])
-    if 'serviceName' in payload and payload['statusName'] != 'all':
+    if 'serviceName' in payload and payload['serviceName'] != 'all':
         payload['filters'].append(['service','equalTo',payload['serviceName'],'String'])
-    if 'clientName' in payload and payload['statusName'] != 'all':
+    if 'clientName' in payload and payload['clientName'] != 'all':
         payload['filters'].append(['clientname','equalTo',payload['clientName'],'String'])
     return await runInTryCatch(
         request=request,
@@ -9247,7 +9325,7 @@ async def report_client_contacts(payload:dict, request:Request, conn: psycopg2.e
       or localcontact1address != '' or localcontact1details != '' or localcontact2name != ''
         or localcontact2address != '' or localcontact2details!='') """
     return await runInTryCatch(
-        request=request,
+        request = request,
         conn = conn,
         fname = 'report_client_contacts',
         payload = payload,
@@ -9371,17 +9449,21 @@ async def dashboard_data(payload:dict, request:Request, conn: psycopg2.extension
 @app.post('/deleteFromTable')
 async def delete_from_table(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
-        query = f"DELETE FROM {payload['table_name']} where id={payload['id']}"
-        with conn[0].cursor() as cursor:
-            cursor.execute(query)
-            conn[0].commit()
-            if cursor.statusmessage == 'DELETE 0':
-                raise HTTPException(404,"ID not found")
-            else:
-                return giveSuccess(payload['user_id'],None,{
-                    "table_edited":payload['table_name'],
-                    "id delete":payload['id']
-                })
+        role_access_status = check_role_access(conn,payload,request,method='delete')
+        if role_access_status==1:
+            query = f"DELETE FROM {payload['table_name']} where id={payload['id']}"
+            with conn[0].cursor() as cursor:
+                cursor.execute(query)
+                conn[0].commit()
+                if cursor.statusmessage == 'DELETE 0':
+                    raise HTTPException(404,"ID not found")
+                else:
+                    return giveSuccess(payload['user_id'],None,{
+                        "table_edited":payload['table_name'],
+                        "id delete":payload['id']
+                    })
+        else:
+            raise HTTPException(404,"Access Denied")
     except HTTPException as h:
         raise h
     except psycopg2.errors.ForeignKeyViolation:
@@ -9487,5 +9569,67 @@ async def logout(payload: dict,conn: psycopg2.extensions.connection = Depends(ge
         return giveSuccess(payload['user_id'],0,{"Logged Out" : payload['user_id']})
     except Exception as e:
         raise HTTPException("400",f"Bad Request {e}")
+
+@app.post('/deleteFromClient')
+async def delete_from_client(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload,request,method='delete')
+        if role_access_status==1:
+            queryarr = [
+                f"DELETE FROM client_access where clientid={payload['id']}",
+                f"DELETE FROM client_poa where clientid={payload['id']}",
+                f"DELETE FROM client_legal_info where clientid={payload['id']}",
+                f"DELETE FROM client_bank_info where clientid={payload['id']}",
+                f"DELETE FROM client where id={payload['id']}"
+            ]
+            with conn[0].cursor() as cursor:
+                for query in queryarr:
+                    cursor.execute(query)
+                    conn[0].commit()
+                if cursor.statusmessage == 'DELETE 0':
+                    raise HTTPException(404,"ID not found")
+                else:
+                    return giveSuccess(payload['user_id'],None,{
+                        "table_edited":"client",
+                        "id delete":payload['id']
+                    })
+        else:
+            raise HTTPException(403,"Access Denied")
+    except HTTPException as h:
+        raise h
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
+    except Exception as e:
+        raise HTTPException(400,f"Bad request error <{e}>")
+
+@app.post('/deleteFromOrders')
+async def delete_from_client(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    try:
+        role_access_status = check_role_access(conn,payload,request,method='delete')
+        if role_access_status==1:
+            queryarr = [
+                f"DELETE FROM order_photos where orderid={payload['id']}",
+                f"DELETE FROM order_status_change where orderid={payload['id']}",
+                f"DELETE FROM orders where id={payload['id']}"
+            ]
+            with conn[0].cursor() as cursor:
+                for query in queryarr:
+                    cursor.execute(query)
+                    conn[0].commit()
+                if cursor.statusmessage == 'DELETE 0':
+                    raise HTTPException(404,"ID not found")
+                else:
+                    return giveSuccess(payload['user_id'],None,{
+                        "table_edited":"orders",
+                        "id delete":payload['id']
+                    })
+        else:
+            raise HTTPException(403,"Access Denied")
+    except HTTPException as h:
+        raise h
+    except psycopg2.errors.ForeignKeyViolation:
+        raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
+    except Exception as e:
+        raise HTTPException(400,f"Bad request error <{e}>")
 
 logger.info("program_started")
