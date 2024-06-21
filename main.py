@@ -4613,7 +4613,7 @@ async def get_order_status_history(payload:dict, request:Request, conn:psycopg2.
         role_access_status = check_role_access(conn,payload,request=request,method="getOrders")
         if role_access_status==1:
             with conn[0].cursor() as cursor:
-                query = 'SELECT distinct a.id,b.briefdescription,c.name,a.dated FROM order_status_change a LEFT JOIN orders b ON a.orderid = b.id LEFT JOIN order_status c ON a.statusid = c.id WHERE a.orderid = %s'
+                query = "SELECT distinct a.id,b.briefdescription,c.name,TO_CHAR(a.dated AT TIME ZONE 'UTC', 'DD-Mon-YYYY HH24:MI:SS') AS dated FROM order_status_change a LEFT JOIN orders b ON a.orderid = b.id LEFT JOIN order_status c ON a.statusid = c.id WHERE a.orderid = %s"
                 msg = logMessage(cursor,query,[payload['id']])
                 logging.info(msg)
                 data = cursor.fetchall()
