@@ -192,11 +192,18 @@ def getdata(conn: psycopg2.extensions.connection):
         paymentreqstatus(conn)
     ]
 
-def ifNotExist(criteria : str,table_name : str,conn: psycopg2.extensions.connection,value):
+def ifNotExist(criteria : str,table_name : str,conn: psycopg2.extensions.connection,value,iddata=None,isInt=None):
     try:
         with conn[0].cursor() as cursor:
-            query = f"SELECT {criteria} FROM {table_name} WHERE lower({criteria}) = %s"
-            logMessage(cursor,query,(value.lower(),))
+            logging.info(type(value))
+            if not isInt:
+                query = f"SELECT {criteria} FROM {table_name} WHERE lower({criteria}) = %s"
+            else:
+                query = f"SELECT {criteria} FROM {table_name} WHERE {criteria} = {value}"
+            if iddata:
+                query += f"AND id != {iddata}"
+            msg = logMessage(cursor,query,(value.lower(),))
+            logging.info(msg)
             s = len(cursor.fetchall())
             logging.info(s)
         if s!=0:
@@ -1586,7 +1593,7 @@ async def edit_localities(payload: dict, request:Request, conn: psycopg2.extensi
     logging.info(f'edit_locality: received payload <{payload}>')
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editLocality")
-        if role_access_status==1 and ifNotExist('locality','locality',conn,payload['locality']):
+        if role_access_status==1 and ifNotExist('locality','locality',conn,payload['locality'],payload['id']):
 
             payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
@@ -1774,7 +1781,9 @@ async def get_employee(payload:dict, request:Request, conn: psycopg2.extensions.
 @app.post('/addEmployee')
 async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'add_employee: received payload <{payload}>')
+    empid = None
     try:
+        empid = payload['employeeid']
         role_access_status = check_role_access(conn,payload,request=request,method="addEmployee")
         if role_access_status == 1 and ifNotExist('employeeid','employee',conn,payload['employeeid']):
             with conn[0].cursor() as cursor:
@@ -1813,7 +1822,7 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
-            raise HTTPException(status_code=409,detail="Employee Already Exists")
+            raise HTTPException(status_code=409,detail=f"Employee ID {empid} Already Exists")
 
     except HTTPException as h:
         raise h
@@ -1824,10 +1833,11 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
 @app.post('/editEmployee')
 async def edit_employee(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f'edit_employee: received payload <{payload}>')
+    empid = None
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editEmployee")
-
-        if role_access_status==1 and ifNotExist('employeeid','employee',conn,payload['employeeid']):
+        empid = payload['employeeid']
+        if role_access_status==1 and ifNotExist('employeeid','employee',conn,payload['employeeid'],payload['id']):
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = '''UPDATe employee SET employeename=%s,employeeid=%s, userid=%s,roleid=%s, dateofjoining=%s, dob=%s, panno=%s,status=%s, phoneno=%s, email=%s, addressline1=%s, addressline2=%s,suburb=%s, city=%s, state=%s, country=%s, zip=%s,dated=%s, createdby=%s, isdeleted=%s, entityid=%s,lobid=%s, lastdateofworking=%s, designation=%s WHERE id=%s'''
@@ -1867,7 +1877,7 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
         else:
 
-            raise HTTPException(status_code=409,detail="Employee Already Exists")
+            raise HTTPException(status_code=409,detail=f"Employee ID {empid} Already Exists")
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -4134,7 +4144,7 @@ async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.c
     logging.info(f"edit_cities:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editCities")
-        if role_access_status == 1 and ifNotExist('city','cities',conn,payload['city']):
+        if role_access_status == 1 and ifNotExist('city','cities',conn,payload['city'],payload['id']):
             with conn[0].cursor() as cursor:
                 query = 'UPDATE cities SET city=%s,state=%s,countryid=%s WHERE id=%s'
                 msg = logMessage(cursor,query,[
@@ -5510,9 +5520,19 @@ async def get_services(payload:dict, request:Request, conn: psycopg2.extensions.
 
 @app.post('/addService')
 async def add_services(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"Payload is <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="addService")
-        if role_access_status == 1:
+        tval = False
+        query = f"SELECT * FROM services WHERE lob={payload['lob']} AND service='{payload['service']}'"
+        with conn[0].cursor() as cursor:
+            cursor.execute(query)
+            logging.info(query)
+            dat = cursor.fetchall()
+            logging.info(dat)
+            if len(dat)==0:
+                tval=True
+        if role_access_status == 1 and tval:
             with conn[0].cursor() as cursor:
                 query = """INSERT INTO services (lob,service,active,dated,createdby,isdeleted,servicetype,category2,tallyledgerid)
                             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"""
@@ -5521,8 +5541,10 @@ async def add_services(payload:dict, request:Request, conn: psycopg2.extensions.
                 id = cursor.fetchone()[0]
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Service ID":id})
+        elif role_access_status!=1:
+            raise giveFailure('Access Denied',payload['user_id'],role_access_status)
         else:
-            raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=409,detail=f"LOB {payload['lob']}-Service {payload['service']} Already Exists")
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
@@ -5536,15 +5558,26 @@ async def add_services(payload:dict, request:Request, conn: psycopg2.extensions.
 async def edit_services(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editService")
-        if role_access_status == 1:
+        tval = False
+        query = f"SELECT * FROM services WHERE lob={payload['lob']} AND service='{payload['service']}'"
+        with conn[0].cursor() as cursor:
+            cursor.execute(query)
+            logging.info(query)
+            dat = cursor.fetchall()
+            logging.info(dat)
+            if len(dat)==0:
+                tval=True
+        if role_access_status == 1 and tval:
             with conn[0].cursor() as cursor:
                 query = """UPDATE services SET lob=%s,service=%s,active=%s,dated=%s,createdby=%s,isdeleted=%s,servicetype=%s,category2=%s,tallyledgerid=%s WHERE id=%s"""
                 msg = logMessage(cursor,query,(payload['lob'],payload['service'],payload['active'],givenowtime(),payload['user_id'],False,payload['servicetype'],payload['category2'],payload['tallyledgerid'],payload['id']))
                 logging.info(msg)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Service ID":payload['id']})
+        elif role_access_status!=1:
+            raise giveFailure('Access Denied',payload['user_id'],role_access_status)
         else:
-            raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+            raise HTTPException(status_code=409,detail=f"LOB {payload['lob']}-Service {payload['service']} Already Exists")
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"Missing key {ke}",0,0)
