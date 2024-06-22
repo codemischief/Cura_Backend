@@ -894,7 +894,7 @@ def check_role_access(conn, payload: dict,request: Request = None,method = None,
                     cursor.execute(query)
                     logging.info(cursor.statusmessage)
                     conn[0].commit()
-                    logging.info(f"DELETEd TOKEN {token}")
+                    logging.info(f"DELETED TOKEN {token}")
                 raise HTTPException(498,"Badly expired token")
         else:
             raise HTTPException(status_code=498,detail="Invalid Token")

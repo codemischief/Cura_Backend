@@ -3486,21 +3486,19 @@ CREATE OR REPLACE VIEW PMABillingTrendView AS
            'VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12)'::text) 
            ct(clientname text, gy text, jan numeric, feb numeric, mar numeric, apr numeric, may numeric, jun numeric, jul numeric, aug numeric, sep numeric, oct numeric, nov numeric, dec numeric);
 
-CREATE VIEW RptBankstAmount AS
-
-SELECT
-    COALESCE(SUM(CASE WHEN BankSt.crdr = 'DR' THEN BankSt.Amount ELSE 0 END), 0) AS BankStAMount,
-    BankSt.Date,
-    BankSt.ModeofPayment,
-    Mode_Of_payment.Name
-FROM
-    BankSt
-INNER JOIN
-    Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
-GROUP BY
-    BankSt.Date,
-    BankSt.ModeofPayment,
-    Mode_Of_payment.Name;
+CREATE OR REPLACE VIEW rptbankstamount
+AS SELECT COALESCE(sum(
+        CASE
+            WHEN bankst.crdr = 'CR'::text THEN bankst.amount
+            ELSE 0::numeric
+        END), 0::numeric) AS bankstamount,
+    bankst.date,
+    bankst.modeofpayment,
+    mode_of_payment.name
+   FROM bankst
+     JOIN mode_of_payment ON bankst.modeofpayment = mode_of_payment.id
+  GROUP BY bankst.date, bankst.modeofpayment, mode_of_payment.name;
+  
 
 CREATE VIEW RptOrderAmount AS
 
@@ -3563,15 +3561,16 @@ FROM
 
 
 
-CREATE VIEW rpt_daily_bank_receipts_reco AS
- SELECT bankreconcillationview.date,
+ CREATE OR REPLACE VIEW rpt_daily_bank_receipts_reco
+AS SELECT bankreconcillationview.date,
     sum(bankreconcillationview.bankstamount) AS bankst_cr,
     sum(bankreconcillationview.cramount) AS client_receipt,
     sum(bankreconcillationview.oramount) AS order_receipt
    FROM bankreconcillationview
-  WHERE bankreconcillationview.paymentmode = 'DAP-ICICI-42'::text AND bankreconcillationview.date >= '2022-01-01'::date AND bankreconcillationview.date <= '2022-10-01'::date
+  WHERE bankreconcillationview.paymentmode = 'DAP-ICICI-42'::text 
   GROUP BY bankreconcillationview.date
   ORDER BY bankreconcillationview.date DESC;
+
 
 CREATE VIEW RptContractualPaymentAmount1 AS
  SELECT COALESCE(sum(ref_contractual_payments.amount), 0::numeric) AS cpamount,
@@ -6107,62 +6106,100 @@ WHERE COALESCE(rptinternal_sumorderreceiptsview.receiptamount, 0) - COALESCE(rpt
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 --2. Bank Record - Bank Balance Reconciliation
-
-CREATE OR REPLACE VIEW BankSTBalanceView AS
-SELECT
-    ID,
-    date,
-    Name,
-    SUM(COALESCE(Payments, 0)) AS Payments,
-    SUM(COALESCE(Receipts, 0)) AS Receipts,
-    ModeofPayment,
-    MonthYear
-FROM (
-    SELECT
-        BankSt.ID,
-        BankSt.ModeofPayment,
-        getMonthYear(BankSt.date) AS MonthYear,
-        BankSt.date,
-        Mode_Of_payment.Name,
-        SUM(CASE WHEN BankSt.crdr = 'DR' THEN BankSt.Amount ELSE 0 END) AS Payments,
-        0 AS Receipts
-    FROM
-        BankSt
-        INNER JOIN Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
-    GROUP BY
-        BankSt.ModeofPayment,
-        BankSt.date,
-        Mode_Of_payment.Name,
-        BankSt.ID,
-        getMonthYear(BankSt.date)
+CREATE OR REPLACE VIEW bankstbalanceview
+AS SELECT tempdata.id,
+    tempdata.date,
+    tempdata.name,
+    sum(COALESCE(tempdata.payments, 0::numeric)) AS payments,
+    sum(COALESCE(tempdata.receipts, 0::numeric)) AS receipts,
+    tempdata.modeofpayment,
+    tempdata.monthyear
+   FROM ( SELECT bankst.id,
+            bankst.modeofpayment,
+            getmonthyear(bankst.date) AS monthyear,
+            bankst.date,
+            mode_of_payment.name,
+            sum(
+                CASE
+                    WHEN bankst.crdr = 'DR'::text THEN bankst.amount
+                    ELSE 0::numeric
+                END) AS payments,
+            0 AS receipts
+           FROM bankst
+             JOIN mode_of_payment ON bankst.modeofpayment = mode_of_payment.id
+          GROUP BY bankst.modeofpayment, bankst.date, mode_of_payment.name, bankst.id, (getmonthyear(bankst.date))
+        UNION ALL
+         SELECT bankst.id,
+            bankst.modeofpayment,
+            getmonthyear(bankst.date) AS monthyear,
+            bankst.date,
+            mode_of_payment.name,
+            0 AS payments,
+            sum(
+                CASE
+                    WHEN bankst.crdr = 'CR'::text THEN bankst.amount
+                    ELSE 0::numeric
+                END) AS receipts
+           FROM bankst
+             JOIN mode_of_payment ON bankst.modeofpayment = mode_of_payment.id
+          GROUP BY bankst.modeofpayment, bankst.date, mode_of_payment.name, bankst.id, (getmonthyear(bankst.date))) tempdata
+  GROUP BY tempdata.modeofpayment, tempdata.date, tempdata.name, tempdata.id, tempdata.monthyear ;
+  
+-- CREATE OR REPLACE VIEW BankSTBalanceView AS
+-- SELECT
+--     ID,
+--     date,
+--     Name,
+--     SUM(COALESCE(Payments, 0)) AS Payments,
+--     SUM(COALESCE(Receipts, 0)) AS Receipts,
+--     ModeofPayment,
+--     MonthYear
+-- FROM (
+--     SELECT
+--         BankSt.ID,
+--         BankSt.ModeofPayment,
+--         getMonthYear(BankSt.date) AS MonthYear,
+--         BankSt.date,
+--         Mode_Of_payment.Name,
+--         SUM(CASE WHEN BankSt.crdr = 'DR' THEN BankSt.Amount ELSE 0 END) AS Payments,
+--         0 AS Receipts
+--     FROM
+--         BankSt
+--         INNER JOIN Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
+--     GROUP BY
+--         BankSt.ModeofPayment,
+--         BankSt.date,
+--         Mode_Of_payment.Name,
+--         BankSt.ID,
+--         getMonthYear(BankSt.date)
     
-    UNION ALL
+--     UNION ALL
     
-    SELECT
-        BankSt.ID,
-        BankSt.ModeofPayment,
-        getMonthYear(BankSt.date) AS MonthYear,
-        BankSt.date,
-        Mode_Of_payment.Name,
-        0 AS Payments,
-        SUM(CASE WHEN BankSt.crdr = 'CR' THEN BankSt.Amount ELSE 0 END) AS Receipts
-    FROM
-        BankSt
-        INNER JOIN Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
-    GROUP BY
-        BankSt.ModeofPayment,
-        BankSt.date,
-        Mode_Of_payment.Name,
-        BankSt.ID,
-        getMonthYear(BankSt.date)
-) AS TempData
-GROUP BY
-    ModeofPayment,
-    date,
-    Name,
-    ID,
-    MonthYear
-LIMIT 100;
+--     SELECT
+--         BankSt.ID,
+--         BankSt.ModeofPayment,
+--         getMonthYear(BankSt.date) AS MonthYear,
+--         BankSt.date,
+--         Mode_Of_payment.Name,
+--         0 AS Payments,
+--         SUM(CASE WHEN BankSt.crdr = 'CR' THEN BankSt.Amount ELSE 0 END) AS Receipts
+--     FROM
+--         BankSt
+--         INNER JOIN Mode_Of_payment ON BankSt.ModeofPayment = Mode_Of_payment.ID
+--     GROUP BY
+--         BankSt.ModeofPayment,
+--         BankSt.date,
+--         Mode_Of_payment.Name,
+--         BankSt.ID,
+--         getMonthYear(BankSt.date)
+-- ) AS TempData
+-- GROUP BY
+--     ModeofPayment,
+--     date,
+--     Name,
+--     ID,
+--     MonthYear
+-- LIMIT 100;
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------
@@ -6224,22 +6261,43 @@ GROUP BY
     paidon,
     paymentmodeid;
 
-CREATE VIEW fin_bank_transactions_daily_bankrcpts_summary AS
-SELECT
-    mode_of_payment.name,
-    to_char(bankst.date, 'YYYY-MM') AS monthyear,
-    bankst.date AS date,
-    SUM(CASE WHEN bankst.crdr = 'CR' THEN bankst.amount ELSE 0 END) AS receipts,
-    SUM(CASE WHEN bankst.crdr = 'DR' THEN bankst.amount ELSE 0 END) AS payments,
-    mode_of_payment.id AS modeid
-FROM
-    bankst
-    INNER JOIN mode_of_payment ON bankst.modeofpayment = mode_of_payment.id
-GROUP BY
-    mode_of_payment.name,
-    to_char(bankst.date, 'YYYY-MM'),
+CREATE OR REPLACE VIEW fin_bank_transactions_daily_bankrcpts_summary
+AS SELECT mode_of_payment.name,
+    to_char(bankst.date::timestamp with time zone, 'Mon-YYYY'::text) AS monthyear,
     bankst.date,
-    mode_of_payment.id;
+    sum(
+        CASE
+            WHEN bankst.crdr = 'CR'::text THEN bankst.amount
+            ELSE 0::numeric
+        END) AS receipts,
+    sum(
+        CASE
+            WHEN bankst.crdr = 'DR'::text THEN bankst.amount
+            ELSE 0::numeric
+        END) AS payments,
+    mode_of_payment.id AS modeid
+   FROM bankst
+     JOIN mode_of_payment ON bankst.modeofpayment = mode_of_payment.id
+  GROUP BY mode_of_payment.name, (to_char(bankst.date::timestamp with time zone, 'YYYY-MM'::text)), bankst.date, mode_of_payment.id;
+  
+  
+
+-- CREATE VIEW fin_bank_transactions_daily_bankrcpts_summary AS
+-- SELECT
+--     mode_of_payment.name,
+--     to_char(bankst.date, 'YYYY-MM') AS monthyear,
+--     bankst.date AS date,
+--     SUM(CASE WHEN bankst.crdr = 'CR' THEN bankst.amount ELSE 0 END) AS receipts,
+--     SUM(CASE WHEN bankst.crdr = 'DR' THEN bankst.amount ELSE 0 END) AS payments,
+--     mode_of_payment.id AS modeid
+-- FROM
+--     bankst
+--     INNER JOIN mode_of_payment ON bankst.modeofpayment = mode_of_payment.id
+-- GROUP BY
+--     mode_of_payment.name,
+--     to_char(bankst.date, 'YYYY-MM'),
+--     bankst.date,
+--     mode_of_payment.id;
 
 CREATE VIEW fin_bank_transactions_daily_summary AS
 SELECT
