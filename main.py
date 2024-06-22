@@ -9619,7 +9619,8 @@ async def logout(payload: dict,request: Request,conn: psycopg2.extensions.connec
     try:
         if 'refreshtoken' in request.headers:
             refresh_token = request.headers['refreshtoken']
-            
+        else:
+            raise HTTPException(498,"Refresh token not found")
         with conn[0].cursor() as cursor:
             query = f"DELETE FROM tokens WHERE refresh_token = '{refresh_token}'"
             logging.info(query)
