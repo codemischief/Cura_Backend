@@ -19,12 +19,15 @@ alter table research_prospect add column email1 text;
 alter table research_prospect add column phoneno text;
 alter table client_property_leave_license_details alter column startdate type date;
 alter table client_property_leave_license_details alter column actualenddate type date;
+alter table ref_contractual_payments alter column paidon type date;
 alter table client_property_poa alter column poaeffectivedate type date;
 alter table client_property_poa alter column poaenddate type date;
 ALTER TABLE orders ALTER COLUMN orderdate TYPE date;
 ALTER TABLE orders ALTER COLUMN earlieststartdate TYPE date;
 ALTER TABLE orders ALTER COLUMN expectedcompletiondate TYPE date;
 ALTER TABLE orders ALTER COLUMN actualcompletiondate TYPE date;
+alter table project_contacts alter column effectivedate type date;
+alter table project_contacts alter column tenureenddate type date;
 
 
 
@@ -53,6 +56,37 @@ ALTER TABLE client_property_owner DROP COLUMN owner2employer;
 ALTER TABLE client_property_owner DROP COLUMN owner2relation;
 ALTER TABLE client_property_owner DROP COLUMN owner2relationwith;
 ALTER TABLE client_property_owner DROP COLUMN otherownerdetails;
+
+ALTER TABLE bankst ADD CONSTRAINT amount CHECK (amount >= 0);
+ALTER TABLE client_property ADD CONSTRAINT numberofparkings CHECK (numberofparkings >= 0);
+ALTER TABLE project ADD CONSTRAINT numberoffloors CHECK (numberoffloors >= 0);
+ALTER TABLE project ADD CONSTRAINT numberofbuildings CHECK (numberofbuildings >= 0);
+ALTER TABLE project ADD CONSTRAINT approxtotalunits CHECK (approxtotalunits >= 0);
+ALTER TABLE order_invoice ADD CONSTRAINT invoiceamount CHECK (invoiceamount >= 0);
+ALTER TABLE order_invoice ADD CONSTRAINT estimateamount CHECK (estimateamount >= 0);
+ALTER TABLE order_invoice ADD CONSTRAINT baseamount CHECK (baseamount >= 0);
+ALTER TABLE order_invoice ADD CONSTRAINT tax CHECK (tax >= 0);
+ALTER TABLE client_receipt ADD CONSTRAINT serviceamount CHECK (serviceamount >= 0);
+ALTER TABLE client_receipt ADD CONSTRAINT reimbursementamount CHECK (reimbursementamount >= 0);
+ALTER TABLE client_receipt ADD CONSTRAINT tds CHECK (tds >= 0);
+ALTER TABLE client_receipt ADD CONSTRAINT amount CHECK (amount >= 0);
+ALTER TABLE order_receipt ADD CONSTRAINT amount CHECK (amount >= 0);
+ALTER TABLE order_receipt ADD CONSTRAINT tds CHECK (tds >= 0);
+ALTER TABLE order_vendorestimate ADD CONSTRAINT amount CHECK (amount >= 0);
+ALTER TABLE order_vendorestimate ADD CONSTRAINT invoiceamount CHECK (invoiceamount >= 0);
+ALTER TABLE order_vendorestimate ADD CONSTRAINT servicetax CHECK (servicetax >= 0);
+ALTER TABLE order_vendorestimate ADD CONSTRAINT vat1 CHECK (vat1 >= 0);
+ALTER TABLE order_payment ADD CONSTRAINT amount CHECK (amount >= 0);
+ALTER TABLE order_payment ADD CONSTRAINT servicetaxamount CHECK (servicetaxamount >= 0);
+ALTER TABLE order_payment ADD CONSTRAINT tds CHECK (tds >= 0);
+ALTER TABLE client_property_caretaking_agreement ADD CONSTRAINT rented CHECK (rented >= 0);
+ALTER TABLE client_property_caretaking_agreement ADD CONSTRAINT fixed CHECK (fixed >= 0);
+ALTER TABLE client_property_leave_license_details ADD CONSTRAINT rentamount CHECK (rentamount >= 0);
+ALTER TABLE client_property_leave_license_details ADD CONSTRAINT durationinmonth CHECK (durationinmonth >= 0);
+ALTER TABLE client_property_leave_license_details ADD CONSTRAINT noticeperiodindays CHECK (noticeperiodindays >= 0);
+ALTER TABLE client_property_leave_license_details ADD CONSTRAINT depositamount CHECK (depositamount >= 0);
+ALTER TABLE ref_contractual_payments ADD CONSTRAINT amount CHECK (amount >= 0);
+
 
 ALTER TABLE client_property_owner
 ADD COLUMN owner1aadhaarno text;
@@ -130,6 +164,13 @@ CREATE TABLE rules (
     status boolean NOT NULL,
     PRIMARY KEY (id)
 );
+
+
+INSERT INTO collegetypes (name) VALUES ('College');
+INSERT INTO collegetypes (name) VALUES ('Pre-Primary School');
+INSERT INTO collegetypes (name) VALUES ('Day Care');
+INSERT INTO collegetypes (name) VALUES ('High School');
+INSERT INTO collegetypes (name) VALUES ('Primary School');
 
 
 INSERT INTO rules (id, module, method, status) VALUES (25, 'BuilderInfo', 'addBuilderInfo', true);
@@ -397,7 +438,7 @@ INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (101, 69, 3);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (102, 70, 3);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (103, 71, 3);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (104, 69, 4);
-INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (105, 70, 34);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (105, 70, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (106, 71, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (107, 69, 5);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (108, 73, 1);
@@ -411,8 +452,8 @@ INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (115, 73, 3);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (116, 74, 3);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (117, 75, 3);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (118, 73, 4);
-INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (119, 74, 4);
-INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (120, 75, 4);
+-- INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (119, 74, 4);
+-- INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (120, 75, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (121, 73, 1);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (122, 78, 1);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (123, 79, 1);
@@ -871,16 +912,10 @@ alter table order_payment alter column paymentdate type date;
 update order_status set name='Closed (Work Done & Collection Completed)' where id=5;
 update order_status set name='Work Done - Pending Collection' where id=8;
 
-alter table realestateagents add column rera_registration_number text;
+alter table realestateagents rename column registered to rera_registration_number;
 
-ALTER TABLE realestateagents 
-ALTER COLUMN registered 
-TYPE boolean 
-USING 
-  CASE 
-    WHEN registered IS NOT NULL AND registered <> '' THEN true
-    ELSE false
-  END;
+ALTER TABLE realestateagents ADD COLUMN registered bool;
+
 
 alter table employee alter column dateofjoining type date;
 alter table employee alter column lastdateofworking type date;
@@ -955,10 +990,9 @@ SELECT DISTINCT
     a.professiontax,
     a.month,
     a.deduction
-
 FROM ref_contractual_payments a
-LEFT JOIN usertable b ON a.paymentto = b.id
-LEFT JOIN usertable c ON a.paymentby = c.id
+LEFT JOIN usertable b ON a.paymentby = b.id
+LEFT JOIN usertable c ON a.paymentto = c.id
 LEFT JOIN mode_of_payment d ON a.paymentmode = d.id
 LEFT JOIN payment_for e ON a.paymentfor = e.id
 LEFT JOIN entity g ON a.entityid = g.id;
@@ -3649,76 +3683,54 @@ LEFT OUTER JOIN howreceived ON client_receipt.howreceivedid = howreceived.id
 LEFT OUTER JOIN entity ON client_receipt.entityid = entity.id
 LEFT OUTER JOIN payment_source ON client_receipt.paymentsource = payment_source.id;
 
+
 create or replace view rpt_pmaclient as 
-SELECT 'Invoice'::text AS type,
-    ov.clientname,
-    oi.id,
-    oi.invoicedate AS date,
-    oi.invoiceamount AS amount,
+
+ SELECT 'Invoice'::text AS type,
+    ordersview.clientname,
+    order_invoice.id,
+    order_invoice.invoicedate AS date,
+    order_invoice.invoiceamount AS amount,
     NULL::numeric AS tds,
-    replace(replace(ov.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
-    e.name AS entity,
-    s.service,
-    replace(replace(oi.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
+    replace(replace(ordersview.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
+    entity.name AS entity,
+    services.service,
+    replace(replace(order_invoice.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
     ''::text AS mode,
-    ov.clienttypename AS client_type,
-    ov.id AS order_id,
-    ov.clientid,
-    getmonthyear(oi.invoicedate::timestamp without time zone) AS monthyear,
-    getfinancialyear(oi.invoicedate) AS fy,
-    ov.lobname
-   FROM order_invoice oi
-     LEFT JOIN ordersview ov ON ov.id = oi.orderid
-     LEFT JOIN entity e ON e.id = oi.entityid
-     LEFT JOIN services s ON s.id = ov.serviceid
-  WHERE ov.clienttypename !~~ '%PMA%'::text AND ov.clientname !~~ '%1-%'::text
+    ordersview.clienttypename AS clienttype,
+    ordersview.id AS orderid,
+    ordersview.clientid,
+    getmonthyear(order_invoice.invoicedate::timestamp without time zone) AS monthyear,
+    getfinancialyear(order_invoice.invoicedate) AS fy,
+    ordersview.lobname
+   FROM order_invoice
+     LEFT JOIN ordersview ON ordersview.id = order_invoice.orderid
+     LEFT JOIN entity ON entity.id = order_invoice.entityid
+     LEFT JOIN services ON services.id = ordersview.serviceid
+  WHERE ordersview.clienttypename ilike '%PMA%'::text
 UNION ALL
  SELECT 'Payment'::text AS type,
-    cv.fullname AS clientname,
-    crv.id,
-    crv.recddate AS date,
-    '-1'::integer::numeric * crv.amount AS amount,
-    crv.tds,
+    clientview.fullname AS clientname,
+    clientreceiptview.id,
+    clientreceiptview.recddate AS date,
+    '-1'::integer::numeric * clientreceiptview.amount AS amount,
+    clientreceiptview.tds,
     NULL::text AS orderdetails,
-    e.name AS entity,
+    entity.name AS entity,
     NULL::text AS service,
-    hr.name AS details,
-    crv.paymentmode AS mode,
-    cv.clienttypename AS client_type,
-    NULL::bigint AS order_id,
-    cv.id AS clientid,
-    getmonthyear(crv.recddate::timestamp without time zone) AS monthyear,
-    getfinancialyear(crv.recddate) AS fy,
+    howreceived.name AS details,
+    clientreceiptview.paymentmode AS mode,
+    clientview.clienttypename AS clienttype,
+    NULL::bigint AS orderid,
+    clientview.id AS clientid,
+    getmonthyear(clientreceiptview.recddate::timestamp without time zone) AS monthyear,
+    getfinancialyear(clientreceiptview.recddate) AS fy,
     NULL::text AS lobname
-   FROM clientview cv
-     JOIN clientreceiptview crv ON cv.id = crv.clientid
-     LEFT JOIN entity e ON crv.entityid = e.id
-     LEFT JOIN howreceived hr ON crv.howreceivedid = hr.id
-  WHERE cv.clienttypename !~~ '%PMA%'::text AND cv.firstname !~~ '%1-%'::text
-UNION ALL
- SELECT 'OrderRec'::text AS type,
-    cv.fullname AS clientname,
-    orv.id,
-    orv.recddate AS date,
-    '-1'::integer::numeric * orv.amount AS amount,
-    orv.tds,
-    orv.orderdescription AS orderdetails,
-    e.name AS entity,
-    orv.service,
-    orv.receiptdesc AS details,
-    orv.paymentmode AS mode,
-    cv.clienttypename AS client_type,
-    orv.orderid AS order_id,
-    cv.id AS clientid,
-    getmonthyear(orv.recddate::timestamp without time zone) AS monthyear,
-    getfinancialyear(orv.recddate) AS fy,
-    orv.lobname
-   FROM clientview cv
-     JOIN orderreceiptview orv ON cv.id = orv.clientid
-     LEFT JOIN entity e ON orv.entityid = e.id
-  WHERE cv.clienttypename !~~ '%PMA%'::text AND cv.firstname !~~ '%1-%'::text;
-
-
+   FROM clientview
+     JOIN clientreceiptview ON clientview.id = clientreceiptview.clientid
+     LEFT JOIN entity ON clientreceiptview.entityid = entity.id
+     LEFT JOIN howreceived ON clientreceiptview.howreceivedid = howreceived.id
+  WHERE clientview.clienttypename ilike '%PMA%'::text;
 
 CREATE VIEW rpt_pmaclient_receivables AS
 SELECT 
@@ -4199,6 +4211,7 @@ SELECT
     cplld.clientpropertyorderid,
     cplld.signedby,
     cplld.active,
+    cplld.tenantsearchmode AS tenantsearchmodeid,
     cplld.llscancopy,
     cplld.pvscancopy,
     cplld.dated,
@@ -6354,26 +6367,52 @@ CREATE VIEW rptorderpaymentamount1 As
   GROUP BY order_payment.paymentdate, mode_of_payment.name, order_payment.mode;
 
 CREATE VIEW BankReconcillationviewPayment AS
-SELECT
-    p.Date,
-    p.PaymentMode,
-    COALESCE(p.Bankst, 0) AS BankStAMount,
-    COALESCE(p.OPAMount, 0) AS OPAMount,
-    COALESCE(p.CPAMount, 0) AS CPAMount,
-    COALESCE(p.OPAMount, 0) + COALESCE(p.CPAMount, 0) AS TotalPayment
-FROM
-    (
-        SELECT
-            COALESCE(BankSt.Date, OPAMount.Date, CPAMount.Date) AS Date,
-            COALESCE(BankSt.Name, OPAMount.Name, CPAMount.Name) AS PaymentMode,
-            COALESCE(BankSt.BankStAMount, 0) AS Bankst,
-            COALESCE(OPAMount.OPAMount, 0) AS OPAMount,
-            COALESCE(CPAMount.CPAMount, 0) AS CPAMount
-        FROM
-            RptBankstAmount1 AS BankSt
-        FULL OUTER JOIN RptOrderPaymentAmount1 AS OPAMount ON BankSt.Date = OPAMount.Date AND BankSt.Name = OPAMount.Name
-        FULL OUTER JOIN RptContractualPaymentAmount1 AS CPAMount ON BankSt.Date = CPAMount.Date AND BankSt.Name = CPAMount.Name
-    ) AS p;
+ SELECT p.date,
+    p.name AS paymentmode,
+    COALESCE(sum(
+        CASE
+            WHEN p.type = 'Bankst'::text THEN p.amount
+            ELSE 0::numeric
+        END), 0::numeric) AS bankstamount,
+    COALESCE(sum(
+        CASE
+            WHEN p.type = 'OPAMount'::text THEN p.amount
+            ELSE 0::numeric
+        END), 0::numeric) AS opamount,
+    COALESCE(sum(
+        CASE
+            WHEN p.type = 'CPAMount'::text THEN p.amount
+            ELSE 0::numeric
+        END), 0::numeric) AS cpamount,
+    COALESCE(sum(
+        CASE
+            WHEN p.type = 'CPAMount'::text THEN p.amount
+            ELSE 0::numeric
+        END), 0::numeric) + COALESCE(sum(
+        CASE
+            WHEN p.type = 'OPAMount'::text THEN p.amount
+            ELSE 0::numeric
+        END), 0::numeric) AS totalpayment
+   FROM ( SELECT 'Bankst'::text AS type,
+            rptbankstamount1.bankstamount AS amount,
+            rptbankstamount1.date,
+            rptbankstamount1.name
+           FROM rptbankstamount1
+        UNION ALL
+         SELECT 'OPAMount'::text AS type,
+            rptorderpaymentamount1.opamount AS amount,
+            rptorderpaymentamount1.date,
+            rptorderpaymentamount1.name
+           FROM rptorderpaymentamount1
+        UNION ALL
+         SELECT 'CPAMount'::text AS type,
+            rptcontractualpaymentamount1.cpamount AS amount,
+            rptcontractualpaymentamount1.date,
+            rptcontractualpaymentamount1.name
+           FROM rptcontractualpaymentamount1) p
+  GROUP BY p.date, p.name
+  ORDER BY p.date DESC;
+
 
 
 
@@ -7156,7 +7195,7 @@ GROUP BY
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE VIEW totalcountview AS
+CREATE OR REPLACE VIEW totalcountview AS
 SELECT 
     'Client Receipt' AS type,
     COUNT(*) AS count,
@@ -7246,7 +7285,83 @@ SELECT
     COUNT(*) AS count,
     SUM(0) AS amount
 FROM 
-    client_property;
+    client_property
+UNION
+SELECT 
+    'BankStatementRecords' AS Type, 
+    COUNT(*) AS Count, 
+    SUM(amount) AS Amount
+FROM 
+    BankSt
+UNION
+SELECT 
+    'BuilderProjects' AS Type, 
+    COUNT(*) AS Count, 
+    SUM(0) AS Amount
+FROM 
+    Project
+UNION
+SELECT 
+    'Users' AS Type, 
+    COUNT(*) AS Count, 
+    SUM(0) AS Amount
+FROM 
+    usertable
+UNION
+SELECT 
+    'Employees' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM 
+    Employee
+UNION
+SELECT
+    'LOBs' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM LOB
+UNION
+SELECT 
+    'Services' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM 
+    Services
+UNION
+SELECT 
+    'Cities' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM 
+    Cities
+UNION
+SELECT 
+    'Countries' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM 
+    Country
+UNION
+SELECT 
+    'PMA_Agreements' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM 
+    Client_Property_Caretaking_Agreement
+UNION
+SELECT 
+    'L_L_Agreements' AS Type,
+    COUNT(*) AS Count,
+    SUM(RentAmount) AS Amount
+FROM 
+    Client_Property_Leave_License_Details
+UNION
+SELECT 
+    'Localities' AS Type,
+    COUNT(*) AS Count,
+    SUM(0) AS Amount
+FROM Locality;
+;
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
