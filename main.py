@@ -9632,6 +9632,8 @@ async def logout(payload: dict,request: Request,conn: psycopg2.extensions.connec
             conn[0].commit()
         logging.info(f"User <{payload['user_id']}> logged out")
         return giveSuccess(payload['user_id'],0,{"Logged Out" : payload['user_id']})
+    except HTTPException as h:
+        raise h
     except Exception as e:
         logging.info(f"Encountered exception due to <{traceback.format_exc()}>")
         raise HTTPException("400",f"Bad Request {e}")
