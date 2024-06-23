@@ -1099,15 +1099,17 @@ async def edit_country(payload:dict, request:Request, conn: psycopg2.extensions.
         if role_access_status == 1 and checkcountry(payload['old_country_name'],conn) and ifNotExist('name','country',conn,payload['new_country_name']):
             with conn[0].cursor() as cursor:
                 # Update country name in the database
-                query_update = "UPDATE country SET name = %s WHERE name = %s"
+                query_update = "UPDATE country SET name = %s WHERE name = %s RETURNING id"
                 msg = logMessage(cursor,query_update, (payload['new_country_name'], payload['old_country_name']))
                 logging.info(msg)
                 # Commit the transaction
                 conn[0].commit()
+                id = cursor.fetchone()[0]
                 data={
                     "original":payload['old_country_name'],
                     "new country":payload['new_country_name']
                 }
+                addLogsForAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif not checkcountry(payload['old_country_name'],conn):
             raise giveFailure("No country Exists",payload['user_id'],role_access_status)
