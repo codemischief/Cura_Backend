@@ -716,7 +716,7 @@ def addLogsForAction(data: dict,conn,id:int = None):
         raise h
     except Exception as e:
         logging.info(traceback.format_exc())
-        return None
+        return "Not complete"
 def get_db_connection():
     # global DATABASE_URL
     try:
@@ -1057,7 +1057,8 @@ async def add_country(payload:dict, request:Request, conn: psycopg2.extensions.c
             # Commit the transaction
                 conn[0].commit()
                 data = {"added":payload['country_name']}
-                addLogsForAction(payload,conn,id)
+                dt = addLogsForAction(payload,conn,id)
+                logging.info(dt)
                 return giveSuccess(payload['user_id'],role_access_status,data)
             elif role_access_status!=1:
                 raise giveFailure("Access Denied",payload['user_id'],role_access_status)
