@@ -702,14 +702,16 @@ async def addLogsForAction(data: dict,conn,id:int = None):
     try:
         with conn[0].cursor() as cursor:
             query = """INSERT INTO useractionmessage (modulename,actionname,parameters,userid,dated,sessionid
-            ) VALUES (%s,%s,%s,%s,%s,%s)"""
+            ) VALUES (%s,%s,%s,%s,%s,%s) RETURNING ID"""
             cursor.execute(query, [data['modulename'] if 'modulename' in data else 'module missing',
                                     data['actionname'] if 'actionname' in data else 'method missing',
                                     f'{data["modulename"]} - {data["user_id"]}' if 'modulename' in data and 'user_id' in data else 'action missing',
                                     data['user_id'] if 'user_id' in data else 'user missing',
                                     givenowtime(),
                                     data['token'][7:]] if 'modulename' in data else 'module missing')
+            id = cursor.fetchone()[0]
             conn[0].commit()
+            logging.info(f"added logs at id = {id}")
     except HTTPException as h:
         raise h
     except Exception as e:
