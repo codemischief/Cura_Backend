@@ -1047,13 +1047,15 @@ async def add_country(payload:dict, request:Request, conn: psycopg2.extensions.c
             #     payload['country_id'] = cursor.fetchone()[0]+1
             if role_access_status == 1 and ifNotExist('name','country',conn,payload['country_name']):
             # Insert new country data into the database
-                query_insert = 'INSERT INTO country (name) VALUES (%s)'
+                query_insert = 'INSERT INTO country (name) VALUES (%s) RETURNING ID'
                 msg = logMessage(cursor,query_insert, ( payload['country_name'],))
+                id = cursor.fetchone()[0]
                 logging.info(msg)
 
             # Commit the transaction
                 conn[0].commit()
                 data = {"added":payload['country_name']}
+                addLogsForAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,data)
             elif role_access_status!=1:
                 raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1066,6 +1068,7 @@ async def add_country(payload:dict, request:Request, conn: psycopg2.extensions.c
         raise h
     except Exception as e:
         raise giveFailure(f"Error {e}",payload["user_id"],0)
+
     
 def checkcountry(payload: str,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
