@@ -698,7 +698,7 @@ def givenowtime():
     s = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     return s
 
-async def addLogsForAction(data: dict,conn,id:int = None):
+def addLogsForAction(data: dict,conn,id:int = None):
     try:
         with conn[0].cursor() as cursor:
             query = """INSERT INTO useractionmessage (modulename,actionname,parameters,userid,dated,sessionid
