@@ -8463,6 +8463,11 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
     except Exception as e:
         logging.info(traceback.format_exc())
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
+    finally:
+        cursor = conn[0].cursor()
+        if table:
+            cursor.execute(f"DROP TABLE {table}")
+            conn[0].commit()
 
 @app.post('/reportClientReceiptBankMode')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -9600,8 +9605,8 @@ async def change_password(payload: dict, request: Request,conn: psycopg2.extensi
 async def refresh_token(payload: dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
         with conn[0].cursor() as cursor:
-                old_token = request.headers.get("authorization")
-                old_token = old_token[7:]
+                # old_token = request.headers.get("authorization")
+                # old_token = old_token[7:]
                 # query1 = "SELECT active FROM tokens where token = %s"
                 # cursor.execute(query1,(old_token,))
                 # status = cursor.fetchone()
@@ -9638,7 +9643,7 @@ async def refresh_token(payload: dict,request:Request,conn: psycopg2.extensions.
                 # disabling old token
 
 
-                query = f"UPDATE tokens SET active=false WHERE token='{old_token}'"
+                # query = f"UPDATE tokens SET active=false WHERE token='{old_token}'"
                 cursor.execute(query)
                 conn[0].commit()
                 return giveSuccess(payload['user_id'],0,{"token":new_token})
