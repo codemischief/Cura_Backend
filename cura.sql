@@ -2358,30 +2358,54 @@ FROM
 WHERE
     Orders.IsDeleted = 'false' or orders.isdeleted = null;
 
+--Older Function commented below produces incorrect FY.
+--2014 would give financial year 2014-20.
 
-
-
-
-CREATE OR REPLACE FUNCTION getFinancialYear(date_input TIMESTAMP)
+CREATE OR REPLACE FUNCTION gftest(date_input TIMESTAMP)
 RETURNS text AS $$
 DECLARE
     ret_val text;
     month_val INTEGER;
     year_val INTEGER;
+    next_year_val INTEGER;
 BEGIN
     month_val := EXTRACT(MONTH FROM date_input);
     year_val := EXTRACT(YEAR FROM date_input);
 
     -- Assuming that the financial year starts from April
     IF month_val > 3 THEN
-        ret_val := year_val || '-' || LPAD((year_val + 1)::TEXT, 2, '0');
+        next_year_val := year_val + 1;
+        ret_val := year_val || '-' || RIGHT(next_year_val::TEXT, 2);
     ELSE
-        ret_val := (year_val - 1) || '-' || LPAD(year_val::TEXT, 2, '0');
+        next_year_val := year_val;
+        ret_val := (year_val - 1) || '-' || RIGHT(next_year_val::TEXT, 2);
     END IF;
 
     RETURN ret_val;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- CREATE OR REPLACE FUNCTION getFinancialYear(date_input TIMESTAMP)
+-- RETURNS text AS $$
+-- DECLARE
+--     ret_val text;
+--     month_val INTEGER;
+--     year_val INTEGER;
+-- BEGIN
+--     month_val := EXTRACT(MONTH FROM date_input);
+--     year_val := EXTRACT(YEAR FROM date_input);
+
+--     -- Assuming that the financial year starts from April
+--     IF month_val > 3 THEN
+--         ret_val := year_val || '-' || LPAD((year_val + 1)::TEXT, 2, '0');
+--     ELSE
+--         ret_val := (year_val - 1) || '-' || LPAD(year_val::TEXT, 2, '0');
+--     END IF;
+
+--     RETURN ret_val;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
 
 
@@ -3708,7 +3732,7 @@ create or replace view rpt_pmaclient as
      LEFT JOIN services ON services.id = ordersview.serviceid
   WHERE ordersview.clienttypename ilike '%PMA%'::text
 UNION ALL
- SELECT 'Payment'::text AS type,
+ SELECT 'Receipt'::text AS type,
     clientview.fullname AS clientname,
     clientreceiptview.id,
     clientreceiptview.recddate AS date,

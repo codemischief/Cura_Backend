@@ -7376,6 +7376,7 @@ async def get_research_colleges(payload:dict, request:Request, conn: psycopg2.ex
         methodname="getResearchColleges"
     )
 
+
 @app.post('/getCollegeTypesAdmin')
 async def get_research_college_types(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
@@ -9601,14 +9602,14 @@ async def refresh_token(payload: dict,request:Request,conn: psycopg2.extensions.
         with conn[0].cursor() as cursor:
                 old_token = request.headers.get("authorization")
                 old_token = old_token[7:]
-                query1 = "SELECT active FROM tokens where token = %s"
-                cursor.execute(query1,(old_token,))
-                status = cursor.fetchone()
-                logging.info(status)
-                if not status:
-                    raise HTTPException(404,f"Token {old_token} not valid")
-                if not status[0]:
-                    raise HTTPException(404,f"Token {old_token} has already expired")
+                # query1 = "SELECT active FROM tokens where token = %s"
+                # cursor.execute(query1,(old_token,))
+                # status = cursor.fetchone()
+                # logging.info(status)
+                # if not status:
+                #     raise HTTPException(404,f"Token {old_token} not valid")
+                # if not status[0]:
+                #     raise HTTPException(404,f"Token {old_token} has already expired")
                 rtoken = request.headers.get("refreshtoken")
                 query2 = "SELECT key FROM refresh_tokens WHERE refresh_token = %s"
                 cursor.execute(query2,(rtoken,))
