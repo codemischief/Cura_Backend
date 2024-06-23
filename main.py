@@ -708,7 +708,7 @@ def addLogsForAction(data: dict,conn,id:int = None):
                                     f'{data["modulename"]} - {data["user_id"]}' if 'modulename' in data and 'user_id' in data else 'action missing',
                                     data['user_id'] if 'user_id' in data else 'user missing',
                                     givenowtime(),
-                                    data['token'][7:]] if 'modulename' in data else 'module missing')
+                                    data['authorization'][7:]] if 'modulename' in data else 'module missing')
             id = cursor.fetchone()[0]
             conn[0].commit()
             logging.info(f"added logs at id = {id}")
