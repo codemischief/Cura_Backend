@@ -5462,9 +5462,24 @@ async def get_order_pending(payload: dict, request:Request, conn:psycopg2.extens
         role_access_status = check_role_access(conn,payload,request=request,isUtilityRoute=True)
         if role_access_status:
             with conn[0].cursor() as cursor:
-                logMessage(cursor,f"""SELECT sum(a.invoiceamount)-sum(b.amount) FROM order_invoice a 
-                           LEFT JOIN order_receipt b ON a.orderid = b.orderid WHERE a.orderid = {payload['orderid']}
-                            and a.isdeleted=false and b.isdeleted=false""")
+                logMessage(cursor,f"""WITH BASETABLE AS
+                        (           
+                        Select 
+                        sum(invoiceamount) as amount
+                        from Order_Invoice
+                        where OrderID = {payload['orderid']} --- this is the variable
+                        and IsDeleted = false
+                        Group by OrderID
+                        UNION
+                        Select
+                        sum(amount)*-1 as amount
+                        from Order_Receipt
+                        where OrderID = {payload['orderid']} --- this is the variable
+                        and IsDeleted = false
+                        Group by OrderID
+                        )
+                        select sum(amount) as PendingAmount from BASETABLE
+                           """)
                 pending = cursor.fetchone()[0]
                 logMessage(cursor,f"SELECT orderstatus,orderdate FROM get_orders_view WHERE id={payload['orderid']}")
                 orderstatus,orderdate = cursor.fetchone()
@@ -6940,7 +6955,7 @@ def send_email(email,password,subject, body,to_email,html=None,filename=None):
     msg['From'] = smtp_username
     msg['To'] = to_email
     msg['Subject'] = subject
-    logging.info(html)
+    # logging.info(html)
     # Add body to the email
     msg.attach(MIMEText(body, 'plain'))
     if html is not None:
@@ -8380,7 +8395,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             cursor.execute(query)
             conn[0].commit()
             if 'sendEmail' in payload and not payload['sendEmail'] and 'downloadType' not in payload:
-                payload['rows'] = ['date','type','description','property','amount']
+                payload['rows'] = ['date','type','description','property','round(amount,2)']
             else:
                 # payload['rows'] = ['date','clientname','property','description','type','amount','opening_balance','closing_balance']
                 payload['rows'] = ['date','clientname','property','description','type','amount']
@@ -8413,7 +8428,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             closing = cursor.fetchone()
             ans['opening_balance'] = opening[0] if opening else 0
             ans['closing_balance'] = closing[0] if closing else 0
-            cursor.execute(f'DROP VIEW {table}')
+            # cursor.execute(f'DROP VIEW {table}')
             conn[0].commit()
             ans['data'] = res
             vardata='<p style="color: purple;">No statement could be generated</p>'
@@ -8424,7 +8439,6 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
         <p>
             Hi,<br>Please find attached Statement of Account from {payload['startdate']} to {payload['enddate']} for your property/ies.
         </p>
-        
         <p>
             <ul style="color: purple;">
                 <li>Balance due till date is Rs. {ans['closing_balance']}/- including 18% taxes (GST).</li>
@@ -8432,6 +8446,12 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 <li>Let us know when you transfer the dues so that we can confirm receipt.</li>
             </ul>
         </p>
+    </body>
+</html>
+'''
+            html3 = f'''
+<html>
+    <body>
         <p>Important Notes:</p>
         <p>
             <ol style="color: blue;">
@@ -8457,7 +8477,6 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
     </body>
 </html>
 '''
-            html = [html1]
             if res :
                 html2 = """
             <!DOCTYPE html>
@@ -8520,7 +8539,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             </body>
             </html>
             """
-                html.append(html2)
+            html = [html1,html2,html3]
             if 'downloadType' in payload:
                 filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
                 ans['filename'] = filename
@@ -8546,7 +8565,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
     finally:
         cursor = conn[0].cursor()
         if table:
-            cursor.execute(f"DROP TABLE {table}")
+            cursor.execute(f"DROP VIEW {table}")
             conn[0].commit()
 
 @app.post('/reportClientReceiptBankMode')
