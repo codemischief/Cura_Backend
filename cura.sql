@@ -334,9 +334,9 @@ INSERT INTO rules (id, module, method, status) VALUES (184, 'BuilderContact', 'e
 INSERT INTO rules (id, module, method, status) VALUES (185, 'BuilderContact', 'deleteBuilderContact', true);
 INSERT INTO rules (id, module, method, status) VALUES (186, 'reportOwnerAllMailIDs', 'getreportOwnerAllMailIDs', true);
 INSERT INTO rules (id, module, method, status) VALUES (187, 'reportAllTenantsMailIDs', 'getreportAllTenantsMailIDs', true);
-INSERT INTO rules (id, module, method, status) VALUES (188, 'reportClientContacts', 'addreportClientContacts', true);
-INSERT INTO rules (id, module, method, status) VALUES (189, 'reportOwnerPhoneNos', 'reportOwnerPhoneNos', true);
-INSERT INTO rules (id, module, method, status) VALUES (190, 'reportClientPhoneNos', 'reportClientPhoneNos', true);
+INSERT INTO rules (id, module, method, status) VALUES (188, 'reportClientContacts', 'getreportClientContacts', true);
+INSERT INTO rules (id, module, method, status) VALUES (189, 'reportOwnerPhoneNos', 'getreportOwnerPhoneNos', true);
+INSERT INTO rules (id, module, method, status) VALUES (190, 'reportClientPhoneNos', 'getreportClientPhoneNos', true);
 
 
 
@@ -791,11 +791,11 @@ INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (459, 182, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (460, 183, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (461, 184, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (462, 182, 5);
-INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (463, 186, 5);
-INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (464, 187, 5);
-INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (465, 188, 5);
-INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (466, 189, 5);
-INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (467, 190, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (463, 186, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (464, 187, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (465, 188, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (466, 189, 1);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (467, 190, 1);
 
 INSERT INTO token_access_config (timedata, type) VALUES
 (900, 'Login'),
