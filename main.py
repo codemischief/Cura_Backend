@@ -698,17 +698,18 @@ def givenowtime():
     s = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     return s
 
-def addLogsForAction(data: dict,conn,id:int = None):
+def logUserAction(data: dict,conn,id:int = None):
     try:
         with conn[0].cursor() as cursor:
-            query = """INSERT INTO useractionmessage (modulename,actionname,parameters,userid,dated,sessionid
-            ) VALUES (%s,%s,%s,%s,%s,%s) RETURNING ID"""
+            query = """INSERT INTO useractionmessage (modulename,actionname,parameters,userid,dated
+            ) VALUES (%s,%s,%s,%s,%s) RETURNING ID"""
             cursor.execute(query, [data['modulename'] if 'modulename' in data else 'module missing',
                                     data['actionname'] if 'actionname' in data else 'method missing',
                                     f'{data["modulename"]} - {id}' if 'modulename' in data and 'user_id' in data else 'action missing',
                                     data['user_id'] if 'user_id' in data else 'user missing',
-                                    givenowtime(),
-                                    data['authorization'][7:]] if 'modulename' in data else 'module missing')
+                                    givenowtime()])
+                                    # data['authorization'][7:]] if 'authorization' in data else 'module missing')
+            
             id = cursor.fetchone()[0]
             conn[0].commit()
             logging.info(f"added logs at id = {id}")
@@ -1057,7 +1058,7 @@ async def add_country(payload:dict, request:Request, conn: psycopg2.extensions.c
             # Commit the transaction
                 conn[0].commit()
                 data = {"added":payload['country_name']}
-                dt = addLogsForAction(payload,conn,id)
+                dt = logUserAction(payload,conn,id)
                 logging.info(dt)
                 return giveSuccess(payload['user_id'],role_access_status,data)
             elif role_access_status!=1:
@@ -1109,7 +1110,7 @@ async def edit_country(payload:dict, request:Request, conn: psycopg2.extensions.
                     "original":payload['old_country_name'],
                     "new country":payload['new_country_name']
                 }
-                addLogsForAction(payload,conn,id)
+                logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif not checkcountry(payload['old_country_name'],conn):
             raise giveFailure("No country Exists",payload['user_id'],role_access_status)
@@ -1133,14 +1134,16 @@ async def delete_country(payload:dict, request:Request, conn: psycopg2.extension
             role_access_status = check_role_access(conn,payload,request=request,method="deleteCountry")
             if role_access_status == 1 and checkcountry(payload['country_name'],conn):
             # Delete country data from the database
-                query_delete = 'DELETE FROM country WHERE name = %s'
+                query_delete = 'DELETE FROM country WHERE name = %s RETURNING ID'
                 msg = logMessage(cursor,query_delete,(payload['country_name'],))
                 logging.info(msg)
+                id = cursor.fetchone()[0]
             # Commit the transaction
                 conn[0].commit()
                 data = {
                         "deleted":payload["country_name"]
                         }
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,data)
             elif role_access_status!=1:
                 raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
@@ -1196,12 +1199,13 @@ async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensi
                 ))
                 logging.info(msg)
                 id = cursor.fetchone()[0]
-                # await addLogsForAction(request.headers,conn)
+                # await logUserAction(request.headers,conn)
                  # Commit the transaction
                 conn[0].commit()
                 data= {
                     "entered":id
                 }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1310,7 +1314,7 @@ async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.
                 logging.info(msg)
                 # Commit the transaction
                 conn[0].commit()
-
+            logUserAction(payload,conn,payload['builder_id'])
             return giveSuccess(payload['user_id'],role_access_status,{"updated":payload})
         elif not builder_exists:
             raise giveFailure("Builder does not exist",payload['user_id'],role_access_status)
@@ -1348,6 +1352,7 @@ async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.c
                 data = {
                     "deleted_builder":payload['builder_id']
                     }
+                logUserAction(payload,conn,payload['builder_id'])
                 return giveSuccess(payload['user_id'],role_access_status,data)
 
         else:
@@ -1487,6 +1492,7 @@ async def delete_project(payload: dict, request:Request, conn: psycopg2.extensio
                 data= {
                         "deleted": payload['id']
                     }
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1543,7 +1549,8 @@ async def add_new_builder_contact(payload:dict, request:Request, conn: psycopg2.
                 conn[0].commit()
             data= {
                     "entered": id
-                } 
+                }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1693,14 +1700,16 @@ async def add_bank_statement(payload: dict, request:Request, conn: psycopg2.exte
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = (
                     'INSERT INTO bankst (modeofpayment,date,amount,particulars,crdr,receivedhow,vendorid,createdby,isdeleted) '
-                    'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                    'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
                          )
                 msg = logMessage(cursor,query,(payload['modeofpayment'],payload['date'],payload['amount'],payload['particulars'],payload['crdr'],payload['howreceived'],payload['vendorid'],payload['user_id'],False))
                 logging.info(msg)
+                id = cursor.fetchone()[0]
                 conn[0].commit()
             data = {
                 "added_data": f"added bank statement for amount <{payload['amount']}>"
             }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1734,6 +1743,7 @@ async def edit_bank_statement(payload: dict, request:Request, conn: psycopg2.ext
             data = {
                 "edited_data":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1761,6 +1771,7 @@ async def delete_bank_statement(payload: dict, request:Request, conn: psycopg2.e
             data = {
                 "deleted_data":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1796,7 +1807,7 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
         if role_access_status == 1 and ifNotExist('employeeid','employee',conn,payload['employeeid']):
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                query = 'INSERT INTO employee (employeename,employeeid, userid,roleid, dateofjoining, dob, panno,status, phoneno, email, addressline1, addressline2,suburb, city, state, country, zip,dated, createdby, isdeleted, entityid,lobid, lastdateofworking, designation)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                query = 'INSERT INTO employee (employeename,employeeid, userid,roleid, dateofjoining, dob, panno,status, phoneno, email, addressline1, addressline2,suburb, city, state, country, zip,dated, createdby, isdeleted, entityid,lobid, lastdateofworking, designation)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
                 msg = logMessage(cursor,query,(  payload['employeename'],
                                         payload['employeeid'],
                                         payload['userid'],
@@ -1822,10 +1833,12 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
                                         payload['lastdateofworking'],     
                                         payload['designation']))
                 logging.info(msg)
+                id = cursor.fetchone()[0]
                 conn[0].commit()
             data = {
                 "Inserted Employee" : payload['employeename']
             }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1880,6 +1893,7 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
             data = {
                 "Updated Employee":payload['employeename']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1910,6 +1924,7 @@ async def delete_employee(payload: dict, request:Request, conn: psycopg2.extensi
             data = {
                 "deleted_user":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload["user_id"],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -1956,13 +1971,15 @@ async def add_lob(payload:dict, request:Request, conn: psycopg2.extensions.conne
         if role_access_status == 1 and ifNotExist('name','lob',conn,payload['name']):
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                query = 'INSERT INTO lob (name) VALUES (%s)'
+                query = 'INSERT INTO lob (name) VALUES (%s) RETURNING id'
                 msg = logMessage(cursor,query,(payload['name'],))
                 logging.info(msg)
+                id = cursor.fetchone()[0]
                 conn[0].commit()
             data = {
                 "added_data":payload['name']
             }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1986,16 +2003,18 @@ async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.conn
 
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                query = 'UPDATE lob SET name=%s WHERE name=%s'
+                query = 'UPDATE lob SET name=%s WHERE name=%s RETURNING id'
                 msg = logMessage(cursor,query,(payload['new_name'],payload['old_name']))
                 logging.info(msg)
                 logging.info(f'editLob: cursor status message is <{cursor.statusmessage}>')
                 if cursor.statusmessage == "UPDATE 0":
                     raise giveFailure(f"No lob <{payload['old_name']}> exists. unable to edit",payload['user_id'],role_access_status)
                 conn[0].commit()
+                id = cursor.fetchone()[0]
             data = {
                 "edited_lob":payload['old_name']
             }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -2016,15 +2035,18 @@ async def delete_lob(payload:dict, request:Request, conn: psycopg2.extensions.co
         role_access_status = check_role_access(conn,payload,request=request,method="deleteLob")
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'DELETE FROM lob WHERE name=%s'
+                query = 'DELETE FROM lob WHERE name=%s RETURNING id'
                 msg = logMessage(cursor,query,(payload['name'],))
                 logging.info(msg)
                 if cursor.statusmessage == "DELETE 0":
                     raise giveFailure(f"No LOB available with name <{payload['name']}>",payload['user_id'],role_access_status)
                 conn[0].commit()
+                id = cursor.fetchone()[0]
             data = {
                 "deleted_lob":payload['name']
             }
+            logUserAction(payload,conn,id)
+
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -2078,7 +2100,7 @@ async def add_research_prospect(payload: dict, request: Request,conn : psycopg2.
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
-                await addLogsForAction(payload,conn)
+                await logUserAction(payload,conn)
             data = {
                 "added_prospect":id
             }
@@ -2185,10 +2207,10 @@ async def add_payment(payload:dict, request:Request, conn: psycopg2.extensions.c
                 logging.info(msg)
                 id = cursor.fetchone()
                 conn[0].commit()
-                conn[0].close()
             data = {
                 "added_payment_id":id
             }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -2241,6 +2263,7 @@ async def edit_payment(payload:dict, request:Request, conn: psycopg2.extensions.
             data = {
                 "edited_data":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -2270,7 +2293,8 @@ async def delete_payment(payload:dict, request:Request, conn: psycopg2.extension
                 conn[0].commit()
             data = {
                 "deleted_payment":payload['id']
-            }
+            }            
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -2868,6 +2892,8 @@ async def add_client_info(payload: dict, request:Request, conn: psycopg2.extensi
                                       client_poa["poaeffectivedate"],client_poa["poaenddate"],client_poa["poafor"],client_poa["scancopy"],
                                       givenowtime(),payload['user_id'],False))
                 conn[0].commit()
+                logUserAction(payload,conn,id)
+
                 return giveSuccess(payload['user_id'],role_access_status,{"inserted_id":id})
         else:
             raise giveFailure("Access Denied",client_info['user_id'],role_access_status)
@@ -3008,6 +3034,8 @@ async def delete_client_info(payload:dict, request:Request, conn: psycopg2.exten
             data = {
                 "deleted_client":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
+
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3050,6 +3078,8 @@ async def add_project(payload:dict, request:Request, conn: psycopg2.extensions.c
                     query = 'insert into project_photos(projectid,photolink,description,date_taken,dated,createdby,isdeleted) values(%s,%s,%s,%s,%s,%s,%s)'
                     logMessage(cursor,query,(id,project_photos["photolink"],project_photos["description"],project_photos["date_taken"],givenowtime(),payload['user_id'],False))
                 conn[0].commit()
+                logUserAction(payload,conn,id)
+
                 return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3112,6 +3142,7 @@ async def add_client_property(payload:dict, request:Request, conn: psycopg2.exte
                 query = "INSERT INTO client_property_owner (propertyid,owner1name,owner1panno,owner1aadhaarno,owner1pancollected,owner1aadhaarcollected,owner2name,owner2panno,owner2aadhaarno,owner2pancollected,owner2aadhaarcollected,owner3name,owner3panno,owner3aadhaarno,owner3pancollected,owner3aadhaarcollected,comments,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
                 logMessage (cursor,query,(prop_id,client_property_owner["owner1name"],client_property_owner["owner1panno"],client_property_owner["owner1aadhaarno"],client_property_owner["owner1pancollected"],client_property_owner["owner1aadhaarcollected"],client_property_owner["owner2name"],client_property_owner["owner2panno"],client_property_owner["owner2aadhaarno"],client_property_owner["owner2pancollected"],client_property_owner["owner2aadhaarcollected"],client_property_owner["owner3name"],client_property_owner["owner3panno"],client_property_owner["owner3aadhaarno"],client_property_owner["owner3pancollected"],client_property_owner["owner3aadhaarcollected"],client_property_owner["comments"],givenowtime(),payload['user_id'],False))
                 conn[0].commit()
+                logUserAction(payload,conn,prop_id)
                 return giveSuccess(payload['user_id'],role_access_status,{"inserted_property":prop_id})
         else:
             raise giveFailure("Access denied",payload['user_id'],role_access_status)
@@ -3230,6 +3261,7 @@ async def edit_client_info(payload:dict, request:Request, conn: psycopg2.extensi
                            pi['poaoccupation'], pi['poapanno'], pi['poaphoto'], pi['poarelation'], pi['poarelationwith'],
                            pi['poastate'],pi['poasuburb'], pi['poazip'],pi['scancopy'],pi['id'], clientid))
                 conn[0].commit()
+                logUserAction(payload,conn,clientid)
                 logging.info(f'editClientInfo: client_poa update status is <{cursor.statusmessage}>')
         return giveSuccess(payload['user_id'],role_access_status,data)
     except HTTPException as h:
@@ -3263,6 +3295,7 @@ async def delete_client_property(payload:dict, request:Request, conn: psycopg2.e
             data = {
                 "deleted_client_property":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3431,6 +3464,7 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
                            pi['poastate'],pi['poasuburb'], pi['poazip'], propertyid))
                 conn[0].commit()
                 logging.info(f'editClientProperty: client_property_poa update status is <{cursor.statusmessage}>')
+                logUserAction(payload,conn,prop_id)
             return giveSuccess(payload['user_id'],role_access_status,{"edited_property":propertyid})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3584,6 +3618,7 @@ async def add_client_receipt(payload:dict, request:Request, conn: psycopg2.exten
                     cursor.execute(query,[payload["clientid"],payload['howreceivedid'],payload["banktransactionid"]])
                     conn[0].commit()
                 conn[0].commit()
+                logUserAction(payload,conn,data)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted_Receipt":data})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3627,6 +3662,7 @@ async def edit_client_receipt(payload: dict, request:Request, conn: psycopg2.ext
                 logging.info(msg)
                 conn[0].commit()
                 if cursor.statusmessage!="UPDATE 0":
+                    logUserAction(payload,conn,payload['id'])
                     return giveSuccess(payload['user_id'],role_access_status,{"Edited_Receipt":payload['id']})
                 else:
                     raise giveFailure("No Record Available",payload['user_id'],role_access_status)
@@ -3657,6 +3693,7 @@ async def delete_client_receipt(payload:dict, request:Request, conn: psycopg2.ex
                 logging.info(msg)
                 conn[0].commit()
             if cursor.statusmessage !="UPDATE 0":
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted_Receipt":payload['id']})
             else:
                     raise giveFailure("No Record Available",payload['user_id'],role_access_status)
@@ -3704,6 +3741,7 @@ async def add_client_pma_agreement(payload:dict, request:Request, conn: psycopg2
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted_PMA":id})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3735,6 +3773,7 @@ async def edit_client_pma_agreement(payload:dict, request:Request, conn: psycopg
                 logging.info(msg)
                 conn[0].commit()
             if cursor.statusmessage !="UPDATE 0":
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited_PMA":payload['id']})
             else:
                 raise giveFailure("No Record Available",payload['user_id'],role_access_status)
@@ -3763,6 +3802,7 @@ async def delete_client_pma_agreement(payload:dict, request:Request, conn: psyco
                 logging.info(msg)
                 conn[0].commit()
             if cursor.statusmessage !="UPDATE 0":
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted_PMA":payload['id']})
             else:
                     raise giveFailure("No Record Available",payload['user_id'],role_access_status)
@@ -3806,6 +3846,7 @@ async def add_client_ll_agreement(payload:dict, request:Request, conn: psycopg2.
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted_L&L":id})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -3835,6 +3876,7 @@ async def edit_client_ll_agreement(payload:dict, request:Request, conn: psycopg2
                 logging.info(msg)
             conn[0].commit()
             if cursor.statusmessage !="UPDATE 0":
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited_LLA":payload['id']})
             else:
                     raise giveFailure("No Record Available",payload['user_id'],role_access_status)
@@ -3863,6 +3905,7 @@ async def delete_client_pma_agreement(payload:dict, request:Request, conn: psyco
                 logging.info(msg)
                 conn[0].commit()
             if cursor.statusmessage !="UPDATE 0":
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted_L&L":payload['id']})
             else:
                     raise giveFailure("No Record Available",payload['user_id'],role_access_status)
@@ -4108,6 +4151,7 @@ async def edit_project(payload:dict, request:Request, conn: psycopg2.extensions.
                         query = '''DELETE FROM project_contacts where id=%s'''
                         logMessage(cursor,query,(contact_delete['id'],))
                 conn[0].commit() 
+                logUserAction(payload,conn,project_info['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"edited project":payload['projectid']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4126,13 +4170,15 @@ async def add_cities(payload:dict, request:Request, conn: psycopg2.extensions.co
         role_access_status = check_role_access(conn,payload,request=request,method="addCities")
         if role_access_status == 1 and ifNotExist('city','cities',conn,payload['city']):
             with conn[0].cursor() as cursor:
-                query = 'INSERT INTO cities (city,state,countryid) VALUES (%s,%s,%s)'
+                query = 'INSERT INTO cities (city,state,countryid) VALUES (%s,%s,%s) RETURNING id'
                 msg = logMessage(cursor,query,[
                     payload['city'],
                     payload['state'],
                     payload['countryid']
                 ])
+                id = cursor.fetchone()[0]
                 logging.info(msg)
+                logUserAction(payload,conn,id)
                 conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"inserted_city":payload['city']})
         elif role_access_status!=1:
@@ -4165,6 +4211,7 @@ async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.c
                 conn[0].commit()
                 if cursor.statusmessage == 'UPDATE 0':
                     raise giveFailure('Does not exist',payload['user_id'],role_access_status)
+                logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,{"editted_city":payload['city']})
         elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4190,6 +4237,7 @@ async def delete_cities(payload:dict, request:Request, conn: psycopg2.extensions
                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,{"deleted_city":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4246,6 +4294,8 @@ async def add_orders(payload:dict, request:Request, conn: psycopg2.extensions.co
                     logging.info('inserting photos')
                     logMessage(cursor,query,(data,order_photos['photolink'],order_photos['description'],order_photos['phototakenwhen'],givenowtime(),payload['user_id'],False))
                 logging.info(cursor.statusmessage)
+                logUserAction(payload,conn,data)
+
                 conn[0].commit()                            
                 return giveSuccess(payload['user_id'],role_access_status,data={"inserted data":data})
         else:
@@ -4302,6 +4352,7 @@ async def edit_orders(payload:dict, request:Request, conn: psycopg2.extensions.c
                     query = 'INSERT INTO order_photos (orderid,photolink,description,phototakenwhen,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s)'
                     logMessage(cursor,query,(order_photos_insert['orderid'],order_photos_insert['photolink'],order_photos_insert['description'],order_photos_insert['phototakenwhen'],givenowtime(),payload['user_id'],False))
                     conn[0].commit() 
+                logUserAction(payload,conn,order_info['id'])
                 return giveSuccess(payload['user_id'],role_access_status,data={"edited data":order_info['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4330,6 +4381,7 @@ async def delete_orders(payload:dict, request:Request, conn: psycopg2.extensions
                 query = 'UPDATE order_photos SET isdeleted=true where orderid = %s'
                 logMessage(cursor,query,[payload['order_id']])
                 conn[0].commit()
+            logUserAction(payload,conn,payload['order_id'])
             return giveSuccess(payload['user_id'],role_access_status,{"Deleted Data":payload['order_id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4370,6 +4422,7 @@ async def add_order_invoice(payload:dict, request:Request, conn:psycopg2.extensi
                 ])
                 logging.info(msg)
                 data = cursor.fetchone()[0]
+                logUserAction(payload,conn,data)
             conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"inserted data":data})
         else:
@@ -4474,6 +4527,7 @@ async def edit_order_invoice(payload:dict, request:Request, conn:psycopg2.extens
                     payload["baseamount"],payload["tax"],payload["entity"],givenowtime(),payload['user_id'],False,
                     payload['id']
                 ])
+                logUserAction(payload,conn,payload['id'])
                 logging.info(msg)
             conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"edited data":payload['id']})
@@ -4501,6 +4555,7 @@ async def delete_order_invoice(payload:dict, request:Request, conn:psycopg2.exte
                 if cursor.statusmessage == "UPDATE 0":
                     raise giveFailure(f"No client invoice with id {payload['id']}",payload['user_id'],role_access_status)
                 logging.info(msg)
+                logUserAction(payload,conn,payload['id'])
             conn[0].commit()
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
         else:
@@ -4544,7 +4599,7 @@ async def add_order_receipt(payload:dict, request:Request, conn: psycopg2.extens
                 logging.info(msg)
                 conn[0].commit()
                 data = cursor.fetchone()[0]
-                
+            logUserAction(payload,conn,data)
             return giveSuccess(payload['user_id'],role_access_status,{"inserted data":data})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4571,6 +4626,7 @@ async def edit_order_receipt(payload:dict, request:Request, conn:psycopg2.extens
                                       payload['officeid'],payload['id']])
                 logging.info(msg)
                 conn[0].commit()
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,{"edited data":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4597,6 +4653,7 @@ async def delete_order_receipt(payload:dict, request:Request, conn:psycopg2.exte
                     raise giveFailure(f"No Order Receipt with id {payload['id']}",payload['user_id'],role_access_status)
                 logging.info(msg)
             conn[0].commit()
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4810,6 +4867,7 @@ async def add_vendors(payload: dict, request:Request, conn: psycopg2.extensions.
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Vendor":id})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4836,6 +4894,7 @@ async def edit_vendors(payload: dict, request:Request, conn: psycopg2.extensions
                                       payload["id"]])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Vendor":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4858,6 +4917,7 @@ async def delete_vendors(payload: dict, request:Request, conn: psycopg2.extensio
                     raise giveFailure(f"No Vendors with id {payload['id']}",payload['user_id'],role_access_status)
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4900,6 +4960,7 @@ async def add_vendor_invoice(payload: dict, request:Request, conn: psycopg2.exte
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,{"Inserted Invoice":id})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4927,6 +4988,7 @@ async def edit_vendor_invoice(payload:dict, request:Request, conn: psycopg2.exte
                 ])
                 logging.info(msg)
                 conn[0].commit()
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,{"Edited Invoice":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -4951,6 +5013,7 @@ async def delete_vendor_invoice(payload:dict, request:Request, conn:psycopg2.ext
                 if cursor.statusmessage == "UPDATE 0":
                     raise giveFailure(f"No vendor invoice with id {payload['id']}",payload['user_id'],role_access_status)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Vendor":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -5020,6 +5083,7 @@ async def add_vendor_payment(payload:dict, request:Request, conn: psycopg2.exten
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Payment":id})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -5047,6 +5111,7 @@ async def edit_vendor_payment(payload:dict, request:Request, conn: psycopg2.exte
                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Payment":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -5071,6 +5136,7 @@ async def delete_vendor_payment(payload:dict, request:Request, conn: psycopg2.ex
                     raise giveFailure(f"No Order Payment with id {payload['id']}",payload['user_id'],role_access_status)
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Payment":payload['id']})
         else:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -5170,6 +5236,7 @@ async def add_new_builder_contact(payload:dict, request:Request, conn: psycopg2.
             data= {
                     "entered": payload['contactname']
                 } 
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -5190,6 +5257,7 @@ async def delete_builder_contact(payload: dict, request:Request, conn:psycopg2.e
                 logging.info(query)
                 logging.info(msg)
                 conn[0].commit()
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,{"deleted data":payload['id']})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)        
@@ -5444,6 +5512,7 @@ async def add_user(payload:dict, request:Request, conn: psycopg2.extensions.conn
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted User ID":id})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -5471,6 +5540,7 @@ async def edit_user(payload:dict, request:Request, conn: psycopg2.extensions.con
                     query = "UPDATE usertable SET password=%s WHERE id=%s"
                     msg = logMessage(cursor,query,(payload['password'],payload['id']))
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited User ID":payload['id']})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -5498,6 +5568,7 @@ async def delete_user(payload:dict, request:Request, conn: psycopg2.extensions.c
                 if cursor.statusmessage == "UPDATE 0":
                     raise giveFailure(f"No User with id {payload['id']}",payload['user_id'],role_access_status)
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted User ID":payload['id']})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -5548,6 +5619,7 @@ async def add_services(payload:dict, request:Request, conn: psycopg2.extensions.
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Service ID":id})
         elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -5581,6 +5653,7 @@ async def edit_services(payload:dict, request:Request, conn: psycopg2.extensions
                 msg = logMessage(cursor,query,(payload['lob'],payload['service'],payload['active'],givenowtime(),payload['user_id'],False,payload['servicetype'],payload['category2'],payload['tallyledgerid'],payload['id']))
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Service ID":payload['id']})
         elif role_access_status!=1:
             raise giveFailure('Access Denied',payload['user_id'],role_access_status)
@@ -5606,6 +5679,7 @@ async def delete_services(payload:dict, request:Request, conn: psycopg2.extensio
                 msg = logMessage(cursor,query,(payload['id'],))
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Service ID":payload['id']})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -9535,10 +9609,12 @@ async def delete_from_table(payload:dict, request:Request, conn: psycopg2.extens
                 if cursor.statusmessage == 'DELETE 0':
                     raise HTTPException(404,"ID not found")
                 else:
+                    logUserAction(payload,conn,payload['id'])
                     return giveSuccess(payload['user_id'],None,{
                         "table_edited":payload['table_name'],
                         "id delete":payload['id']
                     })
+
         else:
             raise HTTPException(404,"Access Denied")
     except HTTPException as h:
@@ -9576,6 +9652,7 @@ async def change_company_key(payload: dict, request: Request,conn : psycopg2.ext
                 logging.info(cursor.mogrify(query,[payload['companykey']]))
                 msg = logMessage(cursor,query,(payload['companykey'],))
                 conn[0].commit()
+            logUserAction(payload,conn,1)
             return giveSuccess(payload['user_id'],role_access_status,{
                 "New company key":payload['companykey']
             })
@@ -9704,6 +9781,7 @@ async def delete_from_client(payload:dict, request:Request, conn: psycopg2.exten
                 if cursor.statusmessage == 'DELETE 0':
                     raise HTTPException(404,"ID not found")
                 else:
+                    logUserAction(payload,conn,payload['id'])
                     return giveSuccess(payload['user_id'],None,{
                         "table_edited":"client",
                         "id delete":payload['id']
@@ -9734,6 +9812,7 @@ async def delete_from_client(payload:dict, request:Request, conn: psycopg2.exten
                 if cursor.statusmessage == 'DELETE 0':
                     raise HTTPException(404,"ID not found")
                 else:
+                    logUserAction(payload,conn,payload['id'])
                     return giveSuccess(payload['user_id'],None,{
                         "table_edited":"orders",
                         "id delete":payload['id']

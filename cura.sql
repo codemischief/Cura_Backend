@@ -332,6 +332,11 @@ INSERT INTO rules (id, module, method, status) VALUES (182, 'BuilderContact', 'g
 INSERT INTO rules (id, module, method, status) VALUES (183, 'BuilderContact', 'addBuilderContact', true);
 INSERT INTO rules (id, module, method, status) VALUES (184, 'BuilderContact', 'editBuilderContact', true);
 INSERT INTO rules (id, module, method, status) VALUES (185, 'BuilderContact', 'deleteBuilderContact', true);
+INSERT INTO rules (id, module, method, status) VALUES (186, 'reportOwnerAllMailIDs', 'getreportOwnerAllMailIDs', true);
+INSERT INTO rules (id, module, method, status) VALUES (187, 'reportAllTenantsMailIDs', 'getreportAllTenantsMailIDs', true);
+INSERT INTO rules (id, module, method, status) VALUES (188, 'reportClientContacts', 'addreportClientContacts', true);
+INSERT INTO rules (id, module, method, status) VALUES (189, 'reportOwnerPhoneNos', 'reportOwnerPhoneNos', true);
+INSERT INTO rules (id, module, method, status) VALUES (190, 'reportClientPhoneNos', 'reportClientPhoneNos', true);
 
 
 
@@ -786,6 +791,11 @@ INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (459, 182, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (460, 183, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (461, 184, 4);
 INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (462, 182, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (463, 186, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (464, 187, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (465, 188, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (466, 189, 5);
+INSERT INTO roles_to_rules_map (id, rule_id, role_id) VALUES (467, 190, 5);
 
 INSERT INTO token_access_config (timedata, type) VALUES
 (900, 'Login'),
@@ -3764,9 +3774,9 @@ WHERE entity LIKE '%CURA%' AND
       type NOT LIKE '%OrderRec%'
 GROUP BY clientname;
 
--- CREATE SEQUENCE IF NOT EXISTS architech_id_seq OWNED BY architech.id;
--- SELECT setval('architech_id_seq', COALESCE(max(id), 0) + 1, false) FROM architech;
--- ALTER TABLE architech ALTER COLUMN id SET DEFAULT nextval('architech_id_seq');
+CREATE SEQUENCE IF NOT EXISTS useractionmessage_id_seq OWNED BY useractionmessage.id;
+SELECT setval('useractionmessage_id_seq', COALESCE(max(id), 0) + 1, false) FROM useractionmessage;
+ALTER TABLE useractionmessage ALTER COLUMN id SET DEFAULT nextval('useractionmessage_id_seq');
 
 -- CREATE SEQUENCE IF NOT EXISTS colleges_id_seq OWNED BY colleges.id;
 -- SELECT setval('colleges_id_seq', COALESCE(max(id), 0) + 1, false) FROM colleges;
