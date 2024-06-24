@@ -2371,7 +2371,7 @@ WHERE
 --Older Function commented below produces incorrect FY.
 --2014 would give financial year 2014-20.
 
-CREATE OR REPLACE FUNCTION gftest(date_input TIMESTAMP)
+CREATE OR REPLACE FUNCTION getfinancialyear(date_input TIMESTAMP)
 RETURNS text AS $$
 DECLARE
     ret_val text;
