@@ -7697,109 +7697,107 @@ WHERE
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-CREATE VIEW Rpt_EntityblankView AS
-SELECT
-    'OI' AS TYPE,
-    OrdersView.ClientName,
-    Order_Invoice.ID,
-    Order_Invoice.InvoiceDate AS Date,
-    Order_Invoice.InvoiceAmount AS Amount,
-    NULL AS TDS,
-    REPLACE(REPLACE(OrdersView.BriefDescription, CHR(10), ''), CHR(13), '') AS OrderDetails,
-    Entity.Name AS Entity,
-    Services.Service,
-    OrdersView.LOBName,
-    REPLACE(REPLACE(Order_Invoice.QuoteDescription, CHR(10), ''), CHR(13), '') AS Details,
-    '' AS Mode,
-    OrdersView.ClientTypeName AS "Client Type",
-    OrdersView.ID AS "Order ID",
-    OrdersView.ClientID AS ClientId,
-    getMonthYear(Order_Invoice.InvoiceDate) AS MonthYear,
-    getFinancialYear(Order_Invoice.InvoiceDate) AS FY
-FROM
-    Order_Invoice
-    LEFT OUTER JOIN OrdersView ON OrdersView.ID = Order_Invoice.OrderID
-    LEFT OUTER JOIN Entity ON Entity.ID = Order_Invoice.EntityId
-    LEFT OUTER JOIN Services ON Services.ID = OrdersView.ServiceId
-WHERE
-    Entity.Name IS NULL
+CREATE OR REPLACE VIEW rpt_entity_noncura_view AS
+
+SELECT 'OI'::text AS type,
+    ordersview.clientname,
+    order_invoice.id,
+    order_invoice.invoicedate AS date,
+    order_invoice.invoiceamount AS amount,
+    NULL::numeric AS tds,
+    replace(replace(ordersview.briefdescription, chr(10), ''::text), chr(13), ''::text) AS orderdetails,
+    entity.name AS entity,
+    services.service,
+    ordersview.lobname,
+    replace(replace(order_invoice.quotedescription, chr(10), ''::text), chr(13), ''::text) AS details,
+    ''::text AS mode,
+    ordersview.clienttypename AS "Client Type",
+    ordersview.id AS "Order ID",
+    ordersview.clientid,
+    getmonthyear(order_invoice.invoicedate) AS monthyear,
+    getfinancialyear(order_invoice.invoicedate) AS fy
+FROM order_invoice
+    LEFT JOIN ordersview ON ordersview.id = order_invoice.orderid
+    LEFT JOIN entity ON entity.id = order_invoice.entityid
+    LEFT JOIN services ON services.id = ordersview.serviceid
+WHERE (entity.name IS NULL OR entity.name NOT ILIKE '%Cura%') 
+    AND order_invoice.invoicedate > '2018-01-01'
+
 UNION ALL
-SELECT
-    'CR' AS TYPE,
-    ClientView.FullName,
-    ClientReceiptView.ID,
-    ClientReceiptView.RecdDate AS Date,
-    - (1 * ClientReceiptView.Amount),
-    ClientReceiptView.TDS,
-    NULL AS OrderDetails,
-    Entity.Name AS Entity,
-    NULL AS Service,
-    NULL AS LOBName,
-    HowReceived.Name AS Details,
-    ClientReceiptView.PaymentMode AS Mode,
-    ClientView.ClientTypeName,
-    NULL AS "Order ID",
-    ClientView.ID AS ClientId,
-    getMonthYear(ClientReceiptView.RecdDate) AS MonthYear,
-    getFinancialYear(ClientReceiptView.RecdDate) AS FY
-FROM
-    ClientView
-    INNER JOIN ClientReceiptView ON ClientView.ID = ClientReceiptView.ClientID
-    LEFT OUTER JOIN Entity ON ClientReceiptView.EntityId = Entity.ID
-    LEFT OUTER JOIN HowReceived ON ClientReceiptView.HowReceivedId = HowReceived.ID
-WHERE
-    Entity.Name IS NULL
+
+SELECT 'CR'::text AS type,
+    clientview.fullname AS clientname,
+    clientreceiptview.id,
+    clientreceiptview.recddate AS date,
+    - (1::numeric * clientreceiptview.amount) AS amount,
+    clientreceiptview.tds,
+    NULL::text AS orderdetails,
+    entity.name AS entity,
+    NULL::text AS service,
+    NULL::text AS lobname,
+    howreceived.name AS details,
+    clientreceiptview.paymentmode AS mode,
+    clientview.clienttypename AS "Client Type",
+    NULL::bigint AS "Order ID",
+    clientview.id AS clientid,
+    getmonthyear(clientreceiptview.recddate) AS monthyear,
+    getfinancialyear(clientreceiptview.recddate) AS fy
+FROM clientview
+    JOIN clientreceiptview ON clientview.id = clientreceiptview.clientid
+    LEFT JOIN entity ON clientreceiptview.entityid = entity.id
+    LEFT JOIN howreceived ON clientreceiptview.howreceivedid = howreceived.id
+WHERE (entity.name IS NULL OR entity.name NOT ILIKE '%Cura%') 
+    AND clientreceiptview.recddate > '2018-01-01'
+
 UNION ALL
-SELECT
-    'OR' AS TYPE,
-    ClientView.FullName,
-    OrderReceiptView.ID,
-    OrderReceiptView.RecdDate AS Date,
-    - (1 * OrderReceiptView.Amount) AS Expr1,
-    OrderReceiptView.TDS,
-    OrderReceiptView.OrderDescription AS OrderDetails,
-    Entity.Name AS Entity,
-    OrderReceiptView.Service,
-    OrderReceiptView.LOBName,
-    OrderReceiptView.ReceiptDesc AS Details,
-    OrderReceiptView.PaymentMode AS Mode,
-    ClientView.ClientTypeName,
-    OrderReceiptView.OrderID AS "Order ID",
-    ClientView.ID AS ClientId,
-    getMonthYear(OrderReceiptView.RecdDate) AS MonthYear,
-    getFinancialYear(OrderReceiptView.RecdDate) AS FY
-FROM
-    ClientView
-    INNER JOIN OrderReceiptView ON ClientView.ID = OrderReceiptView.ClientID
-    LEFT OUTER JOIN Entity ON OrderReceiptView.EntityId = Entity.ID
-WHERE
-    Entity.Name IS NULL
+
+SELECT 'OR'::text AS type,
+    clientview.fullname AS clientname,
+    orderreceiptview.id,
+    orderreceiptview.recddate AS date,
+    - (1::numeric * orderreceiptview.amount) AS amount,
+    orderreceiptview.tds,
+    orderreceiptview.orderdescription AS orderdetails,
+    entity.name AS entity,
+    orderreceiptview.service,
+    orderreceiptview.lobname,
+    orderreceiptview.receiptdesc AS details,
+    orderreceiptview.paymentmode AS mode,
+    clientview.clienttypename AS "Client Type",
+    orderreceiptview.orderid AS "Order ID",
+    clientview.id AS clientid,
+    getmonthyear(orderreceiptview.recddate) AS monthyear,
+    getfinancialyear(orderreceiptview.recddate) AS fy
+FROM clientview
+    JOIN orderreceiptview ON clientview.id = orderreceiptview.clientid
+    LEFT JOIN entity ON orderreceiptview.entityid = entity.id
+WHERE (entity.name IS NULL OR entity.name NOT ILIKE '%Cura%') 
+    AND orderreceiptview.recddate > '2018-01-01'
+
 UNION ALL
-SELECT
-    'OP' AS TYPE,
-    ClientView.FullName,
-    OrderPaymentView.ID,
-    OrderPaymentView.PaymentDate AS Date,
-    - (1 * OrderPaymentView.Amount) AS Expr1,
-    OrderPaymentView.TDS,
-    OrderPaymentView.OrderDescription AS OrderDetails,
-    Entity.Name AS Entity,
-    OrderPaymentView.Service,
-    OrderPaymentView.LOBName,
-    OrderPaymentView.Description AS Details,
-    OrderPaymentView.Mode_Of_payment AS Mode,
-    ClientView.ClientTypeName,
-    OrderPaymentView.OrderID AS "Order ID",
-    ClientView.ID AS ClientId,
-    getMonthYear(OrderPaymentView.PaymentDate) AS MonthYear,
-    getFinancialYear(OrderPaymentView.PaymentDate) AS FY
-FROM
-    ClientView
-    INNER JOIN OrderPaymentView ON ClientView.ID = OrderPaymentView.ClientID
-    LEFT OUTER JOIN Entity ON OrderPaymentView.EntityId = Entity.ID
-WHERE
-    Entity.Name IS NULL
-    AND OrderPaymentView.Mode_Of_payment NOT LIKE '%Stores%';
+
+SELECT 'OP'::text AS type,
+    clientview.fullname AS clientname,
+    orderpaymentview.id,
+    orderpaymentview.paymentdate AS date,
+    - (1::numeric * orderpaymentview.amount) AS amount,
+    orderpaymentview.tds,
+    orderpaymentview.orderdescription AS orderdetails,
+    entity.name AS entity,
+    orderpaymentview.service,
+    orderpaymentview.lobname,
+    orderpaymentview.description AS details,
+    orderpaymentview.mode_of_payment AS mode,
+    clientview.clienttypename AS "Client Type",
+    orderpaymentview.orderid AS "Order ID",
+    clientview.id AS clientid,
+    getmonthyear(orderpaymentview.paymentdate) AS monthyear,
+    getfinancialyear(orderpaymentview.paymentdate) AS fy
+FROM clientview
+    JOIN orderpaymentview ON clientview.id = orderpaymentview.clientid
+    LEFT JOIN entity ON orderpaymentview.entityid = entity.id
+WHERE (entity.name IS NULL OR entity.name NOT ILIKE '%Cura%') 
+    AND orderpaymentview.paymentdate > '2018-01-01';
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 

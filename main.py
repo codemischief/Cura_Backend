@@ -6644,8 +6644,6 @@ async def get_mandal_admin(payload: dict, request:Request, conn: psycopg2.extens
                 res = []
                 for data in _data:
                     res.append({colname:val for colname,val in zip(colnames,data)})
-                if not _data:
-                    res = [{colname:None for colname in colnames}]
                 return giveSuccess(payload['user_id'],role_access_status,res)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -9356,7 +9354,7 @@ async def report_exception_bank_st_wrong_names(payload:dict, request:Request, co
 
 @app.post('/reportExceptionEntityBlank')
 async def report_exception_entity_blank(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'Rpt_EntityblankView'
+    payload['table_name'] = 'rpt_entity_noncura_view'
     data = await runInTryCatch(
         request=request,
         conn = conn,
