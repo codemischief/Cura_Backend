@@ -9425,6 +9425,7 @@ async def report_services_agency_repair_services(payload:dict, request:Request, 
 @app.post('/reportExceptionPropertiesNoProjects')
 async def report_exception_properties_no_projects(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'PropertiesView'
+    payload['filters'].append(['projectid','equalTo',11,'Numeric'])
     return await runInTryCatch(
         request=request,
         conn = conn,
