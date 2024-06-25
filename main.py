@@ -9916,8 +9916,8 @@ async def get_pma_billing_trend(payload: dict,request: Request, conn: psycopg2.e
         whereinquery=False,
         isUtilityRoute=True
     )
-    for i in total:
-        for key in i:
+    for i in total['data']:
+        for key in total_data:
             total_data[key]+=i[key]
     data['total'] = total_data
     return data
