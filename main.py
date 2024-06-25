@@ -7258,9 +7258,9 @@ async def report_monthly_margin_entity_receipt_payments(payload:dict, request:Re
 
 @app.post('/reportMonthlyMarginLOBReceiptPaymentsConsolidated')
 async def report_monthly_margin_lob_receipt_payments_consolidated(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    payload['table_name'] = 'datewiselobserviceview'
-    payload['static'] = True
-    query = f"""SELECT
+    table = f"datewiselobserviceview_{uuid.uuid4().hex}"
+    payload['table_name'] = table
+    query = f"""CREATE VIEW {table} AS SELECT
 	lobname,
 	total_orderreceiptamount,
 	total_paymentamount,
@@ -7283,7 +7283,7 @@ FROM
                 FROM 
                     datewiselobserviceview
                 WHERE 
-                    date >= '2024-01-01' AND date <= '2025-01-01'
+                    date >= '{payload['startdate']}' AND date <= '{payload['enddate']}'
                 GROUP BY 
                     lobname
             ) zz 
@@ -7293,11 +7293,14 @@ FROM
     # payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
     if 'lobName' in payload and payload['lobName'] != 'all':
         payload['filters'].append(['lobname','equalTo',payload['lobName'].lower(),"String"])
+    cursor = conn[0].cursor()
+    cursor.execute(query)
+    conn[0].commit()
+    payload['rows'] = ['lobname','total_orderreceiptamount','total_paymentamount','total_diff']
     data = await runInTryCatch(
         request=request,
         conn = conn,
         fname = 'report_monthly_margin_entity_receipt_payments',
-        query=query,
         isPaginationRequired=True,
         payload=payload,
         whereinquery=False,
@@ -7315,7 +7318,6 @@ FROM
         request=request,
         conn = conn,
         fname = 'report_monthly_margin_entity_receipt_payments',
-        query=query,
         isPaginationRequired=True,
         payload=payload,
         whereinquery=False,
@@ -7357,6 +7359,10 @@ FROM
     #     data['total'] = res['data']
     #     return data
     data['total'] = total
+    query = f"DROP VIEW {table}"
+    cursor = conn[0].cursor()
+    cursor.execute(query)
+    conn[0].commit()
     return data
     
 @app.post('/reportPMABillingListView')
