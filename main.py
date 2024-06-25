@@ -8075,30 +8075,6 @@ async def report_client_order_receipt_mismatch_details(payload:dict, request:Req
 
 @app.post('/reportBankBalanceReconciliation')
 async def report_bank_balance_reconciliation(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
-    return {
-    "filename": None,
-    "result": "success",
-    "user_id": 1234,
-    "role_id": True,
-    "data": {
-        "bankstbalance": {
-            "bankname": "DAP-ICICI-42",
-            "receipt": 32583659.35,
-            "payment": 32513982.34,
-            "balance": 69676.00
-        },
-        "bankpmtrcps": {
-            "bankname": "DAP-ICICI-42",
-            "receipt": 56364326.73,
-            "payment": -56316019.72,
-            "balance": 48307.01
-        }
-    },
-    "total_count": [
-        1,
-        1
-    ]
-}
     query = f'''SELECT 
         name AS bankname, 
         SUM(receipts) AS receipt,  

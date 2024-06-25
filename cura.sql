@@ -3559,7 +3559,7 @@ AS SELECT COALESCE(sum(
 
 CREATE VIEW RptOrderAmount AS
 
-SELECT
+SELECTGROUP BY
     COALESCE(SUM(Order_Receipt.Amount), 0) AS ORAmount,
     Order_Receipt.RecdDate AS Date,
     Mode_Of_payment.Name,
