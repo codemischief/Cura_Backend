@@ -9884,7 +9884,7 @@ async def delete_from_client(payload:dict, request:Request, conn: psycopg2.exten
 @app.post('/getPMABillingTrend')
 async def get_pma_billing_trend(payload: dict,request: Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'pmabillingtrend'
-    data = runInTryCatch(
+    data = await runInTryCatch(
         request=request,
         conn = conn,
         fname = 'getPMABillingTrend',
