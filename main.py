@@ -8404,10 +8404,10 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             cursor.execute(query)
             conn[0].commit()
             if 'sendEmail' in payload and not payload['sendEmail'] and 'downloadType' not in payload:
-                payload['rows'] = ['date','type','description','property','round(amount,2) as amount']
+                payload['rows'] = ["TO_CHAR(date,'dd-mm-yyyy') as date",'type','description','property','round(amount,2) as amount']
             else:
                 # payload['rows'] = ['date','clientname','property','description','type','amount','opening_balance','closing_balance']
-                payload['rows'] = ['date','clientname','property','description','type','round(amount,2) as amount']
+                payload['rows'] = ["TO_CHAR(date,'dd-mm-yyyy') as date",'clientname','property','description','type','round(amount,2) as amount']
             payload['table_name'] = table
             data = filterAndPaginate_v2(
                 db_config=DATABASE_URL,
@@ -8486,6 +8486,9 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
     </body>
 </html>
 '''
+            # maps = {
+            #     "date":
+            # }
             if res :
                 html2 = """
             <!DOCTYPE html>
@@ -8502,7 +8505,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                         flex-direction: column;
                     }
                     table {
-                        width: 50%;
+                        width: 100%;
                         border-collapse: collapse;
                         margin: 25px 25px;
                         font-size: 12px; /* Reduce font size */
@@ -8522,7 +8525,6 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 <table>
                     <thead>
                         <tr>
-                            <th>Sr.No</th>
             """
 
             # Add table headers
@@ -8537,9 +8539,8 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
 
             # Add table rows
                 for index, item in enumerate(res, start=1):
-                    html2 += f"<tr><td>{index}</td>"
-                    for value in item.values():
-                        html2 += f"<td>{value}</td>"
+                    for key in item:
+                        html2 += f"<td>{item[key]}</td>"
                     html2 += "</tr>"
 
                 html2 += """
@@ -8548,6 +8549,8 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             </body>
             </html>
             """
+            f = open('test.html','w')
+            f.write(html2)
             html = [html1,html2,html3]
             if 'downloadType' in payload:
                 filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
