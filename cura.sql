@@ -3498,6 +3498,29 @@ CREATE OR REPLACE VIEW orderinvoiceview AS
      JOIN ordersview ov ON oi.orderid = ov.id
      LEFT JOIN entity e ON oi.entityid = e.id;
 
+
+CREATE VIEW PMABILLINGTREND
+
+AS
+
+SELECT
+    clientname,
+    LEFT(propertydescription, 40) as Property,
+    sum(CASE WHEN invoicemonth = EXTRACT(MONTH FROM CURRENT_DATE) AND invoiceyear = EXTRACT(YEAR FROM CURRENT_DATE) THEN invoiceamount ELSE 0 END) AS CM,
+    sum(CASE WHEN invoicemonth = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1 month') AND invoiceyear = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '1 month') THEN invoiceamount ELSE 0 END) AS CM_1,
+    sum(CASE WHEN invoicemonth = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '2 months') AND invoiceyear = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '2 months') THEN invoiceamount ELSE 0 END) AS CM_2,
+    sum(CASE WHEN invoicemonth = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '3 months') AND invoiceyear = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '3 months') THEN invoiceamount ELSE 0 END) AS CM_3,
+    sum(CASE WHEN invoicemonth = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '4 months') AND invoiceyear = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '4 months') THEN invoiceamount ELSE 0 END) AS CM_4,
+    sum(CASE WHEN invoicemonth = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '5 months') AND invoiceyear = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '5 months') THEN invoiceamount ELSE 0 END) AS CM_5
+FROM
+    dbo.pmabillinglistview
+WHERE
+    DATE_TRUNC('month', DATE(invoiceyear || '-' || invoicemonth || '-01')) >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '5 months'
+GROUP BY
+    clientname, propertydescription
+ORDER BY
+    clientname, propertydescription;
+
 CREATE OR REPLACE VIEW PMABillingTrendView AS
  SELECT ct.clientname,
     ct.gy AS fy,
