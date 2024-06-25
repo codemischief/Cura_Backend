@@ -9884,7 +9884,7 @@ async def delete_from_client(payload:dict, request:Request, conn: psycopg2.exten
 @app.post('/getPMABillingTrend')
 async def get_pma_billing_trend(payload: dict,request: Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'pmabillingtrend'
-    return await runInTryCatch(
+    data = runInTryCatch(
         request=request,
         conn = conn,
         fname = 'getPMABillingTrend',
@@ -9895,5 +9895,31 @@ async def get_pma_billing_trend(payload: dict,request: Request, conn: psycopg2.e
         whereinquery=False,
         isUtilityRoute=True
     )
+    total_data = {
+        "cm":0,
+        "cm_1":0,
+        "cm_2":0,
+        "cm_3":0,
+        "cm_4":0,
+        "cm_5":0
+    }
+    payload['pg_size'] = 0
+    payload['pg_no'] = 0
+    total = await runInTryCatch(
+        request=request,
+        conn = conn,
+        fname = 'getPMABillingTrend',
+        payload=payload,
+        isPaginationRequired=True,
+        formatData=True,
+        isdeleted=False,
+        whereinquery=False,
+        isUtilityRoute=True
+    )
+    for i in total:
+        for key in i:
+            total_data[key]+=i[key]
+    data['total'] = total_data
+    return data
 
 logger.info("program_started")
