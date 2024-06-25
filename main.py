@@ -8407,7 +8407,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 payload['rows'] = ["TO_CHAR(date,'dd-mm-yyyy') as date",'type','description','property','round(amount,2) as amount']
             else:
                 # payload['rows'] = ['date','clientname','property','description','type','amount','opening_balance','closing_balance']
-                payload['rows'] = ["TO_CHAR(date,'dd-mm-yyyy') as date",'clientname','property','description','type','round(amount,2) as amount']
+                payload['rows'] = ["TO_CHAR(date,'dd-mm-yyyy') as date",'type','description','property','round(amount,2) as amount']
             payload['table_name'] = table
             data = filterAndPaginate_v2(
                 db_config=DATABASE_URL,
@@ -8416,8 +8416,8 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 filters=payload['filters'],
                 sort_column=payload['sort_by'],
                 sort_order=payload['order'],
-                page_number=0 if  payload['sendEmail'] else payload['pg_no'],
-                page_size=0 if  payload['sendEmail'] else payload['pg_size'],
+                page_number=0 if payload['sendEmail'] else payload['pg_no'],
+                page_size=0 if payload['sendEmail'] else payload['pg_size'],
                 whereinquery=False,
                 search_key=payload['search_key'] if 'search_key' in payload else '',
                 isdeleted=False,
@@ -8539,6 +8539,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
 
             # Add table rows
                 for index, item in enumerate(res, start=1):
+                    html2 += "<tr>"
                     for key in item:
                         html2 += f"<td>{item[key]}</td>"
                     html2 += "</tr>"
