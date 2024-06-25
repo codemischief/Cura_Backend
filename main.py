@@ -5479,7 +5479,7 @@ async def get_order_pending(payload: dict, request:Request, conn:psycopg2.extens
                         Group by OrderID
                         )
                         select sum(amount) as PendingAmount from BASETABLE
-                           """)
+                """)
                 pending = cursor.fetchone()[0]
                 logMessage(cursor,f"SELECT orderstatus,orderdate FROM get_orders_view WHERE id={payload['orderid']}")
                 orderstatus,orderdate = cursor.fetchone()
@@ -8075,7 +8075,30 @@ async def report_client_order_receipt_mismatch_details(payload:dict, request:Req
 
 @app.post('/reportBankBalanceReconciliation')
 async def report_bank_balance_reconciliation(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
-
+    return {
+    "filename": None,
+    "result": "success",
+    "user_id": 1234,
+    "role_id": True,
+    "data": {
+        "bankstbalance": {
+            "bankname": "DAP-ICICI-42",
+            "receipt": 32583659.35,
+            "payment": 32513982.34,
+            "balance": 69676.00
+        },
+        "bankpmtrcps": {
+            "bankname": "DAP-ICICI-42",
+            "receipt": 56364326.73,
+            "payment": -56316019.72,
+            "balance": 48307.01
+        }
+    },
+    "total_count": [
+        1,
+        1
+    ]
+}
     query = f'''SELECT 
         name AS bankname, 
         SUM(receipts) AS receipt,  
@@ -9857,5 +9880,20 @@ async def delete_from_client(payload:dict, request:Request, conn: psycopg2.exten
         raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         raise HTTPException(400,f"Bad request error <{e}>")
+    
+@app.post('/getPMABillingTrend')
+async def get_pma_billing_trend(payload: dict,request=Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    payload['table_name'] = 'pmabillingtrend'
+    return await runInTryCatch(
+        request=request,
+        conn = conn,
+        fname = 'getPMABillingTrend',
+        payload=payload,
+        isPaginationRequired=True,
+        formatData=True,
+        isdeleted=False,
+        whereinquery=False,
+        isUtilityRoute=True
+    )
 
 logger.info("program_started")
