@@ -7211,7 +7211,16 @@ async def report_monthly_margin_entity_receipt_payments(payload:dict, request:Re
     payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
     if 'entityName' in payload and payload['entityName'] != 'all':
         payload['filters'].append(['entityname','equalTo',payload['entityName'],"String"])
-    
+#     select
+# lobname,
+# sum(orderreceiptamount),
+# sum(paymentamount),
+# sum(diff)
+# from dbo.DatewiseLobEntityView
+# where 
+# date between '2021-01-01' and '2021-02-15' -- variable on screen
+# and entityid  = 1-- variable on screen
+# group by lobname,entityid
     data = await runInTryCatch(
         request=request,
         conn = conn,
@@ -8395,10 +8404,10 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             cursor.execute(query)
             conn[0].commit()
             if 'sendEmail' in payload and not payload['sendEmail'] and 'downloadType' not in payload:
-                payload['rows'] = ['date','type','description','property','round(amount,2)']
+                payload['rows'] = ['date','type','description','property','round(amount,2) as amount']
             else:
                 # payload['rows'] = ['date','clientname','property','description','type','amount','opening_balance','closing_balance']
-                payload['rows'] = ['date','clientname','property','description','type','amount']
+                payload['rows'] = ['date','clientname','property','description','type','round(amount,2) as amount']
             payload['table_name'] = table
             data = filterAndPaginate_v2(
                 db_config=DATABASE_URL,
@@ -9442,6 +9451,7 @@ async def report_services_agency_repair_services(payload:dict, request:Request, 
 @app.post('/reportExceptionPropertiesNoProjects')
 async def report_exception_properties_no_projects(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'PropertiesView'
+    #clientname contains pma
     payload['filters'].append(['projectid','equalTo',11,'Numeric'])
     return await runInTryCatch(
         request=request,
