@@ -5356,8 +5356,8 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                     b.clientid,
                                     d.id AS leavelicenseid,
                                     CONCAT_WS(' ', c.firstname, c.lastname) AS clientname,
-                                    d.orderid,
-                                    CONCAT(' ',e.briefdescription,' {month_map[payload["month"]]}-{payload["year"]} Charges') as briefdescription,
+                                    a.orderid,
+                                    CONCAT(' ',e.briefdescription,'- {month_map[payload["month"]]} {payload["year"]} Charges') as briefdescription,
                                     EXTRACT(DAY FROM d.startdate) AS start_day,
                                     TO_CHAR(TO_DATE('{payload['year']}-{payload['month']}-01', 'YYYY-MM-DD'), 'DD-Mon-YYYY') AS invoicedate,
                                     d.vacatingdate,
@@ -5436,7 +5436,7 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                         query = 'INSERT INTO order_invoice (clientid,orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                         msg = logMessage(cursor,query,[
                             row["clientid"],row["orderid"],None,row["totalamt"],
-                            datetime.date.today(),row["totalamt"],row["briefdescription"],datetime.date.today(),
+                            f"{payload['year']}-{payload['month']}-01",row["totalamt"],row["briefdescription"],datetime.date.today(),
                             row["totalbaseamt"],row["totaltaxamt"],row["entityid"],givenowtime(),payload['user_id'],False
                         ])
                     #---Only enable when not testing
@@ -7208,24 +7208,25 @@ async def report_monthly_margin_lob_receipt_payments(payload:dict, request:Reque
 @app.post('/reportMonthlyMarginEntityReceiptPayments')
 async def report_monthly_margin_entity_receipt_payments(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'datewiselobentityview'
-    payload['filters'].append(['date','between',[payload['startdate'],payload['enddate']],'Date'])
     if 'entityName' in payload and payload['entityName'] != 'all':
         payload['filters'].append(['entityname','equalTo',payload['entityName'],"String"])
-#     select
-# lobname,
-# sum(orderreceiptamount),
-# sum(paymentamount),
-# sum(diff)
-# from dbo.DatewiseLobEntityView
-# where 
-# date between '2021-01-01' and '2021-02-15' -- variable on screen
-# and entityid  = 1-- variable on screen
-# group by lobname,entityid
+    query = f'''
+            select * from 
+            (select
+                lobname,
+                sum(orderreceiptamount) as orderreceiptamount,
+                sum(paymentamount) as paymentamount,
+                sum(diff) as diff
+                from DatewiseLobEntityView
+                where date >= '{payload['startdate']}' and date <= '{payload['enddate']}'
+                group by lobname) as t
+            '''
     data = await runInTryCatch(
         request=request,
         conn = conn,
         fname = 'report_monthly_margin_entity_receipt_payments',
         payload=payload,
+        query=query,
         isPaginationRequired=True,
         whereinquery=False,
         formatData=True,
@@ -8434,8 +8435,8 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             for row in data['data']:
                 dic = {colname:val for (colname,val) in zip(data['colnames'],row)}
                 res.append(dic)
-            queryopening = f"SELECT opening_balance,date from {table} ORDER BY dated asc"
-            queryclosing = f"SELECT Closing_balance,date from {table}"
+            queryopening = f"SELECT Opgbalance from {table} limit 1"
+            queryclosing = f"SELECT Clsgbalance from {table} limit 1"
             cursor.execute(queryopening)
             opening = cursor.fetchone()
             cursor.execute(queryclosing)
@@ -9462,6 +9463,7 @@ async def report_exception_properties_no_projects(payload:dict, request:Request,
     payload['table_name'] = 'PropertiesView'
     #clientname contains pma
     payload['filters'].append(['projectid','equalTo',11,'Numeric'])
+    payload['filters'].append(['clientname','contains','pma','String'])
     return await runInTryCatch(
         request=request,
         conn = conn,
