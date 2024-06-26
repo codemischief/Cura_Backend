@@ -169,6 +169,11 @@ def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: l
     else:
         return f'QUERY IS : <{query}>'
 
+def convert_date_format(date_str):
+    date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+    formatted_date = date_obj.strftime('%d %b %Y')
+    return formatted_date
+
 # PostgreSQL database URL
 #todo : need to source user, password and ip port from variables
 load_dotenv()
@@ -455,7 +460,10 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         if mapping:
             colnames = [mapping[i] for i in colnames]
         df = pd.DataFrame(rows, columns=colnames)
-        logging.info([colnames,mapping])
+        for col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='ignore')
+        float_cols = df.select_dtypes(include=['float']).columns
+        df[float_cols] = df[float_cols].applymap(lambda x: f"{x:.2f}")
         df.reset_index(inplace=True)
         df['index'] += 1
         df.rename(columns={"index":"Sr No."},inplace=True)
@@ -678,12 +686,11 @@ def filterAndPaginate_v2(db_config,
         resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames,'filename':None}
         # generate downloadable file
         if page_number == 0 and page_size == 0 and (downloadType == 'excel' or downloadType == 'pdf'):
-            
             filename = generateExcelOrPDF(downloadType, rows, colnames,mapping,routename)
             resp_payload['filename'] = filename
+            resp_payload['data'] = []
         elif page_number == 0 and page_size == 0 and downloadType == None:
             logging.info(f'downloadType is <None>')
-
         return resp_payload
     except HTTPException as h:
         raise h
@@ -1718,7 +1725,7 @@ async def add_bank_statement(payload: dict, request:Request, conn: psycopg2.exte
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        raise HTTPException(409,str(p))
     except Exception as e:
         print(traceback.print_exc())
         raise giveFailure(f"failed to add bank statement due to exception <{str(e)}>",payload['user_id'],0)
@@ -2100,7 +2107,7 @@ async def add_research_prospect(payload: dict, request: Request,conn : psycopg2.
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
-                await logUserAction(payload,conn)
+                logUserAction(payload,conn)
             data = {
                 "added_prospect":id
             }
@@ -2217,7 +2224,7 @@ async def add_payment(payload:dict, request:Request, conn: psycopg2.extensions.c
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        raise HTTPException(409,str(p))
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Invalid Credentials",payload['user_id'],0)
@@ -5416,7 +5423,10 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                 logging.info(cursor.statusmessage)
                 conn[0].commit()
                 # payload['rows'] = ['*']
-                payload['rows'] = ['clientname','briefdescription','totalamt','totalbaseamt','totaltaxamt','fixedamt','fixedtaxamt','rentedamt','rentedtaxamt','invoicedate']
+                payload['rows'] = ['clientname','briefdescription','round(totalamt,2) as totalamt',
+                                   'round(totalbaseamt,2) as totalbaseamt','round(totaltaxamt,2) as totaltaxamt',
+                                   'round(fixedamt,2) as fixedamt','round(fixedtaxamt,2) as fixedtaxamt',
+                                   'round(rentedamt,2) as rentedamt','round(rentedtaxamt,2) as rentedtaxamt','invoicedate']
                 payload['table_name'] = tbl
                 data = await runInTryCatch(conn,fname='pma_billing',payload=payload,isPaginationRequired=True,whereinquery=False,formatData=True,isdeleted=False,isUtilityRoute=True,request=request)
                 # for row in data['data']:
@@ -8396,11 +8406,15 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                     Date,
                     Type,
                     Amount,
-                dated,
-                COALESCE(SUM(Amount) OVER (ORDER BY Date, dated, Type ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0) AS Opening_balance,
-                COALESCE(SUM(Amount) OVER (ORDER BY Date, dated, Type ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),0)  AS Closing_balance
+                    dated,
+                    b.OpeningBalance,
+                    c.ClosingBalance
                 FROM
                     CombinedTable
+                JOIN 
+                    Opgbalance b ON true
+                JOIN 
+                    Clsgbalance c ON true
                 WHERE
                     clientid = {payload['clientid']} and date >='{payload['startdate']}' and date <= '{payload['enddate']}' 
                 ORDER BY
@@ -8435,8 +8449,8 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             for row in data['data']:
                 dic = {colname:val for (colname,val) in zip(data['colnames'],row)}
                 res.append(dic)
-            queryopening = f"SELECT Opgbalance from {table} limit 1"
-            queryclosing = f"SELECT Clsgbalance from {table} limit 1"
+            queryopening = f"SELECT ROUND(OpeningBalance,2) AS OpeningBalance from {table} limit 1"
+            queryclosing = f"SELECT ROUND(ClosingBalance,2) AS ClosingBalance from {table} limit 1"
             cursor.execute(queryopening)
             opening = cursor.fetchone()
             cursor.execute(queryclosing)
@@ -8450,13 +8464,13 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             html = []
             html1 = f'''
 <html>
-    <body style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 18px;">
+    <body style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 15px;">
         <p>
-            Hi,<br>Please find attached Statement of Account from {payload['startdate']} to {payload['enddate']} for your property/ies.
+            Hi,<br>Please find attached Statement of Account from {convert_date_format(payload['startdate'])} to {convert_date_format(payload['enddate'])} for your property/ies.
         </p>
         <p>
             <ul style="color: purple;">
-                <li>Balance due till date is Rs. {ans['closing_balance']}/- including 18% taxes (GST).</li>
+                <li>Balance due till date is Rs. {ans['closing_balance']}/- including taxes (GST).</li>
                 <li>You can transfer the dues to our usual ICICI bank account given below.</li>
                 <li>Let us know when you transfer the dues so that we can confirm receipt.</li>
             </ul>
@@ -8466,7 +8480,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
 '''
             html3 = f'''
 <html>
-    <body>
+    <body style="font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif; font-size: 15px;">
         <p>Important Notes:</p>
         <p>
             <ol style="color: blue;">
