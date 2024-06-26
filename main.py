@@ -80,20 +80,20 @@ pdfSizeMap = {
     # "/admin/lobReceiptPayments": (10, 10),
     # "/admin/entityReceiptPayments": (10, 10),
     # "/admin/lobReceiptPaymentsConsolidated": (10, 10),
-    "/reports/pmaBillingTrendView": (10, 10),
-    "/reports/pmaClientReport": (10, 10),
-    "/reports/pmaInvoiceList": (10, 10),
+    "/reports/pmaBillingTrendView": (15, 10),
+    "/reports/pmaClientReport": (20, 10),
+    "/reports/pmaInvoiceList": (20,15),
     "/reports/pmaClientReceivable": (10, 10),
-    "/reports/activePmaAgreement": (10, 10),
-    "/reports/projectContact": (10, 10),
+    "/reports/activePmaAgreement": (35,20),
+    "/reports/projectContact": (41,30),
     "/reports/advanceHoldingAmount": (10, 10),
-    "/reports/pmaClientStatementAll": (10, 10),
-    "/reports/pmaClientStatement": (10, 10),
-    "/reports/nonPmaClientStatement": (10, 10),
+    "/reports/pmaClientStatementAll": (30,20),
+    "/reports/pmaClientStatement": (25,15),
+    "/reports/nonPmaClientStatement": (30, 15),
     "/reports/nonPmaClientReceivables": (10, 10),
-    "/reports/clientStatementAll": (10, 10),
+    "/reports/clientStatementAll": (25, 15),
     "/reports/duplicateClientReport": (10, 10),
-    "/reports/clientBankDetails": (10, 10),
+    "/reports/clientBankDetails": (30, 15),
     "/reports/monthlyBankSummary": (10, 10),
     "/reports/bankTransferReconciliation": (12, 10),
     "/reports/clientOrderReceiptMismatchDetails": (10, 10),
@@ -102,20 +102,20 @@ pdfSizeMap = {
     "/reports/clientTraceReport": (8,6),
     "/reports/orderTraceReport": (8,6),
     "/reports/vendorTraceReport": (8,6),
-    "/reports/clientReceipt": (10, 10),
-    "/reports/orderpaymentDD": (10, 10),
-    "/reports/orderpaymentbanktocash": (10, 10),
-    "/reports/orderpaymentbanktobank": (10, 10),
+    "/reports/clientReceipt": (20,15),
+    "/reports/OrderPaymentDD": (25,15),
+    "/reports/orderpaymentbanktocash": (25,15),
+    "/reports/orderpaymentbanktobank": (20,15),
     "/reports/orderpaymentwithtds": (10, 10),
-    "/reports/orderpaymentwithouttds": (10, 10),
-    "/reports/orderreceipttoinvoiceTax": (10, 10),
+    "/reports/orderpaymentwithouttds": (25,15),
+    "/reports/orderreceipttoinvoiceTax": (20,15),
     "/reports/tdspaidbyvendor": (20, 10),
-    "/reports/vendorstatement": (25, 10),
+    "/reports/vendorstatement": (25, 15),
     "/reports/tdsPaidToGovernment": (20, 10),
     "/reports/vendorpaymentsummary": (20, 10),
     "/reports/clientStatistics": (8, 10),
     "/reports/statisticsReport": (10, 10),
-    "/reports/serviceTaxPaidByVendor": (10, 10),
+    "/reports/serviceTaxPaidByVendor": (18,12),
     "/reports/tenantEmail": (32, 10),
     "/reports/ownerMailId": (10, 10),
     "/reports/clientContactDetails": (32, 10),
@@ -124,7 +124,7 @@ pdfSizeMap = {
     "/reports/orderanalysis": (35, 10),
     "/reports/Lllist": (30, 10),
     "/reports/clientstatics": (10, 10),
-    "/reports/clientStatementByDate": (10, 10),
+    "/reports/clientStatementByDate": (35,15),
     "/reports/paymentUnderSuspenseOrder": (20, 10),
     "/reports/receiptsUnderSuspenseOrder": (20, 10),
     "/reports/clientsWithOrderButNoEmail": (10, 10),
@@ -133,12 +133,25 @@ pdfSizeMap = {
     "/reports/entityBlankReport": (25, 10),
     "/reports/ownerwithnoproperty": (10, 10),
     "/reports/propertywithnoproject": (20, 10),
-    "/reports/serviceTaxReport": (10, 10),
+    "/reports/serviceTaxReport": (30,20),
     "/reports/vendorSummary": (30, 10),
     "/reports/clientphoneno": (20,10),
     "/reports/ownerphoneno": (10, 10),
     "/reports/bankbalancereconciliation": (10, 10),
-    "/reports/agedOrders": (40, 10)
+    "/reports/agedOrders": (40, 10),
+    "/research/prospect": (10, 10),
+    "/research/employer": (12, 10),
+    "/research/owner": (30, 10),
+    "/research/educational": (10, 10),
+    "/research/architect": (20, 10),
+    "/research/mandals": (10, 10),
+    "/research/professionals": (20, 10),
+    "/research/businessgroup": (20, 10),
+    "/research/banks": (10, 10),
+    "/research/friends": (10, 10),
+    "/research/serviceapartment": (10, 10),
+    "/research/agent": (20, 10),
+    "/research/governmentdepartment": (10, 10)
 }
 # Load the .env file
 
@@ -161,6 +174,8 @@ month_map = {
     11:"Nov",
     12:"Dec"
 }
+
+
 
 def logMessage(cursor: psycopg2.extensions.connection.cursor,query : str, arr: list = None):
     cursor.execute(query,arr)
@@ -481,14 +496,15 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
             data_list = [df.columns.values.tolist()] + df.values.tolist()
             filename = f'{uuid.uuid4()}.pdf'
             fname = f'{FILE_DIRECTORY}/{filename}'
-            # we may need to vary the pagesize based on each report
-            # pagesize = (55 * inch, 28 * inch)
             if routename in pdfSizeMap:
                 logging.info(f'Route name {routename} found')
                 pagesize = (pdfSizeMap[routename][0]*inch,pdfSizeMap[routename][1]*inch)
             else:
                 logging.info('Route Name not found')
                 pagesize = (55 * inch, 28 * inch)
+            # conn = psycopg2.connect(DATABASE_URL)
+            # pagesize = getpdfsize(conn,routename)
+            # pagesize = [size*inch for size in pagesize]
             logging.info(pagesize)
             pdf = SimpleDocTemplate(fname, pagesize=pagesize)
             table = Table(data_list, colWidths=get_column_widths(df))
@@ -510,6 +526,9 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         logging.info(traceback.print_exc())
         logging.exception(f'failed to generate excel file due to <{msg}>')
         return None
+
+
+
 
 def filterAndPaginate_v2(db_config,
                          required_columns,
@@ -740,6 +759,19 @@ def get_db_connection():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
+def getpdfsize(conn:psycopg2.extensions.connection,routename:str = None):
+    if not routename:
+        return (55,28)
+    else:
+        with conn.cursor() as cursor:
+            query = 'SELECT length,height FROM pdf_sizes WHERE routename = %s'
+            msg = logMessage(cursor,query,[routename])
+            logging.info(msg)
+            data = cursor.fetchone()
+            return data if data else (55,28)
+        
+
 
 def get_countries_from_id(conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     try:
