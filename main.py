@@ -459,12 +459,13 @@ def max_len_without_escape_chars(data, col):
 
 # Function to calculate column widths (for pdf generation)
 def get_column_widths(data):
-    col_widths = []
+    col_widths = [] 
     for col in data.columns:
         # max_len = max(data[col].astype(str).map(len).max(), len(col)) + 5  # Add padding
-        max_len = max_len_without_escape_chars(data,col) + 5
-        col_widths.append(max_len * 5)  # Adjust this multiplier as needed
-        logging.info(f"<{col}> length is {max_len}")
+        max_data_len = max_len_without_escape_chars(data,col)
+        max_col_len = max(len(col), max_data_len) + 5
+        col_widths.append(max_col_len * 5)  # Adjust this multiplier as needed
+        logging.info(f"<{col}> length is {max_col_len}")
     return col_widths
 
 
@@ -2171,9 +2172,12 @@ async def edit_research_prospect(payload: dict, request:Request, conn: psycopg2.
                 if cursor.statusmessage == "UPDATE 0":
                     raise HTTPException(status_code=404,detail="Record not found")
                 conn[0].commit()
+
             data = {
                 "edited_data":payload['id']
             }
+            
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -5845,6 +5849,7 @@ async def edit_research_employer(payload:dict, request:Request, conn: psycopg2.e
             if cursor.statusmessage == "UPDATE 0":
                 raise HTTPException(status_code=403,detail='No Record Available')
             else:
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Employer":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
