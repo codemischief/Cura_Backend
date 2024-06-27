@@ -7294,7 +7294,9 @@ async def report_monthly_margin_lob_receipt_payments(payload:dict, request:Reque
 async def report_monthly_margin_entity_receipt_payments(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'datewiselobentityview'
     if 'entityName' in payload and payload['entityName'] != 'all':
-        payload['filters'].append(['entityname','equalTo',payload['entityName'],"String"])
+        where_cl = f"and lower(entityname) ilike '{payload['entityName']}'"
+    else:
+        where_cl = ''
     query = f'''
             select * from 
             (select
@@ -7303,7 +7305,7 @@ async def report_monthly_margin_entity_receipt_payments(payload:dict, request:Re
                 sum(paymentamount) as paymentamount,
                 sum(diff) as diff
                 from DatewiseLobEntityView
-                where date >= '{payload['startdate']}' and date <= '{payload['enddate']}'
+                where date >= '{payload['startdate']}' and date <= '{payload['enddate']}' {where_cl}
                 group by lobname) as t
             '''
     data = await runInTryCatch(
