@@ -1624,13 +1624,15 @@ async def add_localities(payload: dict, request:Request, conn: psycopg2.extensio
         if role_access_status == 1 and ifNotExist('locality','locality',conn,payload['locality']):
             payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             with conn[0].cursor() as cursor:
-                query = 'INSERT INTO locality (locality,cityid) VALUES (%s,%s)'
+                query = 'INSERT INTO locality (locality,cityid) VALUES (%s,%s) RETURNING id'
                 msg = logMessage(cursor,query,(payload['locality'],payload['cityid']))
                 logging.info(msg)
+                id = cursor.fetchone()[0]
                 conn[0].commit()
             data = {
                 "Inserted Locality" : payload['locality']
             }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             raise HTTPException(status_code=403,detail="Access Denied")
@@ -1659,6 +1661,7 @@ async def edit_localities(payload: dict, request:Request, conn: psycopg2.extensi
             data = {
                 "Updated Locality":payload['locality']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             return HTTPException(status_code=403,detail="Access Denied")
@@ -1681,6 +1684,7 @@ async def delete_localities(payload: dict, request:Request, conn : psycopg2.exte
                 logging.info(msg)
                 conn[0].commit()
             data = {"Deleted Locality ID":payload['id']}
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -2140,7 +2144,7 @@ async def add_research_prospect(payload: dict, request: Request,conn : psycopg2.
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
-                logUserAction(payload,conn)
+                logUserAction(payload,conn,id)
             data = {
                 "added_prospect":id
             }
@@ -2207,6 +2211,7 @@ async def delete_research_prospect(payload: dict, request:Request, conn: psycopg
             data = {
                 "deleted_prospect":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -5447,6 +5452,14 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                             clientpropertyid
                                     )
                                 AND
+                                    d.actualenddate >= '{payload['year']}-{payload['month']}-01'
+                                AND
+                                    d.startdate <= '{payload['year']}-{payload['month']}-01'
+                                AND
+                                    a.enddate >= '{payload['year']}-{payload['month']}-01'
+                                AND
+                                    a.startdate <= '{payload['year']}-{payload['month']}-01'
+                                AND
                                     a.active = true
                                 AND 
                                     a.isdeleted=false
@@ -5814,6 +5827,7 @@ async def add_research_employer(payload:dict, request:Request, conn: psycopg2.ex
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,{"Inserted Employer":id})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -5876,6 +5890,7 @@ async def delete_research_employer(payload:dict, request:Request, conn: psycopg2
             if cursor.statusmessage == "UPDATE 0":
                 raise HTTPException(status_code=403,detail='No Record Available')
             else:
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"deleted employer":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -5924,6 +5939,7 @@ async def add_research_agents(payload:dict, request:Request, conn: psycopg2.exte
                 ])
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,{"Inserted Agent":id})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -5952,6 +5968,7 @@ async def edit_research_agents(payload:dict, request:Request, conn: psycopg2.ext
                 ])
                 logging.info(msg)
                 conn[0].commit()
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,{"Edited Agent":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -5978,6 +5995,7 @@ async def delete_research_agents(payload:dict, request:Request, conn: psycopg2.e
             if cursor.statusmessage == "UPDATE 0":
                 raise giveFailure('No Record Available',payload['user_id'],role_access_status)
             else:
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Agent":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6023,6 +6041,7 @@ async def add_research_coc_and_business_group(payload:dict, request:Request, con
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Group":id})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6054,6 +6073,7 @@ async def edit_research_coc_and_business_group(payload:dict, request:Request, co
                     raise giveFailure("No Record Available",payload['user_id'],role_access_status)
                 else:
                     conn[0].commit()
+                    logUserAction(payload,conn,payload['id'])
                     return giveSuccess(payload['user_id'],role_access_status,{"Edited Group":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6082,6 +6102,7 @@ async def edit_research_coc_and_business_group(payload:dict, request:Request, co
                     raise giveFailure("No Record Available",payload['user_id'],role_access_status)
                 else:
                     conn[0].commit()
+                    logUserAction(payload,conn,payload['id'])
                     return giveSuccess(payload['user_id'],role_access_status,{"Deleted Group":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6164,6 +6185,7 @@ async def add_research_professional(payload:dict, request:Request, conn: psycopg
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Professional":id})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6208,6 +6230,7 @@ async def edit_research_professional(payload:dict, request:Request, conn: psycop
                     raise giveFailure("No Record Available",payload['user_id'],role_access_status)
                 else:
                     conn[0].commit()
+                    logUserAction(payload,conn,payload['id'])
                     return giveSuccess(payload['user_id'],role_access_status,{"Edited Professional":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6344,6 +6367,7 @@ async def add_research_govt_agencies(payload:dict, request:Request, conn: psycop
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Agency":id})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6388,6 +6412,7 @@ async def edit_research_govt_agencies(payload:dict, request:Request, conn: psyco
                                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Agency":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6414,6 +6439,7 @@ async def delete_research_govt_agencies(payload:dict, request:Request, conn: psy
                                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Agency":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6483,6 +6509,7 @@ async def add_research_friends(payload:dict, request:Request, conn: psycopg2.ext
                 logging.info(msg)
                 id = cursor.fetchone()[0]
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Friend":id})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6510,6 +6537,7 @@ async def edit_research_friends(payload:dict, request:Request, conn: psycopg2.ex
                                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Friend":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6535,6 +6563,7 @@ async def delete_research_friends(payload:dict, request:Request, conn: psycopg2.
                                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Friend":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6588,6 +6617,7 @@ async def add_research_banks_and_branches(payload:dict, request:Request, conn: p
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Bank":id})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6625,6 +6655,7 @@ async def edit_research_banks_and_branches(payload:dict, request:Request, conn: 
                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Bank":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6650,6 +6681,7 @@ async def delete_research_banks_and_branches(payload:dict, request:Request, conn
                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Bank":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6783,6 +6815,7 @@ async def add_research_mandals(payload:dict, request:Request, conn: psycopg2.ext
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Mandala":id})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6830,6 +6863,7 @@ async def edit_research_mandals(payload:dict, request:Request, conn: psycopg2.ex
                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Mandala":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6855,6 +6889,7 @@ async def delete_research_mandals(payload:dict, request:Request, conn: psycopg2.
                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Deleted Mandala":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6912,6 +6947,7 @@ async def add_research_architect(payload:dict, request:Request, conn:psycopg2.ex
                 id = cursor.fetchone()[0]
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,{"Inserted Architect":id})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6952,6 +6988,7 @@ async def edit_research_architect(payload:dict, request:Request, conn:psycopg2.e
                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Architect":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -6977,6 +7014,7 @@ async def delete_research_architect(payload:dict, request:Request, conn:psycopg2
                 ])
                 logging.info(msg)
                 conn[0].commit()
+                logUserAction(payload,conn,payload['id'])
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited Architect":payload['id']})
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -7576,6 +7614,7 @@ async def add_research_colleges(payload: dict, request:Request, conn: psycopg2.e
             data = {
                 "added_data":id
             }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -7607,6 +7646,7 @@ async def edit_research_prospect(payload: dict, request:Request, conn: psycopg2.
             data = {
                 "edited_data":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -7636,6 +7676,7 @@ async def delete_research_colleges(payload: dict, request:Request, conn: psycopg
             data = {
                 "deleted_data":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -7679,6 +7720,7 @@ async def add_research_colleges(payload: dict, request:Request, conn: psycopg2.e
             data = {
                 "added_data":id
             }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -7710,6 +7752,7 @@ async def edit_research_prospect(payload: dict, request:Request, conn: psycopg2.
             data = {
                 "edited_data":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -7739,6 +7782,7 @@ async def delete_research_colleges(payload: dict, request:Request, conn: psycopg
             data = {
                 "deleted_data":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -8934,6 +8978,7 @@ async def add_research_apartments(payload: dict, request:Request, conn: psycopg2
             data = {
                 "added_data":id
             }
+            logUserAction(payload,conn,id)
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -8964,6 +9009,7 @@ async def edit_research_apartments(payload: dict, request:Request, conn: psycopg
             data = {
                 "edited_data":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
@@ -8993,6 +9039,7 @@ async def delete_research_colleges(payload: dict, request:Request, conn: psycopg
             data = {
                 "deleted_data":payload['id']
             }
+            logUserAction(payload,conn,payload['id'])
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise HTTPException(status_code=403,detail=f"Access Denied")
