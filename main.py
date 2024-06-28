@@ -5454,7 +5454,7 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                     0 AS renteddays,
                                     'NA'::text AS proratedrentapplicable,
                                     o.id AS orderorderid,
-                                    o.briefdescription || ' {month_map[payload['month']]}' || '-' || '{payload['year']}' || ' Charges' as briefdescription,
+                                    'Property Management for '|| cp.propertydescription || ' {month_map[payload['month']]}' || '-' || '{payload['year']}' || ' Charges' as briefdescription,
                                     o.service,
                                     o.clientpropertyid AS orderpropertyid,
                                     o.status AS orderstatus,
@@ -5487,6 +5487,8 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                     dbo.client c ON o.clientid = c.id
                                 JOIN 
                                     dbo.servicetax st ON st.fromdate < '{invoicemy}-01'::date AND st.todate > '{invoicemy}-01'::date
+                                JOIN
+                                    dbo.client_property cp ON pma.clientpropertyid = cp.id
                                 WHERE 
                                     pma.active IS TRUE AND o.service = 62 AND (pma.rented IS NULL OR pma.rented = 0::numeric) AND c.clienttype = 7
 
@@ -5519,7 +5521,7 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                         ELSE 'No'::text
                                     END AS proratedrentapplicable,
                                     o.id AS orderorderid,
-                                    o.briefdescription || ' {month_map[payload['month']]}' || '-' || '{payload['year']}' || ' Charges' as briefdescription,
+                                    'Property Management for '|| cp.propertydescription || ' {month_map[payload['month']]}' || '-' || '{payload['year']}' || ' Charges' as briefdescription,
                                     o.service,
                                     o.clientpropertyid AS orderpropertyid,
                                     o.status AS orderstatus,
@@ -5562,6 +5564,8 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                     dbo.client c ON o.clientid = c.id
                                 LEFT JOIN 
                                     dbo.servicetax st ON st.fromdate < '{invoicemy}-01'::date AND st.todate > '{invoicemy}-01'::date
+                                JOIN
+                                    dbo.client_property cp ON pma.clientpropertyid = cp.id
                                 WHERE 
                                     ll.active = true 
                                     AND ll.startdate <= '{invoicemy}-{monthdays[payload['month']]}'::date 
