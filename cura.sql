@@ -3588,6 +3588,24 @@ GROUP BY
     service,
     date;
 
+CREATE VIEW RptOrderAmount AS
+
+SELECT
+    COALESCE(SUM(Order_Receipt.Amount), 0) AS ORAmount,
+    Order_Receipt.RecdDate AS Date,
+    Mode_Of_payment.Name,
+    Order_Receipt.PaymentMode
+FROM
+    Order_Receipt
+INNER JOIN
+    Mode_Of_payment ON Order_Receipt.PaymentMode = Mode_Of_payment.ID
+WHERE
+    Order_Receipt.IsDeleted = false
+GROUP BY
+    Order_Receipt.RecdDate,
+    Mode_Of_payment.Name,
+    Order_Receipt.PaymentMode;
+
 CREATE OR REPLACE VIEW orderinvoiceview AS
  SELECT oi.id,
     oi.clientid,
@@ -3818,31 +3836,31 @@ CREATE VIEW vendor_invoice AS
      JOIN order_invoice ON orders.id = order_invoice.orderid
      JOIN client ON order_invoice.clientid = client.id;
 
-CREATE VIEW PMABillingListView AS
- SELECT oiv.clientname,
-    oiv.orderdescription,
-    oiv.baseamount,
-    oiv.propertydescription,
-    oiv.tax,
-    oiv.entityname,
-    oiv.entityid,
-    oiv.owner,
-    oiv.createdby,
-    oiv.isdeleted,
-    oiv.createdbyid,
-    oiv.dated,
-    oiv.paymentsourceid,
-    oiv.quotedescription,
-    oiv.invoiceamount,
-    oiv.invoicedate,
-    oiv.estimateamount,
-    oiv.estimatedate,
-    ov.service,
-    ov.serviceid,
-    EXTRACT(MONTH FROM oiv.invoicedate) AS invoicemonth,
-    EXTRACT(year FROM oiv.invoicedate) AS invoiceyear
-   FROM orderinvoiceview oiv
-     JOIN ordersview ov ON oiv.orderid = ov.id AND ov.serviceid = 62;
+-- CREATE VIEW PMABillingListView AS
+--  SELECT oiv.clientname,PMABillingListView
+--     oiv.orderdescription,
+--     oiv.baseamount,
+--     oiv.propertydescription,
+--     oiv.tax,
+--     oiv.entityname,
+--     oiv.entityid,
+--     oiv.owner,
+--     oiv.createdby,
+--     oiv.isdeleted,
+--     oiv.createdbyid,
+--     oiv.dated,
+--     oiv.paymentsourceid,
+--     oiv.quotedescription,
+--     oiv.invoiceamount,
+--     oiv.invoicedate,
+--     oiv.estimateamount,
+--     oiv.estimatedate,
+--     ov.service,
+--     ov.serviceid,
+--     EXTRACT(MONTH FROM oiv.invoicedate) AS invoicemonth,
+--     EXTRACT(year FROM oiv.invoicedate) AS invoiceyear
+--    FROM orderinvoiceview oiv
+--      JOIN ordersview ov ON oiv.orderid = ov.id AND ov.serviceid = 62;
 
 CREATE OR REPLACE VIEW clientreceiptview AS
 SELECT
