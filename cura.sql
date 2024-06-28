@@ -2478,22 +2478,18 @@ SELECT
     clientview.MobilePhone,
     clientview.EMail1,
     clientview.EMail2
-FROM
-    usertable
-    INNER JOIN orders ON usertable.ID = orders.CreatedBy
-    INNER JOIN Order_Status ON Order_Status.ID = orders.Status
-    INNER JOIN Services ON orders.Service = Services.ID
-    INNER JOIN Office ON orders.AssignedToOffice = Office.ID
-    LEFT OUTER JOIN Vendor ON orders.VendorID = Vendor.ID
-    INNER JOIN userview ON orders.Owner = userview.UserId
-    INNER JOIN clientview ON orders.ClientID = clientview.ID
-    INNER JOIN LOB ON Services.LOB = LOB.ID
-    LEFT OUTER JOIN TallyLedger ON orders.TallyLedgerId = TallyLedger.ID
-    LEFT OUTER JOIN Entity ON orders.EntityId = Entity.ID
-    LEFT OUTER JOIN propertiesview ON orders.ClientPropertyID = propertiesview.ID
-WHERE
-    Orders.IsDeleted = 'false' or orders.isdeleted = null;
-
+  FROM  orders
+     left JOIN usertable ON orders.createdby = usertable.id
+     left JOIN order_status ON orders.status = order_status.id
+     left JOIN services ON orders.service = services.id
+     left JOIN office ON orders.assignedtooffice = office.id
+     LEFT JOIN vendor ON orders.vendorid = vendor.id
+     left JOIN userview ON orders.owner = userview.userid
+     left JOIN clientview ON orders.clientid = clientview.id
+     left JOIN lob ON services.lob = lob.id
+     LEFT JOIN tallyledger ON orders.tallyledgerid = tallyledger.id
+     LEFT JOIN entity ON orders.entityid = entity.id
+     LEFT JOIN propertiesview ON orders.clientpropertyid = propertiesview.id;
 --Older Function commented below produces incorrect FY.
 --2014 would give financial year 2014-20.
 
@@ -3639,7 +3635,7 @@ SELECT
     sum(CASE WHEN invoicemonth = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '4 months') AND invoiceyear = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '4 months') THEN invoiceamount ELSE 0 END) AS CM_4,
     sum(CASE WHEN invoicemonth = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '5 months') AND invoiceyear = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '5 months') THEN invoiceamount ELSE 0 END) AS CM_5
 FROM
-    dbo.pmabillinglistview
+    pmabillinglistview
 WHERE
     DATE_TRUNC('month', DATE(invoiceyear || '-' || invoicemonth || '-01')) >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '5 months'
 GROUP BY

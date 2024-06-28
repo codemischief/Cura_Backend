@@ -5391,6 +5391,20 @@ async def get_ll_tenant(payload:dict, request:Request, conn: psycopg2.extensions
 @app.post("/getPMABilling")
 async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     tbl=False
+    monthdays = {
+        1:31,
+        2:28 if payload['year']//4 != 0 else 29,
+        3:31,
+        4:30,
+        5:31,
+        6:30,
+        7:31,
+        8:31,
+        9:30,
+        10:31,
+        11:31,
+        12:31
+    }
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="getPMABilling")
         role_access_for_add = check_role_access(conn,payload,request=request,method="addPMABilling")
@@ -5398,74 +5412,161 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 tbl = f'get_pma_billing_view_{pid.hex}'
-                query =  f'''CREATE VIEW {tbl} AS
-                                SELECT DISTINCT
-                                    a.id,
-                                    b.clientid,
-                                    d.id AS leavelicenseid,
-                                    CONCAT_WS(' ', c.firstname, c.lastname) AS clientname,
-                                    a.orderid,
-                                    CONCAT(' ',e.briefdescription,'- {month_map[payload["month"]]} {payload["year"]} Charges') as briefdescription,
-                                    EXTRACT(DAY FROM d.startdate) AS start_day,
-                                    TO_CHAR(TO_DATE('{payload['year']}-{payload['month']}-01', 'YYYY-MM-DD'), 'DD-Mon-YYYY') AS invoicedate,
-                                    d.vacatingdate,
-                                    d.rentamount,
-                                    a.rented,
-                                    a.rentedtax,
-                                    a.fixed,
-                                    a.fixedtax,
-                                    e.entityid,
-                                    CASE 
-                                        WHEN a.rented IS NULL THEN NULL 
-                                        ELSE (d.rentamount * COALESCE(a.rented, 0)/100 * (31-EXTRACT(DAY FROM d.startdate))/30) 
-                                    END AS rentedamt,
-                                    a.fixed AS fixedamt,
-                                    st.rate,
-                                    CASE 
-                                        WHEN a.rented IS NULL THEN NULL 
-                                        ELSE ((d.rentamount * COALESCE(a.rented, 0) / 100) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) 
-                                    END AS rentedtaxamt,
-                                    (a.fixed * st.rate / 100) AS fixedtaxamt,
-                                    COALESCE((d.rentamount * COALESCE(a.rented, 0)/100 * (31-EXTRACT(DAY FROM d.startdate))/30),0) + COALESCE(a.fixed,0) as totalbaseamt,
-                                    COALESCE((a.fixed * st.rate / 100),0) + COALESCE((d.rentamount * COALESCE(a.rented, 0) / 100) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30,0) AS totaltaxamt,
-                                    ((d.rentamount * COALESCE(a.rented, 0) / 100 * (31-EXTRACT(DAY FROM d.startdate))/30) + COALESCE((d.rentamount * COALESCE(a.rented, 0) / 100) * st.rate / 100 * (31-EXTRACT(DAY FROM d.startdate))/30, 0) + COALESCE(a.fixed,0) + (COALESCE(a.fixed,0) * st.rate / 100)) AS totalamt
-                                FROM 
-                                    client_property_caretaking_agreement a
-                                LEFT JOIN
-                                    client_property b ON a.clientpropertyid = b.id
-                                LEFT JOIN
-                                    client c ON b.clientid = c.id
-                                LEFT JOIN
-                                    client_property_leave_license_details d ON a.clientpropertyid = d.clientpropertyid AND d.active = true
-                                LEFT JOIN
-                                    orders e ON a.orderid=e.id
-                                LEFT JOIN
-                                    servicetax st ON '{payload['year']}-{payload['month']}-01' >= st.fromdate AND '{payload['year']}-{payload['month']}-01' <= st.todate
-                                WHERE
-                                    (d.clientpropertyid, d.startdate) IN (
-                                        SELECT 
-                                            clientpropertyid,
-                                            MAX(startdate) AS max_startdate
-                                        FROM 
-                                            client_property_leave_license_details
-                                        GROUP BY 
-                                            clientpropertyid
-                                    )
-                                AND
-                                    d.actualenddate >= '{payload['year']}-{payload['month']}-01'
-                                AND
-                                    d.startdate <= '{payload['year']}-{payload['month']}-01'
-                                AND
-                                    a.enddate >= '{payload['year']}-{payload['month']}-01'
-                                AND
-                                    a.startdate <= '{payload['year']}-{payload['month']}-01'
-                                AND
-                                    a.active = true
-                                AND 
-                                    a.isdeleted=false
-                                AND
-                                    e.service = 62;
+                invoicemy = f"{payload['year']}-{'0' if payload['month'] < 9 else ''}{payload['month']}"
+                query =  f'''CREATE OR REPLACE VIEW {tbl} AS
 
+                                WITH rented_days AS (
+                                    SELECT 
+                                        ll.id AS llid,
+                                        GREATEST(ll.startdate, '{invoicemy}-01'::date) AS effective_start_date,
+                                        LEAST(ll.actualenddate, '{invoicemy}-{monthdays[payload['month']]}'::date) AS effective_end_date,
+                                        LEAST(ll.actualenddate, '{invoicemy}-{monthdays[payload['month']]}'::date) - GREATEST(ll.startdate, '{invoicemy}-01'::date) + 1 AS renteddays
+                                    FROM 
+                                        dbo.client_property_leave_license_details ll
+                                    WHERE 
+                                        ll.active = true 
+                                        AND ll.startdate <= '{invoicemy}-{monthdays[payload['month']]}'::date 
+                                        AND ll.actualenddate >= '{invoicemy}-01'::date
+                                )
+
+                                -- Main part of the query
+                                SELECT 
+                                    'fixed'::text AS type,
+                                    pma.id AS pmaid,
+                                    pma.active AS pmaactive,
+                                    pma.orderid AS pmaorderid,
+                                    pma.clientpropertyid AS pmapropertyid,
+                                    pma.startdate AS pmastartdate,
+                                    pma.enddate AS pmaenddate,
+                                    pma.fixed AS fixedamt,
+                                    pma.fixedtax AS fixedtaxapplicable,
+                                    NULL::integer AS rentedpercent,
+                                    pma.rentedtax,
+                                    NULL::integer AS llid,
+                                    NULL::date AS llstartdate,
+                                    NULL::date AS llenddate,
+                                    NULL::numeric AS llrentamount,
+                                    NULL::boolean AS llactive,
+                                    NULL::integer AS llorderid,
+                                    NULL::integer AS llclientpropertyid,
+                                    NULL::date AS effective_start_date,
+                                    NULL::date AS effective_end_date,
+                                    0 AS renteddays,
+                                    'NA'::text AS proratedrentapplicable,
+                                    o.id AS orderorderid,
+                                    o.briefdescription || '{month_map[payload['month']]}' || '-' || {payload['year']} || 'Charges' as briefdescription,
+                                    o.service,
+                                    o.clientpropertyid AS orderpropertyid,
+                                    o.status AS orderstatus,
+                                    (c.firstname || ' '::text) || c.lastname AS clientname,
+                                    c.clienttype,
+                                    st.rate AS taxpercentage,
+                                    '{invoicemy}-01'::text AS invoicedate,
+                                    '{invoicemy}-{monthdays[payload['month']]}'::text AS selectionenddate,
+                                    {monthdays[payload['month']]} AS totaldaysinmonth,
+                                    pma.fixed AS totalbaseamt,
+                                    NULL::int AS rentedamt,
+                                    NULL::int AS rentedtaxamt,
+                                    CASE
+                                        WHEN pma.fixedtax THEN round(COALESCE(pma.fixed * st.rate / 100::numeric, 0::numeric), 2)
+                                        ELSE 0.0
+                                    END AS totaltaxamt,
+                                    CASE
+                                        WHEN pma.fixedtax THEN round(COALESCE(pma.fixed * st.rate / 100::numeric, 0::numeric), 2)
+                                        ELSE 0.0
+                                    END AS fixedtaxamt,
+                                    CASE
+                                        WHEN pma.fixedtax THEN round(COALESCE(pma.fixed + pma.fixed * st.rate / 100::numeric, 0::numeric), 2)
+                                        ELSE round(pma.fixed, 2)
+                                    END AS totalamt
+                                FROM 
+                                    dbo.client_property_caretaking_agreement pma
+                                JOIN 
+                                    dbo.orders o ON pma.orderid = o.id AND o.status = 9
+                                JOIN 
+                                    dbo.client c ON o.clientid = c.id
+                                JOIN 
+                                    dbo.servicetax st ON st.fromdate < '{invoicemy}-01'::date AND st.todate > '{invoicemy}-01'::date
+                                WHERE 
+                                    pma.active IS TRUE AND o.service = 62 AND (pma.rented IS NULL OR pma.rented = 0::numeric) AND c.clienttype = 7
+
+                                UNION ALL
+
+                                SELECT 
+                                    'rented'::text AS type,
+                                    pma.id AS pmaid,
+                                    pma.active AS pmaactive,
+                                    pma.orderid AS pmaorderid,
+                                    pma.clientpropertyid AS pmapropertyid,
+                                    pma.startdate AS pmastartdate,
+                                    pma.enddate AS pmaenddate,
+                                    pma.fixed AS fixedamt,
+                                    pma.fixedtax AS fixedtaxapplicable,
+                                    pma.rented AS rentedpercent,
+                                    pma.rentedtax,
+                                    ll.id AS llid,
+                                    ll.startdate AS llstartdate,
+                                    ll.actualenddate AS llenddate,
+                                    ll.rentamount AS llrentamount,
+                                    ll.active AS llactive,
+                                    ll.orderid AS llorderid,
+                                    ll.clientpropertyid AS llclientpropertyid,
+                                    rd.effective_start_date,
+                                    rd.effective_end_date,
+                                    rd.renteddays,
+                                    CASE
+                                        WHEN rd.renteddays < {monthdays[payload['month']]} THEN 'Yes'::text
+                                        ELSE 'No'::text
+                                    END AS proratedrentapplicable,
+                                    o.id AS orderorderid,
+                                    o.briefdescription || '{month_map[payload['month']]}' || '-' || {payload['year']} || 'Charges' as briefdescription,
+                                    o.service,
+                                    o.clientpropertyid AS orderpropertyid,
+                                    o.status AS orderstatus,
+                                    (c.firstname || ' '::text) || c.lastname AS clientname,
+                                    c.clienttype,
+                                    st.rate AS taxpercentage,
+                                    '{invoicemy}-01'::text AS invoicedate,
+                                    '{invoicemy}-{monthdays[payload['month']]}'::text AS selectionenddate,
+                                    {monthdays[payload['month']]} AS totaldaysinmonth,
+                                    CASE
+                                        WHEN pma.rented > 0::numeric THEN round(pma.rented / 100.0 * (ll.rentamount * rd.renteddays::numeric / {monthdays[payload['month']]}.0), 2)
+                                        ELSE 0.00
+                                    END AS totalbaseamt,
+                                    CASE
+                                        WHEN pma.rented > 0::numeric THEN round(pma.rented / 100.0 * (ll.rentamount * rd.renteddays::numeric / {monthdays[payload['month']]}.0), 2)
+                                        ELSE 0.00
+                                    END AS rentedamt,
+                                    CASE
+                                        WHEN pma.rented > 0::numeric THEN round(COALESCE(pma.rented / 100.0 * (ll.rentamount * rd.renteddays::numeric / {monthdays[payload['month']]}.0) * st.rate / 100.0, 0::numeric), 2)
+                                        ELSE 0.0
+                                    END AS totaltaxamt,
+                                    CASE
+                                        WHEN pma.rented > 0::numeric THEN round(COALESCE(pma.rented / 100.0 * (ll.rentamount * rd.renteddays::numeric / {monthdays[payload['month']]}.0) * st.rate / 100.0, 0::numeric), 2)
+                                        ELSE 0.0
+                                    END AS rentedtaxamt,
+                                    NULL::int AS fixedtaxamt,
+                                    CASE
+                                        WHEN pma.rented > 0::numeric THEN round(pma.rented / 100.0 * (ll.rentamount * rd.renteddays::numeric / {monthdays[payload['month']]}.0) * (1::numeric + st.rate / 100.0), 2)
+                                        ELSE 0.00
+                                    END AS totalamt
+                                FROM 
+                                    dbo.client_property_leave_license_details ll
+                                JOIN 
+                                    rented_days rd ON rd.llid = ll.id
+                                JOIN 
+                                    dbo.client_property_caretaking_agreement pma ON ll.clientpropertyid = pma.clientpropertyid AND pma.orderid IS NOT NULL AND pma.active = true
+                                LEFT JOIN 
+                                    dbo.orders o ON pma.orderid = o.id
+                                LEFT JOIN 
+                                    dbo.client c ON o.clientid = c.id
+                                LEFT JOIN 
+                                    dbo.servicetax st ON st.fromdate < '{invoicemy}-01'::date AND st.todate > '{invoicemy}-01'::date
+                                WHERE 
+                                    ll.active = true 
+                                    AND ll.startdate <= '{invoicemy}-{monthdays[payload['month']]}'::date 
+                                    AND ll.actualenddate >= '{invoicemy}-01'::date 
+                                    AND GREATEST(ll.startdate, '{invoicemy}-01'::date) <= LEAST(ll.actualenddate, '{invoicemy}-{monthdays[payload['month']]}'::date);
 
 '''
                 cursor.execute(query)
