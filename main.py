@@ -7072,7 +7072,7 @@ async def edit_research_architect(payload:dict, request:Request, conn:psycopg2.e
         role_access_status = check_role_access(conn,payload,request=request,method="editResearchArchitect")
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """UPDATE banksandbranches SET name=%s,emailid=%s,phoneno=%s,
+                query = """UPDATE architech SET name=%s,emailid=%s,phoneno=%s,
                     project=%s,societyname=%s,dated=%s,createdby=%s,isdeleted=%s,suburb=%s,city=%s,
                      state=%s,country=%s,excludefrommailinglist=%s WHERE id=%s"""
                 msg = logMessage(cursor,query,[
@@ -7113,7 +7113,7 @@ async def delete_research_architect(payload:dict, request:Request, conn:psycopg2
         role_access_status = check_role_access(conn,payload,request=request,method="deleteResearchArchitect")
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """UPDATE banksandbranches SET isdeleted=true WHERE id=%s AND isdeleted=False"""
+                query = """UPDATE architech SET isdeleted=true WHERE id=%s AND isdeleted=False"""
                 msg = logMessage(cursor,query,[
                     payload["id"]
                 ])
