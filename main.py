@@ -5454,7 +5454,7 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                     0 AS renteddays,
                                     'NA'::text AS proratedrentapplicable,
                                     o.id AS orderorderid,
-                                    o.briefdescription || '{month_map[payload['month']]}' || '-' || {payload['year']} || 'Charges' as briefdescription,
+                                    o.briefdescription || ' {month_map[payload['month']]}' || '-' || '{payload['year']}' || ' Charges' as briefdescription,
                                     o.service,
                                     o.clientpropertyid AS orderpropertyid,
                                     o.status AS orderstatus,
@@ -5519,7 +5519,7 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                         ELSE 'No'::text
                                     END AS proratedrentapplicable,
                                     o.id AS orderorderid,
-                                    o.briefdescription || '{month_map[payload['month']]}' || '-' || {payload['year']} || 'Charges' as briefdescription,
+                                    o.briefdescription || ' {month_map[payload['month']]}' || '-' || '{payload['year']}' || ' Charges' as briefdescription,
                                     o.service,
                                     o.clientpropertyid AS orderpropertyid,
                                     o.status AS orderstatus,
