@@ -3723,23 +3723,6 @@ AS SELECT COALESCE(sum(
   GROUP BY bankst.date, bankst.modeofpayment, mode_of_payment.name;
   
 
-CREATE VIEW RptOrderAmount AS
-
-SELECT GROUP BY
-    COALESCE(SUM(Order_Receipt.Amount), 0) AS ORAmount,
-    Order_Receipt.RecdDate AS Date,
-    Mode_Of_payment.Name,
-    Order_Receipt.PaymentMode
-FROM
-    Order_Receipt
-INNER JOIN
-    Mode_Of_payment ON Order_Receipt.PaymentMode = Mode_Of_payment.ID
-WHERE
-    Order_Receipt.IsDeleted = false
-GROUP BY
-    Order_Receipt.RecdDate,
-    Mode_Of_payment.Name,
-    Order_Receipt.PaymentMode;
 
 CREATE VIEW RptClientAmount AS
 
