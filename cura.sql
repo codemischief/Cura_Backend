@@ -3620,6 +3620,32 @@ CREATE OR REPLACE VIEW orderinvoiceview AS
      JOIN ordersview ov ON oi.orderid = ov.id
      LEFT JOIN entity e ON oi.entityid = e.id;
 
+CREATE VIEW PMABillingListView AS
+ SELECT oiv.clientname,
+    oiv.orderdescription,
+    oiv.baseamount,
+    oiv.propertydescription,
+    oiv.tax,
+    oiv.entityname,
+    oiv.entityid,
+    oiv.owner,
+    oiv.createdby,
+    oiv.isdeleted,
+    oiv.createdbyid,
+    oiv.dated,
+    oiv.paymentsourceid,
+    oiv.quotedescription,
+    oiv.invoiceamount,
+    oiv.invoicedate,
+    oiv.estimateamount,
+    oiv.estimatedate,
+    ov.service,
+    ov.serviceid,
+    EXTRACT(MONTH FROM oiv.invoicedate) AS invoicemonth,
+    EXTRACT(year FROM oiv.invoicedate) AS invoiceyear
+   FROM orderinvoiceview oiv
+     JOIN ordersview ov ON oiv.orderid = ov.id AND ov.serviceid = 62;
+
 
 CREATE VIEW PMABILLINGTREND
 
@@ -3681,7 +3707,7 @@ AS SELECT COALESCE(sum(
 
 CREATE VIEW RptOrderAmount AS
 
-SELECTGROUP BY
+SELECT GROUP BY
     COALESCE(SUM(Order_Receipt.Amount), 0) AS ORAmount,
     Order_Receipt.RecdDate AS Date,
     Mode_Of_payment.Name,
@@ -3716,7 +3742,7 @@ GROUP BY
     Client_Receipt.PaymentMode;
 
 
-CREATE VIEW BankReconcillationview AS
+CREATE OR REPLACE VIEW BankReconcillationview AS
 
 SELECT
     p.Date,
@@ -3740,7 +3766,7 @@ FROM
 
 
 
- CREATE OR REPLACE VIEW rpt_daily_bank_receipts_reco
+CREATE OR REPLACE VIEW rpt_daily_bank_receipts_reco
 AS SELECT bankreconcillationview.date,
     sum(bankreconcillationview.bankstamount) AS bankst_cr,
     sum(bankreconcillationview.cramount) AS client_receipt,
