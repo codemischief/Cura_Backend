@@ -7433,6 +7433,7 @@ async def report_monthly_margin_entity_receipt_payments(payload:dict, request:Re
         conn = conn,
         fname='total_calc',
         payload=payload,
+        query = query,
         whereinquery=False,
         formatData=True,
         isdeleted=False,
