@@ -1991,7 +1991,7 @@ SELECT DISTINCT
 FROM
     order_invoice a
 LEFT JOIN
-    client b ON a.clientid = b.id
+    client b ON d.clientid = b.id
 LEFT JOIN
     entity c ON a.entityid = c.id
 LEFT JOIN
