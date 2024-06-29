@@ -497,15 +497,15 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
             data_list = [df.columns.values.tolist()] + df.values.tolist()
             filename = f'{uuid.uuid4()}.pdf'
             fname = f'{FILE_DIRECTORY}/{filename}'
-            if routename in pdfSizeMap:
-                logging.info(f'Route name {routename} found')
-                pagesize = (pdfSizeMap[routename][0]*inch,pdfSizeMap[routename][1]*inch)
-            else:
-                logging.info('Route Name not found')
-                pagesize = (55 * inch, 28 * inch)
-            # conn = psycopg2.connect(DATABASE_URL)
-            #pagesize = getpdfsize(conn,routename)
-            #pagesize = [size*inch for size in pagesize]
+            # if routename in pdfSizeMap:
+            #     logging.info(f'Route name {routename} found')
+            #     pagesize = (pdfSizeMap[routename][0]*inch,pdfSizeMap[routename][1]*inch)
+            # else:
+            #     logging.info('Route Name not found')
+            #     pagesize = (55 * inch, 28 * inch)
+            conn = psycopg2.connect(DATABASE_URL)
+            pagesize = getpdfsize(conn,routename)
+            pagesize = [size*inch for size in pagesize]
             logging.info(pagesize)
             pdf = SimpleDocTemplate(fname, pagesize=pagesize)
             table = Table(data_list, colWidths=get_column_widths(df))
@@ -8325,7 +8325,7 @@ async def report_bank_balance_reconciliation(payload:dict, request:Request, conn
     if 'downloadType' in payload:
         logging.info(databankpmtrcpts['data'])
         databankpmtrcpts['data'] = [{
-            'TYPE':'Passbook Balance',
+            'TYPE':'Application Balance',
             'Bank Name':databankpmtrcpts['data'][0]['bankname'] if databankpmtrcpts['data'] else payload['bankName'],
             'Payment':databankpmtrcpts['data'][0]['payment']  if databankpmtrcpts['data'] else 0,
             'Receipt':databankpmtrcpts['data'][0]['receipt'] if databankpmtrcpts['data'] else 0,
@@ -8333,7 +8333,7 @@ async def report_bank_balance_reconciliation(payload:dict, request:Request, conn
 
         }]
         databankstbalance['data'] = [{
-            'Type':'Application Balance',
+            'Type':'Passbook Balance',
             'Bank Name':databankstbalance['data'][0]['bankname'] if databankstbalance['data'] else payload['bankName'],
             'Payment':databankstbalance['data'][0]['payment']  if databankstbalance['data'] else 0,
             'Receipt':databankstbalance['data'][0]['receipt'] if databankstbalance['data'] else 0,
@@ -8357,12 +8357,8 @@ async def report_bank_balance_reconciliation(payload:dict, request:Request, conn
             fname = f'{FILE_DIRECTORY}/{filename}'
             # we may need to vary the pagesize based on each report
             # pagesize = (55 * inch, 28 * inch)
-            if payload['routename'] in pdfSizeMap:
-                logging.info(f'Route name {payload["routename"]} found')
-                pagesize = (pdfSizeMap[payload['routename']][0]*inch,pdfSizeMap[payload['routename']][1]*inch)
-            else:
-                logging.info('Route Name not found')
-                pagesize = (55 * inch, 28 * inch)
+            logging.info(f'Route name {payload["routename"]} found')
+            pagesize = getpdfsize(conn,payload['routename'])
             logging.info(pagesize)
             pdf = SimpleDocTemplate(fname, pagesize=pagesize)
             table = Table(data_list, colWidths=get_column_widths(df))
