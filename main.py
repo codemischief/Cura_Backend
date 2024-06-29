@@ -80,7 +80,7 @@ pdfSizeMap = {
     # "/admin/lobReceiptPayments": (10, 10),
     # "/admin/entityReceiptPayments": (10, 10),
     # "/admin/lobReceiptPaymentsConsolidated": (10, 10),
-    "/reports/pmaBillingTrendView": (15, 10),
+    "/reports/pmaBillingTrendView": (20, 10),
     "/reports/pmaClientReport": (20, 10),
     "/reports/pmaInvoiceList": (20,15),
     "/reports/pmaClientReceivable": (10, 10),
@@ -108,7 +108,7 @@ pdfSizeMap = {
     "/reports/orderpaymentbanktobank": (20,15),
     "/reports/orderpaymentwithtds": (10, 10),
     "/reports/orderpaymentwithouttds": (25,15),
-    "/reports/orderreceipttoinvoiceTax": (20,15),
+    "/reports/orderreceipttoinvoiceTax": (25,15),
     "/reports/tdspaidbyvendor": (20, 10),
     "/reports/vendorstatement": (25, 15),
     "/reports/tdsPaidToGovernment": (20, 10),
@@ -141,7 +141,7 @@ pdfSizeMap = {
     "/reports/agedOrders": (40, 10),
     "/research/prospect": (10, 10),
     "/research/employer": (12, 10),
-    "/research/owner": (30, 10),
+    "/research/owner": (60, 10),
     "/research/educational": (10, 10),
     "/research/architect": (20, 10),
     "/research/mandals": (10, 10),
@@ -504,8 +504,8 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
                 logging.info('Route Name not found')
                 pagesize = (55 * inch, 28 * inch)
             # conn = psycopg2.connect(DATABASE_URL)
-            # pagesize = getpdfsize(conn,routename)
-            # pagesize = [size*inch for size in pagesize]
+            #pagesize = getpdfsize(conn,routename)
+            #pagesize = [size*inch for size in pagesize]
             logging.info(pagesize)
             pdf = SimpleDocTemplate(fname, pagesize=pagesize)
             table = Table(data_list, colWidths=get_column_widths(df))
@@ -7072,7 +7072,7 @@ async def edit_research_architect(payload:dict, request:Request, conn:psycopg2.e
         role_access_status = check_role_access(conn,payload,request=request,method="editResearchArchitect")
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """UPDATE banksandbranches SET name=%s,emailid=%s,phoneno=%s,
+                query = """UPDATE architech SET name=%s,emailid=%s,phoneno=%s,
                     project=%s,societyname=%s,dated=%s,createdby=%s,isdeleted=%s,suburb=%s,city=%s,
                      state=%s,country=%s,excludefrommailinglist=%s WHERE id=%s"""
                 msg = logMessage(cursor,query,[
@@ -7113,7 +7113,7 @@ async def delete_research_architect(payload:dict, request:Request, conn:psycopg2
         role_access_status = check_role_access(conn,payload,request=request,method="deleteResearchArchitect")
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = """UPDATE banksandbranches SET isdeleted=true WHERE id=%s AND isdeleted=False"""
+                query = """UPDATE architech SET isdeleted=true WHERE id=%s AND isdeleted=False"""
                 msg = logMessage(cursor,query,[
                     payload["id"]
                 ])
