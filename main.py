@@ -7448,7 +7448,7 @@ async def report_monthly_margin_entity_receipt_payments(payload:dict, request:Re
     for i in res['data']:
         data['total']['totalreceipt'] += i['orderreceiptamount'] if i['orderreceiptamount'] else 0
         data['total']['totalpayment'] += i['paymentamount'] if i['paymentamount'] else 0
-        data['total']['total_diff'] += i['orderreceiptamount'] -i['paymentamount'] if i['orderreceiptamount'] and i['paymentamount'] else 0
+        data['total']['total_diff'] += i['diff'] if i['diff'] else 0
     return data
 
 @app.post('/reportMonthlyMarginLOBReceiptPaymentsConsolidated')
