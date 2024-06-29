@@ -116,19 +116,19 @@ INSERT INTO pdf_sizes (routename, length, height) VALUES
     ('/reports/ownerphoneno', 10, 10),
     ('/reports/bankbalancereconciliation', 10, 10),
     ('/reports/agedOrders', 40, 10),
-    ('/research/prospect', 20, 10),
-    ('/research/employer', 20, 10),
-    ('/research/owner', 20, 10),
-    ('/research/educational', 20, 10),
+    ('/research/prospect', 10, 10),
+    ('/research/employer', 12, 10),
+    ('/research/owner', 60, 10),
+    ('/research/educational', 10, 10),
     ('/research/architect', 20, 10),
-    ('/research/mandals', 20, 10),
+    ('/research/mandals', 10, 10),
     ('/research/professionals', 20, 10),
     ('/research/businessgroup', 20, 10),
-    ('/research/banks', 20, 10),
-    ('/research/friends', 20, 10),
-    ('/research/serviceapartment', 20, 10),
+    ('/research/banks', 10, 10),
+    ('/research/friends', 10, 10),
+    ('/research/serviceapartment', 10, 10),
     ('/research/agent', 20, 10),
-    ('/research/governmentdepartment', 20, 10);
+    ('/research/governmentdepartment', 10, 10);
 
 alter table client_property drop CONSTRAINT fk_client_property_ref_user2;
 alter table client_property drop CONSTRAINT fk_client_property_ref_user1;
