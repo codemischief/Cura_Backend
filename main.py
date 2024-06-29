@@ -922,7 +922,7 @@ def giveSuccess(uid,rid,data=[], total_count=None, filename=None):
     #logging.debug(f'prepared final response <{final_data}>')
     return final_data
 
-def giveFailure(msg,uid,rid,data=[],status=None):
+def giveFailure(msg,uid,rid,data=[],status=400):
     # send_email("",msg,"theruderaw678@gmail.com")
     raise HTTPException(status_code=401 if status == None else status,detail=f"Error encountered: {msg}")
 
@@ -1023,7 +1023,7 @@ async def payment_for_admin(payload:dict, request:Request, conn: psycopg2.extens
     except HTTPException as h:
         raise h
     except Exception as e:
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 # FastAPI route to get roleid based on id or username
 @app.post("/getRoleID")
@@ -1164,7 +1164,7 @@ async def edit_country(payload:dict, request:Request, conn: psycopg2.extensions.
     except HTTPException as h:
         raise h
     except Exception as e:
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/deleteCountry')
 async def delete_country(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1186,19 +1186,19 @@ async def delete_country(payload:dict, request:Request, conn: psycopg2.extension
                 logUserAction(payload,conn,id)
                 return giveSuccess(payload['user_id'],role_access_status,data)
             elif role_access_status!=1:
-                raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+                raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status,status=401)
 
             elif not checkcountry(payload['name'],conn):
                 raise giveFailure("Already Exists",payload['user_id'],role_access_status)
             else:
-                raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+                raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status, status=401)
 
     except HTTPException as h:
         raise h
     except psycopg2.errors.ForeignKeyViolation:
         raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 
 @app.post('/addBuilderInfo')
@@ -1258,7 +1258,7 @@ async def add_builder_info(payload: dict,request:Request, conn: psycopg2.extensi
         raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 
 #BUILDER UPDATED
@@ -1304,7 +1304,7 @@ async def getBuilderInfo(payload: dict,request:Request, conn: psycopg2.extension
         raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
     
 @app.post("/editBuilder")
 async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1372,7 +1372,7 @@ async def edit_builder(payload: dict,request:Request, conn: psycopg2.extensions.
         raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/deleteBuilder')
 async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1405,7 +1405,7 @@ async def deleteBuilder(payload:dict,request:Request,conn: psycopg2.extensions.c
         raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 #STATES UPDATED
 @app.post('/getStatesAdmin')
@@ -1422,12 +1422,12 @@ async def get_states_admin(payload:dict, request:Request, conn: psycopg2.extensi
             total_count = data['total_count']
             return giveSuccess(payload["user_id"],role_access_status,data['data'], total_count=total_count)
         else:
-            raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+            raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status,status=401)
     except HTTPException as h:
         raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
     
 @app.post('/getStates')
 async def get_states(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1538,7 +1538,7 @@ async def delete_project(payload: dict, request:Request, conn: psycopg2.extensio
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
     except Exception as e:
         print(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
     
 @app.post('/addNewBuilderContact')
 async def add_new_builder_contact(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1643,7 +1643,7 @@ async def add_localities(payload: dict, request:Request, conn: psycopg2.extensio
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        raise HTTPException(status_code=400,detail="Invalid Credentials")
+        raise HTTPException(status_code=400,detail="Bad Request")
 
 @app.post('/editLocality')
 async def edit_localities(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1670,7 +1670,7 @@ async def edit_localities(payload: dict, request:Request, conn: psycopg2.extensi
     except HTTPException as h:
         raise h
     except Exception as e:
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/deleteLocality')
 async def delete_localities(payload: dict, request:Request, conn : psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1694,7 +1694,7 @@ async def delete_localities(payload: dict, request:Request, conn : psycopg2.exte
         raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         print(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/getBankSt')
 async def get_bank_statement(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1797,7 +1797,7 @@ async def edit_bank_statement(payload: dict, request:Request, conn: psycopg2.ext
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/deleteBankSt')
 async def delete_bank_statement(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1823,7 +1823,7 @@ async def delete_bank_statement(payload: dict, request:Request, conn: psycopg2.e
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)  
+        giveFailure("Bad Request",payload['user_id'],0)  
 
 @app.post('/getEmployee')
 async def get_employee(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1893,7 +1893,7 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/editEmployee')
 async def edit_employee(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -1948,7 +1948,7 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 
 @app.post('/deleteEmployee')
@@ -1976,7 +1976,7 @@ async def delete_employee(payload: dict, request:Request, conn: psycopg2.extensi
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)  
+        giveFailure("Bad Request",payload['user_id'],0)  
 
 @app.post('/getLob')
 async def get_lob(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2035,7 +2035,7 @@ async def add_lob(payload:dict, request:Request, conn: psycopg2.extensions.conne
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/editLob')
 async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2070,7 +2070,7 @@ async def edit_lob(payload:dict, request:Request, conn: psycopg2.extensions.conn
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/deleteLob')
 async def delete_lob(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2100,7 +2100,7 @@ async def delete_lob(payload:dict, request:Request, conn: psycopg2.extensions.co
         raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        giveFailure("Bad Request",payload['user_id'],0)
         
 @app.post('/getResearchProspect')
 async def get_research_prospect(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2268,7 +2268,7 @@ async def add_payment(payload:dict, request:Request, conn: psycopg2.extensions.c
         raise HTTPException(409,str(p))
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/getPaymentStatusAdmin')
 async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2294,7 +2294,7 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/editPayment')
 async def edit_payment(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2321,7 +2321,7 @@ async def edit_payment(payload:dict, request:Request, conn: psycopg2.extensions.
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)   
+        giveFailure("Bad Request",payload['user_id'],0)   
 
 @app.post('/deletePayment')
 async def delete_payment(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2350,7 +2350,7 @@ async def delete_payment(payload:dict, request:Request, conn: psycopg2.extension
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/getVendorAdmin')
 async def get_vendor_admin(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2369,7 +2369,7 @@ async def get_vendor_admin(payload: dict, request:Request, conn: psycopg2.extens
     except HTTPException as h:
         raise h
     except Exception as e:
-        giveFailure('Invalid Credentials',payload['user_id'],0)
+        giveFailure('Bad Request',payload['user_id'],0)
 
 async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=False,
                         whereinquery=True,formatData = False,isdeleted=False,methodname = None,
@@ -2407,7 +2407,7 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
                                             routename=payload['routename'] if 'routename' in payload else None)
                     logging.info(data.keys())
                     if 'total_count' not in data:
-                        raise giveFailure(data['message'],payload['user_id'],role_access_status)
+                        raise giveFailure(data['message'],payload['user_id'],role_access_status,status=400)
                     colnames = data['colnames']
                     total_count = data['total_count']
                     filename = data['filename'] if 'filename' in data else None
@@ -2438,7 +2438,8 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
         raise h
     except Exception as e:
         logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
-        giveFailure('Invalid Credentials', payload['user_id'], 0)
+        #giveFailure('Invalid Credentials', payload['user_id'], 0)
+        giveFailure('Bad Request', payload['user_id'],0)
 
 @app.post('/getClientAdminPaginated')
 async def get_client_admin_paginated(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2473,7 +2474,7 @@ async def get_client_admin(payload:dict, request:Request, conn: psycopg2.extensi
         raise h
     except Exception as e:
         logging.exception(f'getClientAdmin_Exception: <{str(e)}>')
-        giveFailure('Invalid Credentials', payload['user_id'], 0)
+        giveFailure('Bad Request', payload['user_id'], 0)
 
 @app.post('/getModesAdmin')
 async def get_modes_admin(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2493,7 +2494,7 @@ async def get_modes_admin(payload:dict, request:Request, conn: psycopg2.extensio
         raise h
     except Exception as e:
         logging.exception(f'getModesAdmin_Exception: <{str(e)}>')
-        giveFailure('Invalid Credentials', payload['user_id'], 0)
+        giveFailure('Bad Request', payload['user_id'], 0)
 
 @app.post('/getEntityAdmin')
 async def get_entity_admin(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2513,7 +2514,7 @@ async def get_entity_admin(payload:dict, request:Request, conn: psycopg2.extensi
         raise h
     except Exception as e:
         logging.exception(f'getModesAdmin_Exception: <{str(e)}>')
-        giveFailure('Invalid Credentials', payload['user_id'], 0)
+        giveFailure('Bad Request', payload['user_id'], 0)
 
 @app.post('/getHowReceivedAdmin')
 async def get_howreceived_admin(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2533,7 +2534,7 @@ async def get_howreceived_admin(payload:dict, request:Request, conn: psycopg2.ex
         raise h
     except Exception as e:
         logging.exception(f'getHowReceivedAdmin_Exception: <{str(e)}>')
-        giveFailure('Invalid Credentials', payload['user_id'], 0)
+        giveFailure('Bad Request', payload['user_id'], 0)
 
 @app.post('/getUsersAdmin')
 async def get_users_admin(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2557,7 +2558,7 @@ async def get_users_admin(payload: dict, request:Request, conn: psycopg2.extensi
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/getRolesAdmin')
 async def get_roles(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2575,7 +2576,7 @@ async def get_roles(payload: dict, request:Request, conn: psycopg2.extensions.co
     except HTTPException as h:
         raise h
     except Exception as e:
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 def clienttype(payload,conn):
     try:
@@ -2597,7 +2598,7 @@ def clienttype(payload,conn):
     except HTTPException as h:
         raise h
     except Exception as e:
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/getClientInfo')
 async def get_client_info(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2719,7 +2720,7 @@ async def get_client_info_by_clientid(payload: dict, request:Request, conn: psyc
         raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 
     
@@ -2752,7 +2753,7 @@ async def get_item_by_id(payload:dict, request:Request, conn: psycopg2.extension
     except Exception as e:
         logging.info(traceback.print_exc())
         return {
-            giveFailure("Invalid Credentials",0,0)
+            giveFailure("Bad Request",0,0)
         }
             
 @app.post('/getViewScreenDataTypes')
@@ -2786,7 +2787,7 @@ async def get_view_screen_types(payload: dict, request:Request, conn: psycopg2.e
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
     except psycopg2.Error as e:
-        raise giveFailure("Invalid Credentials",payload['user_id'],role_access_status)
+        raise giveFailure("Bad Request",payload['user_id'],role_access_status)
         
 @app.post('/getProjectsByBuilderId')
 async def get_projects_by_builder_id(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2815,7 +2816,7 @@ async def get_projects_by_builder_id(payload: dict, request:Request, conn: psyco
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0) 
+        giveFailure("Bad Request",payload['user_id'],0) 
 
 @app.post('/getBuilderContactsById')
 async def get_builder_contacts(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2847,7 +2848,7 @@ async def get_builder_contacts(payload: dict, request:Request, conn: psycopg2.ex
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0) 
+        giveFailure("Bad Request",payload['user_id'],0) 
 
 @app.post('/getClientProperty')
 async def get_client_property(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -2891,7 +2892,7 @@ async def get_builders_and_projects_list(payload:dict, request:Request, conn: ps
         raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
-        raise giveFailure("Invalid Credentials", payload['user_id'], 0)
+        raise giveFailure("Bad Request", payload['user_id'], 0)
 
 @app.post('/addClientInfo')
 async def add_client_info(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3001,7 +3002,7 @@ async def get_client_type_admin(payload:dict, request:Request, conn: psycopg2.ex
     except HTTPException as h:
         raise h
     except Exception as e:
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
     
 @app.post('/getRelationAdmin')
 async def get_relation_admin(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3027,7 +3028,7 @@ async def get_relation_admin(payload:dict, request:Request, conn: psycopg2.exten
     except HTTPException as h:
         raise h
     except Exception as e:
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
        
 @app.post('/getTenantOfPropertyAdmin')
 async def get_tenant_of_property_admin(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3055,7 +3056,7 @@ async def get_tenant_of_property_admin(payload:dict, request:Request, conn: psyc
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
     
 @app.post('/deleteClientInfo')
 async def delete_client_info(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3091,7 +3092,7 @@ async def delete_client_info(payload:dict, request:Request, conn: psycopg2.exten
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post("/addProject")
 async def add_project(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3139,7 +3140,7 @@ async def add_project(payload:dict, request:Request, conn: psycopg2.extensions.c
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.format_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
     
 @app.post('/addClientProperty')
 async def add_client_property(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3206,7 +3207,7 @@ async def add_client_property(payload:dict, request:Request, conn: psycopg2.exte
         try:
             conn = psycopg2.connect(DATABASE_URL)
             conn.cursor().execute("delete from client_property where id=%s",(prop_id,))
-            raise giveFailure('Invalid Credentials',0,0)
+            raise giveFailure('Bad Request',0,0)
         
 
         
@@ -3351,7 +3352,7 @@ async def delete_client_property(payload:dict, request:Request, conn: psycopg2.e
         raise h
     except Exception as e:
         print(traceback.print_exc())
-        giveFailure("Invalid Credentials",payload['user_id'],0)
+        giveFailure("Bad Request",payload['user_id'],0)
 
 
 @app.post('/getPropertyStatusAdmin')
@@ -3617,7 +3618,7 @@ async def get_client_property_by_id(payload:dict, request:Request, conn: psycopg
         raise h
     except Exception as e:
         logging.exception(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",payload['user_id'],0)
+        raise giveFailure("Bad Request",payload['user_id'],0)
 
 @app.post('/getClientReceipt')
 async def get_client_receipt(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3679,7 +3680,7 @@ async def add_client_receipt(payload:dict, request:Request, conn: psycopg2.exten
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
     
 @app.post('/editClientReceipt')
 async def edit_client_receipt(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3725,7 +3726,7 @@ async def edit_client_receipt(payload: dict, request:Request, conn: psycopg2.ext
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/deleteClientReceipt')
 async def delete_client_receipt(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3754,7 +3755,7 @@ async def delete_client_receipt(payload:dict, request:Request, conn: psycopg2.ex
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/getClientPMAAgreement')
 async def get_client_pma_agreement(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3802,7 +3803,7 @@ async def add_client_pma_agreement(payload:dict, request:Request, conn: psycopg2
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/editClientPMAAgreement')
 async def edit_client_pma_agreement(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3836,7 +3837,7 @@ async def edit_client_pma_agreement(payload:dict, request:Request, conn: psycopg
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/deleteClientPMAAgreement')
 async def delete_client_pma_agreement(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3860,7 +3861,7 @@ async def delete_client_pma_agreement(payload:dict, request:Request, conn: psyco
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/getClientLLAgreement')
 async def get_ll_agreement(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3907,7 +3908,7 @@ async def add_client_ll_agreement(payload:dict, request:Request, conn: psycopg2.
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/editClientLLAgreement')
 async def edit_client_ll_agreement(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3939,7 +3940,7 @@ async def edit_client_ll_agreement(payload:dict, request:Request, conn: psycopg2
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
     
 @app.post('/deleteClientLLAgreement')
 async def delete_client_pma_agreement(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3966,7 +3967,7 @@ async def delete_client_pma_agreement(payload:dict, request:Request, conn: psyco
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/getClientPropertyByClientId')
 async def get_client_property_admin(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3991,7 +3992,7 @@ async def get_client_property_admin(payload:dict, request:Request, conn: psycopg
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
     
 @app.post('/getOrdersByClientId')
 async def get_order_by_client_id(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4017,7 +4018,7 @@ async def get_order_by_client_id(payload:dict, request:Request, conn: psycopg2.e
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/getProjectById')
 async def getprojectbyid(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4097,7 +4098,7 @@ async def getprojectbyid(payload:dict, request:Request, conn: psycopg2.extension
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 @app.post('/editProject')
 async def edit_project(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4209,7 +4210,7 @@ async def edit_project(payload:dict, request:Request, conn: psycopg2.extensions.
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)            
 
 @app.post('/addCities')
 async def add_cities(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4239,7 +4240,7 @@ async def add_cities(payload:dict, request:Request, conn: psycopg2.extensions.co
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)            
   
 @app.post('/editCities')
 async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4270,7 +4271,7 @@ async def edit_cities(payload:dict, request:Request, conn: psycopg2.extensions.c
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)            
    
 @app.post('/deleteCities')
 async def delete_cities(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4295,7 +4296,7 @@ async def delete_cities(payload:dict, request:Request, conn: psycopg2.extensions
         raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)            
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)            
 
 @app.post('/getOrders')
 async def get_orders(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4354,7 +4355,7 @@ async def add_orders(payload:dict, request:Request, conn: psycopg2.extensions.co
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)  
     
 @app.post('/editOrders')
 async def edit_orders(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4410,7 +4411,7 @@ async def edit_orders(payload:dict, request:Request, conn: psycopg2.extensions.c
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)    
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)    
 
 @app.post('/deleteOrders')
 async def delete_orders(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4437,7 +4438,7 @@ async def delete_orders(payload:dict, request:Request, conn: psycopg2.extensions
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
     
 @app.post('/getOrdersInvoice')
 async def get_orders_invoice(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4481,7 +4482,7 @@ async def add_order_invoice(payload:dict, request:Request, conn:psycopg2.extensi
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)   
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)   
 
 @app.post('/getServiceAdmin')
 async def get_service_admin(payload: dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4500,7 +4501,7 @@ async def get_service_admin(payload: dict, request:Request, conn:psycopg2.extens
     except HTTPException as h:
         raise h
     except Exception as e:
-        giveFailure('Invalid Credentials',payload['user_id'],0)
+        giveFailure('Bad Request',payload['user_id'],0)
 
 @app.post('/getClientPropertyAdmin')
 async def get_client_property_admin(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4519,7 +4520,7 @@ async def get_client_property_admin(payload: dict, request:Request, conn: psycop
     except HTTPException as h:
         raise h
     except Exception as e:
-        giveFailure('Invalid Credentials',payload['user_id'],0)
+        giveFailure('Bad Request',payload['user_id'],0)
 
 @app.post('/getOrderStatusAdmin')
 async def get_order_status_admin(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4539,7 +4540,7 @@ async def get_order_status_admin(payload: dict, request:Request, conn: psycopg2.
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        giveFailure('Invalid Credentials',payload['user_id'],0)   
+        giveFailure('Bad Request',payload['user_id'],0)   
 
 @app.post('/getTallyLedgerAdmin')
 async def get_tally_ledger_admin(payload:dict, request:Request, conn: psycopg2.extensions.connection=Depends(get_db_connection)):
@@ -4559,7 +4560,7 @@ async def get_tally_ledger_admin(payload:dict, request:Request, conn: psycopg2.e
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        giveFailure('Invalid Credentials',payload['user_id'],0)     
+        giveFailure('Bad Request',payload['user_id'],0)     
 
 @app.post('/editOrdersInvoice')
 async def edit_order_invoice(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4587,7 +4588,7 @@ async def edit_order_invoice(payload:dict, request:Request, conn:psycopg2.extens
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 @app.post('/deleteOrdersInvoice')
 async def delete_order_invoice(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4614,7 +4615,7 @@ async def delete_order_invoice(payload:dict, request:Request, conn:psycopg2.exte
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 @app.post('/getOrderReceipt')
 async def get_order_receipt(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4657,7 +4658,7 @@ async def add_order_receipt(payload:dict, request:Request, conn: psycopg2.extens
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)   
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)   
 
 @app.post('/editOrdersReceipt')
 async def edit_order_receipt(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4684,7 +4685,7 @@ async def edit_order_receipt(payload:dict, request:Request, conn:psycopg2.extens
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
     
 @app.post('/deleteOrdersReceipt')
 async def delete_order_receipt(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4709,7 +4710,7 @@ async def delete_order_receipt(payload:dict, request:Request, conn:psycopg2.exte
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 
 
@@ -4755,7 +4756,7 @@ async def get_order_by_id(payload: dict, request:Request, conn: psycopg2.extensi
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 @app.post('/getOrderStatusHistory')
 async def get_order_status_history(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4781,7 +4782,7 @@ async def get_order_status_history(payload:dict, request:Request, conn:psycopg2.
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
     
 @app.post('/addOrderStatusChange')
 async def add_order_status_change(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4801,7 +4802,7 @@ async def add_order_status_change(payload:dict, request:Request, conn: psycopg2.
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 @app.post('/getBuildersAdmin')
 async def get_builders_admin(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4827,7 +4828,7 @@ async def get_builders_admin(payload:dict, request:Request, conn: psycopg2.exten
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 @app.post('/getProjectLegalStatusAdmin')
 async def get_project_legal_status_admin(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4853,7 +4854,7 @@ async def get_project_legal_status_admin(payload:dict, request:Request, conn: ps
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)  
      
 
 @app.post('/getProjectTypeAdmin')
@@ -4880,7 +4881,7 @@ async def get_project_type_admin(payload:dict, request:Request, conn: psycopg2.e
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)  
 
 @app.post('/getVendors')
 async def get_vendors(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4923,7 +4924,7 @@ async def add_vendors(payload: dict, request:Request, conn: psycopg2.extensions.
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)  
 
 @app.post('/editVendors')
 async def edit_vendors(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4950,7 +4951,7 @@ async def edit_vendors(payload: dict, request:Request, conn: psycopg2.extensions
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 @app.post('/deleteVendors')
 async def delete_vendors(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -4973,7 +4974,7 @@ async def delete_vendors(payload: dict, request:Request, conn: psycopg2.extensio
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 @app.post('/getVendorInvoice')
 async def get_vendor_invoice(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5018,7 +5019,7 @@ async def add_vendor_invoice(payload: dict, request:Request, conn: psycopg2.exte
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
                 
 @app.post('/editVendorInvoice')
 async def edit_vendor_invoice(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5046,7 +5047,7 @@ async def edit_vendor_invoice(payload:dict, request:Request, conn: psycopg2.exte
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)    
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)    
 
 @app.post('/deleteVendorInvoice')
 async def delete_vendor_invoice(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5069,7 +5070,7 @@ async def delete_vendor_invoice(payload:dict, request:Request, conn:psycopg2.ext
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)  
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)  
 
 @app.post('/getVendorCategoryAdmin')
 async def get_vendor_category_admin(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5096,7 +5097,7 @@ async def get_vendor_category_admin(payload:dict, request:Request, conn:psycopg2
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 @app.post("/getVendorPayment")
 async def get_vendor_payment(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5141,7 +5142,7 @@ async def add_vendor_payment(payload:dict, request:Request, conn: psycopg2.exten
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
     
 @app.post('/editVendorPayment')
 async def edit_vendor_payment(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5169,7 +5170,7 @@ async def edit_vendor_payment(payload:dict, request:Request, conn: psycopg2.exte
         raise HTTPException(409,"Negative value not allowed in fields")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
     
 @app.post('/deleteVendorPayment')
 async def delete_vendor_payment(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5192,7 +5193,7 @@ async def delete_vendor_payment(payload:dict, request:Request, conn: psycopg2.ex
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',payload['user_id'],role_access_status)
+        raise giveFailure('Bad Request',payload['user_id'],role_access_status)
 
 @app.post('/forgotPasswordEmail')
 async def forgot_password_email(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5214,7 +5215,7 @@ async def forgot_password_email(payload:dict, request:Request, conn: psycopg2.ex
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',None,None)
+        raise giveFailure('Bad Request',None,None)
 
 @app.post("/resetPassword")
 async def reset_password(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5233,7 +5234,7 @@ async def reset_password(payload:dict, request:Request, conn: psycopg2.extension
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure('Invalid Credentials',None,None)
+        raise giveFailure('Bad Request',None,None)
         
 @app.post('/editBuilderContact')
 async def add_new_builder_contact(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5312,7 +5313,7 @@ async def delete_builder_contact(payload: dict, request:Request, conn:psycopg2.e
     except HTTPException as h:
         raise h
     except Exception as e:
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/addLLTenant')
 async def add_ll_tenant(payload: dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5339,7 +5340,7 @@ async def add_ll_tenant(payload: dict, request:Request, conn:psycopg2.extensions
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)  
+        raise giveFailure("Bad Request",0,0)  
 
 @app.post('/deleteLLTenant')
 async def delete_ll_tenant(payload: dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5361,7 +5362,7 @@ async def delete_ll_tenant(payload: dict, request:Request, conn:psycopg2.extensi
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)  
+        raise giveFailure("Bad Request",0,0)  
 
 
 @app.post('/getLLTenant')
@@ -5386,7 +5387,7 @@ async def get_ll_tenant(payload:dict, request:Request, conn: psycopg2.extensions
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post("/getPMABilling")
 async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5613,7 +5614,7 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
 
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
     finally:
         if tbl:
             cursor = conn[0].cursor()
@@ -5662,7 +5663,7 @@ async def get_order_pending(payload: dict, request:Request, conn:psycopg2.extens
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
     
 @app.post("/getUserInfo")
 async def get_user(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5702,7 +5703,7 @@ async def add_user(payload:dict, request:Request, conn: psycopg2.extensions.conn
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post("/editUser")
 async def edit_user(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5730,7 +5731,7 @@ async def edit_user(payload:dict, request:Request, conn: psycopg2.extensions.con
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
     
 @app.post("/deleteUser")
 async def delete_user(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5758,7 +5759,7 @@ async def delete_user(payload:dict, request:Request, conn: psycopg2.extensions.c
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post("/getServices")
 async def get_services(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5811,7 +5812,7 @@ async def add_services(payload:dict, request:Request, conn: psycopg2.extensions.
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure(f"Invalid Credentials",0,0)
+        raise giveFailure(f"Bad Request",0,0)
     
 @app.post('/editService')
 async def edit_services(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5845,7 +5846,7 @@ async def edit_services(payload:dict, request:Request, conn: psycopg2.extensions
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure(f"Invalid Credentials",0,0)
+        raise giveFailure(f"Bad Request",0,0)
     
     
 @app.post('/deleteService')
@@ -5871,7 +5872,7 @@ async def delete_services(payload:dict, request:Request, conn: psycopg2.extensio
         raise HTTPException(409,f"Foreign key violation: Can't delete entry with child elements")
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure(f"Invalid Credentials",0,0)
+        raise giveFailure(f"Bad Request",0,0)
 
 @app.post('/getReportOrderPayment')
 async def get_report_order_payment(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6245,7 +6246,7 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/getResearchProfessional')
 async def get_research_professional(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6402,7 +6403,7 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/getReportOrderReceipt')
 async def get_report_order_receipt(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6582,7 +6583,7 @@ async def get_agency_type_admin(payload:dict, request:Request, conn: psycopg2.ex
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 
 @app.post('/getResearchFriends')
 async def get_research_friends(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6826,7 +6827,7 @@ def download_file(payload:dict, request:Request, conn: psycopg2.extensions.conne
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure(f"Invalid Credentials",0,0)
+        raise giveFailure(f"Bad Request",0,0)
 
 @app.post('/getMandalAdmin')
 async def get_mandal_admin(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -6850,7 +6851,7 @@ async def get_mandal_admin(payload: dict, request:Request, conn: psycopg2.extens
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        giveFailure('Invalid Credentials',payload['user_id'],0)   
+        giveFailure('Bad Request',payload['user_id'],0)   
 
 
 @app.post('/getResearchMandals')
@@ -7704,7 +7705,7 @@ async def get_research_college_types(payload:dict, request:Request, conn: psycop
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
         
 @app.post('/addResearchColleges')
 async def add_research_colleges(payload: dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -9632,7 +9633,7 @@ async def report_exception_entity_blank(payload:dict, request:Request, conn: psy
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Invalid Credentials",0,0)
+        raise giveFailure("Bad Request",0,0)
 @app.post('/reportExceptionOwnerNoProperties')
 async def report_exception_owner_no_properties(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'noPropertyOwnersView'
