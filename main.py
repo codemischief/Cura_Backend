@@ -8358,7 +8358,7 @@ async def report_bank_balance_reconciliation(payload:dict, request:Request, conn
             # we may need to vary the pagesize based on each report
             # pagesize = (55 * inch, 28 * inch)
             logging.info(f'Route name {payload["routename"]} found')
-            pagesize = getpdfsize(conn[0],payload['routename'])*inch
+            pagesize = [i*inch for i in getpdfsize(conn[0],payload['routename'])]
             logging.info(pagesize)
             pdf = SimpleDocTemplate(fname, pagesize=pagesize)
             table = Table(data_list, colWidths=get_column_widths(df))
