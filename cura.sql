@@ -1637,7 +1637,7 @@ LEFT JOIN
 
 -- CREATE TRIGGER delete_trigger_for_get_client_property_view
 -- INSTEAD OF DELETE ON get_client_property_view
--- FOR EACH ROW
+-- FOR EACH ROWfo
 -- EXECUTE FUNCTION delete_from_get_client_property_view();
 
 
@@ -1991,11 +1991,11 @@ SELECT DISTINCT
 FROM
     order_invoice a
 LEFT JOIN
+    orders d ON a.orderid = d.id
+LEFT JOIN
     client b ON d.clientid = b.id
 LEFT JOIN
     entity c ON a.entityid = c.id
-LEFT JOIN
-    orders d ON a.orderid = d.id
 LEFT JOIN
     usertable e ON a.createdby = e.id;
 
@@ -4194,7 +4194,7 @@ SELECT 'Invoice'::text AS type,
      LEFT JOIN ordersview ov ON ov.id = oi.orderid
      LEFT JOIN entity e ON e.id = oi.entityid
      LEFT JOIN services s ON s.id = ov.serviceid
-WHERE ov.clienttypename NOT LIKE '%PMA%' AND ov.clientname NOT LIKE '%1-%'
+WHERE ov.clienttypename NOT LIKE '%PMA%' AND ov.clientname NOT LIKE '%1-%' AND e.name ILIKE '%CURA%'
 
 UNION ALL
  SELECT 'Payment'::text AS type,
@@ -4218,7 +4218,7 @@ UNION ALL
      JOIN clientreceiptview crv ON cv.id = crv.clientid
      LEFT JOIN entity e ON crv.entityid = e.id
      LEFT JOIN howreceived hr ON crv.howreceivedid = hr.id
-WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%'
+WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%'  AND e.name ILIKE '%CURA%'
 UNION ALL
  SELECT 'OrderRec'::text AS type,
     cv.fullname AS clientname,
@@ -4240,7 +4240,7 @@ UNION ALL
    FROM clientview cv
      JOIN orderreceiptview orv ON cv.id = orv.clientid
      LEFT JOIN entity e ON orv.entityid = e.id
-WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%';
+WHERE cv.clienttypename NOT LIKE '%PMA%' AND cv.firstname NOT LIKE '%1-%' AND e.name ILIKE '%CURA%';
 
 
 

@@ -657,7 +657,7 @@ def filterAndPaginate_v2(db_config,
             # Handle pagination
         
         if group_by:
-            query+= f"GROUP BY {','.join(group_by)}"
+            query+= f" GROUP BY {' '.join(group_by)}"
         counts_query = query
         if page_number !=0 and page_size !=0 and search_key is None:
             # Calculate OFFSET
@@ -4002,7 +4002,7 @@ async def get_order_by_client_id(payload:dict, request:Request, conn: psycopg2.e
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
                 query = '''SELECT DISTINCT id,briefdescription
-                            as ordername from orders WHERE clientid = %s AND isdeleted = false AND status != 4 AND status != 5 order by briefdescription'''
+                            as ordername from orders WHERE clientid = %s AND isdeleted = false order by briefdescription'''
                 msg = logMessage(cursor,query,(payload['client_id'],))
                 logging.info(msg)
                 data = cursor.fetchall()
@@ -5455,14 +5455,14 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                     0 AS renteddays,
                                     'NA'::text AS proratedrentapplicable,
                                     o.id AS orderorderid,
-                                    'Property Management for '|| cp.propertydescription || ' {month_map[payload['month']]}' || '-' || '{payload['year']}' || ' Charges' as briefdescription,
+                                    'Property Management for '|| cp.propertydescription || ' - ' || ' {month_map[payload['month']]}' || ' {payload['year']}' || ' Charges' as briefdescription,
                                     o.service,
                                     o.clientpropertyid AS orderpropertyid,
                                     o.status AS orderstatus,
                                     (c.firstname || ' '::text) || c.lastname AS clientname,
                                     c.clienttype,
                                     st.rate AS taxpercentage,
-                                    '{invoicemy}-01'::text AS invoicedate,
+                                    to_char(to_date('{invoicemy}-01','YYYY-MM-DD'), 'DD-MM-YYYY') AS invoicedate,
                                     '{invoicemy}-{monthdays[payload['month']]}'::text AS selectionenddate,
                                     {monthdays[payload['month']]} AS totaldaysinmonth,
                                     pma.fixed AS totalbaseamt,
@@ -5522,14 +5522,14 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                         ELSE 'No'::text
                                     END AS proratedrentapplicable,
                                     o.id AS orderorderid,
-                                    'Property Management for '|| cp.propertydescription || ' {month_map[payload['month']]}' || '-' || '{payload['year']}' || ' Charges' as briefdescription,
+                                    'Property Management for '|| cp.propertydescription || ' - ' || ' {month_map[payload['month']]}' || ' {payload['year']}' || ' Charges' as briefdescription,
                                     o.service,
                                     o.clientpropertyid AS orderpropertyid,
                                     o.status AS orderstatus,
                                     (c.firstname || ' '::text) || c.lastname AS clientname,
                                     c.clienttype,
                                     st.rate AS taxpercentage,
-                                    '{invoicemy}-01'::text AS invoicedate,
+                                    to_char(to_date('{invoicemy}-01','YYYY-MM-DD'), 'DD-MM-YYYY') AS invoicedate,
                                     '{invoicemy}-{monthdays[payload['month']]}'::text AS selectionenddate,
                                     {monthdays[payload['month']]} AS totaldaysinmonth,
                                     CASE
@@ -8191,6 +8191,10 @@ async def report_client_bank_details(payload:dict, request:Request, conn:psycopg
 @app.post('/reportNonPMAClientStatementsAndReceivables')
 async def report_non_pma_client_statements_and_receivables(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'Rpt_NonPMAClient'
+    payload['filters'].append(['type','doesNotContain','OrderRec','String'])
+    if payload['rows'] == ['clientname','amount']:
+        payload['rows'] = ['clientname','sum(amount) as amount']
+        payload['group_by'] = ['clientname','having sum(amount) > 1 or sum(amount) < -1 ']
     data = await runInTryCatch(
         request=request,
         conn = conn,
