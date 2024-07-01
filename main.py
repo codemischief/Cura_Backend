@@ -3996,13 +3996,16 @@ async def get_client_property_admin(payload:dict, request:Request, conn: psycopg
     
 @app.post('/getOrdersByClientId')
 async def get_order_by_client_id(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f"get_client_property_admin:received payload <{payload}>")
+    logging.info(f"get_order_by_client_id:received payload <{payload}>")
     try:
         role_access_status = check_role_access(conn,payload,request=request,isUtilityRoute=True)
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = '''SELECT DISTINCT id,briefdescription
-                            as ordername from orders WHERE clientid = %s AND isdeleted = false order by briefdescription'''
+                query = None
+                if 'mode' in payload and payload['mode'] == 'new':
+                    query = '''SELECT DISTINCT id,briefdescription as ordername from orders WHERE clientid = %s AND isdeleted = false AND status not in (4,5,7) order by briefdescription'''
+                else:
+                    query = '''SELECT DISTINCT id,briefdescription as ordername from orders WHERE clientid = %s AND isdeleted = false order by briefdescription'''
                 msg = logMessage(cursor,query,(payload['client_id'],))
                 logging.info(msg)
                 data = cursor.fetchall()
