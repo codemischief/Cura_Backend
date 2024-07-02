@@ -491,9 +491,10 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         if downloadType == 'excel':
             filename = f'{uuid.uuid4()}.xlsx'
             fname = f'{FILE_DIRECTORY}/{filename}'
-            df.astype("str").replace('nan','0.00', regex=False).to_excel(fname, engine='openpyxl',index=False)
+            df.astype("str").replace('nan','', regex=False).to_excel(fname, engine='openpyxl',index=False)
             logging.info(f'generated excel file <{fname}>')
         else:
+            df = df.astype("str").replace('nan','',regex=False)
             data_list = [df.columns.values.tolist()] + df.values.tolist()
             filename = f'{uuid.uuid4()}.pdf'
             fname = f'{FILE_DIRECTORY}/{filename}'
