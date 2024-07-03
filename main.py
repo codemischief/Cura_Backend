@@ -4467,9 +4467,13 @@ async def add_order_invoice(payload:dict, request:Request, conn:psycopg2.extensi
         role_access_status = check_role_access(conn,payload,request=request,method="addOrdersInvoice")
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'INSERT INTO order_invoice (clientid,orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
+                # 03JUL2024: gaurav: no need for clientid as discussed with Anvay.
+                #query = 'INSERT INTO order_invoice (clientid,orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
+                query = 'INSERT INTO order_invoice (orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
                 msg = logMessage(cursor,query,[
-                    payload["clientid"],payload["orderid"],payload["estimatedate"],payload["estimateamount"],
+                    # 03JUL2024: gaurav: no need for clientid as discussed with Anvay.
+                    #payload["clientid"],payload["orderid"],payload["estimatedate"],payload["estimateamount"],
+                    payload["orderid"],payload["estimatedate"],payload["estimateamount"],
                     payload["invoicedate"],payload["invoiceamount"],payload["quotedescription"],datetime.date.today(),
                     payload["baseamount"],payload["tax"],payload["entity"],givenowtime(),payload['user_id'],False
                 ])
@@ -4573,9 +4577,13 @@ async def edit_order_invoice(payload:dict, request:Request, conn:psycopg2.extens
         role_access_status = check_role_access(conn,payload,request=request,method="editOrdersInvoice")
         if role_access_status == 1:
             with conn[0].cursor() as cursor:
-                query = 'UPDATE order_invoice SET clientid=%s,orderid=%s,estimatedate=%s,estimateamount=%s,invoicedate=%s,invoiceamount=%s,quotedescription=%s,createdon=%s,baseamount=%s,tax=%s,entityid=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
+                # 03JUL2024: gaurav: no need for clientid as discussed with Anvay.
+                #query = 'UPDATE order_invoice SET clientid=%s,orderid=%s,estimatedate=%s,estimateamount=%s,invoicedate=%s,invoiceamount=%s,quotedescription=%s,createdon=%s,baseamount=%s,tax=%s,entityid=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
+                query = 'UPDATE order_invoice SET orderid=%s,estimatedate=%s,estimateamount=%s,invoicedate=%s,invoiceamount=%s,quotedescription=%s,createdon=%s,baseamount=%s,tax=%s,entityid=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
                 msg = logMessage(cursor,query,[
-                    payload["clientid"],payload["orderid"],payload["estimatedate"],payload["estimateamount"],
+                    # 03JUL2024: gaurav: no need for clientid as discussed with Anvay.
+                    #payload["clientid"],payload["orderid"],payload["estimatedate"],payload["estimateamount"],
+                    payload["orderid"],payload["estimatedate"],payload["estimateamount"],
                     payload["invoicedate"],payload["invoiceamount"],payload["quotedescription"],datetime.date.today(),
                     payload["baseamount"],payload["tax"],payload["entity"],givenowtime(),payload['user_id'],False,
                     payload['id']
@@ -5395,10 +5403,11 @@ async def get_ll_tenant(payload:dict, request:Request, conn: psycopg2.extensions
 
 @app.post("/getPMABilling")
 async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'payload is <{payload}>')
     tbl=False
     monthdays = {
         1:31,
-        2:28 if payload['year']//4 != 0 else 29,
+        2:28 if int(payload['year'])//4 != 0 else 29,
         3:31,
         4:30,
         5:31,
@@ -5602,11 +5611,13 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                         rows.append({colname:val for colname,val in zip(colnames,row)})
                     
                     for row in rows:
-                        query = 'INSERT INTO order_invoice (clientid,orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                        # 03JUL2024: gaurav: no need for clientid as discussed with Anvay.
+                        #query = 'INSERT INTO order_invoice (clientid,orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+                        query = 'INSERT INTO order_invoice (orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
                         msg = logMessage(cursor,query,[
-                            row["clientid"],row["orderid"],None,row["totalamt"],
+                            row["orderorderid"],None,row["totalamt"],
                             f"{payload['year']}-{payload['month']}-01",row["totalamt"],row["briefdescription"],datetime.date.today(),
-                            row["totalbaseamt"],row["totaltaxamt"],row["entityid"],givenowtime(),payload['user_id'],False
+                            row["totalbaseamt"],row["totaltaxamt"],1,givenowtime(),payload['user_id'],False
                         ])
                     #---Only enable when not testing
                     conn[0].commit()
