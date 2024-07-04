@@ -1,5 +1,11 @@
-PyYaml == 5.4.1
-uvicorn == 0.15.0
-fastapi == 0.110.0
-psycopg2-binary == 2.9.9
-bcrypt == 4.1.1
+bcrypt==3.2.0
+fastapi==0.111.0
+fastapi-cli==0.0.4
+openpyxl==3.1.2
+pandas==2.2.2
+psycopg2-binary==2.9.9
+pydantic==2.7.1
+pydantic_core==2.18.2
+python-dotenv==1.0.1
+reportlab==3.6.8
+PyJWT==2.3.0
