@@ -5505,6 +5505,7 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                     dbo.client_property cp ON pma.clientpropertyid = cp.id
                                 WHERE 
                                     pma.active IS TRUE AND o.service = 62 AND (pma.rented IS NULL OR pma.rented = 0::numeric) AND c.clienttype = 7
+                                    AND pma.isdeleted = false
 
                                 UNION ALL
 
@@ -5584,7 +5585,8 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
                                     ll.active = true 
                                     AND ll.startdate <= '{invoicemy}-{monthdays[payload['month']]}'::date 
                                     AND ll.actualenddate >= '{invoicemy}-01'::date 
-                                    AND GREATEST(ll.startdate, '{invoicemy}-01'::date) <= LEAST(ll.actualenddate, '{invoicemy}-{monthdays[payload['month']]}'::date);
+                                    AND GREATEST(ll.startdate, '{invoicemy}-01'::date) <= LEAST(ll.actualenddate, '{invoicemy}-{monthdays[payload['month']]}'::date)
+                                    AND pma.isdeleted = false;
 
 '''
                 cursor.execute(query)
