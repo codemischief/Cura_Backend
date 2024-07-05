@@ -5306,6 +5306,7 @@ async def forgot_password_email(payload:dict, request:Request, conn: psycopg2.ex
 
 @app.post("/resetPassword")
 async def reset_password(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f"resetPassword: received payload <{payload}>")
     try:
         with conn[0].cursor() as cursor:
             #hashing to be done here, using bcrypt for now.
@@ -5318,6 +5319,7 @@ async def reset_password(payload:dict, request:Request, conn: psycopg2.extension
             logging.info(cursor.mogrify(query,[newp,payload['username']]))
             return giveSuccess(None,None,{"Change PW for":payload['username']})
     except HTTPException as h:
+        logging.info(traceback.print_exc())
         raise h
     except Exception as e:
         logging.info(traceback.print_exc())
@@ -7340,16 +7342,14 @@ async def login_for_token(payload:dict, request:Request, conn: psycopg2.extensio
 async def getdata(token:str,payload:dict,request : Request,conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     logging.info(f"Got token : {token}")
     try:
-        
         #header derive
         # headers = request.headers
         # if 'authorization' not in headers:
         #     raise giveFailure("No token from user",0,0)
         # token = headers['authorization'][7:]
         with conn[0].cursor() as cursor:
-            query = 'SELECT userid FROM tokens where token = %s and AND active=true'
-            message = logMessage(cursor,query,[token])
-            
+            query = 'SELECT userid FROM tokens where token = %s AND active=true'
+            message = logMessage(cursor,query,(token,))
             logging.info(message)
             userid = cursor.fetchone()[0]
 
