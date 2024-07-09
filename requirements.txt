@@ -9,3 +9,4 @@ pydantic_core==2.18.2
 python-dotenv==1.0.1
 reportlab==3.6.8
 PyJWT==2.3.0
+redmail==0.6.0

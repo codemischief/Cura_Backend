@@ -29,9 +29,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib.units import mm, inch
-# from sendEmail import send_email_testing
-
-#logs
+from redmail import outlook
+import csv
+from io import StringIO
 
 pdfSizeMap = {
     "/admin/manageuser" : (10,10),
@@ -202,6 +202,44 @@ FILE_DIRECTORY = os.getenv("FILE_DIRECTORY")
 SMTP_SERVER = os.getenv("SMTP_SERVER")
 SMTP_PORT = os.getenv("SMTP_PORT")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
+
+import re
+def check_if_within_last45_days_or_is_not_future_date(date_string):
+    if date_string == '' or date_string is None:
+        return True
+    # Regular expression to match date strings with varying year lengths
+    date_pattern = r'(\d{4,7})-(\d{2})-(\d{2})'
+    match = re.match(date_pattern, date_string)
+    if not match:
+        raise HTTPException(409,f"date <{date_string}> does not match the required format")
+    year, month, day = map(int, match.groups())
+
+    try:
+        date_to_check = datetime.datetime(year, month, day, 00, 00, 00)
+    except Exception as e:
+        raise HTTPException(409, f"either the date <{date_string}> is not within last 45 days OR it is a future date")
+
+    if (datetime.datetime.now() - timedelta(days=45)) <= date_to_check <= datetime.datetime.now():
+        return True
+    else:
+        logging.info(f'date <{date_string}> does not fit the criteria')
+        raise HTTPException(409, f"either the date <{date_string}> is not within last 45 days OR it is a future date")
+
+def valid_date(date_string):
+    if date_string == '' or date_string is None:
+        return True
+    min_date = datetime.datetime(1900, 1, 1)
+    max_date = datetime.datetime(2100, 12, 31)
+    date_pattern = r'(\d{4,7})-(\d{2})-(\d{2})'
+    match = re.match(date_pattern, date_string)
+    if not match:
+        raise HTTPException(409,f"date <{date_string}> does not match the required format")
+    year, month, day = map(int, match.groups())
+    try:
+        date_to_check = datetime.datetime(year, month, day, 00, 00, 00)
+    except Exception as e:
+        raise HTTPException(409, f"date <{date_string}> is out of valid range")
+    return min_date <= date_to_check <= max_date
 
 def getdata(conn: psycopg2.extensions.connection):
     return [
@@ -553,10 +591,8 @@ def filterAndPaginate_v2(db_config,
     try:
         # Base query
         query_frontend = False
-        logging.info("in fap2")
         if query is None:
             query = f"SELECT {','.join(required_columns)} FROM {table_name}"
-            logging.info('query is none and join')
             if isdeleted:
                 query += ' WHERE isdeleted = false '
             query_frontend = True
@@ -635,7 +671,7 @@ def filterAndPaginate_v2(db_config,
             query += " WHERE " + " AND ".join(where_clauses)
         elif where_clauses and whereinquery:
             query += " AND " + " AND ".join(where_clauses)
-        logging.info(where_clauses)
+        #logging.info(where_clauses)
         if sort_column and static:
             q = f'''SELECT data_type
                     FROM information_schema.columns
@@ -643,14 +679,13 @@ def filterAndPaginate_v2(db_config,
                     AND column_name = lower('{sort_column[0]}');
 '''
             conn = psycopg2.connect(db_config)
-            logging.info(q)
+            #logging.info(q)
             cursor = conn.cursor()
             msg = logMessage(cursor,q)
-            logging.info(q)
+            #logging.info(q)
             datatype = cursor.fetchone()
             if datatype:
                 datatype = datatype[0]
-            logging.info(f"Data type is{datatype}")
             if datatype != 'text':
                 query += f" ORDER BY {sort_column[0]} {'asc NULLS FIRST' if sort_order == 'asc' else 'desc  NULLS LAST'}"
             if datatype == 'text':
@@ -701,7 +736,7 @@ def filterAndPaginate_v2(db_config,
             end_index = start_index + page_size
             if start_index!=end_index:
                 rows = search_results[start_index:end_index]
-                logging.info([start_index,end_index])
+                #logging.info([start_index,end_index])
             else:
                 rows = search_results
         resp_payload = {'data': rows, 'total_count': total_count, 'message': 'success', 'colnames': colnames,'filename':None}
@@ -929,14 +964,11 @@ def giveFailure(msg,uid,rid,data=[],status=400):
     raise HTTPException(status_code=401 if status == None else status,detail=f"Error encountered: {msg}")
 
 def check_role_access(conn, payload: dict,request: Request = None,method = None,isUtilityRoute=False):
-    logging.info(f"Method is {method}")
     if request and  request.headers.get('authorization'):
         with conn[0].cursor() as cursor:
             token = request.headers['authorization'][7:]
-            logging.info(f"Token is <{token}>")
             cursor.execute("SELECT key FROM tokens WHERE token = %s AND active=true", (token,))
             key = cursor.fetchone()
-            logging.info(key)
         if key:
             try:
                 payload = jwt.decode(token,key[0],algorithms=ALG)
@@ -965,19 +997,17 @@ def check_role_access(conn, payload: dict,request: Request = None,method = None,
     try:
         if identifier_id:
             msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE id = %s AND isdeleted=false", (identifier_id,))
-            logging.info(msg)
         elif identifier_name:
             msg = logMessage(cursor,"SELECT roleid FROM usertable WHERE username = %s AND isdeleted=false", (identifier_name,))
-            logging.info(msg)
         else:
             raise HTTPException(status_code=404,detail=f"Not found user {payload}")
         role_id = cursor.fetchone()
         query = f"SELECT id FROM rules WHERE method='{method}'"
 
-        logging.info(f"QUERY IS <{query}>")
+        #logging.info(f"QUERY IS <{query}>")
         cursor.execute(query)
         rule_id = cursor.fetchone()
-        logging.info(f"Rule ID IS <{rule_id}>")
+        #logging.info(f"Rule ID IS <{rule_id}>")
         query2 = f"SELECT role_id from roles_to_rules_map where rule_id={rule_id[0]}"
         cursor.execute(query2)
         roles = [i[0] for i in cursor.fetchall()]
@@ -989,10 +1019,10 @@ def check_role_access(conn, payload: dict,request: Request = None,method = None,
                 flag = True
             else:
                 flag =False
-            logging.info(f"Access status is : {flag}")
+            #logging.info(f"Access status is : {flag}")
             return flag
         else:
-            logging.info("no rule")
+            #logging.info("no rule")
             return False
     except KeyError as ke:
         return {
@@ -1689,7 +1719,7 @@ async def delete_localities(payload: dict, request:Request, conn : psycopg2.exte
                 logging.info(msg)
                 conn[0].commit()
             data = {"Deleted Locality ID":payload['id']}
-            logUserAction(payload,conn,payload['id'],changes=None)
+            logUserAction(payload,conn,payload['id'],changes=msg)
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1746,6 +1776,8 @@ async def add_bank_statement(payload: dict, request:Request, conn: psycopg2.exte
         role_access_status = check_role_access(conn,payload,request=request,method="addbankst")
         if role_access_status==1:
             msg=None
+            # within 45 days check
+            check_if_within_last45_days_or_is_not_future_date(payload['date'])
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = (
@@ -1759,7 +1791,7 @@ async def add_bank_statement(payload: dict, request:Request, conn: psycopg2.exte
             data = {
                 "added_data": f"added bank statement for amount <{payload['amount']}>"
             }
-            logUserAction(payload,conn,id, changes=None)
+            logUserAction(payload,conn,id, changes=msg)
             return giveSuccess(payload['user_id'],role_access_status,data)
         elif role_access_status!=1:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
@@ -1768,7 +1800,9 @@ async def add_bank_statement(payload: dict, request:Request, conn: psycopg2.exte
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,str(p))
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         print(traceback.print_exc())
         raise giveFailure(f"failed to add bank statement due to exception <{str(e)}>",payload['user_id'],0)
@@ -1781,6 +1815,8 @@ async def edit_bank_statement(payload: dict, request:Request, conn: psycopg2.ext
         role_access_status = check_role_access(conn,payload,request=request,method="editbankst")
         if role_access_status == 1:
             msg=None
+            # within 45 days check
+            check_if_within_last45_days_or_is_not_future_date(payload['date'])
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = ('UPDATE bankst SET modeofpayment=%s,'
@@ -1794,14 +1830,16 @@ async def edit_bank_statement(payload: dict, request:Request, conn: psycopg2.ext
             data = {
                 "edited_data":payload['id']
             }
-            logUserAction(payload,conn,payload['id'], changes=None)
+            logUserAction(payload,conn,payload['id'], changes=msg)
             return giveSuccess(payload['user_id'],role_access_status,data)
         else:
             giveFailure("Access Denied",payload['user_id'],role_access_status)
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Bad Request",payload['user_id'],0)
@@ -1900,6 +1938,10 @@ async def add_employee(payload:dict, request:Request, conn: psycopg2.extensions.
 
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         print(traceback.print_exc())
         raise giveFailure("Bad Request",payload['user_id'],0)
@@ -1953,6 +1995,10 @@ async def edit_employee(payload: dict, request:Request, conn: psycopg2.extension
         else:
 
             raise HTTPException(status_code=409,detail=f"Employee ID {empid} Already Exists")
+    except psycopg2.errors.CheckViolation as p:
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except HTTPException as h:
         raise h
     except Exception as e:
@@ -2274,7 +2320,9 @@ async def add_payment(payload:dict, request:Request, conn: psycopg2.extensions.c
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,str(p))
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Bad Request",payload['user_id'],0)
@@ -2327,7 +2375,9 @@ async def edit_payment(payload:dict, request:Request, conn: psycopg2.extensions.
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         print(traceback.print_exc())
         giveFailure("Bad Request",payload['user_id'],0)   
@@ -2445,6 +2495,10 @@ async def runInTryCatch(conn, fname, payload,query = None,isPaginationRequired=F
     except HTTPException as h:
         logging.exception(f"HTTP EXCEPTION {h}")
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.exception(f'{fname}_EXCEPTION: <{str(e)}>')
         #giveFailure('Invalid Credentials', payload['user_id'], 0)
@@ -2976,6 +3030,10 @@ async def add_client_info(payload: dict, request:Request, conn: psycopg2.extensi
             logging.info(f"Client id {id} could not be deleted")  
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         # print(traceback.print_exc())
@@ -2985,7 +3043,7 @@ async def add_client_info(payload: dict, request:Request, conn: psycopg2.extensi
                 conn[0].commit()
             
             conn[0].rollback()
-            raise giveFailure(f"Error {e}",0,0)
+            raise giveFailure(f"Error {e}",0,0,status =409 )
         except Exception as e:
             logging.info(f"Client id {id} could not be deleted")
 
@@ -3164,7 +3222,9 @@ async def add_project(payload:dict, request:Request, conn: psycopg2.extensions.c
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.format_exc())
         raise giveFailure("Bad Request",payload['user_id'],0)
@@ -3233,20 +3293,19 @@ async def add_client_property(payload:dict, request:Request, conn: psycopg2.exte
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         print(traceback.print_exc())
         try:
             conn = psycopg2.connect(DATABASE_URL)
             conn.cursor().execute("delete from client_property where id=%s",(prop_id,))
-            raise giveFailure('Bad Request',0,0)
-        
-
-        
+            raise giveFailure(f'failed due to <{e}>',0,0,status=409)
         except Exception as e:
             logging.info(traceback.print_exc())
-            raise giveFailure(f"Could not delete id: {prop_id}",0,0)
-    
+            raise giveFailure(f'failed due to <{e}>',0,0,status=409)
+
 
 
 
@@ -3323,43 +3382,47 @@ async def edit_client_info(payload:dict, request:Request, conn: psycopg2.extensi
 
                 # update client legalinfo in 'client_legal_info' table
                 li = payload['client_legal_info']
-                query = ('UPDATE client_legal_info SET '
-                         'fulllegalname=%s,' 'panno=%s,' 'addressline1=%s,' 'addressline2=%s,' 'suburb=%s,'
-                         'city=%s,' 'state=%s,' 'country=%s,' 'zip=%s,' 'occupation=%s,'
-                         'birthyear=%s,' 'employername=%s,' 'relation=%s,' 'relationwith=%s '
-                         'WHERE ID=%s and clientid=%s')
-                data = logMessage(cursor,
-                    query,(li['fulllegalname'],li['panno'], li['addressline1'], li['addressline2'],
-                           li['suburb'], li['city'], li['state'], li['country'], li['zip'], li['occupation'],
-                           li['birthyear'], li['employername'], li['relation'], li['relationwith'], li['id'],
-                           clientid))
-                allmsg = allmsg + f'\n{data}'
-                conn[0].commit()
-                logging.info(f'editClientInfo: client_legal_info update status is <{cursor.statusmessage}>')
+                if li:
+                    query = ('UPDATE client_legal_info SET '
+                             'fulllegalname=%s,' 'panno=%s,' 'addressline1=%s,' 'addressline2=%s,' 'suburb=%s,'
+                             'city=%s,' 'state=%s,' 'country=%s,' 'zip=%s,' 'occupation=%s,'
+                             'birthyear=%s,' 'employername=%s,' 'relation=%s,' 'relationwith=%s '
+                             'WHERE ID=%s and clientid=%s')
+                    data = logMessage(cursor,
+                        query,(li['fulllegalname'],li['panno'], li['addressline1'], li['addressline2'],
+                               li['suburb'], li['city'], li['state'], li['country'], li['zip'], li['occupation'],
+                               li['birthyear'], li['employername'], li['relation'], li['relationwith'], li['id'],
+                               clientid))
+                    allmsg = allmsg + f'\n{data}'
+                    conn[0].commit()
+                    logging.info(f'editClientInfo: client_legal_info update status is <{cursor.statusmessage}>')
 
                 # update client_poa in 'client_poa' table
                 pi = payload['client_poa']
-                query = ('UPDATE client_poa SET '
-                         'poaaddressline1=%s,' 'poaaddressline2=%s,' 'poabirthyear=%s,' 'poacity=%s,' 'poacountry=%s,'
-                         'poaeffectivedate=%s,' 'poaemployername=%s,' 'poaenddate=%s,' 'poafor=%s,' 'poalegalname=%s,'
-                         'poaoccupation=%s,' 'poapanno=%s,' 'poaphoto=%s,' 'poarelation=%s, poarelationwith=%s, poastate=%s,'
-                         'poasuburb=%s, poazip=%s,scancopy=%s WHERE ID=%s and clientid=%s')
-                data = logMessage(cursor, query,(pi['poaaddressline1'],pi['poaaddressline2'], pi['poabirthyear'], pi['poacity'], pi['poacountry'],
-                           pi['poaeffectivedate'], pi['poaemployername'], pi['poaenddate'], pi['poafor'], pi['poalegalname'],
-                           pi['poaoccupation'], pi['poapanno'], pi['poaphoto'], pi['poarelation'], pi['poarelationwith'],
-                           pi['poastate'],pi['poasuburb'], pi['poazip'],pi['scancopy'],pi['id'], clientid))
-                allmsg = allmsg + f'\n{data}'
-                conn[0].commit()
-                logUserAction(payload,conn,clientid,changes=allmsg)
-                logging.info(f'editClientInfo: client_poa update status is <{cursor.statusmessage}>')
-        return giveSuccess(payload['user_id'],role_access_status,data)
+                if pi:
+                    query = ('UPDATE client_poa SET '
+                             'poaaddressline1=%s,' 'poaaddressline2=%s,' 'poabirthyear=%s,' 'poacity=%s,' 'poacountry=%s,'
+                             'poaeffectivedate=%s,' 'poaemployername=%s,' 'poaenddate=%s,' 'poafor=%s,' 'poalegalname=%s,'
+                             'poaoccupation=%s,' 'poapanno=%s,' 'poaphoto=%s,' 'poarelation=%s, poarelationwith=%s, poastate=%s,'
+                             'poasuburb=%s, poazip=%s,scancopy=%s WHERE ID=%s and clientid=%s')
+                    data = logMessage(cursor, query,(pi['poaaddressline1'],pi['poaaddressline2'], pi['poabirthyear'], pi['poacity'], pi['poacountry'],
+                               pi['poaeffectivedate'], pi['poaemployername'], pi['poaenddate'], pi['poafor'], pi['poalegalname'],
+                               pi['poaoccupation'], pi['poapanno'], pi['poaphoto'], pi['poarelation'], pi['poarelationwith'],
+                               pi['poastate'],pi['poasuburb'], pi['poazip'],pi['scancopy'],pi['id'], clientid))
+                    allmsg = allmsg + f'\n{data}'
+                    conn[0].commit()
+                    logUserAction(payload,conn,clientid,changes=allmsg)
+                    logging.info(f'editClientInfo: client_poa update status is <{cursor.statusmessage}>')
+            return giveSuccess(payload['user_id'],role_access_status,data)
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
          logging.info(traceback.print_exc())
-         raise giveFailure(f"Failed To Edit given client info due to <{traceback.print_exc()}>",0,0)
+         raise giveFailure(f"failure due to <{e}>",0,0, status=409)
 
 @app.post('/deleteClientProperty')
 async def delete_client_property(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -3481,6 +3544,7 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
             ci = payload['client_property_info']
             propertyid = payload['client_property_id']
             allmsg = ''
+            check_if_within_last45_days_or_is_not_future_date(ci['initialpossessiondate'])
             with conn[0].cursor() as cursor:
                 # update client information in 'client' table
                 query = ''.join(('UPDATE client_property SET '
@@ -3574,7 +3638,9 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
          logging.info(traceback.print_exc())
          raise giveFailure(f"Failed To Edit given client info due to <{traceback.print_exc()}>",0,0)
@@ -3693,6 +3759,7 @@ async def add_client_receipt(payload:dict, request:Request, conn: psycopg2.exten
         role_access_status = check_role_access(conn,payload,request=request,method="addClientReceipt")
         if role_access_status == 1:
             allmsg = ''
+            check_if_within_last45_days_or_is_not_future_date(payload['recddate'])
             with conn[0].cursor() as cursor:
                 query = "INSERT INTO client_receipt(receivedby,amount,tds,paymentmode,recddate,clientid,receiptdesc,serviceamount,reimbursementamount,entityid,howreceivedid,officeid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
                 msg = logMessage(cursor,query,[
@@ -3728,11 +3795,13 @@ async def add_client_receipt(payload:dict, request:Request, conn: psycopg2.exten
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
     except KeyError as ke:
         logging.info(traceback.print_exc())
-        raise giveFailure(f"Missing key {ke}",0,0)
+        raise giveFailure(f"Missing key {ke}",0,0,status=409)
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Bad Request",0,0)
@@ -3743,6 +3812,7 @@ async def edit_client_receipt(payload: dict, request:Request, conn: psycopg2.ext
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editClientReceipt")
         if role_access_status == 1:
+            check_if_within_last45_days_or_is_not_future_date(payload['recddate'])
             with conn[0].cursor() as cursor:
                 query = "UPDATE client_receipt SET receivedby = %s, amount = %s, tds = %s, paymentmode = %s,recddate=%s ,clientid = %s,receiptdesc = %s, serviceamount=%s, reimbursementamount = %s, entityid = %s, howreceivedid = %s,officeid = %s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s"
                 msg = logMessage(cursor,query,[
@@ -3766,7 +3836,7 @@ async def edit_client_receipt(payload: dict, request:Request, conn: psycopg2.ext
                 logging.info(msg)
                 conn[0].commit()
                 if cursor.statusmessage!="UPDATE 0":
-                    logUserAction(payload,conn,payload['id'], change=msg)
+                    logUserAction(payload,conn,payload['id'], changes=msg)
                     return giveSuccess(payload['user_id'],role_access_status,{"Edited_Receipt":payload['id']})
                 else:
                     raise giveFailure("No Record Available",payload['user_id'],role_access_status)
@@ -3815,6 +3885,7 @@ async def delete_client_receipt(payload:dict, request:Request, conn: psycopg2.ex
 @app.post('/getClientPMAAgreement')
 async def get_client_pma_agreement(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
     payload['table_name'] = 'get_client_property_pma_view'
+
     return await runInTryCatch(
         conn=conn,
         fname='get_client_pma_agreement',
@@ -3834,6 +3905,21 @@ async def add_client_pma_agreement(payload:dict, request:Request, conn: psycopg2
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="addClientPMAAgreement")
         if role_access_status == 1:
+            if 'startdate' in payload and payload['startdate'] is not None:
+                if not valid_date(payload['startdate']):
+                    raise HTTPException(409, "startdate is invalid")
+            if 'enddate' in payload and payload['enddate'] is not None:
+                if not valid_date(payload['enddate']):
+                    raise HTTPException(409, "enddate is invalid")
+            if 'poastartdate' in payload and payload['poastartdate'] is not None:
+                if not valid_date(payload['poastartdate']):
+                    raise HTTPException(409, "poastartdate is invalid")
+            if 'poaenddate' in payload and payload['poaenddate'] is not None:
+                if not valid_date(payload['poaenddate']):
+                    raise HTTPException(409, "poaenddate is invalid")
+            if 'actualenddate' in payload and payload['actualenddate'] is not None:
+                if not valid_date(payload['actualenddate']):
+                    raise HTTPException(409, "actualenddate is invalid")
             with conn[0].cursor() as cursor:
                 query = "INSERT INTO client_property_caretaking_Agreement (clientpropertyid,startdate,enddate,actualenddate,active,scancopy,reasonforearlyterminationifapplicable,description,rented,fixed,rentedtax,fixedtax,orderid,poastartdate,poaenddate,poaholder,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
                 msg = logMessage(cursor,query,[
@@ -3855,7 +3941,9 @@ async def add_client_pma_agreement(payload:dict, request:Request, conn: psycopg2
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Bad Request",0,0)
@@ -3866,6 +3954,21 @@ async def edit_client_pma_agreement(payload:dict, request:Request, conn: psycopg
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editClientPMAAgreement")
         if role_access_status == 1:
+            if 'startdate' in payload and payload['startdate'] is not None:
+                if not valid_date(payload['startdate']):
+                    raise HTTPException(409, "startdate is invalid")
+            if 'enddate' in payload and payload['enddate'] is not None:
+                if not valid_date(payload['enddate']):
+                    raise HTTPException(409, "enddate is invalid")
+            if 'poastartdate' in payload and payload['poastartdate'] is not None:
+                if not valid_date(payload['poastartdate']):
+                    raise HTTPException(409, "poastartdate is invalid")
+            if 'poaenddate' in payload and payload['poaenddate'] is not None:
+                if not valid_date(payload['poaenddate']):
+                    raise HTTPException(409, "poaenddate is invalid")
+            if 'actualenddate' in payload and payload['actualenddate'] is not None:
+                if not valid_date(payload['actualenddate']):
+                    raise HTTPException(409, "actualenddate is invalid")
             with conn[0].cursor() as cursor:
                 query = "UPDATE client_property_caretaking_agreement SET clientpropertyid=%s,startdate=%s,enddate=%s,actualenddate=%s,active=%s,scancopy=%s,reasonforearlyterminationifapplicable=%s,description=%s,rented=%s,fixed=%s,rentedtax=%s,fixedtax=%s,orderid=%s,poastartdate=%s,poaenddate=%s,poaholder=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s"
                 msg = logMessage(cursor,query,[
@@ -3889,7 +3992,9 @@ async def edit_client_pma_agreement(payload:dict, request:Request, conn: psycopg
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Bad Request",0,0)
@@ -3940,6 +4045,12 @@ async def add_client_ll_agreement(payload:dict, request:Request, conn: psycopg2.
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="addClientLLAgreement")
         if role_access_status == 1:
+            if 'startdate' in payload and payload['startdate'] is not None:
+                if not valid_date(payload['startdate']):
+                    raise HTTPException(409, "startdate is invalid")
+            if 'actualenddate' in payload and payload['actualenddate'] is not None:
+                if not valid_date(payload['actualenddate']):
+                    raise HTTPException(409, "actualenddate is invalid")
             with conn[0].cursor() as cursor:
                 query = "INSERT INTO client_property_leave_license_details (clientpropertyid,orderid,durationinmonth,startdate,actualenddate,depositamount,rentamount,registrationtype,rentpaymentdate,noticeperiodindays,active,llscancopy,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id"
                 msg = logMessage(cursor,query,[payload["clientpropertyid"],payload["orderid"],payload["durationinmonth"],payload['startdate'],
@@ -3960,7 +4071,9 @@ async def add_client_ll_agreement(payload:dict, request:Request, conn: psycopg2.
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Bad Request",0,0)
@@ -3971,6 +4084,12 @@ async def edit_client_ll_agreement(payload:dict, request:Request, conn: psycopg2
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editClientLLAgreement")
         if role_access_status == 1:
+            if 'startdate' in payload and payload['startdate'] is not None:
+                if not valid_date(payload['startdate']):
+                    raise HTTPException(409, "startdate is invalid")
+            if 'actualenddate' in payload and payload['actualenddate'] is not None:
+                if not valid_date(payload['actualenddate']):
+                    raise HTTPException(409, "actualenddate is invalid")
             with conn[0].cursor() as cursor:
                 query = 'UPDATE client_property_leave_license_details SET clientpropertyid=%s,orderid=%s,durationinmonth=%s,startdate=%s,depositamount=%s,actualenddate=%s,rentamount=%s,registrationtype=%s,rentpaymentdate=%s,noticeperiodindays=%s,active=%s,llscancopy=%s,dated=%s,createdby=%s,isdeleted=%s WHERE id=%s'
                 msg = logMessage(cursor,query,[payload["clientpropertyid"],payload["orderid"],payload["durationinmonth"],payload["startdate"],payload['depositamount'],
@@ -3992,7 +4111,9 @@ async def edit_client_ll_agreement(payload:dict, request:Request, conn: psycopg2
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure("Bad Request",0,0)
@@ -4275,7 +4396,9 @@ async def edit_project(payload:dict, request:Request, conn: psycopg2.extensions.
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Bad Request',payload['user_id'],role_access_status)            
@@ -4391,6 +4514,7 @@ async def add_orders(payload:dict, request:Request, conn: psycopg2.extensions.co
             # _order_status_change = payload['order_status_change']
             _order_photos = payload['order_photos']
             allmsg = ''
+
             with conn[0].cursor() as cursor:
                 #===============Order_Info===========================
                 query = ('INSERT INTO orders (assignedtooffice,entityid,owner,status,clientpropertyid,service,'
@@ -4521,6 +4645,7 @@ async def delete_orders(payload:dict, request:Request, conn: psycopg2.extensions
     
 @app.post('/getOrdersInvoice')
 async def get_orders_invoice(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+
     payload['table_name'] = 'get_orders_invoice_view'
     return await runInTryCatch(
         conn=conn,
@@ -4541,6 +4666,12 @@ async def add_order_invoice(payload:dict, request:Request, conn:psycopg2.extensi
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="addOrdersInvoice")
         if role_access_status == 1:
+            if 'invoicedate' in payload and payload['invoicedate'] is not None:
+                if not valid_date(payload['invoicedate']):
+                    raise HTTPException(409, "invoicedate is invalid")
+            if 'estimatedate' in payload and payload['estimatedate'] is not None:
+                if not valid_date(payload['estimatedate']):
+                    raise HTTPException(409, "estimatedate is invalid")
             with conn[0].cursor() as cursor:
                 # 03JUL2024: gaurav: no need for clientid as discussed with Anvay.
                 #query = 'INSERT INTO order_invoice (clientid,orderid,estimatedate,estimateamount,invoicedate,invoiceamount,quotedescription,createdon,baseamount,tax,entityid,dated,createdby,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
@@ -4647,7 +4778,13 @@ async def get_tally_ledger_admin(payload:dict, request:Request, conn: psycopg2.e
 
 @app.post('/editOrdersInvoice')
 async def edit_order_invoice(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
-    logging.info(f"edit_order_invoice:received payload <{payload}>")
+    logging.info(f"received payload <{payload}>")
+    if 'invoicedate' in payload and payload['invoicedate'] is not None:
+        if not valid_date (payload['invoicedate']):
+            raise HTTPException(409, "invoicedate is invalid")
+    if 'estimatedate' in payload and payload['estimatedate'] is not None:
+        if not valid_date (payload['estimatedate']):
+            raise HTTPException(409, "estimatedate is invalid")
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editOrdersInvoice")
         if role_access_status == 1:
@@ -4726,6 +4863,7 @@ async def add_order_receipt(payload:dict, request:Request, conn: psycopg2.extens
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="addOrderReceipt")
         if role_access_status == 1:
+            check_if_within_last45_days_or_is_not_future_date(payload['recddate'])
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO order_receipt (receivedby,amount,tds,recddate,receiptdesc,paymentmode,orderid,dated,createdby,isdeleted,createdon,entityid,officeid) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
                 msg = logMessage(cursor,query,[payload["receivedby"],payload["amount"],payload["tds"],
@@ -4742,7 +4880,9 @@ async def add_order_receipt(payload:dict, request:Request, conn: psycopg2.extens
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Bad Request',payload['user_id'],role_access_status)   
@@ -4753,6 +4893,7 @@ async def edit_order_receipt(payload:dict, request:Request, conn:psycopg2.extens
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editOrdersReceipt")
         if role_access_status == 1:
+            check_if_within_last45_days_or_is_not_future_date(payload['recddate'])
             with conn[0].cursor() as cursor:
                 query = 'UPDATE order_receipt SET receivedby=%s,amount=%s,tds=%s,recddate=%s,receiptdesc=%s,paymentmode=%s,orderid=%s,dated=%s,createdby=%s,isdeleted=%s,createdon=%s,entityid=%s,officeid=%s WHERE id=%s'
                 msg = logMessage(cursor,query,[payload["receivedby"],payload["amount"],payload["tds"],
@@ -4769,7 +4910,9 @@ async def edit_order_receipt(payload:dict, request:Request, conn:psycopg2.extens
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Bad Request',payload['user_id'],role_access_status)
@@ -5085,6 +5228,10 @@ async def add_vendor_invoice(payload: dict, request:Request, conn: psycopg2.exte
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="addVendorInvoice")
         if role_access_status == 1:
+            if not valid_date(payload['estimatedate']):
+                raise HTTPException(409, "estimatedate is invalid")
+            if not valid_date(payload['invoicedate']):
+                raise HTTPException(409, "invoicedate is invalid")
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO order_vendorestimate (estimatedate,amount,estimatedesc,orderid,vendorid,invoicedate,invoiceamount,notes,vat1,vat2,servicetax,invoicenumber,entityid,officeid,dated,createdby,createdon,isdeleted) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
                 msg = logMessage(cursor,query,[
@@ -5114,6 +5261,10 @@ async def edit_vendor_invoice(payload:dict, request:Request, conn: psycopg2.exte
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editVendorInvoice")
         if role_access_status == 1:
+            if not valid_date(payload['estimatedate']):
+                raise HTTPException(409, "estimatedate is invalid")
+            if not valid_date(payload['invoicedate']):
+                raise HTTPException(409, "invoicedate is invalid")
             with conn[0].cursor() as cursor:
                 query = 'UPDATE order_vendorestimate SET estimatedate=%s,amount=%s,estimatedesc=%s,orderid=%s,vendorid=%s,invoicedate=%s,invoiceamount=%s,notes=%s,vat1=%s,vat2=%s,servicetax=%s,invoicenumber=%s,entityid=%s,officeid=%s,dated=%s,createdby=%s,createdon=%s,isdeleted=%s WHERE id=%s'
                 msg = logMessage(cursor,query,[
@@ -5208,6 +5359,7 @@ async def add_vendor_payment(payload:dict, request:Request, conn: psycopg2.exten
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="addVendorPayment")
         if role_access_status == 1:
+            check_if_within_last45_days_or_is_not_future_date(payload['paymentdate'])
             with conn[0].cursor() as cursor:
                 query = 'INSERT INTO order_payment (paymentby,amount,paymentdate,orderid,vendorid,mode,description,tds,servicetaxamount,entityid,officeid,dated,createdby,isdeleted,createdon) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'
                 msg = logMessage(cursor,query,[
@@ -5226,7 +5378,9 @@ async def add_vendor_payment(payload:dict, request:Request, conn: psycopg2.exten
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Bad Request',payload['user_id'],role_access_status)
@@ -5237,6 +5391,7 @@ async def edit_vendor_payment(payload:dict, request:Request, conn: psycopg2.exte
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editVendorPayment")
         if role_access_status == 1:
+            check_if_within_last45_days_or_is_not_future_date(payload['paymentdate'])
             with conn[0].cursor() as cursor:
                 query = 'UPDATE order_payment SET paymentby=%s,amount=%s,paymentdate=%s,orderid=%s,vendorid=%s,mode=%s,description=%s,tds=%s,servicetaxamount=%s,entityid=%s,officeid=%s,dated=%s,createdby=%s,isdeleted=%s,createdon=%s WHERE id=%s'
                 msg = logMessage(cursor,query,[
@@ -5254,7 +5409,9 @@ async def edit_vendor_payment(payload:dict, request:Request, conn: psycopg2.exte
     except HTTPException as h:
         raise h
     except psycopg2.errors.CheckViolation as p:
-        raise HTTPException(409,"Negative value not allowed in fields")
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
         raise giveFailure('Bad Request',payload['user_id'],role_access_status)
@@ -5795,9 +5952,13 @@ async def add_user(payload:dict, request:Request, conn: psycopg2.extensions.conn
         raise giveFailure(f"{ke} is missing",0,0)
     except HTTPException as h:
         raise h
+    except psycopg2.errors.CheckViolation as p:
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except Exception as e:
         logging.info(traceback.print_exc())
-        raise giveFailure("Bad Request",0,0)
+        raise giveFailure(e,0,0)
 
 @app.post("/editUser")
 async def edit_user(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
@@ -5970,6 +6131,12 @@ async def delete_services(payload:dict, request:Request, conn: psycopg2.extensio
 
 @app.post('/getReportOrderPayment')
 async def get_report_order_payment(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     try:
         payload['table_name'] = 'orderpaymentview'
         payload['filters'].append(['paymentdate','between',[payload['startdate'],payload['enddate']],'Date'])
@@ -6501,6 +6668,12 @@ async def get_payment_status_admin(payload:dict, request:Request, conn: psycopg2
 
 @app.post('/getReportOrderReceipt')
 async def get_report_order_receipt(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     try:
         payload['table_name'] = 'orderreceiptview'
         payload['filters'].append(['recddate','between',[payload['startdate'],payload['enddate']],'Date'])
@@ -6965,6 +7138,12 @@ async def get_research_mandals(payload:dict, request:Request, conn: psycopg2.ext
 
 @app.post('/getReportOrderInvoice')
 async def get_report_order_invoice(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['filters'].append(['invoicedate','between',[payload['startdate'],payload['enddate']],'Date'])
     payload['table_name'] = 'orderinvoicelistview'
     return await runInTryCatch(
@@ -7284,6 +7463,51 @@ def send_email(email,password,subject, body,to_email,html=None,filename=None):
         logging.info(traceback.format_exc())
         print(f"Failed to send email: {e}")
 
+def send_email2(email,password,subject, body,to_email,html=None,filename=None):
+    # SMTP server configuration
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        cursor.execute("SELECT client_statement_emailid, client_statement_pass, "
+                       "smtp_server, smtp_port, cclist, bcclist from email_config")
+        client_statement_emailid, client_statement_pass, smtp_server, smtp_port, csv_cclist, csv_bcclist = cursor.fetchone()
+        smtp_username = client_statement_emailid
+        smtp_password = client_statement_pass
+        logging.info(f'{to_email}, {csv_cclist}, {csv_bcclist}')
+        outlook.username = client_statement_emailid
+        outlook.password = client_statement_pass
+
+        htmlcontent = ''
+        if html is not None:
+            for _h in html:
+                htmlcontent = htmlcontent + "\n" + _h
+        cc_ = StringIO(csv_cclist)
+        bcc_ = StringIO(csv_bcclist)
+        ccread = csv.reader(cc_)
+        bccread = csv.reader(bcc_)
+        cclist = []
+        bcclist = []
+        for r in ccread:
+            cclist.extend(r)
+        for r in bccread:
+            bcclist.extend(r)
+
+        outlook.send (
+            subject = subject,
+            receivers = to_email,
+            text = "Hi",
+            html = htmlcontent,
+            cc=None if len(cclist) ==0 else cclist,
+            bcc=None if len(bcclist) == 0 else bcclist,
+        )
+
+    except HTTPException as h:
+        raise h
+    except Exception as e:
+        logging.info(traceback.format_exc())
+        print(f"Failed to send email: {e}")
+
+
 def create_token(payload: dict,expires:timedelta = None):
     key = secrets.token_hex(4)
     to_encode = payload.copy()
@@ -7383,6 +7607,12 @@ async def getdata(token:str,payload:dict,request : Request,conn: psycopg2.extens
 
 @app.post('/getReportClientReceipt')
 async def report_client_receipt(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'clientreceiptlistview'
     payload['filters'].append(['recddate','between',[payload['startdate'],payload['enddate']],'Date'])
 
@@ -7400,6 +7630,12 @@ async def report_client_receipt(payload:dict, request:Request, conn: psycopg2.ex
 
 @app.post('/getReportVendorInvoice')
 async def report_vendor_invoice(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'ordervendorestimatelistview'
     payload['filters'].append(['invoicedate','between',[payload['startdate'],payload['enddate']],'Date'])
     return await runInTryCatch(
@@ -8222,6 +8458,12 @@ async def report_pma_client_statements(payload:dict, request:Request, conn:psyco
 
 @app.post('/reportClientStatement')
 async def report_pma_client_statements(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'clientstatementview'
     payload['filters'].append(['type','doesNotContain','payment','String'])
     payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
@@ -8387,6 +8629,9 @@ async def report_client_order_receipt_mismatch_details(payload:dict, request:Req
 
 @app.post('/reportBankBalanceReconciliation')
 async def report_bank_balance_reconciliation(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
     query = f'''SELECT 
         name AS bankname, 
         SUM(receipts) AS receipt,  
@@ -8509,6 +8754,9 @@ async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycop
 
 @app.post('/reportBankTransferReconciliation')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
     payload['table_name'] = 'RPT_Bank_Transfer_Reco'
     return await runInTryCatch(
         request=request,
@@ -8565,7 +8813,12 @@ async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycop
 
 @app.post('/reportDailyBankPaymentsReconciliation')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
-
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     table = f"RPT_Daily_Bank_Payments_Reco_{uuid.uuid4().hex}"
     query = f'''
   CREATE VIEW {table} AS
@@ -8628,7 +8881,13 @@ async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycop
 
 @app.post('/sendClientStatement')
 async def send_client_statement(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    tableCreated = False
+    table = f'client_statement_{uuid.uuid4().hex}'
     try:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409,"startdate is invalid")
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409,"enddate is invalid")
         table = f'client_statement_{uuid.uuid4().hex}'
         query = f'''
             CREATE VIEW {table} AS
@@ -8711,6 +8970,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 ORDER BY
                     Date DESC, dated DESC, Type DESC;
     '''
+        tableCreated = True
         with conn[0].cursor() as cursor:
             cursor.execute(query)
             conn[0].commit()
@@ -8807,40 +9067,40 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             if res :
                 logging.info(f'there are around <{len(res)}> entries for the statements')
                 html2 = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Dynamic HTML Table</title>
-                <style>
-                    body{
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh; /* Full viewport height */
-                        margin: 0;
-                        flex-direction: column;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 25px 25px;
-                        font-size: 12px; /* Reduce font size */
-                        text-align: left;
-                    }
-                    th, td {
-                        padding: 6px; /* Reduce padding to half */
-                        border-bottom: 1px solid #ddd;
-                    }
-                    th {
-                        background-color: #1d4ed8;
-                        color: white;
-                    }
-                </style>
-            </head>
-            <body>
-                <table>
-                    <thead>
-                        <tr>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dynamic HTML Table</title>
+    <style>
+        body{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Full viewport height */
+            margin: 0;
+            flex-direction: column;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 25px;
+            font-size: 12px; /* Reduce font size */
+            text-align: left;
+        }
+        th, td {
+            padding: 6px; /* Reduce padding to half */
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #1d4ed8;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
             """
 
             # Add table headers
@@ -8848,9 +9108,9 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                     html2 += f"<th>{key.capitalize()}</th>"
 
                 html2 += """
-                        </tr>
-                    </thead>
-                    <tbody>
+    </tr>
+</thead>
+<tbody>
             """
 
             # Add table rows
@@ -8861,10 +9121,10 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                     html2 += "</tr>"
 
                 html2 += """
-                    </tbody>
-                </table>
-            </body>
-            </html>
+        </tbody>
+    </table>
+</body>
+</html>
             """
             else:
                 html2 = """<p style="font-weight: bold;"> No transactions were found for the selected period. </p>"""
@@ -8886,26 +9146,41 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 cursor.execute(query)
                 emailid1,emailid2 = cursor.fetchone()
             if emailid1:
-                send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid1,html)
+                #send_email(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid1,html)
+                send_email2(CLIENT_STATEMENT_ID,CLIENT_STATEMENT_PASS,"Cura Statement of Account for your Pune property/ies.",'',emailid1,html)
             if emailid2:
-                send_email(CLIENT_STATEMENT_ID, CLIENT_STATEMENT_PASS, "Cura Statement of Account for your Pune property/ies.", '', emailid2, html)
+                #send_email(CLIENT_STATEMENT_ID, CLIENT_STATEMENT_PASS, "Cura Statement of Account for your Pune property/ies.", '', emailid2, html)
+                send_email2(CLIENT_STATEMENT_ID, CLIENT_STATEMENT_PASS, "Cura Statement of Account for your Pune property/ies.", '', emailid2, html)
             return {"sent email to":f'<{emailid1}> and <{emailid2}>'}
     except psycopg2.Error as e:
+        ex = e
         logging.info(traceback.format_exc())
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
     except HTTPException as h:
         raise h
     except Exception as e:
         logging.info(traceback.format_exc())
+        ex = e
         raise HTTPException(status_code=400,detail=f"Bad Request {e}")
     finally:
         cursor = conn[0].cursor()
-        if table:
-            cursor.execute(f"DROP VIEW {table}")
-            conn[0].commit()
+        try:
+            if tableCreated:
+                cursor.execute(f"DROP VIEW {table}")
+                conn[0].commit()
+        except Exception as e:
+            logging.exception (f'failed to drop table <{table}> due to <{str(e)}>')
+            raise HTTPException(409,e)
+
 
 @app.post('/reportClientReceiptBankMode')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'Tally_ClientReceipt'
     payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
     if 'paymentMode' in payload and payload['paymentMode'] != 'all':
@@ -8948,6 +9223,12 @@ async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycop
 
 @app.post('/reportOrderPaymentDD')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'Tally_OrderPayments_Taxes'
     payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
     if 'paymentMode' in payload and payload['paymentMode'] != 'all':
@@ -8989,6 +9270,12 @@ async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycop
 
 @app.post('/reportOrderPaymentBank2Cash')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'Tally_OrderPayments_Bank2Cash'
     payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
     if 'paymentMode' in payload and payload['paymentMode'] != 'all':
@@ -9030,6 +9317,12 @@ async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycop
 
 @app.post('/reportOrderPaymentBank2Bank')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'Tally_OrderPayment_Bank2Bank'
     payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
     if 'paymentMode' in payload and payload['paymentMode'] != 'all':
@@ -9071,6 +9364,12 @@ async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycop
 
 @app.post('/reportOrderPaymentCRToSalesInvoice')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'TALLY_CR_To_SalesInvoice'
     payload['filters'].append(["vch_date","between",[payload['startdate'],payload['enddate']],"Date"])
     if 'paymentMode' in payload and payload['paymentMode'] != 'all':
@@ -9091,6 +9390,12 @@ async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycop
 
 @app.post('/reportOrderPaymentNoTDS')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'Tally_OrderPayments_Vendors'
     payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
     if 'paymentMode' in payload and payload['paymentMode'] != 'all':
@@ -9132,6 +9437,12 @@ async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycop
 
 @app.post('/reportOrderPaymentWithTDS')
 async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'Tally_OrderPayments_With_TDS'
     payload['filters'].append(["date","between",[payload['startdate'],payload['enddate']],"Date"])
     if 'paymentMode' in payload and payload['paymentMode'] != 'all':
@@ -9340,6 +9651,12 @@ async def report_tds_by_vendor(payload:dict, request:Request, conn: psycopg2.ext
 
 @app.post('/reportVendorPaymentSummary')
 async def report_tds_by_vendor(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = f'VendorSummaryForFinancialYearView_{uuid.uuid4().hex}'
     query = f"""CREATE VIEW {payload['table_name']} AS select 
             vendorname, 
@@ -9396,6 +9713,12 @@ async def report_tds_by_vendor(payload:dict, request:Request, conn: psycopg2.ext
 
 @app.post('/reportVendorStatement')
 async def report_vendor_statement(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    if 'startdate' in payload and payload['startdate'] is not None:
+        if not valid_date(payload['startdate']):
+            raise HTTPException(409, "startdate is invalid")
+    if 'enddate' in payload and payload['enddate'] is not None:
+        if not valid_date(payload['enddate']):
+            raise HTTPException(409, "enddate is invalid")
     payload['table_name'] = 'VendorStatementView'
     if 'vendorID' in payload and payload['vendorID'] != 'all':
         payload['filters'].append(['vendorid','equalTo',payload['vendorID'],'Numeric'])
@@ -9784,6 +10107,8 @@ async def report_exception_properties_no_projects(payload:dict, request:Request,
     #clientname contains pma
     payload['filters'].append(['projectid','equalTo',11,'Numeric'])
     payload['filters'].append(['clientname','contains','pma','String'])
+    # 06JUL2024: condition added as requested by anvay to show only PMA properties.
+    payload['filters'].append(['property_status','contains','pma','String'])
     return await runInTryCatch(
         request=request,
         conn = conn,
