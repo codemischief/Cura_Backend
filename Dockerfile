@@ -7,6 +7,7 @@ COPY ./requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 ENV PORT 6789
+ENV TZ Asia/Kolkata
 
 COPY . /code/
 

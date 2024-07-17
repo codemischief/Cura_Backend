@@ -2303,6 +2303,7 @@ async def add_payment(payload:dict, request:Request, conn: psycopg2.extensions.c
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="addPayment")
         if role_access_status == 1:
+            check_if_within_last45_days_or_is_not_future_date(payload['paidon'])
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'INSERT INTO ref_contractual_payments (paymentto,paymentby,amount,paidon,paymentmode,description,paymentfor,dated,isdeleted,createdby,entityid,tds,professiontax,month,deduction) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id'                
@@ -2359,6 +2360,7 @@ async def edit_payment(payload:dict, request:Request, conn: psycopg2.extensions.
     try:
         role_access_status = check_role_access(conn,payload,request=request,method="editPayment")
         if role_access_status == 1:
+            check_if_within_last45_days_or_is_not_future_date(payload['paidon'])
             with conn[0].cursor() as cursor:
                 payload['dated'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 query = 'UPDATE ref_contractual_payments SET paymentto=%s,paymentby=%s,amount=%s,paidon=%s,paymentmode=%s,description=%s,paymentfor=%s,dated=%s,createdby=%s,isdeleted=%s,entityid=%s,officeid=%s,tds=%s,professiontax=%s,month=%s,deduction=%s WHERE id=%s'
@@ -3545,6 +3547,8 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
             propertyid = payload['client_property_id']
             allmsg = ''
             check_if_within_last45_days_or_is_not_future_date(ci['initialpossessiondate'])
+            if ci['initialpossessiondate'] == '':
+               ci['initialpossessiondate'] = None
             with conn[0].cursor() as cursor:
                 # update client information in 'client' table
                 query = ''.join(('UPDATE client_property SET '
@@ -3572,7 +3576,8 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
                 if 'client_property_photos' in payload and 'update' in payload['client_property_photos']:
                     for u in payload['client_property_photos']['update']:
                         query = ('UPDATE client_property_photos SET photolink=%s,' 'description=%s,' 'phototakenwhen=%s,dated=%s,createdby=%s,isdeleted=%s  WHERE id=%s and clientpropertyid=%s')
-                        data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], u["id"], propertyid,givenowtime(),payload['user_id'],False))
+                        #data = logMessage(cursor, query,(u["photolink"], u["description"], u["phototakenwhen"], u["id"], propertyid,givenowtime(),payload['user_id'],False))
+                        data = logMessage(cursor, query, (u["photolink"], u["description"], u["phototakenwhen"], givenowtime(), payload['user_id'], False, u["id"], propertyid))
                         allmsg = allmsg + f'\n{data}'
                         conn[0].commit()
                         logging.info(f'editClientProperty: client_property_photos propertyid <{propertyid}>, rowid <{u["id"]}> UPDATE status is <{cursor.statusmessage}>')
@@ -3679,7 +3684,7 @@ async def get_client_property_by_id(payload:dict, request:Request, conn: psycopg
                 data["client_property"]  = property_info
                 ############### Arrange Client Property Photos ##################
                 query = f'''
-                    select photolink,description,phototakenwhen  
+                    select id,photolink,description,phototakenwhen  
                     from client_property_photos where clientpropertyid = {payload['id']}
                 '''
                 logMessage(cursor,query)
@@ -5979,6 +5984,10 @@ async def edit_user(payload:dict, request:Request, conn: psycopg2.extensions.con
                 return giveSuccess(payload['user_id'],role_access_status,{"Edited User ID":payload['id']})
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
+    except psycopg2.errors.CheckViolation as p:
+        emsg = str(p).split("\n")[0]
+        logging.info(emsg)
+        raise HTTPException(409, str(emsg))
     except KeyError as ke:
         logging.info(traceback.print_exc())
         raise giveFailure(f"{ke} is missing",0,0)
