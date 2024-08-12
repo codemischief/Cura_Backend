@@ -9147,7 +9147,6 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             f.write(html2)
             html = [html1,html2,html3]
 
-            #logging.info(f'final email html <{html}>')
             if 'downloadType' in payload:
                 filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',
                                               rows = data['data'],
