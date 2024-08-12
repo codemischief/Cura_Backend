@@ -514,10 +514,12 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
         if mapping:
             colnames = [mapping[i] for i in colnames]
         df = pd.DataFrame(rows, columns=colnames)
+        logging.info(f'df has <{len(df.index)}> entries just after line 516')
         for col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='ignore')
+        logging.info(f'df has <{len(df.index)}> entries just after line 519')
         float_cols = df.select_dtypes(include=['float']).columns
-        df[float_cols] = df[float_cols].applymap(lambda x: f"{x:.2f}")
+        df[float_cols] = df[float_cols].map(lambda x: f"{x:.2f}")
         df.reset_index(inplace=True)
         df['index'] += 1
         df.rename(columns={"index":"Sr No."},inplace=True)
@@ -530,7 +532,7 @@ def generateExcelOrPDF(downloadType=None, rows=None, colnames=None,mapping = Non
             filename = f'{uuid.uuid4()}.xlsx'
             fname = f'{FILE_DIRECTORY}/{filename}'
             df.astype("str").replace('nan','', regex=False).to_excel(fname, engine='openpyxl',index=False)
-            logging.info(f'generated excel file <{fname}>')
+            logging.info(f'generated excel file <{fname}> from df with <{len(df.index)}> entries')
         else:
             df = df.astype("str").replace('nan','',regex=False)
             data_list = [df.columns.values.tolist()] + df.values.tolist()
@@ -744,7 +746,8 @@ def filterAndPaginate_v2(db_config,
         if page_number == 0 and page_size == 0 and (downloadType == 'excel' or downloadType == 'pdf'):
             filename = generateExcelOrPDF(downloadType, rows, colnames,mapping,routename)
             resp_payload['filename'] = filename
-            resp_payload['data'] = []
+            #resp_payload['data'] = []
+            resp_payload['data'] = rows
         elif page_number == 0 and page_size == 0 and downloadType == None:
             logging.info(f'downloadType is <None>')
         return resp_payload
@@ -8890,6 +8893,7 @@ async def report_monthly_bank_summary(payload:dict, request:Request, conn:psycop
 
 @app.post('/sendClientStatement')
 async def send_client_statement(payload:dict, request:Request, conn: psycopg2.extensions.connection = Depends(get_db_connection)):
+    logging.info(f'received payload <{payload}>')
     tableCreated = False
     table = f'client_statement_{uuid.uuid4().hex}'
     try:
@@ -9004,6 +9008,7 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
                 downloadType=payload['downloadType'] if 'downloadType' in payload else None,
                 group_by=None
             )
+            logging.info(f'finished filtAndPaginate_v2 call got <{len(data)}> items in data')
             res = []
             ans = giveSuccess(payload['user_id'],None,res,total_count=data['total_count'],filename=None)
             for row in data['data']:
@@ -9141,9 +9146,14 @@ async def send_client_statement(payload:dict, request:Request, conn: psycopg2.ex
             f = open('test.html','w')
             f.write(html2)
             html = [html1,html2,html3]
+
             #logging.info(f'final email html <{html}>')
             if 'downloadType' in payload:
-                filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',rows = data['data'],colnames = data['colnames'],mapping = payload['mapping'] if 'mapping' in payload else None,routename=payload['routename'] if 'routename' in payload else None)
+                filename = generateExcelOrPDF(downloadType=payload['downloadType'] if 'downloadType' in payload else 'pdf',
+                                              rows = data['data'],
+                                              colnames = data['colnames'],
+                                              mapping = payload['mapping'] if 'mapping' in payload else None,
+                                              routename=payload['routename'] if 'routename' in payload else None)
                 ans['filename'] = filename
 
             if not payload['sendEmail']:
