@@ -260,7 +260,10 @@ def ifNotExist(criteria : str,table_name : str,conn: psycopg2.extensions.connect
                 query = f"SELECT {criteria} FROM {table_name} WHERE {criteria} = {value}"
             if iddata:
                 query += f"AND id != {iddata}"
-            msg = logMessage(cursor,query,(value.lower(),))
+            if not isInt:
+                msg = logMessage(cursor,query,(value.lower(),))
+            else:
+                msg = logMessage(cursor, query, (value,))
             logging.info(msg)
             s = len(cursor.fetchall())
             logging.info(s)
@@ -269,7 +272,7 @@ def ifNotExist(criteria : str,table_name : str,conn: psycopg2.extensions.connect
         else:
             return True
     except Exception as e:
-        logging.info(traceback.print_exc())
+        logging.info(traceback.format_exc())
         return False
 def usernames(conn : psycopg2.extensions.connection):
     try:
@@ -3614,10 +3617,15 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
 
     #             # update client legalinfo in 'client_legal_info' table
                 li = payload['client_property_owner']
-                query = ('UPDATE client_property_owner SET owner1name=%s,owner1panno=%s,owner1aadhaarno=%s,owner1pancollected=%s,owner1aadhaarcollected=%s,owner2name=%s,owner2panno=%s,owner2aadhaarno=%s,owner2pancollected=%s,owner2aadhaarcollected=%s,owner3name=%s,owner3panno=%s,owner3aadhaarno=%s,owner3pancollected=%s,owner3aadhaarcollected=%s,comments=%s WHERE propertyid=%s')
-                data = logMessage(cursor,
-                    query,(li["owner1name"],li["owner1panno"],li["owner1aadhaarno"],li["owner1pancollected"],li["owner1aadhaarcollected"],li["owner2name"],li["owner2panno"],li["owner2aadhaarno"],li["owner2pancollected"],li["owner2aadhaarcollected"],li["owner3name"],li["owner3panno"],li["owner3aadhaarno"],li["owner3pancollected"],li["owner3aadhaarcollected"],li["comments"],
-                           propertyid))
+                if ifNotExist('propertyid','client_property_owner',conn, propertyid,isInt=True):
+                    query = ('INSERT into client_property_owner (propertyid,owner1name,owner1panno,owner1aadhaarno,owner1pancollected,owner1aadhaarcollected,owner2name,owner2panno,owner2aadhaarno,owner2pancollected,owner2aadhaarcollected,owner3name,owner3panno,owner3aadhaarno,owner3pancollected,owner3aadhaarcollected,comments,createdby,isdeleted) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)')
+                    data = logMessage(cursor,
+                        query,(propertyid, li["owner1name"],li["owner1panno"],li["owner1aadhaarno"],li["owner1pancollected"],li["owner1aadhaarcollected"],li["owner2name"],li["owner2panno"],li["owner2aadhaarno"],li["owner2pancollected"],li["owner2aadhaarcollected"],li["owner3name"],li["owner3panno"],li["owner3aadhaarno"],li["owner3pancollected"],li["owner3aadhaarcollected"],li["comments"],payload["user_id"],False))
+                else:
+                    query = ('UPDATE client_property_owner SET owner1name=%s,owner1panno=%s,owner1aadhaarno=%s,owner1pancollected=%s,owner1aadhaarcollected=%s,owner2name=%s,owner2panno=%s,owner2aadhaarno=%s,owner2pancollected=%s,owner2aadhaarcollected=%s,owner3name=%s,owner3panno=%s,owner3aadhaarno=%s,owner3pancollected=%s,owner3aadhaarcollected=%s,comments=%s WHERE propertyid=%s')
+                    data = logMessage(cursor,
+                        query,(li["owner1name"],li["owner1panno"],li["owner1aadhaarno"],li["owner1pancollected"],li["owner1aadhaarcollected"],li["owner2name"],li["owner2panno"],li["owner2aadhaarno"],li["owner2pancollected"],li["owner2aadhaarcollected"],li["owner3name"],li["owner3panno"],li["owner3aadhaarno"],li["owner3pancollected"],li["owner3aadhaarcollected"],li["comments"],
+                               propertyid))
                 conn[0].commit()
                 allmsg = allmsg + f'\n{data}'
                 logging.info(f'editClientProperty: client_property_owner update status is <{cursor.statusmessage}>')
@@ -3641,7 +3649,7 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
         else:
             raise giveFailure("Access Denied",payload['user_id'],role_access_status)
     except KeyError as e:
-        logging.info(traceback.print_exc())
+        logging.info(traceback.format_exc())
         raise giveFailure(f"Missing key : {e}",0,0)
     except HTTPException as h:
         raise h
@@ -3650,7 +3658,7 @@ async def edit_client_property(payload: dict, request:Request, conn: psycopg2.ex
         logging.info(emsg)
         raise HTTPException(409, str(emsg))
     except Exception as e:
-         logging.info(traceback.print_exc())
+         logging.info(traceback.format_exc())
          raise giveFailure(f"Failed To Edit given client info due to <{traceback.print_exc()}>",0,0)
 
 
@@ -5658,7 +5666,7 @@ async def get_pma_billing(payload:dict, request:Request, conn: psycopg2.extensio
         8:31,
         9:30,
         10:31,
-        11:31,
+        11:30,
         12:31
     }
     try:
